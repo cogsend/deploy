@@ -1,0 +1,1 @@
+import{n as e}from"./BqBUod9J.js";import"./Bn2JlJ2h.js";function t(t){return t.status===401&&(e(`/login`,{invalidateAll:!0}),!0)}export{t};
