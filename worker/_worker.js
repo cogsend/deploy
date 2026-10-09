@@ -5168,6 +5168,16 @@ async function hashPassword(password) {
   }, key2, 256);
   return `pbkdf2$${PBKDF2_ITERS}$${bytesToBase64(salt)}$${bytesToBase64(new Uint8Array(bits))}`;
 }
+async function passwordKeyHex(password, salt) {
+  const key2 = await crypto.subtle.importKey("raw", utf8Bytes(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({
+    name: "PBKDF2",
+    hash: "SHA-256",
+    salt,
+    iterations: PBKDF2_ITERS
+  }, key2, 256);
+  return bytesToHex(new Uint8Array(bits));
+}
 async function verifyPassword(password, stored) {
   const parts = stored.split("$");
   if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
@@ -5221,6 +5231,7 @@ var init_crypto = __esm({
     __name(encryptJson, "encryptJson");
     __name(decryptJson, "decryptJson");
     __name(hashPassword, "hashPassword");
+    __name(passwordKeyHex, "passwordKeyHex");
     __name(verifyPassword, "verifyPassword");
     HMAC_KEY_CACHE_MAX = 32;
     hmacKeys = /* @__PURE__ */ new Map();
@@ -12611,7 +12622,9 @@ var init_rate_limit = __esm({
     RATE_LIMITED_PATHS = [
       "/api/auth/login",
       "/api/auth/claim",
-      "/api/auth/totp/verify"
+      "/api/auth/totp/verify",
+      "/api/update/unlock",
+      "/api/update/remember"
     ];
     __name(isRateLimitedPath, "isRateLimitedPath");
     __name(rateLimitKey, "rateLimitKey");
@@ -18188,9 +18201,16 @@ async function clearPasswordGate(db, env2, userId, ip) {
   await clearAuthGate(db, env2, userId, "password", { scope: clientAddressBucket(ip) });
   await clearAuthGate(db, env2, userId, "password-all");
 }
+async function checkAccountPassword(db, env2, user, password, ip) {
+  await assertPasswordGateOpen(db, env2, user.id, ip);
+  if (!await verifyPassword(password, user.passwordHash)) return (await recordPasswordFailure(db, env2, user.id, ip)).locked ? "locked" : "wrong";
+  await clearPasswordGate(db, env2, user.id, ip);
+  return "ok";
+}
 var AUTH_GATE_WINDOW_MS;
 var init_auth_gate = __esm({
   ".svelte-kit/output/server/chunks/auth-gate.js"() {
+    init_crypto();
     init_client();
     init_auth();
     init_drizzle_orm();
@@ -18204,6 +18224,7 @@ var init_auth_gate = __esm({
     __name(assertPasswordGateOpen, "assertPasswordGateOpen");
     __name(recordPasswordFailure, "recordPasswordFailure");
     __name(clearPasswordGate, "clearPasswordGate");
+    __name(checkAccountPassword, "checkAccountPassword");
   }
 });
 
@@ -42492,7 +42513,7 @@ var init_internal22 = __esm({
         app: /* @__PURE__ */ __name(({ head: head2, body, assets: assets2, nonce, env: env2 }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<meta name="viewport" content="width=device-width, initial-scale=1" />\n		<meta name="color-scheme" content="light" />\n		' + head2 + '\n	</head>\n	<body data-sveltekit-preload-data="hover">\n		<div style="display: contents">' + body + "</div>\n	</body>\n</html>\n", "app"),
         error: error_template_default
       },
-      version_hash: "1dn928p"
+      version_hash: "1xinp8a"
     };
     __name(get_hooks, "get_hooks");
   }
@@ -43141,13 +43162,13 @@ var init_navigation = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/state2.js
+// .svelte-kit/output/server/chunks/state.js
 function context2() {
   return getContext("__request__");
 }
 var page2;
-var init_state2 = __esm({
-  ".svelte-kit/output/server/chunks/state2.js"() {
+var init_state = __esm({
+  ".svelte-kit/output/server/chunks/state.js"() {
     init_server2();
     init_index_server();
     init_client2();
@@ -43417,7 +43438,7 @@ var init_layout_svelte = __esm({
     init_index_server();
     init_time_zone();
     init_navigation();
-    init_state2();
+    init_state();
     init_Icon();
     init_chevron_down();
     init_favicon();
@@ -43452,8 +43473,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.OdxDwXwk.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DgJdtIiF.js", "_app/immutable/chunks/DWeOu0Y3.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/Dc5n8urS.js", "_app/immutable/chunks/CUbetqdc.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/csflxEAB.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CFa_W6_e.js"];
-    stylesheets = ["_app/immutable/assets/0.DVAAMANu.css"];
+    imports = ["_app/immutable/nodes/0.lUjDdRWx.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/Dc5n8urS.js", "_app/immutable/chunks/CUbetqdc.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/csflxEAB.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CFa_W6_e.js"];
+    stylesheets = ["_app/immutable/assets/0.ldSaOTs_.css"];
     fonts = [];
   }
 });
@@ -43471,7 +43492,7 @@ function Error2($$renderer, $$props) {
 var init_error_svelte = __esm({
   ".svelte-kit/output/server/entries/fallbacks/error.svelte.js"() {
     init_server2();
-    init_state2();
+    init_state();
     __name(Error2, "Error");
   }
 });
@@ -43490,7 +43511,7 @@ var init__2 = __esm({
   ".svelte-kit/output/server/nodes/1.js"() {
     index3 = 1;
     component2 = /* @__PURE__ */ __name(async () => component_cache2 ??= (await Promise.resolve().then(() => (init_error_svelte(), error_svelte_exports))).default, "component");
-    imports2 = ["_app/immutable/nodes/1.DvW3lf0W.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DWeOu0Y3.js", "_app/immutable/chunks/BPfStd28.js"];
+    imports2 = ["_app/immutable/nodes/1.D_jbX9x7.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/Cijj62V4.js"];
     stylesheets2 = [];
     fonts2 = [];
   }
@@ -44487,7 +44508,7 @@ var init_page_svelte2 = __esm({
     init_platforms();
     init_platform_setup();
     init_zernio();
-    init_state2();
+    init_state();
     init_CopyButton();
     init_plus();
     init_x();
@@ -44517,7 +44538,7 @@ var init__4 = __esm({
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.BWvGxwOl.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DWeOu0Y3.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/C5a2th_P.js", "_app/immutable/chunks/B0P383hB.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/DtHuxCtc.js", "_app/immutable/chunks/XX7-MxqZ.js", "_app/immutable/chunks/DgJdtIiF.js"];
+    imports4 = ["_app/immutable/nodes/3.D6vkXk2D.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/C5a2th_P.js", "_app/immutable/chunks/B0P383hB.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/DtHuxCtc.js", "_app/immutable/chunks/BCYb5_1e.js", "_app/immutable/chunks/ChSIMbTw.js"];
     stylesheets4 = [];
     fonts4 = [];
   }
@@ -46276,7 +46297,7 @@ var init_page_svelte4 = __esm({
     init_poll();
     init_client2();
     init_navigation();
-    init_state2();
+    init_state();
     init_Icon();
     init_user();
     init_plus();
@@ -46337,7 +46358,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.DT_qE1eZ.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DgJdtIiF.js", "_app/immutable/chunks/DWeOu0Y3.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/Dc5n8urS.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/B0P383hB.js", "_app/immutable/chunks/DC9hjpxr.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/baUO-7sm.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/DtHuxCtc.js"];
+    imports6 = ["_app/immutable/nodes/5.4BA-3vj8.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/Dc5n8urS.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/B0P383hB.js", "_app/immutable/chunks/DC9hjpxr.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/baUO-7sm.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/DtHuxCtc.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -47108,7 +47129,7 @@ var init__9 = __esm({
     index10 = 8;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports9 = ["_app/immutable/nodes/8.CkUDUpTX.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/CUbetqdc.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/XX7-MxqZ.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/DgJdtIiF.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports9 = ["_app/immutable/nodes/8.H3Mz4x4v.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/CUbetqdc.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/BCYb5_1e.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets9 = [];
     fonts9 = [];
   }
@@ -47190,7 +47211,7 @@ var init__10 = __esm({
     index11 = 9;
     component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
     server_id8 = "src/routes/login/+page.server.ts";
-    imports10 = ["_app/immutable/nodes/9.924jeU7M.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DgJdtIiF.js", "_app/immutable/chunks/CL0Rsr0s.js"];
+    imports10 = ["_app/immutable/nodes/9.0R4x-8zp.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/CL0Rsr0s.js"];
     stylesheets10 = [];
     fonts10 = [];
   }
@@ -47253,7 +47274,7 @@ var init__11 = __esm({
     index12 = 10;
     component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
     server_id9 = "src/routes/login/setup-2fa/+page.server.ts";
-    imports11 = ["_app/immutable/nodes/10.QM4Kpkso.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DgJdtIiF.js"];
+    imports11 = ["_app/immutable/nodes/10.6XOovd1N.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js"];
     stylesheets11 = [];
     fonts11 = [];
   }
@@ -47317,7 +47338,7 @@ var init__12 = __esm({
     index13 = 11;
     component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id10 = "src/routes/login/verify/+page.server.ts";
-    imports12 = ["_app/immutable/nodes/11.CtDLhYnw.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DgJdtIiF.js"];
+    imports12 = ["_app/immutable/nodes/11.BuuvRTfe.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js"];
     stylesheets12 = [];
     fonts12 = [];
   }
@@ -48360,7 +48381,7 @@ var init_page_svelte9 = __esm({
     init_thread_segments();
     init_excerpt();
     init_navigation();
-    init_state2();
+    init_state();
     init_Icon();
     init_chevron_down();
     init_circle_x();
@@ -48403,7 +48424,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id12 = "src/routes/posts/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.DAx4VWJV.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DgJdtIiF.js", "_app/immutable/chunks/DWeOu0Y3.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/C1Sg2J_s.js", "_app/immutable/chunks/BX_1U1nx.js", "_app/immutable/chunks/DC9hjpxr.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/csflxEAB.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/DtHuxCtc.js", "_app/immutable/chunks/XX7-MxqZ.js"];
+    imports14 = ["_app/immutable/nodes/13.Dev03qCg.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/C1Sg2J_s.js", "_app/immutable/chunks/BX_1U1nx.js", "_app/immutable/chunks/DC9hjpxr.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/csflxEAB.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/DtHuxCtc.js", "_app/immutable/chunks/BCYb5_1e.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -48528,6 +48549,17 @@ function parseRelease(json3) {
     publishedAt: typeof data.published_at === "string" ? data.published_at : null
   };
 }
+function newestRelease(json3) {
+  if (!Array.isArray(json3)) return null;
+  let best = null;
+  for (const entry of json3) {
+    if (entry?.draft === true) continue;
+    const release = parseRelease(entry);
+    if (!release || compareVersions(release.version, release.version) === null) continue;
+    if (!best || (compareVersions(release.version, best.version) ?? 0) > 0) best = release;
+  }
+  return best;
+}
 function highestVersionTag(json3) {
   if (!Array.isArray(json3)) return null;
   let best = null;
@@ -48557,11 +48589,12 @@ function releaseCheckResult(current2, latest, checkedAt, error63) {
     ...error63 ? { error: error63 } : {}
   };
 }
-var RELEASE_REPO, RELEASE_API_URL, RELEASES_URL, TAGS_API_URL, RELEASE_DOWNLOAD_BASE, SEMVER;
+var RELEASE_REPO, RELEASE_API_URL, RELEASES_API_URL, RELEASES_URL, TAGS_API_URL, RELEASE_DOWNLOAD_BASE, SEMVER;
 var init_release_check = __esm({
   ".svelte-kit/output/server/chunks/release-check.js"() {
     RELEASE_REPO = "cogsend/cogsend";
     RELEASE_API_URL = `https://api.github.com/repos/${RELEASE_REPO}/releases/latest`;
+    RELEASES_API_URL = `https://api.github.com/repos/${RELEASE_REPO}/releases?per_page=30`;
     RELEASES_URL = `https://github.com/${RELEASE_REPO}/releases`;
     TAGS_API_URL = `https://api.github.com/repos/${RELEASE_REPO}/tags?per_page=100`;
     RELEASE_DOWNLOAD_BASE = `https://github.com/${RELEASE_REPO}/releases/download`;
@@ -48570,6 +48603,7 @@ var init_release_check = __esm({
     __name(compareVersions, "compareVersions");
     __name(isNewer, "isNewer");
     __name(parseRelease, "parseRelease");
+    __name(newestRelease, "newestRelease");
     __name(highestVersionTag, "highestVersionTag");
     __name(releaseCheckResult, "releaseCheckResult");
   }
@@ -51306,8 +51340,11 @@ __export(page_svelte_exports10, {
 function UpdatePanel($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { latestTag = null } = $$props;
+    let token = "";
     let customTag = "";
     derived(() => (customTag.trim(), latestTag) || "");
+    const useSaved = derived(() => Boolean(void 0) && true);
+    derived(() => useSaved() ? false : token.trim().length > 0 && false);
     const visible = derived(() => false);
     const github = derived(() => null);
     $$renderer2.push("<!--[-1-->");
@@ -51347,6 +51384,7 @@ function _page10($$renderer, $$props) {
     let displayName = data.displayName ?? "";
     let instanceName = data.appName ?? "";
     let savedInstanceName = (data.appName ?? "").trim();
+    let offerPrereleases = false;
     let accountEmail = data.user?.email ?? "";
     const seededAccountEmail = data.user?.email ?? "";
     let accountPassword = "";
@@ -51486,6 +51524,7 @@ function _page10($$renderer, $$props) {
             instanceName = s3.instanceName ?? "";
             savedInstanceName = instanceName.trim();
           }
+          offerPrereleases = s3.offerPrereleases === true;
           if (!isPictureDialogOpen) {
             profilePictureUrl = s3.settings?.profilePictureUrl ?? "";
             pictureBroken = false;
@@ -51832,7 +51871,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html2("1.14.1")}${escape_html2(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html2("1.15.0")}${escape_html2(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html2(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html2(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -51842,7 +51881,8 @@ function _page10($$renderer, $$props) {
     }
     $$renderer2.push(`<!--]--></p> `);
     UpdatePanel($$renderer2, { latestTag: release?.updateAvailable ? release.latest?.tag ?? null : null });
-    $$renderer2.push(`<!----></div> <div class="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Login</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">The email and password used to sign in. Changing the password signs out every device.</p> `);
+    $$renderer2.push(`<!----> <label class="mt-4 flex items-start gap-2 text-[12px] font-medium text-stone-500"><input type="checkbox"${attr("checked", offerPrereleases, true)} class="mt-0.5" data-testid="offer-prereleases"/> <span>Offer pre-releases too: release candidates, for testing a release before it is published.
+					Not for an instance you rely on.</span></label></div> <div class="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Login</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">The email and password used to sign in. Changing the password signs out every device.</p> `);
     if (accountLoading) $$renderer2.push(`<!--[0--><p class="text-[13px] font-medium text-stone-500">Loading\u2026</p>`);
     else $$renderer2.push(`<!--[-1--><form class="space-y-4"><label class="block text-sm"><span class="text-[11px] font-bold tracking-widest text-stone-500 uppercase">Email</span> <input type="email" autocomplete="username"${attr("value", accountEmail)} class="mt-1.5 w-full rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base" required=""/></label> <label class="block text-sm"><span class="text-[11px] font-bold tracking-widest text-stone-500 uppercase">Current password</span> <input type="password" autocomplete="current-password"${attr("value", accountPassword)} class="mt-1.5 w-full rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base" required=""/></label> <div class="flex flex-col gap-4 sm:flex-row"><label class="block flex-1 text-sm"><span class="text-[11px] font-bold tracking-widest text-stone-500 uppercase">New password</span> <input type="password" autocomplete="new-password" minlength="8"${attr("value", accountNewPassword)} placeholder="Leave empty to keep" class="mt-1.5 w-full rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/></label> <label class="block flex-1 text-sm"><span class="text-[11px] font-bold tracking-widest text-stone-500 uppercase">Confirm</span> <input type="password" autocomplete="new-password"${attr("value", accountConfirm)} class="mt-1.5 w-full rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/></label></div> <button type="submit"${attr("disabled", accountBusy, true)} class="self-start rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50">Save login</button></form>`);
     $$renderer2.push(`<!--]--></div></div></div> `);
@@ -51947,9 +51987,140 @@ var init__15 = __esm({
   ".svelte-kit/output/server/nodes/14.js"() {
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.g5C2-2BU.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DgJdtIiF.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/C5a2th_P.js", "_app/immutable/chunks/BX_1U1nx.js", "_app/immutable/chunks/baUO-7sm.js", "_app/immutable/chunks/CFa_W6_e.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/XX7-MxqZ.js"];
+    imports15 = ["_app/immutable/nodes/14.If_lxv8w.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/C5a2th_P.js", "_app/immutable/chunks/BX_1U1nx.js", "_app/immutable/chunks/baUO-7sm.js", "_app/immutable/chunks/CFa_W6_e.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/BCYb5_1e.js"];
     stylesheets15 = [];
     fonts15 = [];
+  }
+});
+
+// .svelte-kit/output/server/chunks/saved-token.js
+async function read(db, key2) {
+  try {
+    const row = await first(db.select().from(appSettings).where(eq(appSettings.key, key2)));
+    return row?.value ? JSON.parse(row.value) : null;
+  } catch {
+    return null;
+  }
+}
+async function write(db, key2, value) {
+  const now = /* @__PURE__ */ new Date();
+  const text3 = JSON.stringify(value);
+  await db.insert(appSettings).values({
+    key: key2,
+    value: text3,
+    updatedAt: now
+  }).onConflictDoUpdate({
+    target: appSettings.key,
+    set: {
+      value: text3,
+      updatedAt: now
+    }
+  });
+}
+async function clear(db, key2) {
+  await db.delete(appSettings).where(eq(appSettings.key, key2));
+}
+function jobExpired(job, now = Date.now()) {
+  return now - job.startedAt > UPDATE_JOB_TTL_MS;
+}
+async function clearSavedToken(db) {
+  await clear(db, UPDATE_TOKEN_SAVED_SETTING);
+  await clear(db, UPDATE_TOKEN_UNLOCKED_SETTING);
+}
+async function savedTokenStatus(db) {
+  const saved = await readSavedToken(db);
+  return saved ? {
+    hint: saved.hint,
+    savedAt: saved.savedAt
+  } : null;
+}
+async function saveToken(db, token, password, now = Date.now()) {
+  const salt = randomBytes(16);
+  const payload2 = await encryptSecret(token, await passwordKeyHex(password, salt));
+  await writeSavedToken(db, {
+    salt: bytesToBase64(salt),
+    payload: payload2,
+    hint: token.slice(-4),
+    savedAt: now
+  });
+  return {
+    hint: token.slice(-4),
+    savedAt: now
+  };
+}
+async function unlockToken(db, password, now = Date.now()) {
+  const saved = await readSavedToken(db);
+  if (!saved) throw new SavedTokenError("No Cloudflare token is saved: paste one");
+  let token;
+  try {
+    token = await decryptSecret(saved.payload, await passwordKeyHex(password, base64ToBytes(saved.salt)));
+  } catch {
+    await clearSavedToken(db);
+    throw new SavedTokenError("The saved token was locked with an earlier password, so it is gone: paste the token once more");
+  }
+  const key2 = bytesToHex(randomBytes(32));
+  await writeUnlockedToken(db, {
+    payload: await encryptSecret(token, key2),
+    expiresAt: now + UPDATE_JOB_TTL_MS
+  });
+  return key2;
+}
+async function tokenFromUnlockKey(db, key2, now = Date.now()) {
+  const expired = new SavedTokenError("Enter your password again to continue the update", 401);
+  if (!UNLOCK_KEY.test(key2)) throw expired;
+  const unlocked = await readUnlockedToken(db);
+  if (!unlocked || unlocked.expiresAt < now) throw expired;
+  try {
+    return await decryptSecret(unlocked.payload, key2);
+  } catch {
+    throw expired;
+  }
+}
+var UPDATE_TARGET_SETTING, UPDATE_JOB_SETTING, UPDATE_PREVIOUS_SETTING, UPDATE_TOKEN_SAVED_SETTING, UPDATE_TOKEN_UNLOCKED_SETTING, UPDATE_JOB_TTL_MS, readTarget, writeTarget, readJob, writeJob, clearJob, readPrevious, writePrevious, clearPrevious, readSavedToken, writeSavedToken, readUnlockedToken, writeUnlockedToken, UNLOCK_KEY, SavedTokenError;
+var init_saved_token = __esm({
+  ".svelte-kit/output/server/chunks/saved-token.js"() {
+    init_bytes();
+    init_crypto();
+    init_client();
+    init_drizzle_orm();
+    UPDATE_TARGET_SETTING = "update_target";
+    UPDATE_JOB_SETTING = "update_job";
+    UPDATE_PREVIOUS_SETTING = "update_previous";
+    UPDATE_TOKEN_SAVED_SETTING = "update_token_saved";
+    UPDATE_TOKEN_UNLOCKED_SETTING = "update_token_unlocked";
+    UPDATE_JOB_TTL_MS = 33e5;
+    __name(read, "read");
+    __name(write, "write");
+    __name(clear, "clear");
+    readTarget = /* @__PURE__ */ __name((db) => read(db, UPDATE_TARGET_SETTING), "readTarget");
+    writeTarget = /* @__PURE__ */ __name((db, target) => write(db, UPDATE_TARGET_SETTING, target), "writeTarget");
+    readJob = /* @__PURE__ */ __name((db) => read(db, UPDATE_JOB_SETTING), "readJob");
+    writeJob = /* @__PURE__ */ __name((db, job) => write(db, UPDATE_JOB_SETTING, job), "writeJob");
+    clearJob = /* @__PURE__ */ __name((db) => clear(db, UPDATE_JOB_SETTING), "clearJob");
+    readPrevious = /* @__PURE__ */ __name((db) => read(db, UPDATE_PREVIOUS_SETTING), "readPrevious");
+    writePrevious = /* @__PURE__ */ __name((db, previous) => write(db, UPDATE_PREVIOUS_SETTING, previous), "writePrevious");
+    clearPrevious = /* @__PURE__ */ __name((db) => clear(db, UPDATE_PREVIOUS_SETTING), "clearPrevious");
+    __name(jobExpired, "jobExpired");
+    readSavedToken = /* @__PURE__ */ __name((db) => read(db, UPDATE_TOKEN_SAVED_SETTING), "readSavedToken");
+    writeSavedToken = /* @__PURE__ */ __name((db, saved) => write(db, UPDATE_TOKEN_SAVED_SETTING, saved), "writeSavedToken");
+    readUnlockedToken = /* @__PURE__ */ __name((db) => read(db, UPDATE_TOKEN_UNLOCKED_SETTING), "readUnlockedToken");
+    writeUnlockedToken = /* @__PURE__ */ __name((db, unlocked) => write(db, UPDATE_TOKEN_UNLOCKED_SETTING, unlocked), "writeUnlockedToken");
+    __name(clearSavedToken, "clearSavedToken");
+    UNLOCK_KEY = /^[0-9a-f]{64}$/;
+    SavedTokenError = class extends Error {
+      static {
+        __name(this, "SavedTokenError");
+      }
+      status;
+      constructor(message, status = 409) {
+        super(message);
+        this.status = status;
+      }
+    };
+    __name(savedTokenStatus, "savedTokenStatus");
+    __name(saveToken, "saveToken");
+    __name(unlockToken, "unlockToken");
+    __name(tokenFromUnlockKey, "tokenFromUnlockKey");
   }
 });
 
@@ -51992,6 +52163,7 @@ var init_server_ts = __esm({
     init_auth_gate();
     init_rate_limit();
     init_require();
+    init_saved_token();
     init_credentials();
     init_drizzle_orm();
     GET = /* @__PURE__ */ __name(async ({ locals }) => {
@@ -52035,7 +52207,10 @@ var init_server_ts = __esm({
           ...wantPassword ? { passwordHash: await hashPassword(newPassword) } : {},
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq(users.id, row.id));
-        if (wantPassword) await revokeOtherSessions(locals.db, row.id, void 0);
+        if (wantPassword) {
+          await revokeOtherSessions(locals.db, row.id, void 0);
+          await clearSavedToken(locals.db);
+        }
         return ok({
           email: wantEmail ? email3 : user.email,
           reauth: wantPassword
@@ -55057,7 +55232,7 @@ var init_server_ts34 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.14.1",
+          version: "1.15.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -66064,11 +66239,13 @@ var init_server_ts43 = __esm({
   }
 });
 
-// .svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js
-var server_ts_exports44 = {};
-__export(server_ts_exports44, {
-  GET: () => GET20
-});
+// .svelte-kit/output/server/chunks/release.js
+async function readOfferPrereleases(db) {
+  return await readAppSetting(db, OFFER_PRERELEASES_SETTING) === "1";
+}
+async function setOfferPrereleases(db, on) {
+  await writeAppSetting(db, OFFER_PRERELEASES_SETTING, on ? "1" : "");
+}
 function parseCache(raw) {
   if (!raw) return null;
   try {
@@ -66085,15 +66262,16 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current2 = options2.current ?? "1.14.1";
+  const current2 = options2.current ?? "1.15.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
-  if (cached3 && !options2.refresh && isFresh(cached3, now.getTime())) return releaseCheckResult(current2, cached3.latest, cached3.checkedAt, cached3.error);
+  const prereleases = await readOfferPrereleases(db);
+  if (cached3 && !options2.refresh && (cached3.prereleases ?? false) === prereleases && isFresh(cached3, now.getTime())) return releaseCheckResult(current2, cached3.latest, cached3.checkedAt, cached3.error);
   const doFetch = options2.fetchImpl ?? fetch;
   let latest = null;
   let error63;
   try {
-    const res = await doFetch(RELEASE_API_URL, {
+    const res = await doFetch(prereleases ? RELEASES_API_URL : RELEASE_API_URL, {
       headers: {
         accept: "application/vnd.github+json",
         "user-agent": "cogsend"
@@ -66101,7 +66279,8 @@ async function checkForRelease(db, options2 = {}) {
       signal: AbortSignal.timeout(TIMEOUT_MS)
     });
     if (res.ok) {
-      latest = parseRelease(await res.json().catch(() => null));
+      const body = await res.json().catch(() => null);
+      latest = prereleases ? newestRelease(body) : parseRelease(body);
       if (!latest) error63 = "GitHub returned an unexpected release document";
     } else if (res.status === 404) {
       const tags = await doFetch(TAGS_API_URL, {
@@ -66123,24 +66302,40 @@ async function checkForRelease(db, options2 = {}) {
   await writeAppSetting(db, CACHE_KEY, JSON.stringify({
     latest,
     checkedAt,
-    error: error63
+    error: error63,
+    prereleases
   }));
   return releaseCheckResult(current2, latest, checkedAt, error63);
 }
-var CACHE_KEY, OK_TTL_MS, FAIL_TTL_MS, TIMEOUT_MS, GET20;
-var init_server_ts44 = __esm({
-  ".svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js"() {
-    init_http();
+var CACHE_KEY, OFFER_PRERELEASES_SETTING, OK_TTL_MS, FAIL_TTL_MS, TIMEOUT_MS;
+var init_release = __esm({
+  ".svelte-kit/output/server/chunks/release.js"() {
     init_app_settings();
-    init_require();
     init_release_check();
     CACHE_KEY = "release_check";
+    OFFER_PRERELEASES_SETTING = "offer_prereleases";
     OK_TTL_MS = 216e5;
     FAIL_TTL_MS = 18e5;
     TIMEOUT_MS = 8e3;
+    __name(readOfferPrereleases, "readOfferPrereleases");
+    __name(setOfferPrereleases, "setOfferPrereleases");
     __name(parseCache, "parseCache");
     __name(isFresh, "isFresh");
     __name(checkForRelease, "checkForRelease");
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js
+var server_ts_exports44 = {};
+__export(server_ts_exports44, {
+  GET: () => GET20
+});
+var GET20;
+var init_server_ts44 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js"() {
+    init_http();
+    init_require();
+    init_release();
     GET20 = /* @__PURE__ */ __name(async ({ locals, url: url2 }) => {
       try {
         requireUser(locals.user);
@@ -66329,6 +66524,7 @@ var init_server_ts48 = __esm({
     init_app_settings();
     init_require();
     init_time_zone();
+    init_release();
     init_instance_name();
     init_drizzle_orm();
     GET23 = /* @__PURE__ */ __name(async ({ locals }) => {
@@ -66342,7 +66538,8 @@ var init_server_ts48 = __esm({
         return ok({
           settings: parseProfileSettings(row?.settingsJson ?? null),
           displayName: row?.displayName ?? null,
-          instanceName: await readStoredAppName(locals.db) ?? locals.env.APP_NAME
+          instanceName: await readStoredAppName(locals.db) ?? locals.env.APP_NAME,
+          offerPrereleases: await readOfferPrereleases(locals.db)
         });
       } catch (err) {
         return handleError(err);
@@ -66372,6 +66569,10 @@ var init_server_ts48 = __esm({
         if (hasName && !display.ok) return fail("Invalid display name", 400);
         if (hasInstanceName && !instanceName.ok) return fail("Invalid instance name", 400);
         if (hasTimeZone && !timeZone) return fail("Invalid time zone", 400);
+        const hasPrereleases = Object.hasOwn(body, "offerPrereleases");
+        const offerPrereleases = body.offerPrereleases;
+        if (hasPrereleases && typeof offerPrereleases !== "boolean") return fail("Invalid offerPrereleases", 400);
+        if (hasPrereleases) await setOfferPrereleases(locals.db, offerPrereleases);
         if (hasInstanceName && instanceName.ok) await rememberAppName(locals.db, instanceName.name ?? "");
         const touchesSettings = SETTINGS_KEYS.some((key2) => Object.hasOwn(body, key2));
         await locals.db.update(users).set({
@@ -66384,7 +66585,8 @@ var init_server_ts48 = __esm({
         return ok({
           settings: normalized.settings,
           displayName: row?.displayName ?? null,
-          instanceName: await readStoredAppName(locals.db) ?? locals.env.APP_NAME
+          instanceName: await readStoredAppName(locals.db) ?? locals.env.APP_NAME,
+          offerPrereleases: await readOfferPrereleases(locals.db)
         });
       } catch (err) {
         return handleError(err);
@@ -66846,60 +67048,6 @@ var init_server_ts53 = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/state.js
-async function read(db, key2) {
-  try {
-    const row = await first(db.select().from(appSettings).where(eq(appSettings.key, key2)));
-    return row?.value ? JSON.parse(row.value) : null;
-  } catch {
-    return null;
-  }
-}
-async function write(db, key2, value) {
-  const now = /* @__PURE__ */ new Date();
-  const text3 = JSON.stringify(value);
-  await db.insert(appSettings).values({
-    key: key2,
-    value: text3,
-    updatedAt: now
-  }).onConflictDoUpdate({
-    target: appSettings.key,
-    set: {
-      value: text3,
-      updatedAt: now
-    }
-  });
-}
-async function clear(db, key2) {
-  await db.delete(appSettings).where(eq(appSettings.key, key2));
-}
-function jobExpired(job, now = Date.now()) {
-  return now - job.startedAt > UPDATE_JOB_TTL_MS;
-}
-var UPDATE_TARGET_SETTING, UPDATE_JOB_SETTING, UPDATE_PREVIOUS_SETTING, UPDATE_JOB_TTL_MS, readTarget, writeTarget, readJob, writeJob, clearJob, readPrevious, writePrevious, clearPrevious;
-var init_state = __esm({
-  ".svelte-kit/output/server/chunks/state.js"() {
-    init_client();
-    init_drizzle_orm();
-    UPDATE_TARGET_SETTING = "update_target";
-    UPDATE_JOB_SETTING = "update_job";
-    UPDATE_PREVIOUS_SETTING = "update_previous";
-    UPDATE_JOB_TTL_MS = 33e5;
-    __name(read, "read");
-    __name(write, "write");
-    __name(clear, "clear");
-    readTarget = /* @__PURE__ */ __name((db) => read(db, UPDATE_TARGET_SETTING), "readTarget");
-    writeTarget = /* @__PURE__ */ __name((db, target) => write(db, UPDATE_TARGET_SETTING, target), "writeTarget");
-    readJob = /* @__PURE__ */ __name((db) => read(db, UPDATE_JOB_SETTING), "readJob");
-    writeJob = /* @__PURE__ */ __name((db, job) => write(db, UPDATE_JOB_SETTING, job), "writeJob");
-    clearJob = /* @__PURE__ */ __name((db) => clear(db, UPDATE_JOB_SETTING), "clearJob");
-    readPrevious = /* @__PURE__ */ __name((db) => read(db, UPDATE_PREVIOUS_SETTING), "readPrevious");
-    writePrevious = /* @__PURE__ */ __name((db, previous) => write(db, UPDATE_PREVIOUS_SETTING, previous), "writePrevious");
-    clearPrevious = /* @__PURE__ */ __name((db) => clear(db, UPDATE_PREVIOUS_SETTING), "clearPrevious");
-    __name(jobExpired, "jobExpired");
-  }
-});
-
 // .svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js
 var server_ts_exports54 = {};
 __export(server_ts_exports54, {
@@ -66910,25 +67058,27 @@ var init_server_ts54 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js"() {
     init_http();
     init_require();
+    init_saved_token();
     init_github_update();
-    init_state();
     GET24 = /* @__PURE__ */ __name(async ({ locals, platform: platform2 }) => {
       try {
         requireSession(locals.user, locals.authMethod);
-        const [job, previous, target] = await Promise.all([
+        const [job, previous, target, savedToken] = await Promise.all([
           readJob(locals.db),
           readPrevious(locals.db),
-          readTarget(locals.db)
+          readTarget(locals.db),
+          savedTokenStatus(locals.db)
         ]);
         const running = platform2?.env?.CF_VERSION_METADATA?.id ?? null;
         const rollback = previous?.installedVersionId && (!running || running === previous.installedVersionId) ? previous : null;
         const env2 = platform2?.env;
         const install = env2?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.14.1",
+          version: "1.15.0",
           install,
           github: install === "button" ? githubUpdateTarget(env2?.COGSEND_REPO, env2?.COGSEND_BRANCH) : null,
           target,
+          savedToken,
           previous: rollback,
           job: job ? {
             tag: job.tag,
@@ -66948,10 +67098,87 @@ var init_server_ts54 = __esm({
   }
 });
 
-// .svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js
+// .svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js
 var server_ts_exports55 = {};
 __export(server_ts_exports55, {
+  DELETE: () => DELETE10,
   POST: () => POST32
+});
+var POST32, DELETE10;
+var init_server_ts55 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js"() {
+    init_http();
+    init_auth();
+    init_auth_gate();
+    init_rate_limit();
+    init_require();
+    init_saved_token();
+    POST32 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+      try {
+        requireSession(locals.user, locals.authMethod);
+        const body = await request2.json().catch(() => null);
+        const token = typeof body?.token === "string" ? body.token.trim() : "";
+        const password = typeof body?.password === "string" ? body.password : "";
+        if (!/^[\w-]{20,200}$/.test(token)) return fail("That does not look like a Cloudflare API token", 400);
+        if (!password) return fail("Enter your CogSend password to lock the token with", 400);
+        const user = await getAdminUser(locals.db);
+        if (!user) return fail("This instance has no account yet", 409);
+        const check2 = await checkAccountPassword(locals.db, locals.env, user, password, rateLimitKey(request2.headers));
+        if (check2 !== "ok") return fail(check2 === "locked" ? "Too many attempts \u2014 try again later" : "Your password is incorrect", 401);
+        return ok({ savedToken: await saveToken(locals.db, token, password) });
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "POST");
+    DELETE10 = /* @__PURE__ */ __name(async ({ locals }) => {
+      try {
+        requireSession(locals.user, locals.authMethod);
+        await clearSavedToken(locals.db);
+        return ok({ savedToken: null });
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "DELETE");
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js
+var server_ts_exports56 = {};
+__export(server_ts_exports56, {
+  POST: () => POST33
+});
+var POST33;
+var init_server_ts56 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js"() {
+    init_http();
+    init_auth();
+    init_auth_gate();
+    init_rate_limit();
+    init_require();
+    init_saved_token();
+    POST33 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+      try {
+        requireSession(locals.user, locals.authMethod);
+        const body = await request2.json().catch(() => null);
+        const password = typeof body?.password === "string" ? body.password : "";
+        if (!password) return fail("Enter your CogSend password", 400);
+        const user = await getAdminUser(locals.db);
+        if (!user) return fail("This instance has no account yet", 409);
+        const check2 = await checkAccountPassword(locals.db, locals.env, user, password, rateLimitKey(request2.headers));
+        if (check2 !== "ok") return fail(check2 === "locked" ? "Too many attempts \u2014 try again later" : "Your password is incorrect", 401);
+        return ok({ unlockKey: await unlockToken(locals.db, password) });
+      } catch (err) {
+        if (err instanceof SavedTokenError) return fail(err.message, err.status);
+        return handleError(err);
+      }
+    }, "POST");
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js
+var server_ts_exports57 = {};
+__export(server_ts_exports57, {
+  POST: () => POST34
 });
 function cloudflareApi(token, { fetchImpl = fetch, budget } = {}) {
   const scrub = /* @__PURE__ */ __name((text3) => token ? text3.split(token).join("[token]") : text3, "scrub");
@@ -67054,7 +67281,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env2?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.14.1"
+    currentVersion: "1.15.0"
   };
 }
 async function download(ctx, url2) {
@@ -67394,14 +67621,14 @@ async function dropJob(ctx, job) {
   await ctx.store.delete(stagedKeys(job.version)).catch(() => void 0);
   await clearJob(ctx.db);
 }
-var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST32;
-var init_server_ts55 = __esm({
+var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST34;
+var init_server_ts57 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js"() {
     init_bytes();
     init_http();
     init_require();
+    init_saved_token();
     init_release_check();
-    init_state();
     init_update_manifest();
     API_BASE = "https://api.cloudflare.com/client/v4";
     CloudflareApiError = class extends Error {
@@ -67468,17 +67695,18 @@ var init_server_ts55 = __esm({
       rollback: /* @__PURE__ */ __name((ctx) => stepRollback(ctx), "rollback"),
       abort: /* @__PURE__ */ __name((ctx) => stepAbort(ctx), "abort")
     };
-    POST32 = /* @__PURE__ */ __name(async (event) => {
+    POST34 = /* @__PURE__ */ __name(async (event) => {
       try {
         requireSession(event.locals.user, event.locals.authMethod);
         const run3 = Object.hasOwn(STEPS, event.params.step) ? STEPS[event.params.step] : null;
         if (!run3) return fail("Unknown update step", 404);
         const body = await event.request.json().catch(() => null);
-        const token = typeof body?.token === "string" ? body.token.trim() : "";
+        const token = typeof body?.unlockKey === "string" ? await tokenFromUnlockKey(event.locals.db, body.unlockKey) : typeof body?.token === "string" ? body.token.trim() : "";
         if (!token) return fail("Paste a Cloudflare API token to continue", 400);
         return ok(await run3(updaterContext(event, token), body ?? {}));
       } catch (err) {
         if (err instanceof UpdateError) return fail(err.message, err.status);
+        if (err instanceof SavedTokenError) return fail(err.message, err.status);
         if (err instanceof CloudflareApiError) {
           const status = err.status === 401 || err.status === 403 ? 403 : 502;
           const hint = status === 403 ? " Check that the token has the permissions the link pre-fills, for this account." : "";
@@ -67491,17 +67719,17 @@ var init_server_ts55 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js
-var server_ts_exports56 = {};
-__export(server_ts_exports56, {
-  POST: () => POST33
+var server_ts_exports58 = {};
+__export(server_ts_exports58, {
+  POST: () => POST35
 });
-var POST33;
-var init_server_ts56 = __esm({
+var POST35;
+var init_server_ts58 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js"() {
     init_http();
     init_require();
     init_operations4();
-    POST33 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST35 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -71280,7 +71508,7 @@ var manifest = (() => {
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mimeTypes: { ".png": "image/png", ".txt": "text/plain" },
     _: {
-      client: { start: "_app/immutable/entry/start.CDt1vm4g.js", app: "_app/immutable/entry/app.DS185L20.js", imports: ["_app/immutable/entry/start.CDt1vm4g.js", "_app/immutable/chunks/BPfStd28.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/entry/app.DS185L20.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+      client: { start: "_app/immutable/entry/start.q26Jn8Th.js", app: "_app/immutable/entry/app.DjaZcfyL.js", imports: ["_app/immutable/entry/start.q26Jn8Th.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/entry/app.DjaZcfyL.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
       nodes: [
         __memo(() => Promise.resolve().then(() => (init__(), __exports))),
         __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -71700,18 +71928,32 @@ var manifest = (() => {
           endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
         },
         {
+          id: "/api/update/remember",
+          pattern: /^\/api\/update\/remember\/?$/,
+          params: [],
+          page: null,
+          endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
+        },
+        {
+          id: "/api/update/unlock",
+          pattern: /^\/api\/update\/unlock\/?$/,
+          params: [],
+          page: null,
+          endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
+        },
+        {
           id: "/api/update/[step]",
           pattern: /^\/api\/update\/([^/]+?)\/?$/,
           params: [{ "name": "step", "optional": false, "rest": false, "chained": false }],
           page: null,
-          endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
+          endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
         },
         {
           id: "/api/validate",
           pattern: /^\/api\/validate\/?$/,
           params: [],
           page: null,
-          endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
+          endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
         },
         {
           id: "/compose",
