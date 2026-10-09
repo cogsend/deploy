@@ -5,15 +5,19 @@
  *
  * - The deploy is tagged with this release, so Settings and later deploys can
  *   tell what is running.
- * - It refuses to replace a newer release: once you update from Settings, this
+ * - It refuses to replace a newer release: after an update from Settings this
  *   copy is older than your instance, and pushing to it must not roll you back.
- *   COGSEND_ALLOW_DOWNGRADE=1 (a build variable) overrides that.
+ *   COGSEND_ALLOW_DOWNGRADE=1 (a build variable) overrides that, and so does a
+ *   rollback the "Update CogSend" Action made on purpose, for that release only.
+ * - It tells the Worker which GitHub repository it came from, so Settings can
+ *   offer that repository's "Update CogSend" Action.
  * - An account with no cron-trigger slot left still deploys; Settings →
  *   Scheduled publishing then offers an external tick instead.
  */
 import { spawnSync } from 'node:child_process';
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { downgradeProblem, servingTag } from './lib/deployed-version.mjs';
+import { ROLLBACK_MARKER, githubRepoOf, rollbackAllowed } from './lib/github-update.mjs';
 import {
 	NO_CRON_CONFIG_NAME,
 	cronFallbackWarning,
@@ -36,9 +40,9 @@ function wrangler(args, { show = false } = {}) {
 	return { status: run.status, stdout: run.stdout ?? '', output: `${run.stdout}\n${run.stderr}` };
 }
 
-const allowDowngrade = ['1', 'true', 'yes'].includes(
-	(process.env.COGSEND_ALLOW_DOWNGRADE ?? '').toLowerCase()
-);
+const allowDowngrade =
+	['1', 'true', 'yes'].includes((process.env.COGSEND_ALLOW_DOWNGRADE ?? '').toLowerCase()) ||
+	rollbackAllowed(existsSync(ROLLBACK_MARKER) ? readFileSync(ROLLBACK_MARKER, 'utf8') : null, version);
 if (!allowDowngrade) {
 	const problem = downgradeProblem(servingTag(wrangler).tag, version);
 	if (problem) {
@@ -47,7 +51,21 @@ if (!allowDowngrade) {
 	}
 }
 
-const deployArgs = ['deploy', '--tag', `v${version}`, '--message', `CogSend ${version}`];
+const origin = spawnSync('git', ['remote', 'get-url', 'origin'], { encoding: 'utf8' });
+const repo = githubRepoOf(origin.stdout ?? '');
+const branch = process.env.WORKERS_CI_BRANCH;
+const repoVars = repo
+	? ['--var', `COGSEND_REPO:${repo}`, ...(branch ? ['--var', `COGSEND_BRANCH:${branch}`] : [])]
+	: [];
+
+const deployArgs = [
+	'deploy',
+	'--tag',
+	`v${version}`,
+	'--message',
+	`CogSend ${version}`,
+	...repoVars
+];
 let result = wrangler(deployArgs, { show: true });
 if (result.status !== 0 && isCronQuotaError(result.output)) {
 	console.error(cronFallbackWarning());

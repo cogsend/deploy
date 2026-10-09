@@ -1,4 +1,4 @@
-# CogSend 1.13.1, ready to deploy
+# CogSend 1.14.0, ready to deploy
 
 This repository is [CogSend](https://github.com/cogsend/cogsend), a self-hosted social scheduler, prebuilt for one click. It is regenerated on every release; the source, issues and pull requests live in [cogsend/cogsend](https://github.com/cogsend/cogsend).
 
@@ -14,4 +14,6 @@ The full guide is at [cogsend.com/docs/deploy](https://cogsend.com/docs/deploy/)
 
 ## Updating
 
-Update from **Settings → Instance** in CogSend itself. Afterwards, disconnect this copy from Workers Builds (Workers & Pages → your Worker → Settings → Builds → Disconnect): while it is connected, a push to it would try to deploy the older release it holds, which its deploy script refuses.
+**Through GitHub (no Cloudflare token).** In CogSend, **Settings → Instance** links to this repository's **Update CogSend** Action. The first time, it opens GitHub with the Action's file filled in: commit it (the Deploy button cannot copy workflow files). Then run the Action: it checks the release's signature against every file, commits the release, and Workers Builds deploys it. Leave Workers Builds connected.
+
+**From Settings, with a Cloudflare API token.** Also works, and does not change this repository. While Workers Builds is connected, a push to the older copy here is refused by its deploy script, so nothing rolls back by accident.
