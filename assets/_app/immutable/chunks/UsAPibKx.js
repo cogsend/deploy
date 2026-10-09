@@ -1,1 +1,0 @@
-import{n as e}from"./DPf4y_cI.js";import"./Bo-2HNrm.js";function t(t){return t.status===401&&(e(`/login`,{invalidateAll:!0}),!0)}export{t};

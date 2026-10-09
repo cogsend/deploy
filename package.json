@@ -1,9 +1,9 @@
 {
 	"name": "cogsend",
-	"version": "1.14.0",
+	"version": "1.14.1",
 	"private": true,
 	"type": "module",
-	"description": "CogSend 1.14.0, prebuilt for the Deploy to Cloudflare button.",
+	"description": "CogSend 1.14.1, prebuilt for the Deploy to Cloudflare button.",
 	"license": "MIT",
 	"homepage": "https://cogsend.com",
 	"scripts": {
