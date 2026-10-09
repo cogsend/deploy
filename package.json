@@ -1,0 +1,34 @@
+{
+	"name": "cogsend",
+	"version": "1.13.0",
+	"private": true,
+	"type": "module",
+	"description": "CogSend 1.13.0, prebuilt for the Deploy to Cloudflare button.",
+	"license": "MIT",
+	"homepage": "https://cogsend.com",
+	"scripts": {
+		"deploy": "node deploy.mjs"
+	},
+	"devDependencies": {
+		"wrangler": "4.149.0"
+	},
+	"engines": {
+		"node": "^22.13.0 || ^24.0.0 || >=26.0.0"
+	},
+	"cloudflare": {
+		"bindings": {
+			"APP_ENCRYPTION_KEY": {
+				"description": "Any random string of 32 characters or more. **Generate one at [cogsend.com/key](https://cogsend.com/key/) and keep a copy**: you type it again on your first visit to create your account, and losing it means reconnecting every account."
+			},
+			"DB": {
+				"description": "The D1 database for posts, accounts and settings. Any name works."
+			},
+			"MEDIA": {
+				"description": "The R2 bucket for images and videos. R2 asks for a payment method on file, even on the free tier."
+			},
+			"COGSEND_INSTALL": {
+				"description": "Leave as `button`: it tells Settings how this instance was installed."
+			}
+		}
+	}
+}

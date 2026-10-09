@@ -1,0 +1,4 @@
+# The one secret CogSend needs. It encrypts the account tokens CogSend stores,
+# and you type it once more, on your first visit, to create your account.
+# Generate one at https://cogsend.com/key/ and keep a copy somewhere safe.
+APP_ENCRYPTION_KEY=

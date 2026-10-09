@@ -1,0 +1,1 @@
+import{at as e}from"./DwGdhNQy.js";var t=`cogsend:update-seen`,n=e({tag:null,seen:null});function r(){try{n.seen=localStorage.getItem(t)}catch{n.seen=null}}function i(e){n.tag=e?.updateAvailable?e.latest?.tag??null:null}function a(){if(n.tag){n.seen=n.tag;try{localStorage.setItem(t,n.tag)}catch{}}}export{n as i,i as n,r,a as t};
