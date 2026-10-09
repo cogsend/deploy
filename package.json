@@ -1,9 +1,9 @@
 {
 	"name": "cogsend",
-	"version": "1.13.0",
+	"version": "1.13.1",
 	"private": true,
 	"type": "module",
-	"description": "CogSend 1.13.0, prebuilt for the Deploy to Cloudflare button.",
+	"description": "CogSend 1.13.1, prebuilt for the Deploy to Cloudflare button.",
 	"license": "MIT",
 	"homepage": "https://cogsend.com",
 	"scripts": {
@@ -11,6 +11,12 @@
 	},
 	"devDependencies": {
 		"wrangler": "4.149.0"
+	},
+	"allowScripts": {
+		"esbuild@0.28.2": true,
+		"fsevents@2.3.2": true,
+		"fsevents@2.3.3": true,
+		"workerd@1.20261006.1": true
 	},
 	"engines": {
 		"node": "^22.13.0 || ^24.0.0 || >=26.0.0"
