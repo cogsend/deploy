@@ -42513,7 +42513,7 @@ var init_internal22 = __esm({
         app: /* @__PURE__ */ __name(({ head: head2, body, assets: assets2, nonce, env: env2 }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<meta name="viewport" content="width=device-width, initial-scale=1" />\n		<meta name="color-scheme" content="light" />\n		' + head2 + '\n	</head>\n	<body data-sveltekit-preload-data="hover">\n		<div style="display: contents">' + body + "</div>\n	</body>\n</html>\n", "app"),
         error: error_template_default
       },
-      version_hash: "1xinp8a"
+      version_hash: "c0oaj9"
     };
     __name(get_hooks, "get_hooks");
   }
@@ -43473,7 +43473,7 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.lUjDdRWx.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/Dc5n8urS.js", "_app/immutable/chunks/CUbetqdc.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/csflxEAB.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CFa_W6_e.js"];
+    imports = ["_app/immutable/nodes/0.9GilM6-o.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/BUjzUzRE.js", "_app/immutable/chunks/DxGwzJGt.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/Dc5n8urS.js", "_app/immutable/chunks/CUbetqdc.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/csflxEAB.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CFa_W6_e.js"];
     stylesheets = ["_app/immutable/assets/0.ldSaOTs_.css"];
     fonts = [];
   }
@@ -43511,7 +43511,7 @@ var init__2 = __esm({
   ".svelte-kit/output/server/nodes/1.js"() {
     index3 = 1;
     component2 = /* @__PURE__ */ __name(async () => component_cache2 ??= (await Promise.resolve().then(() => (init_error_svelte(), error_svelte_exports))).default, "component");
-    imports2 = ["_app/immutable/nodes/1.D_jbX9x7.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/Cijj62V4.js"];
+    imports2 = ["_app/immutable/nodes/1.Cwn4_0E0.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DxGwzJGt.js", "_app/immutable/chunks/Cr6K2dNV.js"];
     stylesheets2 = [];
     fonts2 = [];
   }
@@ -44538,7 +44538,7 @@ var init__4 = __esm({
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.D6vkXk2D.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/C5a2th_P.js", "_app/immutable/chunks/B0P383hB.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/DtHuxCtc.js", "_app/immutable/chunks/BCYb5_1e.js", "_app/immutable/chunks/ChSIMbTw.js"];
+    imports4 = ["_app/immutable/nodes/3.qWd8uRC5.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/DxGwzJGt.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/C5a2th_P.js", "_app/immutable/chunks/B0P383hB.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/DtHuxCtc.js", "_app/immutable/chunks/h3qsz70r.js", "_app/immutable/chunks/BUjzUzRE.js"];
     stylesheets4 = [];
     fonts4 = [];
   }
@@ -46358,7 +46358,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.4BA-3vj8.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/Dc5n8urS.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/B0P383hB.js", "_app/immutable/chunks/DC9hjpxr.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/baUO-7sm.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/DtHuxCtc.js"];
+    imports6 = ["_app/immutable/nodes/5.BJE45U7o.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/BUjzUzRE.js", "_app/immutable/chunks/DxGwzJGt.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/Dc5n8urS.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/B0P383hB.js", "_app/immutable/chunks/DC9hjpxr.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/baUO-7sm.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/Da2jdhLC.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/DtHuxCtc.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -47129,7 +47129,7 @@ var init__9 = __esm({
     index10 = 8;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports9 = ["_app/immutable/nodes/8.H3Mz4x4v.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/CUbetqdc.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/BCYb5_1e.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports9 = ["_app/immutable/nodes/8.DEc27hLX.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/CUbetqdc.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/h3qsz70r.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/BUjzUzRE.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets9 = [];
     fonts9 = [];
   }
@@ -47211,7 +47211,7 @@ var init__10 = __esm({
     index11 = 9;
     component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
     server_id8 = "src/routes/login/+page.server.ts";
-    imports10 = ["_app/immutable/nodes/9.0R4x-8zp.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/CL0Rsr0s.js"];
+    imports10 = ["_app/immutable/nodes/9.Cqzx8i3A.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/BUjzUzRE.js", "_app/immutable/chunks/CL0Rsr0s.js"];
     stylesheets10 = [];
     fonts10 = [];
   }
@@ -47274,7 +47274,7 @@ var init__11 = __esm({
     index12 = 10;
     component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
     server_id9 = "src/routes/login/setup-2fa/+page.server.ts";
-    imports11 = ["_app/immutable/nodes/10.6XOovd1N.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js"];
+    imports11 = ["_app/immutable/nodes/10.CvBovj4O.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/BUjzUzRE.js"];
     stylesheets11 = [];
     fonts11 = [];
   }
@@ -47338,7 +47338,7 @@ var init__12 = __esm({
     index13 = 11;
     component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id10 = "src/routes/login/verify/+page.server.ts";
-    imports12 = ["_app/immutable/nodes/11.BuuvRTfe.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js"];
+    imports12 = ["_app/immutable/nodes/11.EqEyujd_.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/BUjzUzRE.js"];
     stylesheets12 = [];
     fonts12 = [];
   }
@@ -48424,7 +48424,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id12 = "src/routes/posts/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.Dev03qCg.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/Cl0d3Pvi.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/C1Sg2J_s.js", "_app/immutable/chunks/BX_1U1nx.js", "_app/immutable/chunks/DC9hjpxr.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/csflxEAB.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/DtHuxCtc.js", "_app/immutable/chunks/BCYb5_1e.js"];
+    imports14 = ["_app/immutable/nodes/13.C7Yul573.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/BUjzUzRE.js", "_app/immutable/chunks/DxGwzJGt.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/DsL1OzPk.js", "_app/immutable/chunks/C1Sg2J_s.js", "_app/immutable/chunks/BX_1U1nx.js", "_app/immutable/chunks/DC9hjpxr.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/csflxEAB.js", "_app/immutable/chunks/BmZZYOCF.js", "_app/immutable/chunks/DtHuxCtc.js", "_app/immutable/chunks/h3qsz70r.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -51871,7 +51871,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html2("1.15.0")}${escape_html2(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html2("1.15.1")}${escape_html2(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html2(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html2(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -51987,7 +51987,7 @@ var init__15 = __esm({
   ".svelte-kit/output/server/nodes/14.js"() {
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.If_lxv8w.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/ChSIMbTw.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/C5a2th_P.js", "_app/immutable/chunks/BX_1U1nx.js", "_app/immutable/chunks/baUO-7sm.js", "_app/immutable/chunks/CFa_W6_e.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/BCYb5_1e.js"];
+    imports15 = ["_app/immutable/nodes/14.BCG9Wdmi.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/xihTtKlq.js", "_app/immutable/chunks/BUjzUzRE.js", "_app/immutable/chunks/B_vsSngl.js", "_app/immutable/chunks/CyI_DYd7.js", "_app/immutable/chunks/C5a2th_P.js", "_app/immutable/chunks/BX_1U1nx.js", "_app/immutable/chunks/baUO-7sm.js", "_app/immutable/chunks/CFa_W6_e.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/WjpJCCeZ.js", "_app/immutable/chunks/h3qsz70r.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -52025,7 +52025,7 @@ function jobExpired(job, now = Date.now()) {
 }
 async function clearSavedToken(db) {
   await clear(db, UPDATE_TOKEN_SAVED_SETTING);
-  await clear(db, UPDATE_TOKEN_UNLOCKED_SETTING);
+  await clearUnlockedToken(db);
 }
 async function savedTokenStatus(db) {
   const saved = await readSavedToken(db);
@@ -52069,14 +52069,18 @@ async function tokenFromUnlockKey(db, key2, now = Date.now()) {
   const expired = new SavedTokenError("Enter your password again to continue the update", 401);
   if (!UNLOCK_KEY.test(key2)) throw expired;
   const unlocked = await readUnlockedToken(db);
-  if (!unlocked || unlocked.expiresAt < now) throw expired;
+  if (!unlocked) throw expired;
+  if (unlocked.expiresAt < now) {
+    await clearUnlockedToken(db);
+    throw expired;
+  }
   try {
     return await decryptSecret(unlocked.payload, key2);
   } catch {
     throw expired;
   }
 }
-var UPDATE_TARGET_SETTING, UPDATE_JOB_SETTING, UPDATE_PREVIOUS_SETTING, UPDATE_TOKEN_SAVED_SETTING, UPDATE_TOKEN_UNLOCKED_SETTING, UPDATE_JOB_TTL_MS, readTarget, writeTarget, readJob, writeJob, clearJob, readPrevious, writePrevious, clearPrevious, readSavedToken, writeSavedToken, readUnlockedToken, writeUnlockedToken, UNLOCK_KEY, SavedTokenError;
+var UPDATE_TARGET_SETTING, UPDATE_JOB_SETTING, UPDATE_PREVIOUS_SETTING, UPDATE_TOKEN_SAVED_SETTING, UPDATE_TOKEN_UNLOCKED_SETTING, UPDATE_JOB_TTL_MS, readTarget, writeTarget, readJob, writeJob, clearJob, readPrevious, writePrevious, clearPrevious, readSavedToken, writeSavedToken, readUnlockedToken, writeUnlockedToken, clearUnlockedToken, UNLOCK_KEY, SavedTokenError;
 var init_saved_token = __esm({
   ".svelte-kit/output/server/chunks/saved-token.js"() {
     init_bytes();
@@ -52105,6 +52109,7 @@ var init_saved_token = __esm({
     writeSavedToken = /* @__PURE__ */ __name((db, saved) => write(db, UPDATE_TOKEN_SAVED_SETTING, saved), "writeSavedToken");
     readUnlockedToken = /* @__PURE__ */ __name((db) => read(db, UPDATE_TOKEN_UNLOCKED_SETTING), "readUnlockedToken");
     writeUnlockedToken = /* @__PURE__ */ __name((db, unlocked) => write(db, UPDATE_TOKEN_UNLOCKED_SETTING, unlocked), "writeUnlockedToken");
+    clearUnlockedToken = /* @__PURE__ */ __name((db) => clear(db, UPDATE_TOKEN_UNLOCKED_SETTING), "clearUnlockedToken");
     __name(clearSavedToken, "clearSavedToken");
     UNLOCK_KEY = /^[0-9a-f]{64}$/;
     SavedTokenError = class extends Error {
@@ -55232,7 +55237,7 @@ var init_server_ts34 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.15.0",
+          version: "1.15.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -66262,7 +66267,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current2 = options2.current ?? "1.15.0";
+  const current2 = options2.current ?? "1.15.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -67074,7 +67079,7 @@ var init_server_ts54 = __esm({
         const env2 = platform2?.env;
         const install = env2?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.15.0",
+          version: "1.15.1",
           install,
           github: install === "button" ? githubUpdateTarget(env2?.COGSEND_REPO, env2?.COGSEND_BRANCH) : null,
           target,
@@ -67281,7 +67286,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env2?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.15.0"
+    currentVersion: "1.15.1"
   };
 }
 async function download(ctx, url2) {
@@ -67587,6 +67592,7 @@ async function stepPromote(ctx, input2) {
     at: ctx.now?.() ?? Date.now()
   });
   await dropJob(ctx, job);
+  await clearUnlockedToken(ctx.db);
   return { version: job.version };
 }
 async function stepRollback(ctx) {
@@ -67604,9 +67610,11 @@ async function stepRollback(ctx) {
     percentage: 100
   }], `CogSend: rolled back to ${previous.version} from Settings`);
   await clearPrevious(ctx.db);
+  await clearUnlockedToken(ctx.db);
   return { version: previous.version };
 }
 async function stepAbort(ctx) {
+  await clearUnlockedToken(ctx.db);
   const job = await readJob(ctx.db);
   if (!job) return { aborted: false };
   if (job.phase === "staged") await ctx.api.deploy(job.accountId, job.scriptName, [{
@@ -71508,7 +71516,7 @@ var manifest = (() => {
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mimeTypes: { ".png": "image/png", ".txt": "text/plain" },
     _: {
-      client: { start: "_app/immutable/entry/start.q26Jn8Th.js", app: "_app/immutable/entry/app.DjaZcfyL.js", imports: ["_app/immutable/entry/start.q26Jn8Th.js", "_app/immutable/chunks/Cijj62V4.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/entry/app.DjaZcfyL.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+      client: { start: "_app/immutable/entry/start.ViUOaQIi.js", app: "_app/immutable/entry/app.CPAU81Xj.js", imports: ["_app/immutable/entry/start.ViUOaQIi.js", "_app/immutable/chunks/Cr6K2dNV.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/entry/app.CPAU81Xj.js", "_app/immutable/chunks/DwGdhNQy.js", "_app/immutable/chunks/xihTtKlq.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
       nodes: [
         __memo(() => Promise.resolve().then(() => (init__(), __exports))),
         __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
