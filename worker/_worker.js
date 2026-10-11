@@ -39251,7 +39251,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1791747078233");
+  response.headers.set("x-sveltekit-version", "1791748799888");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -41946,7 +41946,7 @@ function server_data_serializer(event, state) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_68gwc2";
+  const global = "__sveltekit_4hnqu7";
   function get_replacer(index17) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -42690,7 +42690,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_68gwc2";
+  const global = "__sveltekit_4hnqu7";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state.prerendering || state.prerender_default === true))).join("\n			")}`;
@@ -42715,7 +42715,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1791747078233")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1791748799888")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -44839,9 +44839,16 @@ function initialsOf(name, email3) {
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return source.slice(0, 2).toUpperCase();
 }
+var composeSession;
 var init_initials = __esm({
   ".svelte-kit/output/server/chunks/initials.js"() {
     "use strict";
+    init_server3();
+    composeSession = {
+      active: false,
+      hasContent: false,
+      startNew: null
+    };
     __name(initialsOf, "initialsOf");
   }
 });
@@ -44884,6 +44891,7 @@ function _layout($$renderer, $$props) {
     const avatarSrc = derived2(() => profilePictureUrl() || null);
     let failedAvatarSrc = null;
     const isLoginRoute = derived2(() => page.url.pathname.startsWith("/login"));
+    const showWrite = derived2(() => page.url.pathname !== "/compose" || (composeSession.active ? composeSession.hasContent : page.url.searchParams.has("id")));
     const showUpdateDot = derived2(() => !!updateNotice.tag && updateNotice.seen !== updateNotice.tag);
     head("12qhfyh", $$renderer2, ($$renderer3) => {
       $$renderer3.title(($$renderer4) => {
@@ -44902,8 +44910,8 @@ function _layout($$renderer, $$props) {
       $$renderer2.push(`<!----></button> `);
       $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--></nav> <div class="pointer-events-auto flex items-center gap-3">`);
-      if (page.url.pathname !== "/compose") {
-        $$renderer2.push(`<!--[0--><a href="/compose" class="flex h-11 w-11 items-center justify-center gap-2 rounded-full bg-stone-900 text-[13px] font-bold text-white shadow-[0_4px_16px_-4px_rgb(28_25_23/0.3)] transition-all hover:bg-stone-800 hover:shadow-[0_4px_20px_-4px_rgb(28_25_23/0.4)] sm:h-auto sm:w-auto sm:px-5 sm:py-2.5">`);
+      if (showWrite()) {
+        $$renderer2.push(`<!--[0--><a href="/compose" data-testid="write-new-post" class="flex h-11 w-11 items-center justify-center gap-2 rounded-full bg-stone-900 text-[13px] font-bold text-white shadow-[0_4px_16px_-4px_rgb(28_25_23/0.3)] transition-all hover:bg-stone-800 hover:shadow-[0_4px_20px_-4px_rgb(28_25_23/0.4)] sm:h-auto sm:w-auto sm:px-5 sm:py-2.5">`);
         Pen_line($$renderer2, { class: "h-4 w-4" });
         $$renderer2.push(`<!----> <span class="sr-only sm:not-sr-only">Write</span></a>`);
       } else $$renderer2.push("<!--[-1-->");
@@ -44966,7 +44974,7 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.CrqZ0cvJ.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/VWtwJqcg.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CqLwI8We.js"];
+    imports = ["_app/immutable/nodes/0.bQ7_d8Fy.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/D1frdMm2.js", "_app/immutable/chunks/VWtwJqcg.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CqLwI8We.js"];
     stylesheets = ["_app/immutable/assets/0.DD7vxkCu.css"];
     fonts = [];
   }
@@ -47343,7 +47351,9 @@ function Editor($$renderer, $$props) {
       });
     }
     __name(setComposeUrl, "setComposeUrl");
+    let editorGeneration = 0;
     function resetEditorForNewDraft() {
+      editorGeneration++;
       draftId = null;
       baseBody = "";
       overrides = {};
@@ -47385,8 +47395,10 @@ function Editor($$renderer, $$props) {
       mastoPoll,
       selectedConnectionIds: [...selected]
     }, navigate = true) {
-      if (draftId) {
-        const res2 = await fetch(`/api/drafts/${draftId}`, {
+      const generation = editorGeneration;
+      const current = draftId;
+      if (current) {
+        const res2 = await fetch(`/api/drafts/${current}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -47396,7 +47408,7 @@ function Editor($$renderer, $$props) {
         });
         const data2 = await res2.json().catch(() => ({}));
         if (!res2.ok) throw new Error(data2.error || "Failed to save draft");
-        return draftId;
+        return current;
       }
       const res = await fetch("/api/drafts", {
         method: "POST",
@@ -47408,6 +47420,7 @@ function Editor($$renderer, $$props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create draft");
+      if (generation !== editorGeneration) return data.draft.id;
       draftId = data.draft.id;
       loadedDraftContentFor = draftId;
       if (navigate) setComposeUrl(`/compose?id=${data.draft.id}`);
@@ -47421,7 +47434,7 @@ function Editor($$renderer, $$props) {
       mastoCW,
       mastoPoll,
       selectedConnectionIds: [...selected]
-    }) {
+    }, stored = storedVariants) {
       const toSave = customizedBodiesForSave(snap.baseBody, snap.overrides, PLATFORM_ORDER);
       const pending2 = PLATFORM_ORDER.map((platform2) => {
         const customized = isPlatformCustomized(snap.overrides, platform2);
@@ -47432,7 +47445,7 @@ function Editor($$renderer, $$props) {
         } : {};
         const mastodonOptions = platform2 === "mastodon" && Boolean(snap.mastoCW || snap.mastoVisibility !== "public" || snap.mastoPoll);
         if (customized || mastodonOptions) {
-          storedVariants.add(platform2);
+          stored.add(platform2);
           return {
             platform: platform2,
             action: "put",
@@ -47447,7 +47460,7 @@ function Editor($$renderer, $$props) {
             })
           };
         }
-        if (!storedVariants.has(platform2)) return null;
+        if (!stored.has(platform2)) return null;
         return {
           platform: platform2,
           action: "delete",
@@ -47461,14 +47474,17 @@ function Editor($$renderer, $$props) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || `Failed to save ${pending2[i].platform} variant`);
         }
-        if (pending2[i].action === "delete") storedVariants.delete(pending2[i].platform);
+        if (pending2[i].action === "delete") stored.delete(pending2[i].platform);
       }
     }
     __name(saveVariants, "saveVariants");
     let savePromise = null;
+    let saveGeneration = -1;
     async function persistAll(allowEmpty = false, opts = {}) {
-      if (savePromise) return savePromise;
+      if (savePromise && saveGeneration === editorGeneration) return savePromise;
+      while (savePromise) await savePromise;
       savePromise = doPersist(allowEmpty, opts);
+      saveGeneration = editorGeneration;
       try {
         return await savePromise;
       } finally {
@@ -47483,6 +47499,8 @@ function Editor($$renderer, $$props) {
       if (!draftId && !baseBody.trim() && !allowEmpty) return null;
       if (draftId && takeSnapshot() === savedSnapshot && Object.keys(altPending).length === 0) return draftId;
       saving = true;
+      const generation = editorGeneration;
+      const stored = storedVariants;
       const before = takeSnapshot();
       const snap = {
         baseBody,
@@ -47494,7 +47512,8 @@ function Editor($$renderer, $$props) {
       };
       try {
         const id2 = await ensureDraft(snap, opts.navigate ?? true);
-        await saveVariants(id2, snap);
+        await saveVariants(id2, snap, stored);
+        if (generation !== editorGeneration) return id2;
         loadedDraftContentFor = id2;
         saveFailed = false;
         if (takeSnapshot() === before) {
@@ -47503,6 +47522,10 @@ function Editor($$renderer, $$props) {
         }
         return id2;
       } catch (e) {
+        if (generation !== editorGeneration) {
+          showToast(humanizeError(e instanceof Error ? e.message : "Save failed"), "error");
+          return null;
+        }
         if (e instanceof Error && e.message === "Already published \u2014 duplicate it to post again") {
           publishedLock = true;
           saveFailed = false;
@@ -48374,7 +48397,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.CkKSoFCB.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/Cbwdacam.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js"];
+    imports6 = ["_app/immutable/nodes/5.QEyhRPxx.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/D1frdMm2.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/Cbwdacam.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -53961,7 +53984,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.18.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.18.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -54083,7 +54106,7 @@ var init__15 = __esm({
     "use strict";
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.CD4rGHZj.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js"];
+    imports15 = ["_app/immutable/nodes/14._x7VoHBT.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -57393,7 +57416,7 @@ var init_server_ts34 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.18.0",
+          version: "1.18.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -68429,7 +68452,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.18.0";
+  const current = options2.current ?? "1.18.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -69284,7 +69307,7 @@ var init_server_ts54 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.18.0",
+          version: "1.18.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -69493,7 +69516,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.18.0"
+    currentVersion: "1.18.1"
   };
 }
 async function download(ctx, url3) {
@@ -70006,7 +70029,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.DuCcpmID.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.DuCcpmID.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.DjETEEE-.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.DjETEEE-.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
