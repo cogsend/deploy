@@ -39251,7 +39251,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1791726733391");
+  response.headers.set("x-sveltekit-version", "1791747078233");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -41946,7 +41946,7 @@ function server_data_serializer(event, state) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_rt194k";
+  const global = "__sveltekit_68gwc2";
   function get_replacer(index17) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -42690,7 +42690,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_rt194k";
+  const global = "__sveltekit_68gwc2";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state.prerendering || state.prerender_default === true))).join("\n			")}`;
@@ -42715,7 +42715,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1791726733391")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1791747078233")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -44966,8 +44966,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.B5MtNoXt.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/VWtwJqcg.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CqLwI8We.js"];
-    stylesheets = ["_app/immutable/assets/0.CD1ZueF5.css"];
+    imports = ["_app/immutable/nodes/0.CrqZ0cvJ.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/VWtwJqcg.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CqLwI8We.js"];
+    stylesheets = ["_app/immutable/assets/0.DD7vxkCu.css"];
     fonts = [];
   }
 });
@@ -46276,15 +46276,102 @@ var init_page_server_ts3 = __esm({
 });
 
 // .svelte-kit/output/server/chunks/published-lock.js
+function toDate(value) {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  if (value === "") return null;
+  const date6 = new Date(value);
+  return Number.isNaN(date6.getTime()) ? null : date6;
+}
+function isPublished(t) {
+  return t.status === "published" || Boolean(t.remotePostId);
+}
+function isTargetSending(t, now = /* @__PURE__ */ new Date()) {
+  if (t.jobId) return true;
+  const updated = toDate(t.updatedAt);
+  return isFreshPublishing({
+    status: t.status ?? "",
+    updatedAt: updated,
+    remotePostId: t.remotePostId ?? null
+  }, now);
+}
+function summarizePost(targets, now = /* @__PURE__ */ new Date()) {
+  const byConnection = /* @__PURE__ */ new Map();
+  for (const t of targets ?? []) {
+    if (!t.connectionId || t.status === "cancelled") continue;
+    const rows = byConnection.get(t.connectionId);
+    if (rows) rows.push(t);
+    else byConnection.set(t.connectionId, [t]);
+  }
+  const state = {
+    published: [],
+    sending: [],
+    waiting: [],
+    failed: [],
+    nextAt: null
+  };
+  for (const [connectionId, rows] of byConnection) {
+    if (rows.some(isPublished)) {
+      state.published.push(connectionId);
+      continue;
+    }
+    if (rows.some((t) => isTargetSending(t, now))) {
+      state.sending.push(connectionId);
+      continue;
+    }
+    const waiting = rows.find((t) => t.status === "scheduled" || t.status === "pending" || t.status === "publishing");
+    if (waiting) {
+      const queued = waiting.status !== "scheduled";
+      const at = queued ? null : toDate(waiting.scheduledFor);
+      state.waiting.push({
+        targetId: waiting.id ?? null,
+        connectionId,
+        at,
+        queued,
+        retrying: waiting.status === "scheduled" && Boolean(waiting.errorMessage),
+        error: waiting.errorMessage ?? null
+      });
+      const due = queued ? now : at;
+      if (due && (!state.nextAt || due.getTime() < state.nextAt.getTime())) state.nextAt = due;
+      continue;
+    }
+    const failed = rows.find((t) => t.status === "failed");
+    if (failed) state.failed.push({
+      connectionId,
+      error: failed.errorMessage ?? null
+    });
+  }
+  return state;
+}
+function selectionDrift(state, selected) {
+  if (!state.waiting.length) return {
+    added: [],
+    removed: []
+  };
+  const ticked = new Set(selected);
+  const waiting = new Set(state.waiting.map((w) => w.connectionId));
+  const settled = /* @__PURE__ */ new Set([...state.published, ...state.sending]);
+  return {
+    added: [...ticked].filter((id2) => !waiting.has(id2) && !settled.has(id2)),
+    removed: [...waiting].filter((id2) => !ticked.has(id2))
+  };
+}
 function isFullyPublished(targets) {
   const live = targets.filter((t) => t.status !== "cancelled");
   return live.length > 0 && live.every((t) => t.status === "published" || Boolean(t.remotePostId));
 }
-var PUBLISHED_EDIT_ERROR;
+var PUBLISHED_EDIT_ERROR, PUBLISH_IN_PROGRESS_ERROR;
 var init_published_lock = __esm({
   ".svelte-kit/output/server/chunks/published-lock.js"() {
     "use strict";
+    init_due_jobs();
+    __name(toDate, "toDate");
+    __name(isPublished, "isPublished");
+    __name(isTargetSending, "isTargetSending");
+    __name(summarizePost, "summarizePost");
+    __name(selectionDrift, "selectionDrift");
     PUBLISHED_EDIT_ERROR = "Already published \u2014 duplicate it to post again";
+    PUBLISH_IN_PROGRESS_ERROR = "Publishing in progress \u2014 try again shortly";
     __name(isFullyPublished, "isFullyPublished");
   }
 });
@@ -46562,7 +46649,10 @@ function schedulePreviewText(value, now = /* @__PURE__ */ new Date()) {
   if (!value || !isFutureScheduleValue(value, now)) return null;
   const date6 = parseDatetimeLocal(value);
   if (!date6) return null;
-  return `${formatLocalDateTimeWithZone(date6)} (${formatRelativeTime(date6)})`;
+  return scheduleWhenText(date6, now);
+}
+function scheduleWhenText(date6, now = /* @__PURE__ */ new Date()) {
+  return `${formatLocalDateTimeWithZone(date6)} (${formatRelativeTime(date6, now)})`;
 }
 function earliestFutureScheduleValue(targets, now = /* @__PURE__ */ new Date()) {
   let best = null;
@@ -46582,7 +46672,7 @@ function earliestFutureScheduleValue(targets, now = /* @__PURE__ */ new Date()) 
   }
   return best?.value ?? null;
 }
-var PLATFORM_COLOR;
+var PLATFORM_COLOR, DEFAULT_SCHEDULE_OFFSET;
 var init_schedule_helpers = __esm({
   ".svelte-kit/output/server/chunks/schedule-helpers.js"() {
     "use strict";
@@ -46603,10 +46693,16 @@ var init_schedule_helpers = __esm({
     __name(parseDatetimeLocal, "parseDatetimeLocal");
     __name(minScheduleDatetime, "minScheduleDatetime");
     __name(isFutureScheduleValue, "isFutureScheduleValue");
+    DEFAULT_SCHEDULE_OFFSET = {
+      days: 0,
+      hours: 1,
+      mins: 0
+    };
     __name(parseOffsetField, "parseOffsetField");
     __name(scheduleFromDHM, "scheduleFromDHM");
     __name(offsetToDHM, "offsetToDHM");
     __name(schedulePreviewText, "schedulePreviewText");
+    __name(scheduleWhenText, "scheduleWhenText");
     __name(earliestFutureScheduleValue, "earliestFutureScheduleValue");
   }
 });
@@ -46804,6 +46900,9 @@ function platformsFromConnections(connections2) {
   for (const c of connections2) if (isPlatformId(c.platform)) set2.add(c.platform);
   return Array.from(set2);
 }
+function restorableTargetIds(targets) {
+  return (targets ?? []).filter((t) => t.status !== "cancelled").map((t) => t.connectionId).filter((id2) => Boolean(id2));
+}
 function LinkPreview($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { text: text3 = "", hasMedia = false } = $$props;
@@ -46851,6 +46950,101 @@ function XQuoteCard($$renderer, $$props) {
     $$renderer2.push(`<!--]--></div>`);
   });
 }
+function PostStatusBanner($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { post, now, nameOf, drift, sending, dirty, unscheduling, busy, onChangeTime, onUnschedule, onApplyAccounts } = $$props;
+    const SOON_MS = 3e5;
+    const names = /* @__PURE__ */ __name((ids) => ids.map(nameOf).join(", "), "names");
+    const groups = derived2(() => {
+      const out = [];
+      for (const w of post.waiting.filter((w2) => !w2.retrying)) {
+        const kind = w.queued || w.at !== null && w.at.getTime() <= now.getTime() ? "due" : w.at ? "at" : "untimed";
+        const minute = kind === "at" && w.at ? Math.floor(w.at.getTime() / 6e4) : null;
+        const same = out.find((g) => g.kind === kind && (minute === null || g.at && Math.floor(g.at.getTime() / 6e4) === minute));
+        if (same) same.ids.push(w.connectionId);
+        else out.push({
+          kind,
+          at: kind === "at" ? w.at : null,
+          ids: [w.connectionId]
+        });
+      }
+      return out.sort((a, b) => (a.at?.getTime() ?? 0) - (b.at?.getTime() ?? 0));
+    });
+    const retrying = derived2(() => post.waiting.filter((w) => w.retrying));
+    const soon = derived2(() => !sending && post.nextAt !== null && post.nextAt.getTime() > now.getTime() && post.nextAt.getTime() - now.getTime() <= SOON_MS);
+    const canAct = derived2(() => post.waiting.length > 0 && !sending);
+    function retryLine(w) {
+      const when = w.at && w.at.getTime() > now.getTime() ? ` at ${scheduleWhenText(w.at, now)}` : "";
+      return `Retrying on ${nameOf(w.connectionId)}${when}: ${humanizeError(w.error)}`;
+    }
+    __name(retryLine, "retryLine");
+    const actionClass = "rounded-full border border-stone-300 bg-white px-4 py-1.5 text-[12px] font-bold text-stone-800 transition-colors hover:bg-stone-100 disabled:opacity-50";
+    $$renderer2.push(`<section aria-label="Post status" data-testid="post-status" class="mb-6 rounded-xl border border-stone-200/80 bg-stone-50/70 px-4 py-3"><ul class="space-y-1.5 text-[13px] font-medium text-stone-800">`);
+    if (sending) {
+      $$renderer2.push(`<!--[0--><li class="flex items-start gap-2" data-testid="post-status-sending">`);
+      Loader_circle($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-stone-500" });
+      $$renderer2.push(`<!----> <span>${escape_html(post.sending.length ? `Posting to ${names(post.sending)} now.` : "Posting now.")}
+					Editing is paused until it's done.${escape_html(dirty ? " Your last change isn't saved yet." : "")}</span></li>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> <!--[-->`);
+    const each_array = ensure_array_like(groups());
+    for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+      let group = each_array[$$index];
+      $$renderer2.push(`<li class="flex items-start gap-2" data-testid="post-status-scheduled">`);
+      Calendar($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-500" });
+      $$renderer2.push(`<!----> <span>`);
+      if (group.kind === "at" && group.at) $$renderer2.push(`<!--[0-->Scheduled for <strong class="font-bold">${escape_html(scheduleWhenText(group.at, now))}</strong> on ${escape_html(names(group.ids))}.`);
+      else if (group.kind === "due") $$renderer2.push(`<!--[1-->Due on ${escape_html(names(group.ids))} \u2014 it goes out with the next scheduler run.`);
+      else $$renderer2.push(`<!--[-1-->Scheduled on ${escape_html(names(group.ids))}.`);
+      $$renderer2.push(`<!--]--></span></li>`);
+    }
+    $$renderer2.push(`<!--]--> <!--[-->`);
+    const each_array_1 = ensure_array_like(retrying());
+    for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
+      let w = each_array_1[$$index_1];
+      $$renderer2.push(`<li class="flex items-start gap-2 text-amber-800" data-testid="post-status-retrying">`);
+      Refresh_cw($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0" });
+      $$renderer2.push(`<!----> <span class="min-w-0 break-words">${escape_html(retryLine(w))}</span></li>`);
+    }
+    $$renderer2.push(`<!--]--> `);
+    if (post.published.length) {
+      $$renderer2.push(`<!--[0--><li class="flex items-start gap-2" data-testid="post-status-published">`);
+      Check2($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" });
+      $$renderer2.push(`<!----> <span>Published on ${escape_html(names(post.published))}.</span></li>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> <!--[-->`);
+    const each_array_2 = ensure_array_like(post.failed);
+    for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
+      let f = each_array_2[$$index_2];
+      $$renderer2.push(`<li class="flex items-start gap-2 text-red-700" data-testid="post-status-failed">`);
+      X($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0" });
+      $$renderer2.push(`<!----> <span class="min-w-0 break-words">Failed on ${escape_html(nameOf(f.connectionId))}: ${escape_html(humanizeError(f.error ?? "Publish failed"))}</span></li>`);
+    }
+    $$renderer2.push(`<!--]--></ul> `);
+    if (canAct()) $$renderer2.push(`<!--[0--><p class="mt-2 text-[12px] font-medium text-stone-500">${escape_html(soon() && post.nextAt ? `It goes out ${formatRelativeTime(post.nextAt, now)}; editing pauses while it sends.` : "Edits save as you type and go out at that time.")}</p>`);
+    else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
+    if (canAct() && (drift.added.length || drift.removed.length)) {
+      $$renderer2.push(`<!--[0--><div data-testid="schedule-drift" class="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200/70 bg-amber-50/70 px-3 py-2">`);
+      Triangle_alert($$renderer2, { class: "h-3.5 w-3.5 shrink-0 text-amber-600" });
+      $$renderer2.push(`<!----> <p class="min-w-48 flex-1 text-[12px] font-medium text-amber-900">`);
+      if (drift.removed.length) $$renderer2.push(`<!--[0-->${escape_html(names(drift.removed))}
+					${escape_html(drift.removed.length === 1 ? "is" : "are")} still scheduled even though
+					${escape_html(drift.removed.length === 1 ? "it's" : "they're")} unticked.`);
+      else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--> `);
+      if (drift.added.length) $$renderer2.push(`<!--[0-->${escape_html(names(drift.added))}
+					${escape_html(drift.added.length === 1 ? "is" : "are")} ticked but
+					${escape_html(drift.added.length === 1 ? "isn't" : "aren't")} scheduled.`);
+      else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--> Update the schedule to apply your changes.</p> <button type="button" data-testid="schedule-drift-apply" data-schedule-opener="" class="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-[12px] font-bold text-amber-900 transition-colors hover:bg-amber-100">Update schedule</button></div>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
+    if (canAct()) $$renderer2.push(`<!--[0--><div class="mt-3 flex flex-wrap gap-2"><button type="button" data-testid="post-status-change-time" data-schedule-opener=""${attr_class(clsx$1(actionClass))}>Change time</button> <button type="button" data-testid="unschedule-post"${attr_class(clsx$1(actionClass))}${attr("disabled", busy, true)}>${escape_html(unscheduling ? "Unscheduling\u2026" : "Unschedule")}</button></div>`);
+    else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--></section>`);
+  });
+}
 function Editor($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { initialConnections = [], initialSettings = null, initialDraft = null, displayName = null, videoEnabled = false } = $$props;
@@ -46882,7 +47076,7 @@ function Editor($$renderer, $$props) {
     (() => {
       const saved = seededDraft?.selectedConnectionIds;
       if (Array.isArray(saved)) return saved;
-      const targetIds = (seededDraft?.targets || []).map((t) => t.connectionId).filter((id2) => Boolean(id2));
+      const targetIds = restorableTargetIds(seededDraft?.targets);
       return targetIds.length ? targetIds : null;
     })();
     const ACCEPTED_MEDIA = derived2(() => videoEnabled ? "image/png,image/jpeg,image/webp,image/gif,video/mp4" : "image/png,image/jpeg,image/webp,image/gif");
@@ -46902,8 +47096,18 @@ function Editor($$renderer, $$props) {
     let scheduleOpen = false;
     let schedDate = "";
     let schedTime = "";
-    earliestFutureScheduleValue(seededDraft?.targets, /* @__PURE__ */ new Date());
+    let loadedSchedule = earliestFutureScheduleValue(seededDraft?.targets, /* @__PURE__ */ new Date());
+    let scheduleTouched = false;
     let publishedLock = isFullyPublished(seededDraft?.targets ?? []);
+    let targets = seededDraft?.targets ?? [];
+    let sendBlocked = false;
+    let clock = Date.now();
+    const postState = derived2(() => summarizePost(targets, new Date(clock)));
+    const drift = derived2(() => selectionDrift(postState(), selected));
+    const hasSchedule = derived2(() => postState().waiting.length > 0);
+    const sendInFlight = derived2(() => postState().sending.length > 0 || sendBlocked);
+    const sendingNow = derived2(() => sendInFlight());
+    const editLocked = derived2(() => publishedLock || sendingNow());
     let mastoVisibility = seededVisibility;
     let mastoCW = seededCw;
     let mastoPoll = seededPoll;
@@ -46921,6 +47125,7 @@ function Editor($$renderer, $$props) {
     let isPostConfirmOpen = false;
     let textareaRefs = [];
     let altOpen = {};
+    let mounted = false;
     function showToast(message, tone = "success", action) {
       if (toastTimer) {
         clearTimeout(toastTimer);
@@ -47124,7 +47329,7 @@ function Editor($$renderer, $$props) {
     }
     __name(markDirty, "markDirty");
     function setActiveBody(nextBody) {
-      if (publishedLock) return;
+      if (editLocked()) return;
       if (activeTab === "global") baseBody = nextBody;
       else overrides = customizePlatformBody(overrides, activeTab, nextBody);
       markDirty();
@@ -47148,6 +47353,8 @@ function Editor($$renderer, $$props) {
       mastoPoll = null;
       activeTab = "global";
       scheduleOpen = false;
+      loadedSchedule = null;
+      scheduleTouched = false;
       isPostConfirmOpen = false;
       pendingPublish = null;
       publishProgress = null;
@@ -47157,6 +47364,8 @@ function Editor($$renderer, $$props) {
       loadFailedId = null;
       storedVariants = /* @__PURE__ */ new Set();
       publishedLock = false;
+      targets = [];
+      sendBlocked = false;
     }
     __name(resetEditorForNewDraft, "resetEditorForNewDraft");
     function clearComposer() {
@@ -47270,6 +47479,7 @@ function Editor($$renderer, $$props) {
     async function doPersist(allowEmpty = false, opts = {}) {
       if (loadFailedId) return null;
       if (publishedLock) return draftId;
+      if (sendingNow()) return null;
       if (!draftId && !baseBody.trim() && !allowEmpty) return null;
       if (draftId && takeSnapshot() === savedSnapshot && Object.keys(altPending).length === 0) return draftId;
       saving = true;
@@ -47298,6 +47508,12 @@ function Editor($$renderer, $$props) {
           saveFailed = false;
           return null;
         }
+        if (e instanceof Error && e.message === "Publishing in progress \u2014 try again shortly") {
+          sendBlocked = true;
+          saveFailed = false;
+          refreshTargets();
+          return null;
+        }
         saveFailed = true;
         showToast(humanizeError(e instanceof Error ? e.message : "Save failed"), "error");
         return null;
@@ -47307,16 +47523,165 @@ function Editor($$renderer, $$props) {
     }
     __name(doPersist, "doPersist");
     let pendingPublish = null;
+    let publishRequestSeq = 0;
     const pendingAccounts = derived2(() => (pendingPublish?.connectionIds ?? []).map((id2) => connections2.find((c) => c.id === id2)).filter((c) => c !== void 0));
     const destinationName = /* @__PURE__ */ __name((connectionId) => {
-      const c = connections2.find((x) => x.id === connectionId);
+      const c = connections2.find((x) => x.id === connectionId) ?? targets.find((t) => t.connectionId === connectionId)?.connection;
       if (!c) return "Destination";
       if (!c.handle) return platformName(c.platform);
       return `${platformName(c.platform)} \xB7 ${displayHandle(c.handle)}`;
     }, "destinationName");
+    function applyTargets(list) {
+      targets = list;
+      clock = Date.now();
+      sendBlocked = false;
+      publishedLock = isFullyPublished(list);
+      if (!scheduleTouched) loadedSchedule = earliestFutureScheduleValue(list, /* @__PURE__ */ new Date());
+      if (!editLocked() && Object.keys(altPending).length) flushAltPending();
+    }
+    __name(applyTargets, "applyTargets");
+    let targetsRead = null;
+    async function refreshTargets() {
+      while (targetsRead) await targetsRead;
+      targetsRead = readTargets();
+      try {
+        await targetsRead;
+      } finally {
+        targetsRead = null;
+      }
+    }
+    __name(refreshTargets, "refreshTargets");
+    async function readTargets() {
+      const id2 = draftId;
+      if (!id2 || loadFailedId) return;
+      try {
+        const res = await fetch(`/api/drafts/${encodeURIComponent(id2)}`);
+        if (draftId !== id2) return;
+        if (res.status === 404) {
+          sendBlocked = false;
+          return;
+        }
+        if (!res.ok) return;
+        const data = await res.json().catch(() => null);
+        if (draftId !== id2 || !Array.isArray(data?.draft?.targets)) return;
+        applyTargets(data.draft.targets);
+      } catch {
+      }
+    }
+    __name(readTargets, "readTargets");
+    async function cancelWaitingExcept(id2, keep) {
+      let list = targets;
+      try {
+        const res = await fetch(`/api/drafts/${encodeURIComponent(id2)}`);
+        const data = res.ok ? await res.json().catch(() => null) : null;
+        if (Array.isArray(data?.draft?.targets)) list = data.draft.targets;
+      } catch {
+      }
+      const waiting = summarizePost(list).waiting.filter((w) => !keep.includes(w.connectionId) && w.targetId).map((w) => ({
+        targetId: w.targetId,
+        connectionId: w.connectionId
+      }));
+      const cancelled = [];
+      const kept = [];
+      for (let i = 0; i < waiting.length; i += 10) {
+        const chunk = waiting.slice(i, i + 10);
+        let results = [];
+        try {
+          const res = await fetch("/api/targets/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              op: "cancel",
+              ids: chunk.map((w) => w.targetId)
+            })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && Array.isArray(data.results)) results = data.results;
+        } catch {
+        }
+        for (const w of chunk) if (results.some((r2) => r2.id === w.targetId && r2.ok)) cancelled.push(w.connectionId);
+        else kept.push(w.connectionId);
+      }
+      return {
+        cancelled,
+        kept
+      };
+    }
+    __name(cancelWaitingExcept, "cancelWaitingExcept");
+    let unscheduling = false;
+    async function unschedulePost() {
+      const id2 = draftId;
+      if (!id2 || unscheduling || editLocked()) return;
+      unscheduling = true;
+      scheduleOpen = false;
+      try {
+        const { cancelled, kept } = await cancelWaitingExcept(id2, []);
+        await refreshTargets();
+        if (draftId !== id2) return;
+        if (kept.length) showToast(`Couldn't unschedule ${kept.map(destinationName).join(", ")}`, "warn");
+        else if (!cancelled.length) showToast("Nothing was scheduled", "warn");
+        else if (postState().published.length || postState().failed.length) showToast(`Unscheduled on ${cancelled.map(destinationName).join(", ")}`, "success");
+        else showToast("Unscheduled \u2014 it's a draft again", "success");
+      } finally {
+        unscheduling = false;
+      }
+    }
+    __name(unschedulePost, "unschedulePost");
+    function showSchedule() {
+      if (!scheduleOpen) openSchedule();
+    }
+    __name(showSchedule, "showSchedule");
+    derived2(() => {
+      if (!draftId || publishedLock) return null;
+      if (sendingNow()) return 1e4;
+      if (!postState().nextAt) return null;
+      const until = postState().nextAt.getTime() - clock;
+      if (until > 12e4) return null;
+      return until > -6e5 ? 15e3 : 6e4;
+    });
     let duplicating = false;
+    let scheduleMode = "relative";
     let relativeValue = "1";
     let relativeUnit = "hours";
+    function applyLoadedSchedule(value) {
+      scheduleMode = "absolute";
+      schedDate = value.slice(0, 10);
+      schedTime = value.slice(11, 16);
+    }
+    __name(applyLoadedSchedule, "applyLoadedSchedule");
+    function openSchedule() {
+      if (isPostConfirmOpen) dismissPostConfirm();
+      if (scheduleOpen) {
+        scheduleOpen = false;
+        return;
+      }
+      scheduleOpen = true;
+      if (scheduleTouched) {
+        if (scheduleMode === "relative") applyRelativeFields();
+        return;
+      }
+      if (loadedSchedule && isFutureScheduleValue(loadedSchedule, /* @__PURE__ */ new Date())) {
+        applyLoadedSchedule(loadedSchedule);
+        return;
+      }
+      scheduleMode = "relative";
+      let defaultUnit;
+      let defaultValue;
+      if (DEFAULT_SCHEDULE_OFFSET.days > 0) {
+        defaultUnit = "days";
+        defaultValue = String(DEFAULT_SCHEDULE_OFFSET.days);
+      } else if (DEFAULT_SCHEDULE_OFFSET.hours > 0) {
+        defaultUnit = "hours";
+        defaultValue = String(DEFAULT_SCHEDULE_OFFSET.hours);
+      } else {
+        defaultUnit = "mins";
+        defaultValue = String(DEFAULT_SCHEDULE_OFFSET.mins || 1);
+      }
+      relativeUnit = defaultUnit;
+      relativeValue = defaultValue;
+      applyRelativeFields();
+    }
+    __name(openSchedule, "openSchedule");
     function applyRelativeFields() {
       const { days, hours, minutes } = offsetToDHM(relativeValue, relativeUnit);
       const value = scheduleFromDHM(days, hours, minutes, /* @__PURE__ */ new Date());
@@ -47325,9 +47690,9 @@ function Editor($$renderer, $$props) {
     }
     __name(applyRelativeFields, "applyRelativeFields");
     const schedulePreview = derived2(() => schedulePreviewText(scheduleCombined()));
-    localTimezoneShort();
+    const tzShort = localTimezoneShort();
     const scheduleCombined = derived2(() => schedDate && schedTime ? `${schedDate}T${schedTime}` : "");
-    derived2(() => {
+    const minSchedDate = derived2(() => {
       return minScheduleDatetime(/* @__PURE__ */ new Date()).slice(0, 10);
     });
     const altTimers = {};
@@ -47348,7 +47713,17 @@ function Editor($$renderer, $$props) {
         }
         delete altPending[mediaId];
       } catch (e) {
-        showToast(e instanceof Error ? e.message : "Failed to save alt text", "error");
+        const message = e instanceof Error ? e.message : "Failed to save alt text";
+        if (message === "Publishing in progress \u2014 try again shortly") {
+          sendBlocked = true;
+          refreshTargets();
+          return;
+        }
+        if (message === "Already published \u2014 duplicate it to post again") {
+          publishedLock = true;
+          return;
+        }
+        showToast(message, "error");
       }
     }
     __name(fireAltUpdate, "fireAltUpdate");
@@ -47364,6 +47739,30 @@ function Editor($$renderer, $$props) {
     let isDiscardOpen = false;
     let discarding = false;
     const canDiscard = derived2(() => draftId !== null || baseBody.trim() !== "" || media.length > 0);
+    const discardCopy = derived2(() => {
+      const outThere = postState().published.length ? ` What's already published on ${postState().published.map(destinationName).join(", ")} stays there.` : "";
+      if (hasSchedule()) return {
+        label: "Delete scheduled post",
+        title: "Delete this scheduled post?",
+        body: `It won't be published, and its images are deleted.${outThere} This cannot be undone.`,
+        confirm: "Delete",
+        done: "Scheduled post deleted"
+      };
+      if (postState().published.length) return {
+        label: "Delete post",
+        title: "Delete this post?",
+        body: `It's deleted here, with its images.${outThere} This cannot be undone.`,
+        confirm: "Delete",
+        done: "Post deleted"
+      };
+      return {
+        label: "Discard draft",
+        title: "Discard this draft?",
+        body: "This will permanently delete the draft and its images. This cannot be undone.",
+        confirm: "Discard",
+        done: "Draft discarded"
+      };
+    });
     async function confirmDiscard() {
       if (discarding) return;
       if (saving || publishing) {
@@ -47377,6 +47776,7 @@ function Editor($$renderer, $$props) {
         showToast("Draft discarded", "success");
         return;
       }
+      const done = discardCopy().done;
       discarding = true;
       try {
         const res = await fetch(`/api/drafts/${encodeURIComponent(id2)}`, { method: "DELETE" });
@@ -47386,7 +47786,7 @@ function Editor($$renderer, $$props) {
         }
         isDiscardOpen = false;
         clearComposer();
-        showToast("Draft discarded", "success");
+        showToast(done, "success");
       } catch (e) {
         showToast(humanizeError(e instanceof Error ? e.message : "Could not discard draft"), "error");
       } finally {
@@ -47451,15 +47851,30 @@ function Editor($$renderer, $$props) {
       return countForPlatform(text3, activeTab === "global" ? globalLimit().platform : activeTab);
     }
     __name(countForCard, "countForCard");
+    function clearPostConfirm() {
+      publishRequestSeq++;
+      pendingPublish = null;
+      isPostConfirmOpen = false;
+      publishProgress = null;
+    }
+    __name(clearPostConfirm, "clearPostConfirm");
+    function dismissPostConfirm() {
+      clearPostConfirm();
+    }
+    __name(dismissPostConfirm, "dismissPostConfirm");
     derived2(() => {
       const list = publishProgress ?? [];
       const settled = list.filter((d) => d.status === "published" || d.status === "failed").length;
       return settled > 0 && list.length > 1 ? `Publishing ${settled}/${list.length}\u2026` : "Publishing\u2026";
     });
     const publishButtonBusy = derived2(() => publishing);
-    const publishButtonLabel = derived2(() => "Publish");
+    const showPostStatus = derived2(() => mounted);
+    const publishIdleLabel = derived2(() => hasSchedule() ? "Publish now" : "Publish");
+    const publishReplacesSchedule = derived2(() => postState().waiting.some((w) => (pendingPublish?.connectionIds ?? []).includes(w.connectionId)));
+    const unscheduledByPublish = derived2(() => postState().waiting.map((w) => w.connectionId).filter((id2) => !(pendingPublish?.connectionIds ?? []).includes(id2)));
+    const publishButtonLabel = derived2(() => publishIdleLabel());
     const saveIndicator = derived2(() => {
-      if (loadFailedId || publishedLock) return null;
+      if (loadFailedId || editLocked()) return null;
       if (saveFailed) return "failed";
       if (saving || dirty && (draftId || baseBody.trim())) return "saving";
       return draftId ? "saved" : null;
@@ -47469,7 +47884,7 @@ function Editor($$renderer, $$props) {
       from?.url.pathname === "/posts" && Boolean(to?.url.searchParams.get("id"));
     });
     beforeNavigate(() => {
-      if (publishedLock) return;
+      if (editLocked()) return;
       if (!dirty && Object.keys(altPending).length === 0) return;
       persistAll(false, { navigate: false });
       flushAltPending();
@@ -47481,6 +47896,23 @@ function Editor($$renderer, $$props) {
     $$renderer2.push(`<!--]--> `);
     if (publishedLock) $$renderer2.push(`<!--[0--><div role="status" data-testid="published-lock" class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/60 px-4 py-3"><p class="min-w-0 flex-1 text-[13px] font-medium text-amber-900">This post is already published, so it can't be edited.${escape_html(dirty ? " Your last changes weren't saved." : "")}</p> <button type="button" data-testid="duplicate-published"${attr("disabled", duplicating, true)} class="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-[12px] font-bold text-amber-900 transition-colors hover:bg-amber-100 disabled:opacity-50">${escape_html("Duplicate to post again")}</button></div>`);
     else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
+    if (showPostStatus()) {
+      $$renderer2.push("<!--[0-->");
+      PostStatusBanner($$renderer2, {
+        post: postState(),
+        now: new Date(clock),
+        nameOf: destinationName,
+        drift: drift(),
+        sending: sendingNow(),
+        dirty,
+        unscheduling,
+        busy: unscheduling,
+        onChangeTime: showSchedule,
+        onUnschedule: /* @__PURE__ */ __name(() => void unschedulePost(), "onUnschedule"),
+        onApplyAccounts: showSchedule
+      });
+    } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> <div class="relative mb-8 flex flex-wrap items-center gap-2 pt-2"><button type="button" data-testid="editor-tab-global"${attr("aria-pressed", activeTab === "global")}${attr_class(`flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-bold whitespace-nowrap transition-all ${activeTab === "global" ? "bg-stone-900 text-white shadow-md" : "border border-stone-200/80 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-900 hover:shadow-sm"}`)}>Global</button> <!--[-->`);
     const each_array = ensure_array_like(tabs().filter((t) => t !== "global"));
     for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
@@ -47494,7 +47926,7 @@ function Editor($$renderer, $$props) {
       });
       $$renderer2.push(`<!----> ${escape_html(rep?.displayName || displayHandle(rep?.handle) || platformName(platform2))}</button> `);
       if (status.hasError) $$renderer2.push(`<!--[0--><div class="ml-0.5 h-2 w-2 rounded-full border-2 border-white bg-red-500" title="Character limit exceeded" role="img"${attr("aria-label", `${platformName(platform2)} over character limit`)}></div>`);
-      else if (!publishedLock) {
+      else if (!editLocked()) {
         $$renderer2.push(`<!--[1--><button type="button" data-testid="reset-platform-tab"${attr_class(`-mr-1.5 ml-0.5 flex items-center justify-center rounded-full p-1 transition-colors ${activeTab === platform2 ? "text-stone-300 hover:bg-stone-700 hover:text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-900"}`)} title="Unlinked from Global. Click to re-sync.">`);
         Link_2_off($$renderer2, { class: "h-3 w-3" });
         $$renderer2.push(`<!----></button>`);
@@ -47502,7 +47934,7 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--></div>`);
     }
     $$renderer2.push(`<!--]--> `);
-    if (canAddOverride() && !publishedLock) {
+    if (canAddOverride() && !editLocked()) {
       $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div> <div class="override-dropdown-container relative"><button type="button" data-testid="add-override-toggle" class="flex items-center gap-1.5 rounded-full border border-dashed border-stone-200 px-3 py-1.5 text-[12px] font-bold whitespace-nowrap text-stone-500 transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900">`);
       Plus($$renderer2, { class: "h-3 w-3" });
       $$renderer2.push(`<!----> Add override...</button> `);
@@ -47510,7 +47942,7 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--></div>`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> `);
-    if (showMastoOptions() && !publishedLock) {
+    if (showMastoOptions() && !editLocked()) {
       $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div> <div class="masto-options-container relative" data-testid="masto-options"><button type="button" data-testid="masto-settings-toggle" class="flex items-center gap-1.5 rounded-full border border-stone-200 px-3 py-1.5 text-[12px] font-bold whitespace-nowrap text-stone-500 transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900">`);
       Settings($$renderer2, { class: "h-3 w-3" });
       $$renderer2.push(`<!----> Mastodon</button> `);
@@ -47552,7 +47984,7 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--> `);
       if (index17 < segments().length - 1) $$renderer2.push(`<!--[0--><div class="absolute top-10 bottom-[-24px] left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-stone-200/80"></div>`);
       else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index17)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index17)}${attr("data-testid", `segment-input-${stringify3(index17)}`)}${attr("readonly", publishedLock, true)}${attr("placeholder", index17 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index17 === 0 ? "Post text" : `Post ${index17 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
+      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index17)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index17)}${attr("data-testid", `segment-input-${stringify3(index17)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", index17 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index17 === 0 ? "Post text" : `Post ${index17 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
       const $$body = escape_html(hiddenQuote(index17)?.visible ?? segment);
       if ($$body) $$renderer2.push(`${$$body}`);
       $$renderer2.push(`</textarea> `);
@@ -47566,7 +47998,7 @@ function Editor($$renderer, $$props) {
           if ((m.mime || "").startsWith("video/")) $$renderer2.push(`<!--[0--><video${attr("src", m.previewUrl || `/api/media/${encodeURIComponent(m.storageKey)}`)} controls="" preload="none" width="80" height="80"${attr("aria-label", `Attached video ${index17 + 1} (no captions)`)} class="h-20 w-20 rounded-xl border border-stone-200/80 bg-black object-cover"></video>`);
           else $$renderer2.push(`<!--[-1--><img${attr("src", m.previewUrl || `/api/media/${encodeURIComponent(m.storageKey)}`)}${attr("alt", m.altText || "")} loading="lazy" decoding="async" width="80" height="80" class="h-20 w-20 rounded-xl border border-stone-200/80 object-cover"/>`);
           $$renderer2.push(`<!--]--> <button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`absolute -top-1.5 -right-1.5 z-10 min-h-6 min-w-6 rounded-md px-1 py-px text-[9px] font-bold tracking-wide shadow-sm ${hasAlt ? "bg-black/60 text-white" : "bg-amber-400 text-black"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", hasAlt ? `Edit alt text for image ${index17 + 1}` : `Add alt text for image ${index17 + 1}`)}>ALT</button> `);
-          if (!publishedLock) $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="absolute -right-1.5 -bottom-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-focus-within/media:opacity-100 group-hover/media:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"${attr("title", `Remove ${(m.mime || "").startsWith("video/") ? "video" : "image"} ${index17 + 1}`)}${attr("aria-label", `Remove ${(m.mime || "").startsWith("video/") ? "video" : "image"} ${index17 + 1}`)}><svg width="8" height="8" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg></button>`);
+          if (!editLocked()) $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="absolute -right-1.5 -bottom-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-focus-within/media:opacity-100 group-hover/media:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"${attr("title", `Remove ${(m.mime || "").startsWith("video/") ? "video" : "image"} ${index17 + 1}`)}${attr("aria-label", `Remove ${(m.mime || "").startsWith("video/") ? "video" : "image"} ${index17 + 1}`)}><svg width="8" height="8" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg></button>`);
           else $$renderer2.push("<!--[-1-->");
           $$renderer2.push(`<!--]--></div>`);
         }
@@ -47576,7 +48008,7 @@ function Editor($$renderer, $$props) {
       const each_array_4 = ensure_array_like(segMedia);
       for (let $$index_3 = 0, $$length2 = each_array_4.length; $$index_3 < $$length2; $$index_3++) {
         let m = each_array_4[$$index_3];
-        if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)}${attr("readonly", publishedLock, true)} placeholder="Describe this image\u2026"${attr("aria-label", `Alt text for image ${index17 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
+        if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)}${attr("readonly", editLocked(), true)} placeholder="Describe this image\u2026"${attr("aria-label", `Alt text for image ${index17 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
         else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
       }
@@ -47585,11 +48017,11 @@ function Editor($$renderer, $$props) {
         $$renderer2.push("<!--[0-->");
         XQuoteCard($$renderer2, {
           url: quote.url,
-          onRemove: publishedLock ? void 0 : () => removeQuote(index17),
+          onRemove: editLocked() ? void 0 : () => removeQuote(index17),
           otherPlatforms: quoteLinkPlatforms(),
-          onOnlyOnX: !publishedLock && canQuoteOnlyOnX(index17) ? () => quoteOnlyOnX(index17) : void 0,
+          onOnlyOnX: !editLocked() && canQuoteOnlyOnX(index17) ? () => quoteOnlyOnX(index17) : void 0,
           withheldFrom: xWithheldFrom(),
-          onShareWithAll: !publishedLock && sharedQuote(index17) ? () => shareQuoteWithAll(index17) : void 0
+          onShareWithAll: !editLocked() && sharedQuote(index17) ? () => shareQuoteWithAll(index17) : void 0
         });
       } else {
         $$renderer2.push("<!--[-1-->");
@@ -47599,7 +48031,7 @@ function Editor($$renderer, $$props) {
         });
       }
       $$renderer2.push(`<!--]--> `);
-      if (strayLinks.length > 0 && !publishedLock) {
+      if (strayLinks.length > 0 && !editLocked()) {
         $$renderer2.push(`<!--[0--><div class="mt-3 flex flex-col gap-2 rounded-xl border border-amber-200/70 bg-amber-50/60 px-3 py-2" data-testid="x-quote-stray"><p class="text-[12px] font-medium text-amber-900">`);
         if (quote) $$renderer2.push(`<!--[0-->X quotes one post, so ${escape_html(strayLinks.length === 1 ? "this other X link shows" : "these other X links show")} as a plain link.${escape_html(tabSupportsThreads() ? " To quote both, give each its own post with + Thread." : "")}`);
         else $$renderer2.push(`<!--[-1-->X only quotes a link at the very end, so ${escape_html(strayLinks.length === 1 ? "this X link shows" : "these X links show")} as a plain link.`);
@@ -47616,7 +48048,7 @@ function Editor($$renderer, $$props) {
         $$renderer2.push(`<!--]--></div></div>`);
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> <div class="mt-3 flex items-center justify-between border-t border-stone-100 pt-3"><div class="flex items-center gap-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">`);
-      if (!publishedLock) {
+      if (!editLocked()) {
         $$renderer2.push("<!--[0-->");
         if (tabSupportsThreads()) {
           $$renderer2.push("<!--[0-->");
@@ -47633,14 +48065,14 @@ function Editor($$renderer, $$props) {
           Trash($$renderer2, { class: "h-3.5 w-3.5" });
           $$renderer2.push(`<!----></button>`);
         } else if (index17 === 0 && canDiscard()) {
-          $$renderer2.push(`<!--[1--><button type="button" data-testid="discard-draft" class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Discard draft" aria-label="Discard draft">`);
+          $$renderer2.push(`<!--[1--><button type="button" data-testid="discard-draft" class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"${attr("title", discardCopy().label)}${attr("aria-label", discardCopy().label)}>`);
           Trash($$renderer2, { class: "h-3.5 w-3.5" });
           $$renderer2.push(`<!----></button>`);
         } else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--></div> <div class="quote-picker-container relative flex items-center gap-3">`);
-      if (xQuoteActive() && !quote && !publishedLock) {
+      if (xQuoteActive() && !quote && !editLocked()) {
         $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `quote-post-${stringify3(index17)}`)}${attr_class(`flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 pointer-coarse:opacity-100 ${quotePickerFor === index17 ? "opacity-100" : ""}`)}${attr("aria-label", `Quote one of your X posts in post ${index17 + 1}`)}${attr("aria-expanded", quotePickerFor === index17)} title="Quote one of your X posts">`);
         Quote($$renderer2, { class: "h-4 w-4" });
         $$renderer2.push(`<!----></button> `);
@@ -47652,7 +48084,7 @@ function Editor($$renderer, $$props) {
         $$renderer2.push(`<!--]-->`);
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> `);
-      if (!publishedLock) {
+      if (!editLocked()) {
         $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index17)}`)}${attr("disabled", uploadingSegment === index17, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index17 ? `Uploading to post ${index17 + 1}` : `Add image to post ${index17 + 1}`)}${attr("title", uploadingSegment === index17 ? "Uploading\u2026" : "Add Image")}>`);
         Image($$renderer2, { class: "h-4 w-4" });
         $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA())} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index17)}`)}/>`);
@@ -47660,7 +48092,7 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--> <div${attr("data-testid", `segment-count-${stringify3(index17)}`)}${attr_class(`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider transition-colors ${isOver ? "border border-red-100 bg-red-50 text-red-600" : "border border-stone-100 bg-stone-50 text-stone-500"}`)}>${escape_html(segLen)}/${escape_html(maxChars())}</div></div></div></div></div>`);
     }
     $$renderer2.push(`<!--]--></div></div> `);
-    if (!publishedLock) {
+    if (!editLocked()) {
       $$renderer2.push(`<!--[0--><div class="pointer-events-none fixed bottom-[max(2rem,env(safe-area-inset-bottom))] left-1/2 z-30 w-full max-w-2xl -translate-x-1/2 px-4 sm:px-6"><div class="flex items-center justify-center gap-4"><div class="accounts-popover-container pointer-events-auto relative flex items-center"><button type="button" data-testid="destinations-toggle"${attr_class(`flex items-center gap-2 rounded-full border border-stone-200/80 bg-white/95 px-4 py-2.5 text-[13px] font-bold text-stone-700 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl transition-all hover:border-stone-300 hover:bg-white `)} aria-haspopup="dialog"${attr("aria-expanded", isAccountsPopoverOpen)}><div class="mr-0.5 flex -space-x-1.5"><!--[-->`);
       const each_array_7 = ensure_array_like(selectedAccounts().slice(0, 3));
       for (let $$index_7 = 0, $$length = each_array_7.length; $$index_7 < $$length; $$index_7++) {
@@ -47676,7 +48108,7 @@ function Editor($$renderer, $$props) {
       Chevron_up($$renderer2, { class: `ml-1 h-3.5 w-3.5 text-stone-500 transition-transform ` });
       $$renderer2.push(`<!----></button> `);
       $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--></div> <div class="post-actions-container pointer-events-auto relative flex items-center rounded-full bg-stone-900 text-white shadow-[0_16px_40px_-12px_rgb(28_25_23/0.3)]"><button type="button" data-testid="publish-now" class="flex cursor-pointer items-center gap-2 rounded-l-full px-6 py-2.5 text-[13px] font-bold transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", publishing, true)}${attr("aria-busy", publishButtonBusy())}><span>${escape_html(publishButtonLabel())}</span> `);
+      $$renderer2.push(`<!--]--></div> <div class="post-actions-container pointer-events-auto relative flex items-center rounded-full bg-stone-900 text-white shadow-[0_16px_40px_-12px_rgb(28_25_23/0.3)]"><button type="button" data-testid="publish-now" class="flex cursor-pointer items-center gap-2 rounded-l-full px-6 py-2.5 text-[13px] font-bold transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", unscheduling, true)}${attr("aria-busy", publishButtonBusy())}><span>${escape_html(publishButtonLabel())}</span> `);
       if (publishButtonBusy()) {
         $$renderer2.push("<!--[0-->");
         Loader_circle($$renderer2, { class: "h-3.5 w-3.5 animate-spin" });
@@ -47684,14 +48116,21 @@ function Editor($$renderer, $$props) {
         $$renderer2.push("<!--[-1-->");
         Send($$renderer2, { class: "h-3.5 w-3.5" });
       }
-      $$renderer2.push(`<!--]--></button> <div class="h-5 w-px bg-stone-700/80"></div> <button type="button" data-testid="schedule-toggle" class="group flex cursor-pointer items-center justify-center rounded-r-full px-4 py-2.5 transition-all hover:bg-stone-800" title="Schedule Options" aria-label="Schedule Options"${attr("aria-expanded", scheduleOpen)}${attr("disabled", publishing, true)}>`);
+      $$renderer2.push(`<!--]--></button> <div class="h-5 w-px bg-stone-700/80"></div> <button type="button" data-testid="schedule-toggle" class="group flex cursor-pointer items-center justify-center rounded-r-full px-4 py-2.5 transition-all hover:bg-stone-800" title="Schedule Options" aria-label="Schedule Options"${attr("aria-expanded", scheduleOpen)}${attr("disabled", unscheduling, true)}>`);
       Calendar($$renderer2, { class: "h-4 w-4 text-stone-300 transition-colors group-hover:text-white" });
       $$renderer2.push(`<!----></button> `);
       if (isPostConfirmOpen && pendingPublish) {
         $$renderer2.push(`<!--[0--><div class="absolute right-0 bottom-full z-40 mb-3 w-64 origin-bottom-right rounded-[1.5rem] border border-stone-200/80 bg-white/95 p-3 text-stone-900 shadow-[0_12px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl" role="dialog"${attr("aria-label", publishProgress?.some((d) => d.status === "failed") ? "Publish results" : "Confirm post")}><div class="px-2 pt-2 pb-4 text-center">`);
         if (publishProgress?.some((d) => d.status === "failed")) $$renderer2.push(`<!--[0--><h4 class="mb-1 text-[14px] font-extrabold text-stone-900">Couldn\u2019t publish everywhere</h4> <p class="text-[12px] font-medium text-stone-500">Fix the problems below, then retry from Posts.</p>`);
-        else $$renderer2.push(`<!--[-1--><h4 class="mb-1 text-[14px] font-extrabold text-stone-900">Confirm Post</h4> <p class="text-[12px] font-medium text-stone-500">Publishing to ${escape_html(pendingAccounts().length)}
-										${escape_html(pendingAccounts().length === 1 ? "destination" : "destinations")}.</p>`);
+        else {
+          $$renderer2.push(`<!--[-1--><h4 class="mb-1 text-[14px] font-extrabold text-stone-900">Confirm Post</h4> <p class="text-[12px] font-medium text-stone-500">Publishing to ${escape_html(pendingAccounts().length)}
+										${escape_html(pendingAccounts().length === 1 ? "destination" : "destinations")}${escape_html(publishReplacesSchedule() ? " now instead of at the scheduled time" : "")}.</p> `);
+          if (unscheduledByPublish().length) $$renderer2.push(`<!--[0--><p data-testid="publish-unschedules" class="mt-1 text-[12px] font-medium text-amber-700">${escape_html(unscheduledByPublish().map(destinationName).join(", "))}
+											${escape_html(unscheduledByPublish().length === 1 ? "is" : "are")} unticked, so
+											${escape_html(unscheduledByPublish().length === 1 ? "it" : "they")} will be unscheduled.</p>`);
+          else $$renderer2.push("<!--[-1-->");
+          $$renderer2.push(`<!--]-->`);
+        }
         $$renderer2.push(`<!--]--></div> <div class="mb-4 flex justify-center -space-x-2" data-testid="publish-confirm-destinations"><!--[-->`);
         const each_array_9 = ensure_array_like(pendingAccounts());
         for (let $$index_9 = 0, $$length = each_array_9.length; $$index_9 < $$length; $$index_9++) {
@@ -47756,32 +48195,35 @@ function Editor($$renderer, $$props) {
       if (scheduleOpen) {
         $$renderer2.push(`<!--[0--><div data-testid="schedule-panel" class="absolute right-0 bottom-full z-40 mb-3 w-72 origin-bottom-right rounded-[1.5rem] border border-stone-200/80 bg-white/95 p-3 text-stone-900 shadow-[0_12px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl" role="dialog" aria-label="Schedule post"><div class="flex items-center gap-2 px-2 pt-2 pb-3">`);
         Calendar($$renderer2, { class: "h-4 w-4 text-stone-900" });
-        $$renderer2.push(`<!----> <h4 class="text-[14px] font-extrabold text-stone-900">Schedule Post</h4></div> <div class="mx-1 mb-4 flex rounded-lg bg-stone-100 p-1"><button type="button"${attr_class(`flex-1 rounded-md py-1.5 text-[12px] font-bold transition-colors bg-white text-stone-900 shadow-sm`)}>Relative</button> <button type="button"${attr_class(`flex-1 rounded-md py-1.5 text-[12px] font-bold transition-colors text-stone-500 hover:text-stone-900`)}>Specific Date</button></div> `);
-        $$renderer2.push(`<!--[0--><div class="mb-4 flex flex-col gap-2 px-1" data-testid="schedule-offsets"><span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">Publish in</span> <label class="flex items-center gap-2"><input type="number" min="1" data-testid="schedule-offset-value" aria-label="Publish in amount"${attr("value", relativeValue)} class="w-20 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-center text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> `);
-        $$renderer2.select({
-          "data-testid": "schedule-offset-unit",
-          "aria-label": "Publish in unit",
-          value: relativeUnit,
-          onchange: /* @__PURE__ */ __name(() => {
-            applyRelativeFields();
-          }, "onchange"),
-          class: "flex-1 appearance-none rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"
-        }, ($$renderer3) => {
-          $$renderer3.option({ value: "mins" }, ($$renderer4) => {
-            $$renderer4.push(`Minutes`);
+        $$renderer2.push(`<!----> <h4 class="text-[14px] font-extrabold text-stone-900">${escape_html(hasSchedule() ? "Reschedule" : "Schedule Post")}</h4></div> <div class="mx-1 mb-4 flex rounded-lg bg-stone-100 p-1"><button type="button"${attr_class(`flex-1 rounded-md py-1.5 text-[12px] font-bold transition-colors ${scheduleMode === "relative" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-900"}`)}>Relative</button> <button type="button"${attr_class(`flex-1 rounded-md py-1.5 text-[12px] font-bold transition-colors ${scheduleMode === "absolute" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-900"}`)}>Specific Date</button></div> `);
+        if (scheduleMode === "relative") {
+          $$renderer2.push(`<!--[0--><div class="mb-4 flex flex-col gap-2 px-1" data-testid="schedule-offsets"><span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">Publish in</span> <label class="flex items-center gap-2"><input type="number" min="1" data-testid="schedule-offset-value" aria-label="Publish in amount"${attr("value", relativeValue)} class="w-20 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-center text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> `);
+          $$renderer2.select({
+            "data-testid": "schedule-offset-unit",
+            "aria-label": "Publish in unit",
+            value: relativeUnit,
+            onchange: /* @__PURE__ */ __name(() => {
+              scheduleTouched = true;
+              applyRelativeFields();
+            }, "onchange"),
+            class: "flex-1 appearance-none rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"
+          }, ($$renderer3) => {
+            $$renderer3.option({ value: "mins" }, ($$renderer4) => {
+              $$renderer4.push(`Minutes`);
+            });
+            $$renderer3.option({ value: "hours" }, ($$renderer4) => {
+              $$renderer4.push(`Hours`);
+            });
+            $$renderer3.option({ value: "days" }, ($$renderer4) => {
+              $$renderer4.push(`Days`);
+            });
           });
-          $$renderer3.option({ value: "hours" }, ($$renderer4) => {
-            $$renderer4.push(`Hours`);
-          });
-          $$renderer3.option({ value: "days" }, ($$renderer4) => {
-            $$renderer4.push(`Days`);
-          });
-        });
-        $$renderer2.push(`</label></div>`);
+          $$renderer2.push(`</label></div>`);
+        } else $$renderer2.push(`<!--[-1--><div class="mb-4 flex flex-col gap-2 px-1"><span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">Publish at (${escape_html(tzShort)})</span> <div class="flex gap-2 pointer-coarse:flex-col"><div class="flex-1"><input type="date" data-testid="schedule-date"${attr("value", schedDate)}${attr("min", minSchedDate())} aria-label="Schedule date" class="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/></div> <div class="flex-1"><input type="time" data-testid="schedule-time"${attr("value", schedTime)} aria-label="Schedule time" class="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/></div></div></div>`);
         $$renderer2.push(`<!--]--> `);
         if (schedulePreview()) $$renderer2.push(`<!--[0--><p data-testid="schedule-preview" class="mb-3 px-2 text-center text-[12px] font-bold text-stone-500">Will publish ${escape_html(schedulePreview())}</p>`);
         else $$renderer2.push("<!--[-1-->");
-        $$renderer2.push(`<!--]--> <button type="button" data-testid="schedule-confirm" class="w-full cursor-pointer rounded-full bg-stone-900 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", publishing, true)}>Confirm Schedule</button></div>`);
+        $$renderer2.push(`<!--]--> <button type="button" data-testid="schedule-confirm" class="w-full cursor-pointer rounded-full bg-stone-900 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", unscheduling, true)}>${escape_html(hasSchedule() ? "Update schedule" : "Confirm Schedule")}</button></div>`);
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--></div></div></div>`);
     } else $$renderer2.push("<!--[-1-->");
@@ -47824,9 +48266,9 @@ function Editor($$renderer, $$props) {
     ConfirmDialog($$renderer2, {
       open: isDiscardOpen,
       idPrefix: "discard-draft-dialog",
-      title: "Discard this draft?",
-      body: "This will permanently delete the draft and its images. This cannot be undone.",
-      confirmLabel: "Discard",
+      title: discardCopy().title,
+      body: discardCopy().body,
+      confirmLabel: discardCopy().confirm,
       cancelLabel: "Keep",
       tone: "danger",
       busy: discarding || saving || publishing,
@@ -47904,8 +48346,10 @@ var init_page_svelte4 = __esm({
     __name(customizedBodiesForSave, "customizedBodiesForSave");
     __name(overridesFromVariants, "overridesFromVariants");
     __name(platformsFromConnections, "platformsFromConnections");
+    __name(restorableTargetIds, "restorableTargetIds");
     __name(LinkPreview, "LinkPreview");
     __name(XQuoteCard, "XQuoteCard");
+    __name(PostStatusBanner, "PostStatusBanner");
     __name(Editor, "Editor");
     __name(_page4, "_page");
   }
@@ -47930,7 +48374,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.CbgxAJme.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/DJeBKFlL.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js"];
+    imports6 = ["_app/immutable/nodes/5.CkKSoFCB.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/Cbwdacam.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -50033,7 +50477,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id12 = "src/routes/posts/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.BhuMATPt.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DORB3-UK.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DJeBKFlL.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/BQ4_BNpj.js", "_app/immutable/chunks/DBrtxNzI.js"];
+    imports14 = ["_app/immutable/nodes/13.ZpNNnktW.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DORB3-UK.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/Cbwdacam.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/BQ4_BNpj.js", "_app/immutable/chunks/DBrtxNzI.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -50442,13 +50886,13 @@ var init_constructFrom = __esm({
 });
 
 // node_modules/date-fns/toDate.js
-function toDate(argument, context3) {
+function toDate2(argument, context3) {
   return constructFrom(context3 || argument, argument);
 }
 var init_toDate = __esm({
   "node_modules/date-fns/toDate.js"() {
     init_constructFrom();
-    __name(toDate, "toDate");
+    __name(toDate2, "toDate");
   }
 });
 
@@ -50538,7 +50982,7 @@ var init_getISOWeekYear = __esm({
 
 // node_modules/date-fns/_lib/getTimezoneOffsetInMilliseconds.js
 function getTimezoneOffsetInMilliseconds(date6) {
-  const _date2 = toDate(date6);
+  const _date2 = toDate2(date6);
   const utcDate = new Date(
     Date.UTC(
       _date2.getFullYear(),
@@ -50673,7 +51117,7 @@ var init_closestTo = __esm({
 
 // node_modules/date-fns/compareAsc.js
 function compareAsc(dateLeft, dateRight) {
-  const diff = +toDate(dateLeft) - +toDate(dateRight);
+  const diff = +toDate2(dateLeft) - +toDate2(dateRight);
   if (diff < 0) return -1;
   else if (diff > 0) return 1;
   return diff;
@@ -50826,7 +51270,7 @@ var init_differenceInISOWeekYears = __esm({
 
 // node_modules/date-fns/differenceInMilliseconds.js
 function differenceInMilliseconds(laterDate, earlierDate) {
-  return +toDate(laterDate) - +toDate(earlierDate);
+  return +toDate2(laterDate) - +toDate2(earlierDate);
 }
 var init_differenceInMilliseconds = __esm({
   "node_modules/date-fns/differenceInMilliseconds.js"() {
@@ -50843,7 +51287,7 @@ var init_differenceInMinutes = __esm({
 
 // node_modules/date-fns/endOfDay.js
 function endOfDay(date6, options2) {
-  const _date2 = toDate(date6, options2?.in);
+  const _date2 = toDate2(date6, options2?.in);
   _date2.setHours(23, 59, 59, 999);
   return _date2;
 }
@@ -50856,7 +51300,7 @@ var init_endOfDay = __esm({
 
 // node_modules/date-fns/endOfMonth.js
 function endOfMonth(date6, options2) {
-  const _date2 = toDate(date6, options2?.in);
+  const _date2 = toDate2(date6, options2?.in);
   const month = _date2.getMonth();
   _date2.setFullYear(_date2.getFullYear(), month + 1, 0);
   _date2.setHours(23, 59, 59, 999);
@@ -50871,7 +51315,7 @@ var init_endOfMonth = __esm({
 
 // node_modules/date-fns/isLastDayOfMonth.js
 function isLastDayOfMonth(date6, options2) {
-  const _date2 = toDate(date6, options2?.in);
+  const _date2 = toDate2(date6, options2?.in);
   return +endOfDay(_date2, options2) === +endOfMonth(_date2, options2);
 }
 var init_isLastDayOfMonth = __esm({
@@ -53517,7 +53961,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.17.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.18.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -53639,7 +54083,7 @@ var init__15 = __esm({
     "use strict";
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.DvflR9RI.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js"];
+    imports15 = ["_app/immutable/nodes/14.CD4rGHZj.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -55328,10 +55772,10 @@ function classifyWinner(winner, now = /* @__PURE__ */ new Date()) {
   return "reusable";
 }
 function draftHasInFlightPublish(targets, now = /* @__PURE__ */ new Date()) {
-  return targets.some((t) => t.jobId || isFreshPublishing(t, now));
+  return targets.some((t) => isTargetSending(t, now));
 }
 function draftEditBlock(targets, now = /* @__PURE__ */ new Date()) {
-  if (draftHasInFlightPublish(targets, now)) return "Publishing in progress \u2014 try again shortly";
+  if (draftHasInFlightPublish(targets, now)) return PUBLISH_IN_PROGRESS_ERROR;
   if (isFullyPublished(targets)) return PUBLISHED_EDIT_ERROR;
   return null;
 }
@@ -56949,7 +57393,7 @@ var init_server_ts34 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.17.1",
+          version: "1.18.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -67985,7 +68429,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.17.1";
+  const current = options2.current ?? "1.18.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -68840,7 +69284,7 @@ var init_server_ts54 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.17.1",
+          version: "1.18.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -69049,7 +69493,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.17.1"
+    currentVersion: "1.18.0"
   };
 }
 async function download(ctx, url3) {
@@ -69562,7 +70006,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.MYhjZjnG.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.MYhjZjnG.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.DuCcpmID.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.DuCcpmID.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
