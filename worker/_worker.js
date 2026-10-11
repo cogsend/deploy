@@ -39251,7 +39251,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1791710535003");
+  response.headers.set("x-sveltekit-version", "1791726733391");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -41946,7 +41946,7 @@ function server_data_serializer(event, state) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_hx8ltp";
+  const global = "__sveltekit_rt194k";
   function get_replacer(index17) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -42690,7 +42690,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_hx8ltp";
+  const global = "__sveltekit_rt194k";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state.prerendering || state.prerender_default === true))).join("\n			")}`;
@@ -42715,7 +42715,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1791710535003")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1791726733391")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -53517,7 +53517,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.17.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.17.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -53639,7 +53639,7 @@ var init__15 = __esm({
     "use strict";
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.CXcBwCrs.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js"];
+    imports15 = ["_app/immutable/nodes/14.DvflR9RI.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -56949,7 +56949,7 @@ var init_server_ts34 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.17.0",
+          version: "1.17.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -67985,7 +67985,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.17.0";
+  const current = options2.current ?? "1.17.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -68065,7 +68065,7 @@ var init_release = __esm({
     init_release_check();
     CACHE_KEY = "release_check";
     OFFER_PRERELEASES_SETTING = "offer_prereleases";
-    OK_TTL_MS = 216e5;
+    OK_TTL_MS = 36e5;
     FAIL_TTL_MS = 18e5;
     TIMEOUT_MS = 8e3;
     __name(readOfferPrereleases, "readOfferPrereleases");
@@ -68840,7 +68840,7 @@ var init_server_ts54 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.17.0",
+          version: "1.17.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -69049,7 +69049,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.17.0"
+    currentVersion: "1.17.1"
   };
 }
 async function download(ctx, url3) {
@@ -69562,7 +69562,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.DvgU7i06.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.DvgU7i06.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.MYhjZjnG.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.MYhjZjnG.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
