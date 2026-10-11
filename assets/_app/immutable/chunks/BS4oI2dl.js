@@ -1,0 +1,1 @@
+import{n as e}from"./DZVXwCR3.js";function t(t){return t.status===401&&(e(`/login`,{refreshAll:!0}),!0)}export{t};
