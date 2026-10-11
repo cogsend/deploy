@@ -9091,19 +9091,19 @@ async function verifyPassword(password, stored) {
 async function hmacKey(secret) {
   const cached3 = hmacKeys.get(secret);
   if (cached3) return cached3;
-  const pending = crypto.subtle.importKey("raw", utf8Bytes(secret), {
+  const pending2 = crypto.subtle.importKey("raw", utf8Bytes(secret), {
     name: "HMAC",
     hash: "SHA-256"
   }, false, ["sign"]).catch((err) => {
     hmacKeys.delete(secret);
     throw err;
   });
-  hmacKeys.set(secret, pending);
+  hmacKeys.set(secret, pending2);
   if (hmacKeys.size > HMAC_KEY_CACHE_MAX) {
     const oldest = hmacKeys.keys().next().value;
     if (oldest !== void 0 && oldest !== secret) hmacKeys.delete(oldest);
   }
-  return pending;
+  return pending2;
 }
 async function hmacHex(secret, value) {
   const key = await hmacKey(secret);
@@ -33935,13 +33935,13 @@ var init_json_schema_processors = __esm({
             ...params,
             path: [...params.path, "propertyNames"]
           });
-          let pending = pendingRecords.get(ctx);
-          if (!pending) {
-            pending = [];
-            pendingRecords.set(ctx, pending);
+          let pending2 = pendingRecords.get(ctx);
+          if (!pending2) {
+            pending2 = [];
+            pendingRecords.set(ctx, pending2);
             ctx.deferred.push(() => rewriteKeyNames(ctx));
           }
-          pending.push(schema);
+          pending2.push(schema);
         }
         json3.additionalProperties = processSchema(def.valueType, ctx, {
           ...params,
@@ -39251,7 +39251,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1791708812906");
+  response.headers.set("x-sveltekit-version", "1791710535003");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -41946,7 +41946,7 @@ function server_data_serializer(event, state) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1o58vrk";
+  const global = "__sveltekit_hx8ltp";
   function get_replacer(index17) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -42690,7 +42690,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1o58vrk";
+  const global = "__sveltekit_hx8ltp";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state.prerendering || state.prerender_default === true))).join("\n			")}`;
@@ -42715,7 +42715,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1791708812906")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1791710535003")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -44966,8 +44966,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.D0Xrzzor.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/VWtwJqcg.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CqLwI8We.js"];
-    stylesheets = ["_app/immutable/assets/0.ldSaOTs_.css"];
+    imports = ["_app/immutable/nodes/0.B5MtNoXt.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/VWtwJqcg.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CqLwI8We.js"];
+    stylesheets = ["_app/immutable/assets/0.CD1ZueF5.css"];
     fonts = [];
   }
 });
@@ -46053,7 +46053,7 @@ var init__4 = __esm({
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.BcEh_xH9.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js", "_app/immutable/chunks/BS4oI2dl.js", "_app/immutable/chunks/DZVXwCR3.js"];
+    imports4 = ["_app/immutable/nodes/3.BZVzlfh2.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js", "_app/immutable/chunks/DBrtxNzI.js", "_app/immutable/chunks/D_c3Neth.js"];
     stylesheets4 = [];
     fonts4 = [];
   }
@@ -46272,6 +46272,20 @@ var init_page_server_ts3 = __esm({
         draft
       };
     }, "load");
+  }
+});
+
+// .svelte-kit/output/server/chunks/published-lock.js
+function isFullyPublished(targets) {
+  const live = targets.filter((t) => t.status !== "cancelled");
+  return live.length > 0 && live.every((t) => t.status === "published" || Boolean(t.remotePostId));
+}
+var PUBLISHED_EDIT_ERROR;
+var init_published_lock = __esm({
+  ".svelte-kit/output/server/chunks/published-lock.js"() {
+    "use strict";
+    PUBLISHED_EDIT_ERROR = "Already published \u2014 duplicate it to post again";
+    __name(isFullyPublished, "isFullyPublished");
   }
 });
 
@@ -46813,9 +46827,13 @@ function XQuoteCard($$renderer, $$props) {
     const withheldLabel = derived2(() => platformNames(withheldFrom));
     const handle2 = derived2(() => ref()?.handle);
     $$renderer2.push(`<div class="mt-3" data-testid="x-quote">`);
-    $$renderer2.push(`<!--[-1--><div class="relative rounded-xl border border-stone-200/80 bg-white p-3" data-testid="x-quote-card"${attr("aria-busy", loading)}><button type="button" data-testid="x-quote-remove" class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-stone-900/70 text-white transition-colors hover:bg-stone-900" title="Remove quote" aria-label="Remove quote">`);
-    X($$renderer2, { class: "h-3 w-3" });
-    $$renderer2.push(`<!----></button> <div class="flex min-w-0 items-center gap-1.5 pr-8 text-[13px]">`);
+    $$renderer2.push(`<!--[-1--><div class="relative rounded-xl border border-stone-200/80 bg-white p-3" data-testid="x-quote-card"${attr("aria-busy", loading)}>`);
+    if (onRemove) {
+      $$renderer2.push(`<!--[0--><button type="button" data-testid="x-quote-remove" class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-stone-900/70 text-white transition-colors hover:bg-stone-900" title="Remove quote" aria-label="Remove quote">`);
+      X($$renderer2, { class: "h-3 w-3" });
+      $$renderer2.push(`<!----></button>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> <div class="flex min-w-0 items-center gap-1.5 pr-8 text-[13px]">`);
     $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> <span class="min-w-0 truncate font-medium text-stone-500">${escape_html(handle2() ? `@${handle2()}` : "Post on X")}${escape_html("")}</span></div> `);
     $$renderer2.push("<!--[-1-->");
@@ -46885,12 +46903,12 @@ function Editor($$renderer, $$props) {
     let schedDate = "";
     let schedTime = "";
     earliestFutureScheduleValue(seededDraft?.targets, /* @__PURE__ */ new Date());
+    let publishedLock = isFullyPublished(seededDraft?.targets ?? []);
     let mastoVisibility = seededVisibility;
     let mastoCW = seededCw;
     let mastoPoll = seededPoll;
     let uploadingSegment = null;
     let dirty = false;
-    let loadingDraftId = null;
     let loadFailedId = null;
     Promise.resolve();
     let saveFailed = false;
@@ -47106,6 +47124,7 @@ function Editor($$renderer, $$props) {
     }
     __name(markDirty, "markDirty");
     function setActiveBody(nextBody) {
+      if (publishedLock) return;
       if (activeTab === "global") baseBody = nextBody;
       else overrides = customizePlatformBody(overrides, activeTab, nextBody);
       markDirty();
@@ -47137,8 +47156,18 @@ function Editor($$renderer, $$props) {
       savedSnapshot = null;
       loadFailedId = null;
       storedVariants = /* @__PURE__ */ new Set();
+      publishedLock = false;
     }
     __name(resetEditorForNewDraft, "resetEditorForNewDraft");
+    function clearComposer() {
+      for (const key of Object.keys(altTimers)) clearTimeout(altTimers[key]);
+      for (const key of Object.keys(altPending)) delete altPending[key];
+      pendingMediaRemove = null;
+      resetEditorForNewDraft();
+      loadedDraftContentFor = null;
+      setComposeUrl("/compose");
+    }
+    __name(clearComposer, "clearComposer");
     async function ensureDraft(snap = {
       baseBody,
       overrides,
@@ -47185,7 +47214,7 @@ function Editor($$renderer, $$props) {
       selectedConnectionIds: [...selected]
     }) {
       const toSave = customizedBodiesForSave(snap.baseBody, snap.overrides, PLATFORM_ORDER);
-      const pending = PLATFORM_ORDER.map((platform2) => {
+      const pending2 = PLATFORM_ORDER.map((platform2) => {
         const customized = isPlatformCustomized(snap.overrides, platform2);
         const options2 = platform2 === "mastodon" ? {
           visibility: snap.mastoVisibility,
@@ -47216,14 +47245,14 @@ function Editor($$renderer, $$props) {
           request: fetch(`/api/drafts/${id2}/variants?platform=${platform2}`, { method: "DELETE" })
         };
       }).filter((w) => w !== null);
-      const results = await Promise.all(pending.map((w) => w.request));
+      const results = await Promise.all(pending2.map((w) => w.request));
       for (let i = 0; i < results.length; i++) {
         const res = results[i];
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || `Failed to save ${pending[i].platform} variant`);
+          throw new Error(data.error || `Failed to save ${pending2[i].platform} variant`);
         }
-        if (pending[i].action === "delete") storedVariants.delete(pending[i].platform);
+        if (pending2[i].action === "delete") storedVariants.delete(pending2[i].platform);
       }
     }
     __name(saveVariants, "saveVariants");
@@ -47240,6 +47269,7 @@ function Editor($$renderer, $$props) {
     __name(persistAll, "persistAll");
     async function doPersist(allowEmpty = false, opts = {}) {
       if (loadFailedId) return null;
+      if (publishedLock) return draftId;
       if (!draftId && !baseBody.trim() && !allowEmpty) return null;
       if (draftId && takeSnapshot() === savedSnapshot && Object.keys(altPending).length === 0) return draftId;
       saving = true;
@@ -47263,6 +47293,11 @@ function Editor($$renderer, $$props) {
         }
         return id2;
       } catch (e) {
+        if (e instanceof Error && e.message === "Already published \u2014 duplicate it to post again") {
+          publishedLock = true;
+          saveFailed = false;
+          return null;
+        }
         saveFailed = true;
         showToast(humanizeError(e instanceof Error ? e.message : "Save failed"), "error");
         return null;
@@ -47279,6 +47314,7 @@ function Editor($$renderer, $$props) {
       if (!c.handle) return platformName(c.platform);
       return `${platformName(c.platform)} \xB7 ${displayHandle(c.handle)}`;
     }, "destinationName");
+    let duplicating = false;
     let relativeValue = "1";
     let relativeUnit = "hours";
     function applyRelativeFields() {
@@ -47337,11 +47373,7 @@ function Editor($$renderer, $$props) {
       const id2 = draftId;
       if (!id2) {
         isDiscardOpen = false;
-        for (const key of Object.keys(altTimers)) clearTimeout(altTimers[key]);
-        for (const key of Object.keys(altPending)) delete altPending[key];
-        pendingMediaRemove = null;
-        resetEditorForNewDraft();
-        setComposeUrl("/compose");
+        clearComposer();
         showToast("Draft discarded", "success");
         return;
       }
@@ -47353,12 +47385,7 @@ function Editor($$renderer, $$props) {
           throw new Error(data.error || "Could not discard draft");
         }
         isDiscardOpen = false;
-        for (const key of Object.keys(altTimers)) clearTimeout(altTimers[key]);
-        for (const key of Object.keys(altPending)) delete altPending[key];
-        pendingMediaRemove = null;
-        resetEditorForNewDraft();
-        loadedDraftContentFor = null;
-        setComposeUrl("/compose");
+        clearComposer();
         showToast("Draft discarded", "success");
       } catch (e) {
         showToast(humanizeError(e instanceof Error ? e.message : "Could not discard draft"), "error");
@@ -47432,13 +47459,17 @@ function Editor($$renderer, $$props) {
     const publishButtonBusy = derived2(() => publishing);
     const publishButtonLabel = derived2(() => "Publish");
     const saveIndicator = derived2(() => {
-      if (loadFailedId || loadingDraftId) return null;
+      if (loadFailedId || publishedLock) return null;
       if (saveFailed) return "failed";
       if (saving || dirty && (draftId || baseBody.trim())) return "saving";
       return draftId ? "saved" : null;
     });
     let loadedDraftContentFor = seededDraft?.id ?? null;
+    afterNavigate(({ from, to }) => {
+      from?.url.pathname === "/posts" && Boolean(to?.url.searchParams.get("id"));
+    });
     beforeNavigate(() => {
+      if (publishedLock) return;
       if (!dirty && Object.keys(altPending).length === 0) return;
       persistAll(false, { navigate: false });
       flushAltPending();
@@ -47446,6 +47477,9 @@ function Editor($$renderer, $$props) {
     $$renderer2.push(`<div class="relative mx-auto mb-8 flex w-full max-w-2xl flex-1 flex-col pb-32" data-testid="thread-preview"><h1 class="sr-only">Compose post</h1> `);
     if (loadFailedId) $$renderer2.push(`<!--[0--><div role="alert" data-testid="draft-load-error" class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/60 px-4 py-3"><p class="min-w-0 flex-1 text-[13px] font-medium text-amber-900">This draft could not be loaded. Saving is paused so an empty editor cannot overwrite the
 				stored copy. Retry loads it, replacing anything typed here.</p> <button type="button"${attr("disabled", false, true)} class="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-[12px] font-bold text-amber-900 transition-colors hover:bg-amber-100 disabled:opacity-50">${escape_html("Retry")}</button></div>`);
+    else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
+    if (publishedLock) $$renderer2.push(`<!--[0--><div role="status" data-testid="published-lock" class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/60 px-4 py-3"><p class="min-w-0 flex-1 text-[13px] font-medium text-amber-900">This post is already published, so it can't be edited.${escape_html(dirty ? " Your last changes weren't saved." : "")}</p> <button type="button" data-testid="duplicate-published"${attr("disabled", duplicating, true)} class="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-[12px] font-bold text-amber-900 transition-colors hover:bg-amber-100 disabled:opacity-50">${escape_html("Duplicate to post again")}</button></div>`);
     else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> <div class="relative mb-8 flex flex-wrap items-center gap-2 pt-2"><button type="button" data-testid="editor-tab-global"${attr("aria-pressed", activeTab === "global")}${attr_class(`flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-bold whitespace-nowrap transition-all ${activeTab === "global" ? "bg-stone-900 text-white shadow-md" : "border border-stone-200/80 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-900 hover:shadow-sm"}`)}>Global</button> <!--[-->`);
     const each_array = ensure_array_like(tabs().filter((t) => t !== "global"));
@@ -47460,15 +47494,15 @@ function Editor($$renderer, $$props) {
       });
       $$renderer2.push(`<!----> ${escape_html(rep?.displayName || displayHandle(rep?.handle) || platformName(platform2))}</button> `);
       if (status.hasError) $$renderer2.push(`<!--[0--><div class="ml-0.5 h-2 w-2 rounded-full border-2 border-white bg-red-500" title="Character limit exceeded" role="img"${attr("aria-label", `${platformName(platform2)} over character limit`)}></div>`);
-      else {
-        $$renderer2.push(`<!--[-1--><button type="button" data-testid="reset-platform-tab"${attr_class(`-mr-1.5 ml-0.5 flex items-center justify-center rounded-full p-1 transition-colors ${activeTab === platform2 ? "text-stone-300 hover:bg-stone-700 hover:text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-900"}`)} title="Unlinked from Global. Click to re-sync.">`);
+      else if (!publishedLock) {
+        $$renderer2.push(`<!--[1--><button type="button" data-testid="reset-platform-tab"${attr_class(`-mr-1.5 ml-0.5 flex items-center justify-center rounded-full p-1 transition-colors ${activeTab === platform2 ? "text-stone-300 hover:bg-stone-700 hover:text-white" : "text-stone-500 hover:bg-stone-100 hover:text-stone-900"}`)} title="Unlinked from Global. Click to re-sync.">`);
         Link_2_off($$renderer2, { class: "h-3 w-3" });
         $$renderer2.push(`<!----></button>`);
-      }
+      } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--></div>`);
     }
     $$renderer2.push(`<!--]--> `);
-    if (canAddOverride()) {
+    if (canAddOverride() && !publishedLock) {
       $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div> <div class="override-dropdown-container relative"><button type="button" data-testid="add-override-toggle" class="flex items-center gap-1.5 rounded-full border border-dashed border-stone-200 px-3 py-1.5 text-[12px] font-bold whitespace-nowrap text-stone-500 transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900">`);
       Plus($$renderer2, { class: "h-3 w-3" });
       $$renderer2.push(`<!----> Add override...</button> `);
@@ -47476,7 +47510,7 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--></div>`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> `);
-    if (showMastoOptions()) {
+    if (showMastoOptions() && !publishedLock) {
       $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div> <div class="masto-options-container relative" data-testid="masto-options"><button type="button" data-testid="masto-settings-toggle" class="flex items-center gap-1.5 rounded-full border border-stone-200 px-3 py-1.5 text-[12px] font-bold whitespace-nowrap text-stone-500 transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900">`);
       Settings($$renderer2, { class: "h-3 w-3" });
       $$renderer2.push(`<!----> Mastodon</button> `);
@@ -47518,7 +47552,7 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--> `);
       if (index17 < segments().length - 1) $$renderer2.push(`<!--[0--><div class="absolute top-10 bottom-[-24px] left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-stone-200/80"></div>`);
       else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index17)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index17)}${attr("data-testid", `segment-input-${stringify3(index17)}`)}${attr("placeholder", index17 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index17 === 0 ? "Post text" : `Post ${index17 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
+      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index17)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index17)}${attr("data-testid", `segment-input-${stringify3(index17)}`)}${attr("readonly", publishedLock, true)}${attr("placeholder", index17 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index17 === 0 ? "Post text" : `Post ${index17 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
       const $$body = escape_html(hiddenQuote(index17)?.visible ?? segment);
       if ($$body) $$renderer2.push(`${$$body}`);
       $$renderer2.push(`</textarea> `);
@@ -47531,7 +47565,10 @@ function Editor($$renderer, $$props) {
           $$renderer2.push(`<div class="group/media relative">`);
           if ((m.mime || "").startsWith("video/")) $$renderer2.push(`<!--[0--><video${attr("src", m.previewUrl || `/api/media/${encodeURIComponent(m.storageKey)}`)} controls="" preload="none" width="80" height="80"${attr("aria-label", `Attached video ${index17 + 1} (no captions)`)} class="h-20 w-20 rounded-xl border border-stone-200/80 bg-black object-cover"></video>`);
           else $$renderer2.push(`<!--[-1--><img${attr("src", m.previewUrl || `/api/media/${encodeURIComponent(m.storageKey)}`)}${attr("alt", m.altText || "")} loading="lazy" decoding="async" width="80" height="80" class="h-20 w-20 rounded-xl border border-stone-200/80 object-cover"/>`);
-          $$renderer2.push(`<!--]--> <button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`absolute -top-1.5 -right-1.5 z-10 min-h-6 min-w-6 rounded-md px-1 py-px text-[9px] font-bold tracking-wide shadow-sm ${hasAlt ? "bg-black/60 text-white" : "bg-amber-400 text-black"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", hasAlt ? `Edit alt text for image ${index17 + 1}` : `Add alt text for image ${index17 + 1}`)}>ALT</button> <button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="absolute -right-1.5 -bottom-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-focus-within/media:opacity-100 group-hover/media:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"${attr("title", `Remove ${(m.mime || "").startsWith("video/") ? "video" : "image"} ${index17 + 1}`)}${attr("aria-label", `Remove ${(m.mime || "").startsWith("video/") ? "video" : "image"} ${index17 + 1}`)}><svg width="8" height="8" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg></button></div>`);
+          $$renderer2.push(`<!--]--> <button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`absolute -top-1.5 -right-1.5 z-10 min-h-6 min-w-6 rounded-md px-1 py-px text-[9px] font-bold tracking-wide shadow-sm ${hasAlt ? "bg-black/60 text-white" : "bg-amber-400 text-black"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", hasAlt ? `Edit alt text for image ${index17 + 1}` : `Add alt text for image ${index17 + 1}`)}>ALT</button> `);
+          if (!publishedLock) $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="absolute -right-1.5 -bottom-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-focus-within/media:opacity-100 group-hover/media:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"${attr("title", `Remove ${(m.mime || "").startsWith("video/") ? "video" : "image"} ${index17 + 1}`)}${attr("aria-label", `Remove ${(m.mime || "").startsWith("video/") ? "video" : "image"} ${index17 + 1}`)}><svg width="8" height="8" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg></button>`);
+          else $$renderer2.push("<!--[-1-->");
+          $$renderer2.push(`<!--]--></div>`);
         }
         $$renderer2.push(`<!--]--></div>`);
       } else $$renderer2.push("<!--[-1-->");
@@ -47539,7 +47576,7 @@ function Editor($$renderer, $$props) {
       const each_array_4 = ensure_array_like(segMedia);
       for (let $$index_3 = 0, $$length2 = each_array_4.length; $$index_3 < $$length2; $$index_3++) {
         let m = each_array_4[$$index_3];
-        if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)} placeholder="Describe this image\u2026"${attr("aria-label", `Alt text for image ${index17 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
+        if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)}${attr("readonly", publishedLock, true)} placeholder="Describe this image\u2026"${attr("aria-label", `Alt text for image ${index17 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
         else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
       }
@@ -47548,11 +47585,11 @@ function Editor($$renderer, $$props) {
         $$renderer2.push("<!--[0-->");
         XQuoteCard($$renderer2, {
           url: quote.url,
-          onRemove: /* @__PURE__ */ __name(() => removeQuote(index17), "onRemove"),
+          onRemove: publishedLock ? void 0 : () => removeQuote(index17),
           otherPlatforms: quoteLinkPlatforms(),
-          onOnlyOnX: canQuoteOnlyOnX(index17) ? () => quoteOnlyOnX(index17) : void 0,
+          onOnlyOnX: !publishedLock && canQuoteOnlyOnX(index17) ? () => quoteOnlyOnX(index17) : void 0,
           withheldFrom: xWithheldFrom(),
-          onShareWithAll: sharedQuote(index17) ? () => shareQuoteWithAll(index17) : void 0
+          onShareWithAll: !publishedLock && sharedQuote(index17) ? () => shareQuoteWithAll(index17) : void 0
         });
       } else {
         $$renderer2.push("<!--[-1-->");
@@ -47562,7 +47599,7 @@ function Editor($$renderer, $$props) {
         });
       }
       $$renderer2.push(`<!--]--> `);
-      if (strayLinks.length > 0) {
+      if (strayLinks.length > 0 && !publishedLock) {
         $$renderer2.push(`<!--[0--><div class="mt-3 flex flex-col gap-2 rounded-xl border border-amber-200/70 bg-amber-50/60 px-3 py-2" data-testid="x-quote-stray"><p class="text-[12px] font-medium text-amber-900">`);
         if (quote) $$renderer2.push(`<!--[0-->X quotes one post, so ${escape_html(strayLinks.length === 1 ? "this other X link shows" : "these other X links show")} as a plain link.${escape_html(tabSupportsThreads() ? " To quote both, give each its own post with + Thread." : "")}`);
         else $$renderer2.push(`<!--[-1-->X only quotes a link at the very end, so ${escape_html(strayLinks.length === 1 ? "this X link shows" : "these X links show")} as a plain link.`);
@@ -47579,27 +47616,31 @@ function Editor($$renderer, $$props) {
         $$renderer2.push(`<!--]--></div></div>`);
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> <div class="mt-3 flex items-center justify-between border-t border-stone-100 pt-3"><div class="flex items-center gap-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">`);
-      if (tabSupportsThreads()) {
+      if (!publishedLock) {
         $$renderer2.push("<!--[0-->");
-        if (index17 === segments().length - 1) {
-          $$renderer2.push(`<!--[0--><button type="button" data-testid="add-thread-post" class="flex items-center gap-1.5 rounded-full border border-stone-100 bg-stone-50 px-3 py-1.5 text-[12px] font-bold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900">`);
-          Plus($$renderer2, { class: "h-3.5 w-3.5" });
-          $$renderer2.push(`<!----> Thread</button>`);
+        if (tabSupportsThreads()) {
+          $$renderer2.push("<!--[0-->");
+          if (index17 === segments().length - 1) {
+            $$renderer2.push(`<!--[0--><button type="button" data-testid="add-thread-post" class="flex items-center gap-1.5 rounded-full border border-stone-100 bg-stone-50 px-3 py-1.5 text-[12px] font-bold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900">`);
+            Plus($$renderer2, { class: "h-3.5 w-3.5" });
+            $$renderer2.push(`<!----> Thread</button>`);
+          } else $$renderer2.push("<!--[-1-->");
+          $$renderer2.push(`<!--]-->`);
+        } else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> `);
+        if (segments().length > 1) {
+          $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-segment-${stringify3(index17)}`)} class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Remove post from thread" aria-label="Remove post from thread">`);
+          Trash($$renderer2, { class: "h-3.5 w-3.5" });
+          $$renderer2.push(`<!----></button>`);
+        } else if (index17 === 0 && canDiscard()) {
+          $$renderer2.push(`<!--[1--><button type="button" data-testid="discard-draft" class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Discard draft" aria-label="Discard draft">`);
+          Trash($$renderer2, { class: "h-3.5 w-3.5" });
+          $$renderer2.push(`<!----></button>`);
         } else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
       } else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--> `);
-      if (segments().length > 1) {
-        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-segment-${stringify3(index17)}`)} class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Remove post from thread" aria-label="Remove post from thread">`);
-        Trash($$renderer2, { class: "h-3.5 w-3.5" });
-        $$renderer2.push(`<!----></button>`);
-      } else if (index17 === 0 && canDiscard()) {
-        $$renderer2.push(`<!--[1--><button type="button" data-testid="discard-draft" class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Discard draft" aria-label="Discard draft">`);
-        Trash($$renderer2, { class: "h-3.5 w-3.5" });
-        $$renderer2.push(`<!----></button>`);
-      } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--></div> <div class="quote-picker-container relative flex items-center gap-3">`);
-      if (xQuoteActive() && !quote) {
+      if (xQuoteActive() && !quote && !publishedLock) {
         $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `quote-post-${stringify3(index17)}`)}${attr_class(`flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 pointer-coarse:opacity-100 ${quotePickerFor === index17 ? "opacity-100" : ""}`)}${attr("aria-label", `Quote one of your X posts in post ${index17 + 1}`)}${attr("aria-expanded", quotePickerFor === index17)} title="Quote one of your X posts">`);
         Quote($$renderer2, { class: "h-4 w-4" });
         $$renderer2.push(`<!----></button> `);
@@ -47610,133 +47651,141 @@ function Editor($$renderer, $$props) {
         } else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
       } else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--> <button type="button"${attr("data-testid", `attach-image-${stringify3(index17)}`)}${attr("disabled", uploadingSegment === index17, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index17 ? `Uploading to post ${index17 + 1}` : `Add image to post ${index17 + 1}`)}${attr("title", uploadingSegment === index17 ? "Uploading\u2026" : "Add Image")}>`);
-      Image($$renderer2, { class: "h-4 w-4" });
-      $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA())} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index17)}`)}/> <div${attr("data-testid", `segment-count-${stringify3(index17)}`)}${attr_class(`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider transition-colors ${isOver ? "border border-red-100 bg-red-50 text-red-600" : "border border-stone-100 bg-stone-50 text-stone-500"}`)}>${escape_html(segLen)}/${escape_html(maxChars())}</div></div></div></div></div>`);
+      $$renderer2.push(`<!--]--> `);
+      if (!publishedLock) {
+        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index17)}`)}${attr("disabled", uploadingSegment === index17, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index17 ? `Uploading to post ${index17 + 1}` : `Add image to post ${index17 + 1}`)}${attr("title", uploadingSegment === index17 ? "Uploading\u2026" : "Add Image")}>`);
+        Image($$renderer2, { class: "h-4 w-4" });
+        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA())} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index17)}`)}/>`);
+      } else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--> <div${attr("data-testid", `segment-count-${stringify3(index17)}`)}${attr_class(`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider transition-colors ${isOver ? "border border-red-100 bg-red-50 text-red-600" : "border border-stone-100 bg-stone-50 text-stone-500"}`)}>${escape_html(segLen)}/${escape_html(maxChars())}</div></div></div></div></div>`);
     }
-    $$renderer2.push(`<!--]--></div></div> <div class="pointer-events-none fixed bottom-[max(2rem,env(safe-area-inset-bottom))] left-1/2 z-30 w-full max-w-2xl -translate-x-1/2 px-4 sm:px-6"><div class="flex items-center justify-center gap-4"><div class="accounts-popover-container pointer-events-auto relative flex items-center"><button type="button" data-testid="destinations-toggle"${attr_class(`flex items-center gap-2 rounded-full border border-stone-200/80 bg-white/95 px-4 py-2.5 text-[13px] font-bold text-stone-700 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl transition-all hover:border-stone-300 hover:bg-white `)} aria-haspopup="dialog"${attr("aria-expanded", isAccountsPopoverOpen)}><div class="mr-0.5 flex -space-x-1.5"><!--[-->`);
-    const each_array_7 = ensure_array_like(selectedAccounts().slice(0, 3));
-    for (let $$index_7 = 0, $$length = each_array_7.length; $$index_7 < $$length; $$index_7++) {
-      let account = each_array_7[$$index_7];
-      $$renderer2.push(`<div class="z-10 flex h-[20px] w-[20px] items-center justify-center rounded-full border-2 border-white bg-stone-100">`);
-      SocialIcon($$renderer2, {
-        platform: account.platform,
-        className: `h-2.5 w-2.5 ${platformColorClass(account.platform)}`
-      });
-      $$renderer2.push(`<!----></div>`);
-    }
-    $$renderer2.push(`<!--]--></div> <span>${escape_html(selectedAccounts().length)} <span class="hidden sm:inline">selected</span></span> `);
-    Chevron_up($$renderer2, { class: `ml-1 h-3.5 w-3.5 text-stone-500 transition-transform ` });
-    $$renderer2.push(`<!----></button> `);
-    $$renderer2.push("<!--[-1-->");
-    $$renderer2.push(`<!--]--></div> <div class="post-actions-container pointer-events-auto relative flex items-center rounded-full bg-stone-900 text-white shadow-[0_16px_40px_-12px_rgb(28_25_23/0.3)]"><button type="button" data-testid="publish-now" class="flex cursor-pointer items-center gap-2 rounded-l-full px-6 py-2.5 text-[13px] font-bold transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", publishing, true)}${attr("aria-busy", publishButtonBusy())}><span>${escape_html(publishButtonLabel())}</span> `);
-    if (publishButtonBusy()) {
-      $$renderer2.push("<!--[0-->");
-      Loader_circle($$renderer2, { class: "h-3.5 w-3.5 animate-spin" });
-    } else {
-      $$renderer2.push("<!--[-1-->");
-      Send($$renderer2, { class: "h-3.5 w-3.5" });
-    }
-    $$renderer2.push(`<!--]--></button> <div class="h-5 w-px bg-stone-700/80"></div> <button type="button" data-testid="schedule-toggle" class="group flex cursor-pointer items-center justify-center rounded-r-full px-4 py-2.5 transition-all hover:bg-stone-800" title="Schedule Options" aria-label="Schedule Options"${attr("aria-expanded", scheduleOpen)}${attr("disabled", publishing, true)}>`);
-    Calendar($$renderer2, { class: "h-4 w-4 text-stone-300 transition-colors group-hover:text-white" });
-    $$renderer2.push(`<!----></button> `);
-    if (isPostConfirmOpen && pendingPublish) {
-      $$renderer2.push(`<!--[0--><div class="absolute right-0 bottom-full z-40 mb-3 w-64 origin-bottom-right rounded-[1.5rem] border border-stone-200/80 bg-white/95 p-3 text-stone-900 shadow-[0_12px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl" role="dialog"${attr("aria-label", publishProgress?.some((d) => d.status === "failed") ? "Publish results" : "Confirm post")}><div class="px-2 pt-2 pb-4 text-center">`);
-      if (publishProgress?.some((d) => d.status === "failed")) $$renderer2.push(`<!--[0--><h4 class="mb-1 text-[14px] font-extrabold text-stone-900">Couldn\u2019t publish everywhere</h4> <p class="text-[12px] font-medium text-stone-500">Fix the problems below, then retry from Posts.</p>`);
-      else $$renderer2.push(`<!--[-1--><h4 class="mb-1 text-[14px] font-extrabold text-stone-900">Confirm Post</h4> <p class="text-[12px] font-medium text-stone-500">Publishing to ${escape_html(pendingAccounts().length)}
-									${escape_html(pendingAccounts().length === 1 ? "destination" : "destinations")}.</p>`);
-      $$renderer2.push(`<!--]--></div> <div class="mb-4 flex justify-center -space-x-2" data-testid="publish-confirm-destinations"><!--[-->`);
-      const each_array_9 = ensure_array_like(pendingAccounts());
-      for (let $$index_9 = 0, $$length = each_array_9.length; $$index_9 < $$length; $$index_9++) {
-        let account = each_array_9[$$index_9];
-        const state = publishProgress?.find((d) => d.connectionId === account.id);
-        $$renderer2.push(`<div class="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-stone-50 shadow-sm"${attr("title", `${stringify3(platformName(account.platform))}: ${stringify3(account.displayName || account.handle)}`)}>`);
+    $$renderer2.push(`<!--]--></div></div> `);
+    if (!publishedLock) {
+      $$renderer2.push(`<!--[0--><div class="pointer-events-none fixed bottom-[max(2rem,env(safe-area-inset-bottom))] left-1/2 z-30 w-full max-w-2xl -translate-x-1/2 px-4 sm:px-6"><div class="flex items-center justify-center gap-4"><div class="accounts-popover-container pointer-events-auto relative flex items-center"><button type="button" data-testid="destinations-toggle"${attr_class(`flex items-center gap-2 rounded-full border border-stone-200/80 bg-white/95 px-4 py-2.5 text-[13px] font-bold text-stone-700 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl transition-all hover:border-stone-300 hover:bg-white `)} aria-haspopup="dialog"${attr("aria-expanded", isAccountsPopoverOpen)}><div class="mr-0.5 flex -space-x-1.5"><!--[-->`);
+      const each_array_7 = ensure_array_like(selectedAccounts().slice(0, 3));
+      for (let $$index_7 = 0, $$length = each_array_7.length; $$index_7 < $$length; $$index_7++) {
+        let account = each_array_7[$$index_7];
+        $$renderer2.push(`<div class="z-10 flex h-[20px] w-[20px] items-center justify-center rounded-full border-2 border-white bg-stone-100">`);
         SocialIcon($$renderer2, {
           platform: account.platform,
-          className: `h-3.5 w-3.5 ${platformColorClass(account.platform)}`
+          className: `h-2.5 w-2.5 ${platformColorClass(account.platform)}`
         });
-        $$renderer2.push(`<!----> `);
-        if (state?.status === "published") {
-          $$renderer2.push(`<!--[0--><span class="absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">`);
-          Check2($$renderer2, { class: "h-2.5 w-2.5" });
-          $$renderer2.push(`<!----></span>`);
-        } else if (state?.status === "failed") {
-          $$renderer2.push(`<!--[1--><span class="absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white">`);
-          X($$renderer2, { class: "h-2.5 w-2.5" });
-          $$renderer2.push(`<!----></span>`);
-        } else $$renderer2.push("<!--[-1-->");
-        $$renderer2.push(`<!--]--></div>`);
+        $$renderer2.push(`<!----></div>`);
       }
-      $$renderer2.push(`<!--]--></div> `);
-      if (publishProgress?.some((d) => d.status === "failed")) {
-        $$renderer2.push(`<!--[0--><ul class="mb-3 space-y-1.5" data-testid="publish-progress"><!--[-->`);
-        const each_array_10 = ensure_array_like(publishProgress ?? []);
-        for (let $$index_10 = 0, $$length = each_array_10.length; $$index_10 < $$length; $$index_10++) {
-          let dest = each_array_10[$$index_10];
-          $$renderer2.push(`<li class="flex items-start gap-2 rounded-xl bg-stone-50 px-2.5 py-2" data-testid="publish-dest"${attr("data-status", dest.status)}>`);
-          if (dest.status === "pending" || dest.status === "publishing") {
-            $$renderer2.push("<!--[0-->");
-            Loader_circle($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-stone-500" });
-            $$renderer2.push(`<!----> <span class="text-[11px] font-bold text-stone-600">${escape_html(destinationName(dest.connectionId))} \u2014 publishing\u2026</span>`);
-          } else if (dest.status === "published") {
-            $$renderer2.push("<!--[1-->");
-            Check2($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" });
-            $$renderer2.push(`<!----> <span class="text-[11px] font-bold text-stone-700">${escape_html(destinationName(dest.connectionId))} \u2014 published</span>`);
-          } else if (dest.status === "retrying") {
-            $$renderer2.push("<!--[2-->");
-            Refresh_cw($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" });
-            $$renderer2.push(`<!----> <span class="min-w-0 flex-1 text-[11px] font-medium break-words text-amber-700">${escape_html(destinationName(dest.connectionId))}: ${escape_html(dest.error || "retrying automatically")}
-												\u2014 retrying automatically</span>`);
-          } else {
-            $$renderer2.push("<!--[-1-->");
-            X($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" });
-            $$renderer2.push(`<!----> <span class="min-w-0 flex-1 text-[11px] font-medium break-words text-red-600">${escape_html(destinationName(dest.connectionId))}: ${escape_html(dest.error || "Publish failed")}</span>`);
-          }
-          $$renderer2.push(`<!--]--></li>`);
+      $$renderer2.push(`<!--]--></div> <span>${escape_html(selectedAccounts().length)} <span class="hidden sm:inline">selected</span></span> `);
+      Chevron_up($$renderer2, { class: `ml-1 h-3.5 w-3.5 text-stone-500 transition-transform ` });
+      $$renderer2.push(`<!----></button> `);
+      $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--></div> <div class="post-actions-container pointer-events-auto relative flex items-center rounded-full bg-stone-900 text-white shadow-[0_16px_40px_-12px_rgb(28_25_23/0.3)]"><button type="button" data-testid="publish-now" class="flex cursor-pointer items-center gap-2 rounded-l-full px-6 py-2.5 text-[13px] font-bold transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", publishing, true)}${attr("aria-busy", publishButtonBusy())}><span>${escape_html(publishButtonLabel())}</span> `);
+      if (publishButtonBusy()) {
+        $$renderer2.push("<!--[0-->");
+        Loader_circle($$renderer2, { class: "h-3.5 w-3.5 animate-spin" });
+      } else {
+        $$renderer2.push("<!--[-1-->");
+        Send($$renderer2, { class: "h-3.5 w-3.5" });
+      }
+      $$renderer2.push(`<!--]--></button> <div class="h-5 w-px bg-stone-700/80"></div> <button type="button" data-testid="schedule-toggle" class="group flex cursor-pointer items-center justify-center rounded-r-full px-4 py-2.5 transition-all hover:bg-stone-800" title="Schedule Options" aria-label="Schedule Options"${attr("aria-expanded", scheduleOpen)}${attr("disabled", publishing, true)}>`);
+      Calendar($$renderer2, { class: "h-4 w-4 text-stone-300 transition-colors group-hover:text-white" });
+      $$renderer2.push(`<!----></button> `);
+      if (isPostConfirmOpen && pendingPublish) {
+        $$renderer2.push(`<!--[0--><div class="absolute right-0 bottom-full z-40 mb-3 w-64 origin-bottom-right rounded-[1.5rem] border border-stone-200/80 bg-white/95 p-3 text-stone-900 shadow-[0_12px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl" role="dialog"${attr("aria-label", publishProgress?.some((d) => d.status === "failed") ? "Publish results" : "Confirm post")}><div class="px-2 pt-2 pb-4 text-center">`);
+        if (publishProgress?.some((d) => d.status === "failed")) $$renderer2.push(`<!--[0--><h4 class="mb-1 text-[14px] font-extrabold text-stone-900">Couldn\u2019t publish everywhere</h4> <p class="text-[12px] font-medium text-stone-500">Fix the problems below, then retry from Posts.</p>`);
+        else $$renderer2.push(`<!--[-1--><h4 class="mb-1 text-[14px] font-extrabold text-stone-900">Confirm Post</h4> <p class="text-[12px] font-medium text-stone-500">Publishing to ${escape_html(pendingAccounts().length)}
+										${escape_html(pendingAccounts().length === 1 ? "destination" : "destinations")}.</p>`);
+        $$renderer2.push(`<!--]--></div> <div class="mb-4 flex justify-center -space-x-2" data-testid="publish-confirm-destinations"><!--[-->`);
+        const each_array_9 = ensure_array_like(pendingAccounts());
+        for (let $$index_9 = 0, $$length = each_array_9.length; $$index_9 < $$length; $$index_9++) {
+          let account = each_array_9[$$index_9];
+          const state = publishProgress?.find((d) => d.connectionId === account.id);
+          $$renderer2.push(`<div class="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-stone-50 shadow-sm"${attr("title", `${stringify3(platformName(account.platform))}: ${stringify3(account.displayName || account.handle)}`)}>`);
+          SocialIcon($$renderer2, {
+            platform: account.platform,
+            className: `h-3.5 w-3.5 ${platformColorClass(account.platform)}`
+          });
+          $$renderer2.push(`<!----> `);
+          if (state?.status === "published") {
+            $$renderer2.push(`<!--[0--><span class="absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">`);
+            Check2($$renderer2, { class: "h-2.5 w-2.5" });
+            $$renderer2.push(`<!----></span>`);
+          } else if (state?.status === "failed") {
+            $$renderer2.push(`<!--[1--><span class="absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white">`);
+            X($$renderer2, { class: "h-2.5 w-2.5" });
+            $$renderer2.push(`<!----></span>`);
+          } else $$renderer2.push("<!--[-1-->");
+          $$renderer2.push(`<!--]--></div>`);
         }
-        $$renderer2.push(`<!--]--></ul>`);
+        $$renderer2.push(`<!--]--></div> `);
+        if (publishProgress?.some((d) => d.status === "failed")) {
+          $$renderer2.push(`<!--[0--><ul class="mb-3 space-y-1.5" data-testid="publish-progress"><!--[-->`);
+          const each_array_10 = ensure_array_like(publishProgress ?? []);
+          for (let $$index_10 = 0, $$length = each_array_10.length; $$index_10 < $$length; $$index_10++) {
+            let dest = each_array_10[$$index_10];
+            $$renderer2.push(`<li class="flex items-start gap-2 rounded-xl bg-stone-50 px-2.5 py-2" data-testid="publish-dest"${attr("data-status", dest.status)}>`);
+            if (dest.status === "pending" || dest.status === "publishing") {
+              $$renderer2.push("<!--[0-->");
+              Loader_circle($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-stone-500" });
+              $$renderer2.push(`<!----> <span class="text-[11px] font-bold text-stone-600">${escape_html(destinationName(dest.connectionId))} \u2014 publishing\u2026</span>`);
+            } else if (dest.status === "published") {
+              $$renderer2.push("<!--[1-->");
+              Check2($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" });
+              $$renderer2.push(`<!----> <span class="text-[11px] font-bold text-stone-700">${escape_html(destinationName(dest.connectionId))} \u2014 ${escape_html(dest.already ? "already published" : "published")}</span>`);
+            } else if (dest.status === "retrying") {
+              $$renderer2.push("<!--[2-->");
+              Refresh_cw($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" });
+              $$renderer2.push(`<!----> <span class="min-w-0 flex-1 text-[11px] font-medium break-words text-amber-700">${escape_html(destinationName(dest.connectionId))}: ${escape_html(dest.error || "retrying automatically")}
+													\u2014 retrying automatically</span>`);
+            } else {
+              $$renderer2.push("<!--[-1-->");
+              X($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" });
+              $$renderer2.push(`<!----> <span class="min-w-0 flex-1 text-[11px] font-medium break-words text-red-600">${escape_html(destinationName(dest.connectionId))}: ${escape_html(dest.error || "Publish failed")}</span>`);
+            }
+            $$renderer2.push(`<!--]--></li>`);
+          }
+          $$renderer2.push(`<!--]--></ul>`);
+        } else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> `);
+        if (publishProgress?.some((d) => d.status === "failed")) $$renderer2.push(`<!--[0--><button type="button" data-testid="publish-progress-close" class="w-full cursor-pointer rounded-full bg-stone-900 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-stone-800">Close</button>`);
+        else {
+          $$renderer2.push(`<!--[-1--><button type="button" data-testid="confirm-dialog-ok" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-stone-900 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", pendingPublish?.saving || !pendingPublish?.draftId, true)}>${escape_html(pendingPublish?.saving ? "Saving\u2026" : "Publish Now")} `);
+          Send($$renderer2, { class: "h-3.5 w-3.5" });
+          $$renderer2.push(`<!----></button> <button type="button" class="mt-1 w-full rounded-full py-1.5 text-[12px] font-bold text-stone-500 transition-colors hover:text-stone-900">Keep editing</button> <label class="mt-1 flex items-center justify-center gap-1.5 text-[11px] font-medium text-stone-500"><input type="checkbox"${attr("checked", skipAsk, true)}/> Publish without asking next time</label>`);
+        }
+        $$renderer2.push(`<!--]--></div>`);
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> `);
-      if (publishProgress?.some((d) => d.status === "failed")) $$renderer2.push(`<!--[0--><button type="button" data-testid="publish-progress-close" class="w-full cursor-pointer rounded-full bg-stone-900 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-stone-800">Close</button>`);
-      else {
-        $$renderer2.push(`<!--[-1--><button type="button" data-testid="confirm-dialog-ok" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-stone-900 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", pendingPublish?.saving || !pendingPublish?.draftId, true)}>${escape_html(pendingPublish?.saving ? "Saving\u2026" : "Publish Now")} `);
-        Send($$renderer2, { class: "h-3.5 w-3.5" });
-        $$renderer2.push(`<!----></button> <button type="button" class="mt-1 w-full rounded-full py-1.5 text-[12px] font-bold text-stone-500 transition-colors hover:text-stone-900">Keep editing</button> <label class="mt-1 flex items-center justify-center gap-1.5 text-[11px] font-medium text-stone-500"><input type="checkbox"${attr("checked", skipAsk, true)}/> Publish without asking next time</label>`);
-      }
-      $$renderer2.push(`<!--]--></div>`);
+      if (scheduleOpen) {
+        $$renderer2.push(`<!--[0--><div data-testid="schedule-panel" class="absolute right-0 bottom-full z-40 mb-3 w-72 origin-bottom-right rounded-[1.5rem] border border-stone-200/80 bg-white/95 p-3 text-stone-900 shadow-[0_12px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl" role="dialog" aria-label="Schedule post"><div class="flex items-center gap-2 px-2 pt-2 pb-3">`);
+        Calendar($$renderer2, { class: "h-4 w-4 text-stone-900" });
+        $$renderer2.push(`<!----> <h4 class="text-[14px] font-extrabold text-stone-900">Schedule Post</h4></div> <div class="mx-1 mb-4 flex rounded-lg bg-stone-100 p-1"><button type="button"${attr_class(`flex-1 rounded-md py-1.5 text-[12px] font-bold transition-colors bg-white text-stone-900 shadow-sm`)}>Relative</button> <button type="button"${attr_class(`flex-1 rounded-md py-1.5 text-[12px] font-bold transition-colors text-stone-500 hover:text-stone-900`)}>Specific Date</button></div> `);
+        $$renderer2.push(`<!--[0--><div class="mb-4 flex flex-col gap-2 px-1" data-testid="schedule-offsets"><span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">Publish in</span> <label class="flex items-center gap-2"><input type="number" min="1" data-testid="schedule-offset-value" aria-label="Publish in amount"${attr("value", relativeValue)} class="w-20 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-center text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> `);
+        $$renderer2.select({
+          "data-testid": "schedule-offset-unit",
+          "aria-label": "Publish in unit",
+          value: relativeUnit,
+          onchange: /* @__PURE__ */ __name(() => {
+            applyRelativeFields();
+          }, "onchange"),
+          class: "flex-1 appearance-none rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"
+        }, ($$renderer3) => {
+          $$renderer3.option({ value: "mins" }, ($$renderer4) => {
+            $$renderer4.push(`Minutes`);
+          });
+          $$renderer3.option({ value: "hours" }, ($$renderer4) => {
+            $$renderer4.push(`Hours`);
+          });
+          $$renderer3.option({ value: "days" }, ($$renderer4) => {
+            $$renderer4.push(`Days`);
+          });
+        });
+        $$renderer2.push(`</label></div>`);
+        $$renderer2.push(`<!--]--> `);
+        if (schedulePreview()) $$renderer2.push(`<!--[0--><p data-testid="schedule-preview" class="mb-3 px-2 text-center text-[12px] font-bold text-stone-500">Will publish ${escape_html(schedulePreview())}</p>`);
+        else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> <button type="button" data-testid="schedule-confirm" class="w-full cursor-pointer rounded-full bg-stone-900 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", publishing, true)}>Confirm Schedule</button></div>`);
+      } else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--></div></div></div>`);
     } else $$renderer2.push("<!--[-1-->");
-    $$renderer2.push(`<!--]--> `);
-    if (scheduleOpen) {
-      $$renderer2.push(`<!--[0--><div data-testid="schedule-panel" class="absolute right-0 bottom-full z-40 mb-3 w-72 origin-bottom-right rounded-[1.5rem] border border-stone-200/80 bg-white/95 p-3 text-stone-900 shadow-[0_12px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl" role="dialog" aria-label="Schedule post"><div class="flex items-center gap-2 px-2 pt-2 pb-3">`);
-      Calendar($$renderer2, { class: "h-4 w-4 text-stone-900" });
-      $$renderer2.push(`<!----> <h4 class="text-[14px] font-extrabold text-stone-900">Schedule Post</h4></div> <div class="mx-1 mb-4 flex rounded-lg bg-stone-100 p-1"><button type="button"${attr_class(`flex-1 rounded-md py-1.5 text-[12px] font-bold transition-colors bg-white text-stone-900 shadow-sm`)}>Relative</button> <button type="button"${attr_class(`flex-1 rounded-md py-1.5 text-[12px] font-bold transition-colors text-stone-500 hover:text-stone-900`)}>Specific Date</button></div> `);
-      $$renderer2.push(`<!--[0--><div class="mb-4 flex flex-col gap-2 px-1" data-testid="schedule-offsets"><span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">Publish in</span> <label class="flex items-center gap-2"><input type="number" min="1" data-testid="schedule-offset-value" aria-label="Publish in amount"${attr("value", relativeValue)} class="w-20 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-center text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> `);
-      $$renderer2.select({
-        "data-testid": "schedule-offset-unit",
-        "aria-label": "Publish in unit",
-        value: relativeUnit,
-        onchange: /* @__PURE__ */ __name(() => {
-          applyRelativeFields();
-        }, "onchange"),
-        class: "flex-1 appearance-none rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[13px] font-bold text-stone-900 transition-colors focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"
-      }, ($$renderer3) => {
-        $$renderer3.option({ value: "mins" }, ($$renderer4) => {
-          $$renderer4.push(`Minutes`);
-        });
-        $$renderer3.option({ value: "hours" }, ($$renderer4) => {
-          $$renderer4.push(`Hours`);
-        });
-        $$renderer3.option({ value: "days" }, ($$renderer4) => {
-          $$renderer4.push(`Days`);
-        });
-      });
-      $$renderer2.push(`</label></div>`);
-      $$renderer2.push(`<!--]--> `);
-      if (schedulePreview()) $$renderer2.push(`<!--[0--><p data-testid="schedule-preview" class="mb-3 px-2 text-center text-[12px] font-bold text-stone-500">Will publish ${escape_html(schedulePreview())}</p>`);
-      else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--> <button type="button" data-testid="schedule-confirm" class="w-full cursor-pointer rounded-full bg-stone-900 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-stone-800 disabled:opacity-60"${attr("disabled", publishing, true)}>Confirm Schedule</button></div>`);
-    } else $$renderer2.push("<!--[-1-->");
-    $$renderer2.push(`<!--]--></div></div></div>  <div class="sr-only" role="status" aria-live="polite" data-testid="publish-announcement">${escape_html(publishAnnouncement)}</div> `);
+    $$renderer2.push(`<!--]-->  <div class="sr-only" role="status" aria-live="polite" data-testid="publish-announcement">${escape_html(publishAnnouncement)}</div> `);
     if (toastMessage) {
       $$renderer2.push("<!--[0-->");
       const tone = toastTone;
@@ -47815,6 +47864,7 @@ var init_page_svelte4 = __esm({
     init_x_quote();
     init_thread_segments();
     init_poll();
+    init_published_lock();
     init_server3();
     init_navigation();
     init_index_server();
@@ -47880,7 +47930,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.Dn2RiGcw.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/CaKi7LOk.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js"];
+    imports6 = ["_app/immutable/nodes/5.CbgxAJme.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/Yl-4B7FM.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/DJeBKFlL.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -48659,7 +48709,7 @@ var init__9 = __esm({
     index10 = 8;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports9 = ["_app/immutable/nodes/8.CZKT2ieC.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/VWtwJqcg.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BS4oI2dl.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports9 = ["_app/immutable/nodes/8.DG8vi71z.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/VWtwJqcg.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets9 = [];
     fonts9 = [];
   }
@@ -48744,7 +48794,7 @@ var init__10 = __esm({
     index11 = 9;
     component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
     server_id8 = "src/routes/login/+page.server.ts";
-    imports10 = ["_app/immutable/nodes/9.BcOiOT7I.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/CL0Rsr0s.js"];
+    imports10 = ["_app/immutable/nodes/9.Bsnv4r75.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/CL0Rsr0s.js"];
     stylesheets10 = [];
     fonts10 = [];
   }
@@ -48809,7 +48859,7 @@ var init__11 = __esm({
     index12 = 10;
     component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
     server_id9 = "src/routes/login/setup-2fa/+page.server.ts";
-    imports11 = ["_app/immutable/nodes/10.CVriBmBV.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js"];
+    imports11 = ["_app/immutable/nodes/10.CfLC-YPg.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js"];
     stylesheets11 = [];
     fonts11 = [];
   }
@@ -48876,7 +48926,7 @@ var init__12 = __esm({
     index13 = 11;
     component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id10 = "src/routes/login/verify/+page.server.ts";
-    imports12 = ["_app/immutable/nodes/11.DkuZinsk.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js"];
+    imports12 = ["_app/immutable/nodes/11.CMCybRuR.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js"];
     stylesheets12 = [];
     fonts12 = [];
   }
@@ -49186,6 +49236,11 @@ function Users($$renderer, $$props) {
     ]
   } }]));
 }
+function takePostsNotice() {
+  const notice = pending;
+  pending = null;
+  return notice;
+}
 function isAuthError(message) {
   if (!message) return false;
   return AUTH_ERROR_PATTERN.test(message);
@@ -49250,6 +49305,7 @@ function _page9($$renderer, $$props) {
     let queueHasMore = data.queueHasMore;
     let targets = data.targets;
     let error63 = data.loadFailed ? "Could not load posts" : null;
+    let notice = takePostsNotice();
     let busy = null;
     let pendingCancel = null;
     let pendingRemove = null;
@@ -49672,6 +49728,12 @@ function _page9($$renderer, $$props) {
       X($$renderer2, { class: "h-3.5 w-3.5" });
       $$renderer2.push(`<!----></button></span></div>`);
     } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
+    if (notice) {
+      $$renderer2.push(`<!--[0--><div${attr_class(`mb-4 flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ${notice.tone === "warn" ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`)} role="status" data-testid="posts-notice"><p class="font-medium">${escape_html(notice.message)}</p> <button type="button" aria-label="Dismiss notice"${attr_class(`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors ${notice.tone === "warn" ? "text-amber-700 hover:bg-amber-100" : "text-emerald-700 hover:bg-emerald-100"}`)}>`);
+      X($$renderer2, { class: "h-3.5 w-3.5" });
+      $$renderer2.push(`<!----></button></div>`);
+    } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> <div class="-mx-6 mb-6 [scrollbar-width:none] overflow-x-auto px-6 [&amp;::-webkit-scrollbar]:hidden"${attr_style("", {
       "mask-image": fadeMask(fadeLeft, fadeRight),
       "-webkit-mask-image": fadeMask(fadeLeft, fadeRight)
@@ -49912,7 +49974,7 @@ function _page9($$renderer, $$props) {
     bind_props($$props, { snapshot });
   });
 }
-var AUTH_ERROR_PATTERN;
+var pending, AUTH_ERROR_PATTERN;
 var init_page_svelte9 = __esm({
   ".svelte-kit/output/server/entries/pages/posts/_page.svelte.js"() {
     "use strict";
@@ -49939,6 +50001,8 @@ var init_page_svelte9 = __esm({
     __name(Calendar_clock, "Calendar_clock");
     __name(Search, "Search");
     __name(Users, "Users");
+    pending = null;
+    __name(takePostsNotice, "takePostsNotice");
     AUTH_ERROR_PATTERN = /401|unauthorized|invalid credentials|createsession failed|reconnect|expired|forbidden|403/i;
     __name(isAuthError, "isAuthError");
     __name(needsReconnect, "needsReconnect");
@@ -49969,7 +50033,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id12 = "src/routes/posts/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.DatK6jeX.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DORB3-UK.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/CaKi7LOk.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/BQ4_BNpj.js", "_app/immutable/chunks/BS4oI2dl.js"];
+    imports14 = ["_app/immutable/nodes/13.BhuMATPt.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DORB3-UK.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DJeBKFlL.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/BQ4_BNpj.js", "_app/immutable/chunks/DBrtxNzI.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -53453,7 +53517,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.16.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.17.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -53575,7 +53639,7 @@ var init__15 = __esm({
     "use strict";
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.DjmK4UIx.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BS4oI2dl.js"];
+    imports15 = ["_app/immutable/nodes/14.CXcBwCrs.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -54337,21 +54401,21 @@ function createOAuthCallback(opts) {
     if (error63) redirect(302, `${appUrl}/accounts?error=${encodeURIComponent(error63)}`, toAppOrigin(appUrl));
     if (!code || !state) redirect(302, `${appUrl}/accounts?error=missing_code`, toAppOrigin(appUrl));
     const candidate = splitOAuthState(state);
-    const pending = candidate ? await first(locals.db.select().from(oauthPending).where(eq(oauthPending.id, candidate))) : null;
-    const sessionId = cookies.get("cog_session") ?? (pending ? `machine:${pending.userId}` : null);
+    const pending2 = candidate ? await first(locals.db.select().from(oauthPending).where(eq(oauthPending.id, candidate))) : null;
+    const sessionId = cookies.get("cog_session") ?? (pending2 ? `machine:${pending2.userId}` : null);
     const pendingId = await verifyOAuthState({
       secret: locals.env.AUTH_SECRET,
       state,
       sessionId
     });
-    const wrongProvider = opts.pendingMarker !== void 0 && pending?.instanceUrl !== opts.pendingMarker;
-    if (!pending || !pendingId || pending.id !== pendingId || pending.expiresAt < /* @__PURE__ */ new Date() || wrongProvider) {
-      if (pending) await locals.db.delete(oauthPending).where(eq(oauthPending.id, pending.id));
+    const wrongProvider = opts.pendingMarker !== void 0 && pending2?.instanceUrl !== opts.pendingMarker;
+    if (!pending2 || !pendingId || pending2.id !== pendingId || pending2.expiresAt < /* @__PURE__ */ new Date() || wrongProvider) {
+      if (pending2) await locals.db.delete(oauthPending).where(eq(oauthPending.id, pending2.id));
       redirect(302, `${appUrl}/accounts?error=oauth_expired`, toAppOrigin(appUrl));
     }
     try {
       const exchanged = await opts.complete({
-        pending,
+        pending: pending2,
         code,
         db: locals.db,
         env: locals.env
@@ -54368,16 +54432,16 @@ function createOAuthCallback(opts) {
         status: "active",
         updatedAt: now
       };
-      const existing = findExistingConnection(await locals.db.select().from(connections).where(and(eq(connections.userId, pending.userId), eq(connections.platform, opts.platform), ...opts.matchInstanceUrl ? [eq(connections.instanceUrl, exchanged.instanceUrl || "")] : [])), exchanged.handle || "", opts.accountIdKey ? exchanged.meta[opts.accountIdKey] : void 0, opts.accountIdKey);
+      const existing = findExistingConnection(await locals.db.select().from(connections).where(and(eq(connections.userId, pending2.userId), eq(connections.platform, opts.platform), ...opts.matchInstanceUrl ? [eq(connections.instanceUrl, exchanged.instanceUrl || "")] : [])), exchanged.handle || "", opts.accountIdKey ? exchanged.meta[opts.accountIdKey] : void 0, opts.accountIdKey);
       if (existing) await locals.db.update(connections).set(data).where(eq(connections.id, existing.id));
       else await locals.db.insert(connections).values({
         id: newId(),
-        userId: pending.userId,
+        userId: pending2.userId,
         platform: opts.platform,
         ...data,
         createdAt: now
       });
-      await locals.db.delete(oauthPending).where(eq(oauthPending.id, pending.id));
+      await locals.db.delete(oauthPending).where(eq(oauthPending.id, pending2.id));
       redirect(302, `${appUrl}/accounts?connected=${opts.platform}`, toAppOrigin(appUrl));
     } catch (e) {
       if (isRedirect(e)) throw e;
@@ -54556,10 +54620,10 @@ var init_server_ts14 = __esm({
       platform: "linkedin",
       pendingMarker: "linkedin",
       accountIdKey: "personUrn",
-      async complete({ pending, code, env: env3 }) {
-        const clientSecret = await decryptSecret(pending.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
+      async complete({ pending: pending2, code, env: env3 }) {
+        const clientSecret = await decryptSecret(pending2.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
         const exchanged = await linkedinExchangeCode({
-          clientId: pending.clientId,
+          clientId: pending2.clientId,
           clientSecret,
           code,
           appUrl: env3.APP_URL
@@ -54571,7 +54635,7 @@ var init_server_ts14 = __esm({
             expiresAt: exchanged.expiresAt,
             tokenType: exchanged.tokenType,
             scopes: exchanged.scopes,
-            clientId: pending.clientId,
+            clientId: pending2.clientId,
             clientSecret,
             personUrn: exchanged.personUrn,
             openIdSub: exchanged.openIdSub
@@ -54665,10 +54729,10 @@ var init_server_ts16 = __esm({
     GET6 = createOAuthCallback({
       platform: "mastodon",
       matchInstanceUrl: true,
-      async complete({ pending, code, env: env3 }) {
+      async complete({ pending: pending2, code, env: env3 }) {
         const allowLocal = isLocalAppUrl(env3.APP_URL);
-        const clientSecret = await decryptSecret(pending.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
-        const exchanged = await mastodonExchangeCode(pending.instanceUrl, pending.clientId, clientSecret, code, env3.APP_URL, providerFetch, allowLocal);
+        const clientSecret = await decryptSecret(pending2.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
+        const exchanged = await mastodonExchangeCode(pending2.instanceUrl, pending2.clientId, clientSecret, code, env3.APP_URL, providerFetch, allowLocal);
         return {
           credentials: {
             accessToken: exchanged.accessToken,
@@ -54754,10 +54818,10 @@ var init_server_ts18 = __esm({
       platform: "threads",
       pendingMarker: "threads",
       accountIdKey: "threadsUserId",
-      async complete({ pending, code, env: env3 }) {
-        const appSecret = await decryptSecret(pending.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
+      async complete({ pending: pending2, code, env: env3 }) {
+        const appSecret = await decryptSecret(pending2.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
         const exchanged = await threadsExchangeCode({
-          appId: pending.clientId,
+          appId: pending2.clientId,
           appSecret,
           code,
           appUrl: env3.APP_URL
@@ -54768,7 +54832,7 @@ var init_server_ts18 = __esm({
             expiresAt: exchanged.expiresAt,
             tokenType: exchanged.tokenType,
             scopes: exchanged.scopes,
-            clientId: pending.clientId,
+            clientId: pending2.clientId,
             threadsUserId: exchanged.threadsUserId,
             threadsUsername: exchanged.threadsUsername
           },
@@ -54854,12 +54918,12 @@ var init_server_ts20 = __esm({
       platform: "x",
       pendingMarker: "x",
       accountIdKey: "xUserId",
-      async complete({ pending, code, env: env3 }) {
-        const packed = await decryptSecret(pending.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
+      async complete({ pending: pending2, code, env: env3 }) {
+        const packed = await decryptSecret(pending2.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
         const { clientSecret, codeVerifier } = unpackXPendingSecret(packed);
         if (!codeVerifier) throw new Error("X connect session expired \u2014 try connecting again");
         const exchanged = await xExchangeCode({
-          clientId: pending.clientId,
+          clientId: pending2.clientId,
           clientSecret: clientSecret || void 0,
           code,
           codeVerifier,
@@ -54872,7 +54936,7 @@ var init_server_ts20 = __esm({
             expiresAt: exchanged.expiresAt,
             tokenType: exchanged.tokenType,
             scopes: exchanged.scopes,
-            clientId: pending.clientId,
+            clientId: pending2.clientId,
             ...clientSecret ? { clientSecret } : {},
             xUserId: exchanged.xUserId,
             xUsername: exchanged.xUsername
@@ -55070,29 +55134,29 @@ var init_server_ts22 = __esm({
       const appUrl = locals.env.APP_URL.replace(/\/$/, "");
       const state = url3.searchParams.get("pending");
       const candidate = splitOAuthState(state);
-      const pending = candidate ? await first(locals.db.select().from(oauthPending).where(eq(oauthPending.id, candidate))) : null;
-      const sessionId = cookies.get("cog_session") ?? (pending ? `machine:${pending.userId}` : null);
+      const pending2 = candidate ? await first(locals.db.select().from(oauthPending).where(eq(oauthPending.id, candidate))) : null;
+      const sessionId = cookies.get("cog_session") ?? (pending2 ? `machine:${pending2.userId}` : null);
       const pendingId = await verifyOAuthState({
         secret: locals.env.AUTH_SECRET,
         state,
         sessionId
       });
-      if (!pending || !pendingId || pending.id !== pendingId || pending.expiresAt < /* @__PURE__ */ new Date() || pending.instanceUrl !== "zernio") {
-        if (pending) await locals.db.delete(oauthPending).where(eq(oauthPending.id, pending.id));
+      if (!pending2 || !pendingId || pending2.id !== pendingId || pending2.expiresAt < /* @__PURE__ */ new Date() || pending2.instanceUrl !== "zernio") {
+        if (pending2) await locals.db.delete(oauthPending).where(eq(oauthPending.id, pending2.id));
         redirect(302, `${appUrl}/accounts?error=oauth_expired`, toAppOrigin(appUrl));
       }
-      await locals.db.delete(oauthPending).where(eq(oauthPending.id, pending.id));
+      await locals.db.delete(oauthPending).where(eq(oauthPending.id, pending2.id));
       const failure3 = url3.searchParams.get("error");
       if (failure3) {
         const message = url3.searchParams.get("error_message") || failure3;
         redirect(302, `${appUrl}/accounts?error=${encodeURIComponent(message)}`, toAppOrigin(appUrl));
       }
       try {
-        const apiKey = await decryptSecret(pending.clientSecretEnc, locals.env.APP_ENCRYPTION_KEY);
+        const apiKey = await decryptSecret(pending2.clientSecretEnc, locals.env.APP_ENCRYPTION_KEY);
         const accountId = url3.searchParams.get("accountId") ?? "";
         const account = (await listAccounts({
           apiKey,
-          profileId: pending.clientId
+          profileId: pending2.clientId
         })).find((a) => a._id === accountId);
         if (!account) throw new Error("Zernio did not report the connected account");
         const platform2 = fromZernioPlatform(account.platform);
@@ -55100,7 +55164,7 @@ var init_server_ts22 = __esm({
         await upsertZernioConnection({
           db: locals.db,
           env: locals.env,
-          userId: pending.userId,
+          userId: pending2.userId,
           apiKey,
           account
         });
@@ -55266,6 +55330,11 @@ function classifyWinner(winner, now = /* @__PURE__ */ new Date()) {
 function draftHasInFlightPublish(targets, now = /* @__PURE__ */ new Date()) {
   return targets.some((t) => t.jobId || isFreshPublishing(t, now));
 }
+function draftEditBlock(targets, now = /* @__PURE__ */ new Date()) {
+  if (draftHasInFlightPublish(targets, now)) return "Publishing in progress \u2014 try again shortly";
+  if (isFullyPublished(targets)) return PUBLISHED_EDIT_ERROR;
+  return null;
+}
 function refuseInFlightOrPublished(target, now = /* @__PURE__ */ new Date()) {
   if (target.status === "published" || target.remotePostId) return "Already published";
   if (isFreshPublishing(target, now)) return "Already publishing";
@@ -55408,6 +55477,7 @@ var init_publish_plan = __esm({
     "use strict";
     init_client();
     init_due_jobs();
+    init_published_lock();
     init_drizzle_orm();
     REUSABLE_STATUSES = [
       "pending",
@@ -55420,6 +55490,7 @@ var init_publish_plan = __esm({
     __name(pickTargetWinner, "pickTargetWinner");
     __name(classifyWinner, "classifyWinner");
     __name(draftHasInFlightPublish, "draftHasInFlightPublish");
+    __name(draftEditBlock, "draftEditBlock");
     __name(refuseInFlightOrPublished, "refuseInFlightOrPublished");
     __name(loadTargets, "loadTargets");
     __name(classifyConnections, "classifyConnections");
@@ -55861,7 +55932,8 @@ function validatePost(input2) {
 async function updateDraft(ctx, userId, id2, body) {
   if (!await first(ctx.db.select().from(drafts).where(and(eq(drafts.id, id2), eq(drafts.userId, userId))))) invalid("Not found", 404);
   const liveTargets = await ctx.db.select().from(publishTargets).where(eq(publishTargets.draftId, id2));
-  if (draftHasInFlightPublish(liveTargets)) invalid("Publishing in progress \u2014 try again shortly", 409);
+  const blocked = draftEditBlock(liveTargets);
+  if (blocked) invalid(blocked, 409);
   if (!body || typeof body !== "object") invalid("Invalid JSON body");
   const input2 = body;
   const selection = normalizeSelectedConnectionIds(input2.selectedConnectionIds);
@@ -55890,6 +55962,7 @@ async function scheduleDraft(ctx, userId, draftId, body) {
   const input2 = body;
   const now = /* @__PURE__ */ new Date();
   if (connectionIdsOverflow(input2.connectionIds)) invalid("Too many connections (max 10)");
+  if (input2.cancelOthers !== void 0 && typeof input2.cancelOthers !== "boolean") invalid("cancelOthers must be a boolean");
   const ids = normalizeConnectionIds(input2.connectionIds);
   const runAt2 = input2.runAt ? new Date(input2.runAt) : null;
   if (!ids.length) invalid("connectionIds required");
@@ -55911,10 +55984,17 @@ async function scheduleDraft(ctx, userId, draftId, body) {
     alreadyPublished: blocked.filter((i) => i.alreadyPublished).map((i) => i.target.connectionId),
     inFlight: blocked.filter((i) => i.inFlight).map((i) => i.target.connectionId)
   });
+  const cancelled = input2.cancelOthers ? await ctx.db.update(publishTargets).set({
+    status: "cancelled",
+    jobId: null,
+    scheduledFor: null,
+    updatedAt: now
+  }).where(and(eq(publishTargets.draftId, draftId), notInArray(publishTargets.connectionId, ids), inArray(publishTargets.status, ["scheduled", "pending"]), isNull(publishTargets.remotePostId), isNull(publishTargets.jobId))).returning({ connectionId: publishTargets.connectionId }) : [];
   await refreshDraftStatus(ctx.db, draftId);
   return {
     targets: ensured.map((i) => i.target),
-    scheduledFor: runAt2.toISOString()
+    scheduledFor: runAt2.toISOString(),
+    cancelled: [...new Set(cancelled.map((row) => row.connectionId))]
   };
 }
 async function cancelDelivery(ctx, userId, id2) {
@@ -56192,13 +56272,14 @@ function validateVariantOptions(options2) {
   if (value.threadSegments !== void 0 && (!Array.isArray(value.threadSegments) || value.threadSegments.some((segment) => typeof segment !== "string"))) return "threadSegments must be an array of strings";
   return null;
 }
-async function ensureDraftNotPublishing(ctx, draftId) {
+async function ensureDraftEditable(ctx, draftId) {
   const targets = await ctx.db.select().from(publishTargets).where(eq(publishTargets.draftId, draftId));
-  if (draftHasInFlightPublish(targets)) invalid("Publishing in progress \u2014 try again shortly", 409);
+  const blocked = draftEditBlock(targets);
+  if (blocked) invalid(blocked, 409);
 }
 async function setDraftVariant(ctx, userId, draftId, input2) {
   if (!await first(ctx.db.select().from(drafts).where(and(eq(drafts.id, draftId), eq(drafts.userId, userId))))) invalid("Not found", 404);
-  await ensureDraftNotPublishing(ctx, draftId);
+  await ensureDraftEditable(ctx, draftId);
   if (!input2 || typeof input2 !== "object") invalid("Invalid JSON body");
   const fields = input2;
   const optionsError = validateVariantOptions(fields.options);
@@ -56232,7 +56313,7 @@ async function setDraftVariant(ctx, userId, draftId, input2) {
 }
 async function deleteDraftVariant(ctx, userId, draftId, platform2) {
   if (!await first(ctx.db.select().from(drafts).where(and(eq(drafts.id, draftId), eq(drafts.userId, userId))))) invalid("Not found", 404);
-  await ensureDraftNotPublishing(ctx, draftId);
+  await ensureDraftEditable(ctx, draftId);
   if (!platform2) invalid("platform required");
   await ctx.db.delete(draftVariants).where(and(eq(draftVariants.draftId, draftId), eq(draftVariants.platform, platform2)));
   return { ok: true };
@@ -56437,7 +56518,7 @@ var init_operations3 = __esm({
     __name(createDraft, "createDraft");
     __name(duplicateDraft, "duplicateDraft");
     __name(validateVariantOptions, "validateVariantOptions");
-    __name(ensureDraftNotPublishing, "ensureDraftNotPublishing");
+    __name(ensureDraftEditable, "ensureDraftEditable");
     __name(setDraftVariant, "setDraftVariant");
     __name(deleteDraftVariant, "deleteDraftVariant");
     __name(queuedResult, "queuedResult");
@@ -56582,10 +56663,10 @@ function cleanAltText(value) {
   if (!trimmed) return null;
   return trimmed.slice(0, MAX_ALT_LENGTH);
 }
-async function rejectIfPublishing(db, draftId) {
+async function rejectIfNotEditable(db, draftId) {
   const targets = await db.select().from(publishTargets).where(eq(publishTargets.draftId, draftId));
-  if (draftHasInFlightPublish(targets)) return fail("Publishing in progress \u2014 try again shortly", 409);
-  return null;
+  const blocked = draftEditBlock(targets);
+  return blocked ? fail(blocked, 409) : null;
 }
 async function ownDraft(locals, id2, userId) {
   return first(locals.db.select().from(drafts).where(and(eq(drafts.id, id2), eq(drafts.userId, userId))));
@@ -56616,7 +56697,7 @@ var init_server_ts30 = __esm({
     MAX_UPLOAD_BYTES = 1e8;
     __name(parseSegmentIndex, "parseSegmentIndex");
     __name(cleanAltText, "cleanAltText");
-    __name(rejectIfPublishing, "rejectIfPublishing");
+    __name(rejectIfNotEditable, "rejectIfNotEditable");
     __name(ownDraft, "ownDraft");
     __name(segmentProblem, "segmentProblem");
     POST19 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
@@ -56627,7 +56708,7 @@ var init_server_ts30 = __esm({
         requireScope(locals, "write");
         const draft = await ownDraft(locals, params.id, user.id);
         if (!draft) return fail("Not found", 404);
-        const busy = await rejectIfPublishing(locals.db, params.id);
+        const busy = await rejectIfNotEditable(locals.db, params.id);
         if (busy) return busy;
         const form = await request2.formData();
         const segmentIndex = parseSegmentIndex(form.get("segmentIndex"));
@@ -56711,7 +56792,7 @@ var init_server_ts30 = __esm({
         requireScope(locals, "write");
         const draft = await ownDraft(locals, params.id, user.id);
         if (!draft) return fail("Not found", 404);
-        const busy = await rejectIfPublishing(locals.db, params.id);
+        const busy = await rejectIfNotEditable(locals.db, params.id);
         if (busy) return busy;
         let body;
         try {
@@ -56749,7 +56830,7 @@ var init_server_ts30 = __esm({
         const user = requireUser(locals.user);
         requireScope(locals, "write");
         if (!await ownDraft(locals, params.id, user.id)) return fail("Not found", 404);
-        const busy = await rejectIfPublishing(locals.db, params.id);
+        const busy = await rejectIfNotEditable(locals.db, params.id);
         if (busy) return busy;
         const mediaId = url3.searchParams.get("mediaId");
         if (!mediaId) return fail("mediaId required");
@@ -56868,7 +56949,7 @@ var init_server_ts34 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.16.0",
+          version: "1.17.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -67904,7 +67985,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.16.0";
+  const current = options2.current ?? "1.17.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -68759,7 +68840,7 @@ var init_server_ts54 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.16.0",
+          version: "1.17.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -68968,7 +69049,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.16.0"
+    currentVersion: "1.17.0"
   };
 }
 async function download(ctx, url3) {
@@ -69481,7 +69562,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.CfBqryf5.js", app: "_app/immutable/entry/app.DSi6hcKP.js", imports: ["_app/immutable/entry/start.CfBqryf5.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/B1exdJuM.js", "_app/immutable/chunks/DZVXwCR3.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.DSi6hcKP.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.DvgU7i06.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.DvgU7i06.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),

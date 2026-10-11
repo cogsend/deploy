@@ -1,4 +1,4 @@
-# CogSend 1.16.0, ready to deploy
+# CogSend 1.17.0, ready to deploy
 
 This repository is [CogSend](https://github.com/cogsend/cogsend), a self-hosted social scheduler, prebuilt for one click. It is regenerated on every release; the source, issues and pull requests live in [cogsend/cogsend](https://github.com/cogsend/cogsend).
 
