@@ -10567,6 +10567,48 @@ var init_threads_error = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/links.js
+function cleanUrl(raw) {
+  return raw.replace(TRAILING_PUNCT_RE, "");
+}
+function extractUrls(text3) {
+  if (!text3) return [];
+  const out = [];
+  URL_RE.lastIndex = 0;
+  let m;
+  while ((m = URL_RE.exec(text3)) !== null) {
+    const cleaned = cleanUrl(m[0]);
+    if (cleaned) out.push(cleaned);
+  }
+  return out;
+}
+function extractFirstUrl(text3) {
+  return extractUrls(text3)[0] ?? null;
+}
+function safeHttpUrl(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const { protocol } = new URL(trimmed);
+    return protocol === "https:" || protocol === "http:" ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
+var URL_RE, TRAILING_PUNCT_RE;
+var init_links = __esm({
+  ".svelte-kit/output/server/chunks/links.js"() {
+    "use strict";
+    URL_RE = /https?:\/\/[^\s<>"'`]+/gi;
+    TRAILING_PUNCT_RE = /[.,);:!?'\]"'`]+$/;
+    __name(cleanUrl, "cleanUrl");
+    __name(extractUrls, "extractUrls");
+    __name(extractFirstUrl, "extractFirstUrl");
+    __name(safeHttpUrl, "safeHttpUrl");
+  }
+});
+
 // .svelte-kit/output/server/chunks/platforms.js
 function isPlatformId(value) {
   return PLATFORM_IDS.includes(value);
@@ -10693,345 +10735,6 @@ var init_thread_segments = __esm({
     __name(flattenThreadBody, "flattenThreadBody");
     __name(maxThreadSegmentLength, "maxThreadSegmentLength");
     __name(updateSegment, "updateSegment");
-  }
-});
-
-// .svelte-kit/output/server/chunks/x-quote.js
-function cleanUrl(raw) {
-  return raw.replace(TRAILING_PUNCT_RE, "");
-}
-function extractUrls(text3) {
-  if (!text3) return [];
-  const out = [];
-  URL_RE.lastIndex = 0;
-  let m;
-  while ((m = URL_RE.exec(text3)) !== null) {
-    const cleaned = cleanUrl(m[0]);
-    if (cleaned) out.push(cleaned);
-  }
-  return out;
-}
-function extractFirstUrl(text3) {
-  return extractUrls(text3)[0] ?? null;
-}
-function safeHttpUrl(value) {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  try {
-    const { protocol } = new URL(trimmed);
-    return protocol === "https:" || protocol === "http:" ? trimmed : null;
-  } catch {
-    return null;
-  }
-}
-function handleOf(segment) {
-  return /^i(\/web)?$/i.test(segment) ? null : segment;
-}
-function parseXPostUrl(url3) {
-  const m = FULL_RE.exec((url3 ?? "").trim());
-  return m ? {
-    id: m[2],
-    handle: handleOf(m[1])
-  } : null;
-}
-function trailingXQuote(text3) {
-  if (!text3) return null;
-  const m = TRAILING_RE.exec(text3);
-  if (!m) return null;
-  if (m.index > 0 && !/\s/.test(text3[m.index - 1])) return null;
-  let visible = text3.slice(0, m.index);
-  let sep = "";
-  if (visible && /\s$/.test(visible)) {
-    sep = visible.slice(-1);
-    visible = visible.slice(0, -1);
-  }
-  return {
-    visible,
-    url: m[0].trimEnd(),
-    id: m[2],
-    handle: handleOf(m[1]),
-    sep
-  };
-}
-function attachXQuote(visible, url3, sep = "") {
-  if (visible === "" && sep === "") return url3;
-  return `${visible}${sep || "\n"}${url3}`;
-}
-function strayXPostLinks(text3) {
-  if (!text3) return [];
-  const trailingEnd = trailingXQuote(text3) ? text3.trimEnd().length : -1;
-  const out = [];
-  ANY_RE.lastIndex = 0;
-  let m;
-  while ((m = ANY_RE.exec(text3)) !== null) {
-    if (m.index > 0 && !/\s/.test(text3[m.index - 1])) continue;
-    if (m.index + m[0].length !== trailingEnd) out.push({
-      url: m[0],
-      index: m.index
-    });
-  }
-  return out;
-}
-function keepXQuoteOnX(body, index17) {
-  const segments = splitThreadSegments(body);
-  const quote = trailingXQuote(segments[index17] ?? "");
-  if (!quote || !quote.visible.trim()) return null;
-  return {
-    x: body,
-    global: joinThreadSegments(updateSegment(segments, index17, quote.visible))
-  };
-}
-function shareXQuote(globalBody, xBody, index17) {
-  const quote = trailingXQuote(splitThreadSegments(xBody)[index17] ?? "");
-  const segments = splitThreadSegments(globalBody);
-  if (!quote || index17 >= segments.length) return null;
-  const current = segments[index17];
-  ANY_RE.lastIndex = 0;
-  let m;
-  while ((m = ANY_RE.exec(current)) !== null) if (m[2] === quote.id) return null;
-  const shared = attachXQuote(current, quote.url, current === "" ? "" : quote.sep || "\n");
-  const global = joinThreadSegments(updateSegment(segments, index17, shared));
-  return {
-    global,
-    xFollows: sameSegments(global, xBody)
-  };
-}
-function sameSegments(a, b) {
-  const left = splitThreadSegments(a);
-  const right = splitThreadSegments(b);
-  return left.length === right.length && left.every((s2, i) => s2.trimEnd() === right[i].trimEnd());
-}
-function quotedPostText(text3) {
-  return text3.replace(/(?:\s*(?:https?:\/\/t\.co\/|pic\.(?:twitter|x)\.com\/)[A-Za-z0-9]+)+\s*$/, "").trim();
-}
-var URL_RE, TRAILING_PUNCT_RE, X_POST_URL, FULL_RE, TRAILING_RE, ANY_RE;
-var init_x_quote = __esm({
-  ".svelte-kit/output/server/chunks/x-quote.js"() {
-    "use strict";
-    init_thread_segments();
-    URL_RE = /https?:\/\/[^\s<>"'`]+/gi;
-    TRAILING_PUNCT_RE = /[.,);:!?'\]"'`]+$/;
-    __name(cleanUrl, "cleanUrl");
-    __name(extractUrls, "extractUrls");
-    __name(extractFirstUrl, "extractFirstUrl");
-    __name(safeHttpUrl, "safeHttpUrl");
-    X_POST_URL = String.raw`https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/(i\/web|[A-Za-z0-9_]{1,15})\/status(?:es)?\/(\d{1,19})(?:\?[\w\-=&%~]*)?`;
-    FULL_RE = new RegExp(`^${X_POST_URL}$`);
-    TRAILING_RE = new RegExp(`${X_POST_URL}\\s*$`);
-    ANY_RE = new RegExp(`${X_POST_URL}(?![\\w/])`, "g");
-    __name(handleOf, "handleOf");
-    __name(parseXPostUrl, "parseXPostUrl");
-    __name(trailingXQuote, "trailingXQuote");
-    __name(attachXQuote, "attachXQuote");
-    __name(strayXPostLinks, "strayXPostLinks");
-    __name(keepXQuoteOnX, "keepXQuoteOnX");
-    __name(shareXQuote, "shareXQuote");
-    __name(sameSegments, "sameSegments");
-    __name(quotedPostText, "quotedPostText");
-  }
-});
-
-// .svelte-kit/output/server/chunks/poll.js
-function countGraphemes(text3) {
-  if (!text3) return 0;
-  try {
-    const Seg = Intl.Segmenter;
-    if (Seg) return [...new Seg(void 0, { granularity: "grapheme" }).segment(text3)].length;
-  } catch {
-  }
-  return [...text3].length;
-}
-function mastodonWeightedLength(text3, options2 = {}) {
-  const urlLength = options2.urlLength ?? 23;
-  if (!text3) return 0;
-  const re = /https?:\/\/[^\s]+/gi;
-  let weighted = 0;
-  let lastIndex = 0;
-  let match2;
-  while ((match2 = re.exec(text3)) !== null) {
-    weighted += countGraphemes(text3.slice(lastIndex, match2.index));
-    weighted += urlLength;
-    lastIndex = match2.index + match2[0].length;
-  }
-  weighted += countGraphemes(text3.slice(lastIndex));
-  return weighted;
-}
-function tooLong(length, max, label) {
-  return {
-    ok: false,
-    length,
-    max,
-    message: `${length} / ${max} characters (${label})`
-  };
-}
-function validateBlueskyText(text3, maxGraphemes = 300) {
-  const length = countGraphemes(text3);
-  if (length > maxGraphemes) return {
-    ok: false,
-    length,
-    max: maxGraphemes,
-    message: `${length} graphemes \u2014 over by ${length - maxGraphemes} (max ${maxGraphemes})`
-  };
-  const bytes = utf8ByteLength(text3);
-  if (bytes > 3e3) return {
-    ok: false,
-    length,
-    max: maxGraphemes,
-    message: `Text exceeds 3000 UTF-8 bytes (${bytes})`
-  };
-  return {
-    ok: true,
-    length,
-    max: maxGraphemes
-  };
-}
-function validateMastodonText(text3, maxChars = 500) {
-  const length = mastodonWeightedLength(text3);
-  if (length > maxChars) return {
-    ok: false,
-    length,
-    max: maxChars,
-    message: `${length} / ${maxChars} characters on this instance`
-  };
-  return {
-    ok: true,
-    length,
-    max: maxChars
-  };
-}
-function validateLinkedinText(text3, maxChars = LINKEDIN_MAX_CHARS) {
-  const length = countGraphemes(text3);
-  if (length > maxChars) return tooLong(length, maxChars, "LinkedIn max 3000");
-  return {
-    ok: true,
-    length,
-    max: maxChars
-  };
-}
-function validateThreadsText(text3, maxChars = 500) {
-  const length = countGraphemes(text3);
-  if (length > maxChars) return tooLong(length, maxChars, "Threads max 500");
-  return {
-    ok: true,
-    length,
-    max: maxChars
-  };
-}
-function graphemesOf(text3) {
-  if (xSegmenter === void 0) try {
-    xSegmenter = new Intl.Segmenter(void 0, { granularity: "grapheme" });
-  } catch {
-    xSegmenter = null;
-  }
-  return xSegmenter ? [...xSegmenter.segment(text3)].map((s2) => s2.segment) : [...text3];
-}
-function xTextWeight(text3) {
-  let weight = 0;
-  for (const grapheme of graphemesOf(text3)) {
-    if (EMOJI.test(grapheme)) {
-      weight += 2;
-      continue;
-    }
-    for (const char of grapheme) {
-      const cp = char.codePointAt(0) ?? 0;
-      weight += X_LIGHT_RANGES.some(([start, end]) => cp >= start && cp <= end) ? 1 : 2;
-    }
-  }
-  return weight;
-}
-function xWeightedLength(text3) {
-  if (!text3) return 0;
-  const normalized = text3.normalize("NFC");
-  const re = /https?:\/\/[^\s]+/gi;
-  let weight = 0;
-  let last = 0;
-  let match2;
-  while ((match2 = re.exec(normalized)) !== null) {
-    const url3 = cleanUrl(match2[0]);
-    if (!/^https?:\/\/[^/]/i.test(url3)) continue;
-    weight += xTextWeight(normalized.slice(last, match2.index)) + 23;
-    last = match2.index + url3.length;
-  }
-  return weight + xTextWeight(normalized.slice(last));
-}
-function validateXText(text3, maxChars = 280) {
-  const length = xWeightedLength(text3);
-  if (length > maxChars) return tooLong(length, maxChars, "X max 280");
-  return {
-    ok: true,
-    length,
-    max: maxChars
-  };
-}
-function validatePollConfig(input2) {
-  if (!input2 || typeof input2 !== "object") return {
-    ok: false,
-    error: "Invalid poll"
-  };
-  const r2 = input2;
-  if (!Array.isArray(r2.options)) return {
-    ok: false,
-    error: "Poll needs options"
-  };
-  const options2 = r2.options.map((o) => typeof o === "string" ? o.trim() : "").filter((o) => o);
-  if (options2.length < 2) return {
-    ok: false,
-    error: "Poll needs at least 2 options"
-  };
-  if (options2.length > 4) return {
-    ok: false,
-    error: "Poll allows max 4 options"
-  };
-  if (options2.some((o) => o.length > 50)) return {
-    ok: false,
-    error: "Poll options allow max 50 characters each"
-  };
-  if (typeof r2.expiresIn !== "number" || !Number.isInteger(r2.expiresIn) || r2.expiresIn < 300 || r2.expiresIn > 604800) return {
-    ok: false,
-    error: "Poll needs a duration between 5 minutes and 7 days"
-  };
-  return {
-    ok: true,
-    config: {
-      options: options2,
-      expiresIn: r2.expiresIn,
-      multiple: r2.multiple === true ? true : void 0,
-      hideTotals: r2.hideTotals === true ? true : void 0
-    }
-  };
-}
-function parsePollConfig(input2) {
-  const v = validatePollConfig(input2);
-  return v.ok ? v.config : null;
-}
-var LINKEDIN_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter;
-var init_poll = __esm({
-  ".svelte-kit/output/server/chunks/poll.js"() {
-    "use strict";
-    init_bytes();
-    init_x_quote();
-    __name(countGraphemes, "countGraphemes");
-    __name(mastodonWeightedLength, "mastodonWeightedLength");
-    __name(tooLong, "tooLong");
-    __name(validateBlueskyText, "validateBlueskyText");
-    __name(validateMastodonText, "validateMastodonText");
-    LINKEDIN_MAX_CHARS = 3e3;
-    __name(validateLinkedinText, "validateLinkedinText");
-    __name(validateThreadsText, "validateThreadsText");
-    X_LIGHT_RANGES = [
-      [0, 4351],
-      [8192, 8205],
-      [8208, 8223],
-      [8242, 8247]
-    ];
-    EMOJI = /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20e3/u;
-    __name(graphemesOf, "graphemesOf");
-    __name(xTextWeight, "xTextWeight");
-    __name(xWeightedLength, "xWeightedLength");
-    __name(validateXText, "validateXText");
-    __name(validatePollConfig, "validatePollConfig");
-    __name(parsePollConfig, "parsePollConfig");
   }
 });
 
@@ -11359,12 +11062,15 @@ var init_zernio2 = __esm({
       * codes/subcodes the 300-char message slice cuts off.
       */
       detail;
+      /** What the failure proved about the account, merged into its metaJson. */
+      metaPatch;
       constructor(message, opts = {}) {
         super(message);
         this.name = "ProviderError";
         this.status = opts.status;
         this.code = opts.code;
         this.detail = opts.detail;
+        this.metaPatch = opts.metaPatch;
         this.retryable = opts.code === "rate_limited" || opts.code === "network" || opts.code === "upstream";
       }
     };
@@ -11379,11 +11085,14 @@ var init_zernio2 = __esm({
       segmentIds;
       segmentCids;
       remoteUrl;
+      /** Carried over from the ProviderError that stopped the thread. */
+      metaPatch;
       constructor(message, opts) {
         super(message);
         this.name = "PublishPartialError";
         this.segmentIds = opts.segmentIds;
         this.segmentCids = opts.segmentCids;
+        this.metaPatch = opts.metaPatch;
         this.remoteUrl = opts.remoteUrl;
       }
     };
@@ -11402,6 +11111,108 @@ var init_zernio2 = __esm({
     __name(unwrapPost, "unwrapPost");
     __name(createPost, "createPost");
     __name(getPost, "getPost");
+  }
+});
+
+// .svelte-kit/output/server/chunks/x-quote.js
+function handleOf(segment) {
+  return /^i(\/web)?$/i.test(segment) ? null : segment;
+}
+function parseXPostUrl(url3) {
+  const m = FULL_RE.exec((url3 ?? "").trim());
+  return m ? {
+    id: m[2],
+    handle: handleOf(m[1])
+  } : null;
+}
+function trailingXQuote(text3) {
+  if (!text3) return null;
+  const m = TRAILING_RE.exec(text3);
+  if (!m) return null;
+  if (m.index > 0 && !/\s/.test(text3[m.index - 1])) return null;
+  let visible = text3.slice(0, m.index);
+  let sep = "";
+  if (visible && /\s$/.test(visible)) {
+    sep = visible.slice(-1);
+    visible = visible.slice(0, -1);
+  }
+  return {
+    visible,
+    url: m[0].trimEnd(),
+    id: m[2],
+    handle: handleOf(m[1]),
+    sep
+  };
+}
+function attachXQuote(visible, url3, sep = "") {
+  if (visible === "" && sep === "") return url3;
+  return `${visible}${sep || "\n"}${url3}`;
+}
+function strayXPostLinks(text3) {
+  if (!text3) return [];
+  const trailingEnd = trailingXQuote(text3) ? text3.trimEnd().length : -1;
+  const out = [];
+  ANY_RE.lastIndex = 0;
+  let m;
+  while ((m = ANY_RE.exec(text3)) !== null) {
+    if (m.index > 0 && !/\s/.test(text3[m.index - 1])) continue;
+    if (m.index + m[0].length !== trailingEnd) out.push({
+      url: m[0],
+      index: m.index
+    });
+  }
+  return out;
+}
+function keepXQuoteOnX(body, index17) {
+  const segments = splitThreadSegments(body);
+  const quote = trailingXQuote(segments[index17] ?? "");
+  if (!quote || !quote.visible.trim()) return null;
+  return {
+    x: body,
+    global: joinThreadSegments(updateSegment(segments, index17, quote.visible))
+  };
+}
+function shareXQuote(globalBody, xBody, index17) {
+  const quote = trailingXQuote(splitThreadSegments(xBody)[index17] ?? "");
+  const segments = splitThreadSegments(globalBody);
+  if (!quote || index17 >= segments.length) return null;
+  const current = segments[index17];
+  ANY_RE.lastIndex = 0;
+  let m;
+  while ((m = ANY_RE.exec(current)) !== null) if (m[2] === quote.id) return null;
+  const shared = attachXQuote(current, quote.url, current === "" ? "" : quote.sep || "\n");
+  const global = joinThreadSegments(updateSegment(segments, index17, shared));
+  return {
+    global,
+    xFollows: sameSegments(global, xBody)
+  };
+}
+function sameSegments(a, b) {
+  const left = splitThreadSegments(a);
+  const right = splitThreadSegments(b);
+  return left.length === right.length && left.every((s2, i) => s2.trimEnd() === right[i].trimEnd());
+}
+function quotedPostText(text3) {
+  return text3.replace(/(?:\s*(?:https?:\/\/t\.co\/|pic\.(?:twitter|x)\.com\/)[A-Za-z0-9]+)+\s*$/, "").trim();
+}
+var X_POST_URL, FULL_RE, TRAILING_RE, ANY_RE;
+var init_x_quote = __esm({
+  ".svelte-kit/output/server/chunks/x-quote.js"() {
+    "use strict";
+    init_thread_segments();
+    X_POST_URL = String.raw`https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/(i\/web|[A-Za-z0-9_]{1,15})\/status(?:es)?\/(\d{1,19})(?:\?[\w\-=&%~]*)?`;
+    FULL_RE = new RegExp(`^${X_POST_URL}$`);
+    TRAILING_RE = new RegExp(`${X_POST_URL}\\s*$`);
+    ANY_RE = new RegExp(`${X_POST_URL}(?![\\w/])`, "g");
+    __name(handleOf, "handleOf");
+    __name(parseXPostUrl, "parseXPostUrl");
+    __name(trailingXQuote, "trailingXQuote");
+    __name(attachXQuote, "attachXQuote");
+    __name(strayXPostLinks, "strayXPostLinks");
+    __name(keepXQuoteOnX, "keepXQuoteOnX");
+    __name(shareXQuote, "shareXQuote");
+    __name(sameSegments, "sameSegments");
+    __name(quotedPostText, "quotedPostText");
   }
 });
 
@@ -11864,6 +11675,231 @@ var init_x_post_preview = __esm({
     __name(fetchXPostPreview, "fetchXPostPreview");
     __name(fetchXPostCard, "fetchXPostCard");
     __name(fetchLinkCard, "fetchLinkCard");
+  }
+});
+
+// .svelte-kit/output/server/chunks/x-limits.js
+function countGraphemes(text3) {
+  if (!text3) return 0;
+  try {
+    const Seg = Intl.Segmenter;
+    if (Seg) return [...new Seg(void 0, { granularity: "grapheme" }).segment(text3)].length;
+  } catch {
+  }
+  return [...text3].length;
+}
+function mastodonWeightedLength(text3, options2 = {}) {
+  const urlLength = options2.urlLength ?? 23;
+  if (!text3) return 0;
+  const re = /https?:\/\/[^\s]+/gi;
+  let weighted = 0;
+  let lastIndex = 0;
+  let match2;
+  while ((match2 = re.exec(text3)) !== null) {
+    weighted += countGraphemes(text3.slice(lastIndex, match2.index));
+    weighted += urlLength;
+    lastIndex = match2.index + match2[0].length;
+  }
+  weighted += countGraphemes(text3.slice(lastIndex));
+  return weighted;
+}
+function tooLong(length, max, label) {
+  return {
+    ok: false,
+    length,
+    max,
+    message: `${length} / ${max} characters (${label})`
+  };
+}
+function validateBlueskyText(text3, maxGraphemes = 300) {
+  const length = countGraphemes(text3);
+  if (length > maxGraphemes) return {
+    ok: false,
+    length,
+    max: maxGraphemes,
+    message: `${length} graphemes \u2014 over by ${length - maxGraphemes} (max ${maxGraphemes})`
+  };
+  const bytes = utf8ByteLength(text3);
+  if (bytes > 3e3) return {
+    ok: false,
+    length,
+    max: maxGraphemes,
+    message: `Text exceeds 3000 UTF-8 bytes (${bytes})`
+  };
+  return {
+    ok: true,
+    length,
+    max: maxGraphemes
+  };
+}
+function validateMastodonText(text3, maxChars = 500) {
+  const length = mastodonWeightedLength(text3);
+  if (length > maxChars) return {
+    ok: false,
+    length,
+    max: maxChars,
+    message: `${length} / ${maxChars} characters on this instance`
+  };
+  return {
+    ok: true,
+    length,
+    max: maxChars
+  };
+}
+function validateLinkedinText(text3, maxChars = LINKEDIN_MAX_CHARS) {
+  const length = countGraphemes(text3);
+  if (length > maxChars) return tooLong(length, maxChars, "LinkedIn max 3000");
+  return {
+    ok: true,
+    length,
+    max: maxChars
+  };
+}
+function validateThreadsText(text3, maxChars = 500) {
+  const length = countGraphemes(text3);
+  if (length > maxChars) return tooLong(length, maxChars, "Threads max 500");
+  return {
+    ok: true,
+    length,
+    max: maxChars
+  };
+}
+function graphemesOf(text3) {
+  if (xSegmenter === void 0) try {
+    xSegmenter = new Intl.Segmenter(void 0, { granularity: "grapheme" });
+  } catch {
+    xSegmenter = null;
+  }
+  return xSegmenter ? [...xSegmenter.segment(text3)].map((s2) => s2.segment) : [...text3];
+}
+function xTextWeight(text3) {
+  let weight = 0;
+  for (const grapheme of graphemesOf(text3)) {
+    if (EMOJI.test(grapheme)) {
+      weight += 2;
+      continue;
+    }
+    for (const char of grapheme) {
+      const cp = char.codePointAt(0) ?? 0;
+      weight += X_LIGHT_RANGES.some(([start, end]) => cp >= start && cp <= end) ? 1 : 2;
+    }
+  }
+  return weight;
+}
+function xWeightedLength(text3) {
+  if (!text3) return 0;
+  const normalized = text3.normalize("NFC");
+  const re = /https?:\/\/[^\s]+/gi;
+  let weight = 0;
+  let last = 0;
+  let match2;
+  while ((match2 = re.exec(normalized)) !== null) {
+    const url3 = cleanUrl(match2[0]);
+    if (!/^https?:\/\/[^/]/i.test(url3)) continue;
+    weight += xTextWeight(normalized.slice(last, match2.index)) + 23;
+    last = match2.index + url3.length;
+  }
+  return weight + xTextWeight(normalized.slice(last));
+}
+function validateXText(text3, maxChars = 280) {
+  const length = xWeightedLength(text3);
+  if (length > maxChars) return tooLong(length, maxChars, `X max ${maxChars}`);
+  return {
+    ok: true,
+    length,
+    max: maxChars
+  };
+}
+function isPaidXSubscription(type) {
+  const value = (type ?? "").trim();
+  return value !== "" && value.toLowerCase() !== "none";
+}
+function xLimitFor(meta3) {
+  return (typeof meta3?.longPosts === "boolean" ? meta3.longPosts : isPaidXSubscription(meta3?.xSubscription)) ? X_LONG_POST_MAX : 280;
+}
+function storedXLimit(value) {
+  return typeof value === "number" && value >= 280 && value <= 25e3 ? Math.floor(value) : 280;
+}
+var LINKEDIN_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
+var init_x_limits = __esm({
+  ".svelte-kit/output/server/chunks/x-limits.js"() {
+    "use strict";
+    init_bytes();
+    init_links();
+    __name(countGraphemes, "countGraphemes");
+    __name(mastodonWeightedLength, "mastodonWeightedLength");
+    __name(tooLong, "tooLong");
+    __name(validateBlueskyText, "validateBlueskyText");
+    __name(validateMastodonText, "validateMastodonText");
+    LINKEDIN_MAX_CHARS = 3e3;
+    __name(validateLinkedinText, "validateLinkedinText");
+    __name(validateThreadsText, "validateThreadsText");
+    X_LIGHT_RANGES = [
+      [0, 4351],
+      [8192, 8205],
+      [8208, 8223],
+      [8242, 8247]
+    ];
+    EMOJI = /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20e3/u;
+    __name(graphemesOf, "graphemesOf");
+    __name(xTextWeight, "xTextWeight");
+    __name(xWeightedLength, "xWeightedLength");
+    __name(validateXText, "validateXText");
+    X_LONG_POST_MAX = 25e3;
+    X_FOLD = 280;
+    __name(isPaidXSubscription, "isPaidXSubscription");
+    __name(xLimitFor, "xLimitFor");
+    __name(storedXLimit, "storedXLimit");
+  }
+});
+
+// .svelte-kit/output/server/chunks/poll.js
+function validatePollConfig(input2) {
+  if (!input2 || typeof input2 !== "object") return {
+    ok: false,
+    error: "Invalid poll"
+  };
+  const r2 = input2;
+  if (!Array.isArray(r2.options)) return {
+    ok: false,
+    error: "Poll needs options"
+  };
+  const options2 = r2.options.map((o) => typeof o === "string" ? o.trim() : "").filter((o) => o);
+  if (options2.length < 2) return {
+    ok: false,
+    error: "Poll needs at least 2 options"
+  };
+  if (options2.length > 4) return {
+    ok: false,
+    error: "Poll allows max 4 options"
+  };
+  if (options2.some((o) => o.length > 50)) return {
+    ok: false,
+    error: "Poll options allow max 50 characters each"
+  };
+  if (typeof r2.expiresIn !== "number" || !Number.isInteger(r2.expiresIn) || r2.expiresIn < 300 || r2.expiresIn > 604800) return {
+    ok: false,
+    error: "Poll needs a duration between 5 minutes and 7 days"
+  };
+  return {
+    ok: true,
+    config: {
+      options: options2,
+      expiresIn: r2.expiresIn,
+      multiple: r2.multiple === true ? true : void 0,
+      hideTotals: r2.hideTotals === true ? true : void 0
+    }
+  };
+}
+function parsePollConfig(input2) {
+  const v = validatePollConfig(input2);
+  return v.ok ? v.config : null;
+}
+var init_poll = __esm({
+  ".svelte-kit/output/server/chunks/poll.js"() {
+    "use strict";
+    __name(validatePollConfig, "validatePollConfig");
+    __name(parsePollConfig, "parsePollConfig");
   }
 });
 
@@ -12861,6 +12897,21 @@ function xPostUrl(postId, username) {
   if (username && /^[A-Za-z0-9_]{1,15}$/.test(username)) return `https://x.com/${username}/status/${encodeURIComponent(postId)}`;
   return `https://x.com/i/status/${encodeURIComponent(postId)}`;
 }
+function isLongPostRefusal(status, body) {
+  if (status === 403) return !/duplicate/i.test(body);
+  return status === 400 && /too long/i.test(body);
+}
+function longPostRefused(status, detail) {
+  return new ProviderError("X refused a post over 280 characters. Long posts need X Premium on this account, so CogSend now holds it to 280. If it does have Premium, turn Long posts back on under Accounts.", {
+    status,
+    code: "forbidden",
+    detail,
+    metaPatch: {
+      maxCharacters: 280,
+      longPosts: false
+    }
+  });
+}
 function isGif(m) {
   return (m.mime || "").toLowerCase() === "image/gif";
 }
@@ -12959,7 +13010,13 @@ async function requestToken(body, clientSecret, clientId, fetchImpl) {
   return await res.json();
 }
 async function fetchMe(accessToken, fetchImpl) {
-  const res = await fetchImpl(`${X_API}/2/users/me?user.fields=profile_image_url,verified`, { headers: { Authorization: `Bearer ${accessToken}` } });
+  const lookup = /* @__PURE__ */ __name((fields) => fetchImpl(`${X_API}/2/users/me?user.fields=${fields}`, { headers: { Authorization: `Bearer ${accessToken}` } }), "lookup");
+  let res = await lookup("profile_image_url,verified,subscription_type");
+  if (res.status === 400 || res.status === 403) {
+    await res.body?.cancel().catch(() => {
+    });
+    res = await lookup("profile_image_url,verified");
+  }
   if (!res.ok) throw Object.assign(/* @__PURE__ */ new Error(`X profile lookup failed (${res.status}): ${(await res.text()).slice(0, 300)}`), { status: res.status });
   const me = (await res.json()).data ?? {};
   if (!me.id) throw new Error("X profile lookup returned no user id");
@@ -12967,7 +13024,8 @@ async function fetchMe(accessToken, fetchImpl) {
     id: me.id,
     username: me.username,
     name: me.name,
-    avatarUrl: me.profile_image_url
+    avatarUrl: me.profile_image_url,
+    subscriptionType: typeof me.subscription_type === "string" ? me.subscription_type.trim() || void 0 : void 0
   };
 }
 async function xExchangeCode(args, fetchImpl = providerFetch) {
@@ -12997,7 +13055,8 @@ async function xExchangeCode(args, fetchImpl = providerFetch) {
     handle: handle2,
     displayName: me.name || handle2 || "X",
     avatarUrl: me.avatarUrl,
-    maxCharacters: 280
+    xSubscription: me.subscriptionType,
+    maxCharacters: xLimitFor({ xSubscription: me.subscriptionType })
   };
 }
 async function xVerify(creds, fetchImpl = providerFetch) {
@@ -13007,7 +13066,8 @@ async function xVerify(creds, fetchImpl = providerFetch) {
   return {
     displayName: me.name || handle2,
     avatarUrl: me.avatarUrl,
-    handle: handle2
+    handle: handle2,
+    subscriptionType: me.subscriptionType
   };
 }
 function packXPendingSecret(clientSecret, codeVerifier) {
@@ -13207,7 +13267,10 @@ function zernioProviderFor(platform2, opts = {}) {
     id: platform2,
     mediaByUrl: true,
     capabilities: direct.capabilities,
-    validate: /* @__PURE__ */ __name((content, meta3) => direct.validate(content, meta3), "validate"),
+    validate: /* @__PURE__ */ __name((content, meta3) => direct.validate(content, platform2 === "x" && meta3 ? {
+      ...meta3,
+      maxCharacters: void 0
+    } : meta3), "validate"),
     async publish(content, creds, _meta, fetchImpl = providerFetch, publishOpts) {
       const { zernioApiKey: apiKey, zernioAccountId: accountId } = creds;
       if (!apiKey || !accountId) throw new ProviderError("Zernio credentials require zernioApiKey and zernioAccountId", { code: "auth" });
@@ -13300,12 +13363,13 @@ var init_providers = __esm({
     init_media_limits();
     init_platforms();
     init_zernio();
-    init_x_quote();
+    init_links();
     init_x_post_preview();
     init_thread_segments();
-    init_poll();
+    init_x_limits();
     init_zernio2();
     init_timed_fetch();
+    init_poll();
     DEFAULT_PDS = "https://bsky.social";
     __name(sanitizeBlueskyPdsHost, "sanitizeBlueskyPdsHost");
     __name(upstreamError, "upstreamError");
@@ -14194,6 +14258,8 @@ var init_providers = __esm({
     __name(xUserId, "xUserId");
     __name(xUsername, "xUsername");
     __name(xPostUrl, "xPostUrl");
+    __name(isLongPostRefusal, "isLongPostRefusal");
+    __name(longPostRefused, "longPostRefused");
     __name(isGif, "isGif");
     __name(isVideo, "isVideo");
     __name(validateSegmentMedia, "validateSegmentMedia");
@@ -14222,8 +14288,9 @@ var init_providers = __esm({
         supportsVisibility: false,
         supportsThreads: true
       },
-      validate(content) {
+      validate(content, meta3) {
         const issues = [];
+        const max = storedXLimit(meta3?.maxCharacters);
         const segments = content.thread && content.thread.length > 0 ? content.thread : [content];
         for (let i = 0; i < segments.length; i++) {
           const seg = segments[i];
@@ -14234,7 +14301,7 @@ var init_providers = __esm({
             message: "Segment needs text or media",
             code: "empty"
           });
-          const check2 = validateXText(seg.text || "", 280);
+          const check2 = validateXText(seg.text || "", max);
           if (!check2.ok) issues.push({
             field: `thread[${i}].text`,
             message: check2.message || "Text too long",
@@ -14289,7 +14356,11 @@ var init_providers = __esm({
             } catch (err) {
               throw unconfirmedPostError("X", err);
             }
-            if (!res.ok) throw Object.assign(/* @__PURE__ */ new Error(`X post failed (${res.status}): ${(await res.text()).slice(0, 300)}`), { status: res.status });
+            if (!res.ok) {
+              const detail = (await res.text()).slice(0, 300);
+              if (xWeightedLength(text3) > 280 && isLongPostRefusal(res.status, detail)) throw longPostRefused(res.status, detail);
+              throw Object.assign(/* @__PURE__ */ new Error(`X post failed (${res.status}): ${detail}`), { status: res.status });
+            }
             const data = await res.json().catch(() => ({}));
             const id2 = typeof data.data?.id === "string" ? data.data.id : "";
             segmentIds.push(id2);
@@ -14307,7 +14378,8 @@ var init_providers = __esm({
             const message = err instanceof Error ? err.message : String(err);
             if (segmentIds.length) throw new PublishPartialError(message, {
               segmentIds,
-              remoteUrl: firstUrl ?? opts?.resume?.remoteUrl ?? null
+              remoteUrl: firstUrl ?? opts?.resume?.remoteUrl ?? null,
+              metaPatch: err instanceof ProviderError ? err.metaPatch : void 0
             });
             throw err;
           }
@@ -14870,6 +14942,14 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
       status: "expired",
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(connections.id, target.connectionId));
+    const metaPatch = err instanceof ProviderError || err instanceof PublishPartialError ? err.metaPatch : void 0;
+    if (metaPatch) await db.update(connections).set({
+      metaJson: JSON.stringify({
+        ...parseJson(conn.metaJson, {}),
+        ...metaPatch
+      }),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(connections.id, conn.id));
     const partial2 = err instanceof PublishPartialError ? err : null;
     const errorDetail = err instanceof ProviderError ? err.detail ?? null : null;
     return {
@@ -14969,7 +15049,8 @@ function isRetryableError(message) {
   if (lower.includes("segment needs") || lower.includes("empty")) return false;
   if (lower.includes("max 4 images") || lower.includes("max 4 photos")) return false;
   if (/max \d+mb/.test(lower)) return false;
-  if (lower.includes("x max 280") || lower.includes("max 1 cashtag")) return false;
+  if (/x max \d+/.test(lower) || lower.includes("max 1 cashtag")) return false;
+  if (lower.includes("x refused a post over 280")) return false;
   if (lower.includes("video uploads are not enabled")) return false;
   if (lower.includes("x video is not supported")) return false;
   if (lower.includes("utf-8 bytes") || lower.includes("max 16mb")) return false;
@@ -14997,12 +15078,12 @@ var init_publish = __esm({
     init_auth();
     init_app_settings();
     init_image_dimensions();
-    init_x_quote();
+    init_links();
     init_thread_segments();
-    init_poll();
     init_zernio2();
     init_timed_fetch();
     init_providers();
+    init_poll();
     init_due_jobs();
     init_public_media();
     init_drizzle_orm();
@@ -39251,7 +39332,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1791748799888");
+  response.headers.set("x-sveltekit-version", "1792299898857");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -41946,7 +42027,7 @@ function server_data_serializer(event, state) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_4hnqu7";
+  const global = "__sveltekit_rxcbp5";
   function get_replacer(index17) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -42690,7 +42771,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_4hnqu7";
+  const global = "__sveltekit_rxcbp5";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state.prerendering || state.prerender_default === true))).join("\n			")}`;
@@ -42715,7 +42796,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1791748799888")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1792299898857")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -45880,6 +45961,14 @@ function _page2($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;
     const viaZernio = /* @__PURE__ */ __name((account) => account.metaJson?.provider === "zernio", "viaZernio");
+    function longPostSource(account) {
+      const meta3 = account.metaJson ?? {};
+      if (typeof meta3.longPosts === "boolean") return "set by you";
+      if (!meta3.xSubscription) return "plan not checked yet";
+      if (!isPaidXSubscription(meta3.xSubscription)) return "X reports no paid plan";
+      return `X reports ${meta3.xSubscription === "PremiumPlus" ? "Premium+" : meta3.xSubscription}`;
+    }
+    __name(longPostSource, "longPostSource");
     let connections2 = [...data.connections ?? []].sort((a, b) => platformRank(a.platform) - platformRank(b.platform));
     let configured = data.configured ?? {
       linkedin: true,
@@ -45955,6 +46044,7 @@ function _page2($$renderer, $$props) {
       }
     }
     __name(confirmDisconnect, "confirmDisconnect");
+    let savingLongPosts = null;
     $$renderer2.push(`<div class="mx-auto flex w-full max-w-2xl flex-1 flex-col"><div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><p class="text-[11px] font-bold tracking-widest text-stone-500 uppercase">Integrations</p> <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-stone-900">Connected Accounts</h1></div> <button type="button" class="inline-flex items-center gap-2 rounded-full bg-stone-900 px-5 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800">`);
     Plus($$renderer2, { class: "h-4 w-4" });
     $$renderer2.push(`<!----> <span>Connect new</span></button></div> `);
@@ -45996,7 +46086,17 @@ function _page2($$renderer, $$props) {
         $$renderer2.push(`<!--]--></h3> <p class="mt-0.5 text-[13px] font-medium text-stone-500"${attr("title", accountLabel(account.displayName, account.handle, account.instanceUrl) || void 0)}>`);
         if (account.platform === "linkedin" && account.displayName) $$renderer2.push(`<!--[0-->${escape_html(account.displayName)}`);
         else $$renderer2.push(`<!--[-1-->${escape_html(accountLabel(account.displayName, account.handle))}`);
-        $$renderer2.push(`<!--]--> ${escape_html(account.instanceUrl ? ` \xB7 ${displayHost(account.instanceUrl)}` : "")}</p></div></div> <div class="mt-2 flex items-center justify-between gap-3 sm:mt-0 sm:justify-end">`);
+        $$renderer2.push(`<!--]--> ${escape_html(account.instanceUrl ? ` \xB7 ${displayHost(account.instanceUrl)}` : "")}</p> `);
+        if (account.platform === "x" && !viaZernio(account) && !needsReconnect2) {
+          $$renderer2.push("<!--[0-->");
+          const long = (account.metaJson?.maxCharacters ?? 280) > 280;
+          $$renderer2.push(`<p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-stone-500"${attr("data-testid", `x-long-posts-${stringify3(account.id)}`)}><span>Long posts ${escape_html(long ? "on, up to 25,000 characters" : "off, 280 characters")} \xB7
+										${escape_html(longPostSource(account))}</span> <button type="button"${attr("disabled", savingLongPosts === account.id, true)} class="font-bold text-stone-900 underline">${escape_html(long ? "Turn off" : "Turn on")}</button> `);
+          if (typeof account.metaJson?.longPosts === "boolean") $$renderer2.push(`<!--[0--><button type="button"${attr("disabled", savingLongPosts === account.id, true)} class="font-bold text-stone-500 underline">Use what X reports</button>`);
+          else $$renderer2.push("<!--[-1-->");
+          $$renderer2.push(`<!--]--> <button type="button"${attr("disabled", verifying === account.id, true)} class="font-bold text-stone-500 underline">${escape_html(verifying === account.id ? "Checking\u2026" : "Check plan")}</button></p>`);
+        } else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--></div></div> <div class="mt-2 flex items-center justify-between gap-3 sm:mt-0 sm:justify-end">`);
         if (needsReconnect2) $$renderer2.push(`<!--[0--><span class="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-bold tracking-widest text-amber-700 uppercase">${escape_html(account.status)}</span> <button type="button"${attr("disabled", verifying === account.id || loading, true)} class="text-xs font-bold text-stone-900 underline">Reconnect</button> <button type="button"${attr("disabled", verifying === account.id, true)} class="text-xs font-bold text-stone-500 underline">${escape_html(verifying === account.id ? "Checking\u2026" : "Check")}</button>`);
         else $$renderer2.push(`<!--[-1--><span class="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold tracking-widest text-emerald-700 uppercase shadow-sm">Connected</span>`);
         $$renderer2.push(`<!--]--> <button type="button" class="flex h-8 w-8 items-center justify-center rounded-full text-stone-500 transition-colors hover:bg-red-50 hover:text-red-600"${attr("aria-label", `Disconnect ${accountLabel(account.displayName, account.handle, account.instanceUrl) || platformName(account.platform)}`)}${attr("title", `Disconnect ${accountLabel(account.displayName, account.handle, account.instanceUrl) || platformName(account.platform)}`)}>`);
@@ -46028,6 +46128,7 @@ var init_page_svelte2 = __esm({
     init_platforms();
     init_platform_setup();
     init_zernio();
+    init_x_limits();
     init_server3();
     init_index_server();
     init_state();
@@ -46061,7 +46162,7 @@ var init__4 = __esm({
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.BZVzlfh2.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js", "_app/immutable/chunks/DBrtxNzI.js", "_app/immutable/chunks/D_c3Neth.js"];
+    imports4 = ["_app/immutable/nodes/3.cyqZTx-E.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/BfDTVH2p.js", "_app/immutable/chunks/CBbcPEtL.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js", "_app/immutable/chunks/D_c3Neth.js"];
     stylesheets4 = [];
     fonts4 = [];
   }
@@ -46852,6 +46953,10 @@ function Triangle_alert($$renderer, $$props) {
 }
 function platformLimit(platform2, accounts) {
   const fallback2 = PLATFORM_LIMITS[platform2] ?? PLATFORM_LIMITS.mastodon;
+  if (platform2 === "x") {
+    const maxes2 = accounts.filter((account) => account.platform === "x").map((account) => storedXLimit(account.metaJson?.maxCharacters));
+    return maxes2.length ? Math.min(...maxes2) : fallback2;
+  }
   if (platform2 !== "mastodon") return fallback2;
   const maxes = accounts.filter((account) => account.platform === "mastodon").map((account) => account.metaJson?.maxCharacters).filter((n) => typeof n === "number" && n > 0);
   return maxes.length ? Math.min(...maxes) : fallback2;
@@ -47253,7 +47358,7 @@ function Editor($$renderer, $$props) {
         },
         x: {
           len: maxThreadSegmentLength(xText, xWeightedLength),
-          max: PLATFORM_LIMITS.x
+          max: platformMax("x", accountsFor("x"))
         }
       };
     });
@@ -48054,6 +48159,9 @@ function Editor($$renderer, $$props) {
         });
       }
       $$renderer2.push(`<!--]--> `);
+      if (xQuoteActive() && counters().x.max > X_FOLD && xWeightedLength(segment) > X_FOLD) $$renderer2.push(`<!--[0--><p class="mt-3 text-[12px] font-medium text-stone-500"${attr("data-testid", `x-fold-${stringify3(index17)}`)}>X shows about the first ${escape_html(X_FOLD)} characters, then Show more.</p>`);
+      else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--> `);
       if (strayLinks.length > 0 && !editLocked()) {
         $$renderer2.push(`<!--[0--><div class="mt-3 flex flex-col gap-2 rounded-xl border border-amber-200/70 bg-amber-50/60 px-3 py-2" data-testid="x-quote-stray"><p class="text-[12px] font-medium text-amber-900">`);
         if (quote) $$renderer2.push(`<!--[0-->X quotes one post, so ${escape_html(strayLinks.length === 1 ? "this other X link shows" : "these other X links show")} as a plain link.${escape_html(tabSupportsThreads() ? " To quote both, give each its own post with + Thread." : "")}`);
@@ -48326,8 +48434,10 @@ var init_page_svelte4 = __esm({
     init_human_error();
     init_media_limits();
     init_platforms();
-    init_x_quote();
+    init_links();
     init_thread_segments();
+    init_x_quote();
+    init_x_limits();
     init_poll();
     init_published_lock();
     init_server3();
@@ -48397,7 +48507,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.QEyhRPxx.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/D1frdMm2.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/cALzjuMW.js", "_app/immutable/chunks/Cbwdacam.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/BQ4_BNpj.js"];
+    imports6 = ["_app/immutable/nodes/5.CMYcBQqv.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/D1frdMm2.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/BfDTVH2p.js", "_app/immutable/chunks/CBbcPEtL.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/f5FsXQ-7.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/Df-RdhF7.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/Df-4s8Xn.js", "_app/immutable/chunks/DSff4liI.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -50448,8 +50558,9 @@ var init_page_svelte9 = __esm({
     init_human_error();
     init_threads_error();
     init_platforms();
-    init_x_quote();
+    init_links();
     init_thread_segments();
+    init_x_quote();
     init_excerpt();
     init_server3();
     init_navigation();
@@ -50500,7 +50611,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id12 = "src/routes/posts/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.ZpNNnktW.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DORB3-UK.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/Cbwdacam.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/BQ4_BNpj.js", "_app/immutable/chunks/DBrtxNzI.js"];
+    imports14 = ["_app/immutable/nodes/13.1C5PUOs9.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/BeV_6Wo7.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/CqcwGVNn.js", "_app/immutable/chunks/DORB3-UK.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/f5FsXQ-7.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DeQfLlGa.js", "_app/immutable/chunks/DnRgByu1.js", "_app/immutable/chunks/CBbcPEtL.js", "_app/immutable/chunks/DBrtxNzI.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -53984,7 +54095,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.18.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.19.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -54106,7 +54217,7 @@ var init__15 = __esm({
     "use strict";
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14._x7VoHBT.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/DUQldyMy.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js"];
+    imports15 = ["_app/immutable/nodes/14.DBkbJasF.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/chunks/C9NnRJug.js", "_app/immutable/chunks/5mz8J23a.js", "_app/immutable/chunks/C29vMP3L.js", "_app/immutable/chunks/C2fLxPJv.js", "_app/immutable/chunks/Df-RdhF7.js", "_app/immutable/chunks/CqLwI8We.js", "_app/immutable/chunks/CAUmsoSX.js", "_app/immutable/chunks/DSff4liI.js", "_app/immutable/chunks/DBrtxNzI.js", "_app/immutable/chunks/D20gE_Xc.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -54900,8 +55011,13 @@ function createOAuthCallback(opts) {
         updatedAt: now
       };
       const existing = findExistingConnection(await locals.db.select().from(connections).where(and(eq(connections.userId, pending2.userId), eq(connections.platform, opts.platform), ...opts.matchInstanceUrl ? [eq(connections.instanceUrl, exchanged.instanceUrl || "")] : [])), exchanged.handle || "", opts.accountIdKey ? exchanged.meta[opts.accountIdKey] : void 0, opts.accountIdKey);
-      if (existing) await locals.db.update(connections).set(data).where(eq(connections.id, existing.id));
-      else await locals.db.insert(connections).values({
+      if (existing) {
+        const meta3 = opts.reconcileMeta ? opts.reconcileMeta(exchanged.meta, parseJson(existing.metaJson, {})) : exchanged.meta;
+        await locals.db.update(connections).set({
+          ...data,
+          metaJson: JSON.stringify(meta3)
+        }).where(eq(connections.id, existing.id));
+      } else await locals.db.insert(connections).values({
         id: newId(),
         userId: pending2.userId,
         platform: opts.platform,
@@ -55380,11 +55496,25 @@ var init_server_ts20 = __esm({
     "use strict";
     init_crypto();
     init_oauth_callback();
+    init_x_limits();
     init_providers();
     GET8 = createOAuthCallback({
       platform: "x",
       pendingMarker: "x",
       accountIdKey: "xUserId",
+      reconcileMeta(incoming, existing) {
+        const xSubscription = incoming.xSubscription ?? existing.xSubscription;
+        const longPosts = typeof existing.longPosts === "boolean" ? existing.longPosts : void 0;
+        const meta3 = {
+          ...incoming,
+          ...typeof xSubscription === "string" ? { xSubscription } : {},
+          ...longPosts !== void 0 ? { longPosts } : {}
+        };
+        return {
+          ...meta3,
+          maxCharacters: xLimitFor(meta3)
+        };
+      },
       async complete({ pending: pending2, code, env: env3 }) {
         const packed = await decryptSecret(pending2.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
         const { clientSecret, codeVerifier } = unpackXPendingSecret(packed);
@@ -55413,7 +55543,8 @@ var init_server_ts20 = __esm({
           avatarUrl: exchanged.avatarUrl,
           meta: {
             xUserId: exchanged.xUserId,
-            maxCharacters: 280
+            ...exchanged.xSubscription ? { xSubscription: exchanged.xSubscription } : {},
+            maxCharacters: exchanged.maxCharacters
           }
         };
       }
@@ -55970,15 +56101,19 @@ var init_publish_plan = __esm({
 // .svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js
 var server_ts_exports25 = {};
 __export(server_ts_exports25, {
-  DELETE: () => DELETE2
+  DELETE: () => DELETE2,
+  PATCH: () => PATCH2
 });
-var DELETE2;
+var DELETE2, PATCH2;
 var init_server_ts25 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js"() {
     "use strict";
     init_client();
     init_http();
     init_require();
+    init_serialize();
+    init_zernio();
+    init_x_limits();
     init_due_jobs();
     init_publish();
     init_publish_plan();
@@ -56021,6 +56156,35 @@ var init_server_ts25 = __esm({
         return handleError(err);
       }
     }, "DELETE");
+    PATCH2 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+      try {
+        const user = requireSession(locals.user, locals.authMethod);
+        const body = await request2.json().catch(() => null);
+        const longPosts = body?.longPosts;
+        if (!body || !Object.hasOwn(body, "longPosts")) return fail("Send longPosts", 400);
+        if (longPosts !== null && typeof longPosts !== "boolean") return fail("longPosts must be true, false or null", 400);
+        const owned = and(eq(connections.id, params.id), eq(connections.userId, user.id));
+        const conn = await first(locals.db.select().from(connections).where(owned));
+        if (!conn) return fail("Not found", 404);
+        if (conn.platform !== "x" || isZernioConnection(conn.metaJson)) return fail("Long posts can only be set on an X account connected directly", 400);
+        if (conn.status === "disconnected") return fail("Account disconnected \u2014 reconnect it first", 409);
+        const meta3 = parseJson(conn.metaJson, {});
+        if (longPosts === null) delete meta3.longPosts;
+        else meta3.longPosts = longPosts;
+        meta3.maxCharacters = xLimitFor(meta3);
+        const metaJson = JSON.stringify(meta3);
+        await locals.db.update(connections).set({
+          metaJson,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(owned);
+        return ok({ connection: serializeConnection({
+          ...conn,
+          metaJson
+        }) });
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "PATCH");
   }
 });
 
@@ -56039,6 +56203,7 @@ var init_server_ts26 = __esm({
     init_auth();
     init_require();
     init_zernio();
+    init_x_limits();
     init_zernio2();
     init_providers();
     init_drizzle_orm();
@@ -56199,11 +56364,20 @@ var init_server_ts26 = __esm({
           const info = await xVerify(checkCreds);
           const resolvedUsername = info.handle?.replace(/^@/, "").trim();
           const needsCredsUsername = resolvedUsername && resolvedUsername !== checkCreds.xUsername && checkCreds.xUserId && resolvedUsername !== checkCreds.xUserId;
+          const meta3 = parseJson(conn.metaJson, {});
+          const detected = info.subscriptionType ? {
+            ...meta3,
+            xSubscription: info.subscriptionType
+          } : null;
           await locals.db.update(connections).set({
             status: "active",
             displayName: info.displayName || conn.displayName,
             avatarUrl: info.avatarUrl || conn.avatarUrl,
             handle: info.handle || conn.handle,
+            ...detected ? { metaJson: JSON.stringify({
+              ...detected,
+              maxCharacters: xLimitFor(detected)
+            }) } : {},
             ...needsCredsUsername ? { credentialsEncrypted: await encryptJson({
               ...checkCreds,
               xUsername: resolvedUsername
@@ -56384,7 +56558,7 @@ function validatePost(input2) {
   const platform2 = input2.platform;
   const maxCharacters = input2.maxCharacters;
   const bluesky = validateBlueskyText(text3), mastodon = validateMastodonText(text3, maxCharacters ?? 500), linkedin = validateLinkedinText(text3), threads = validateThreadsText(text3), x = validateXText(text3);
-  const issues = platform2 && isPlatformId(platform2) ? getProvider(platform2).validate({ text: text3 }, { maxCharacters: maxCharacters ?? 500 }) : [];
+  const issues = platform2 && isPlatformId(platform2) ? getProvider(platform2).validate({ text: text3 }, { maxCharacters }) : [];
   return {
     graphemes: countGraphemes(text3),
     mastodonLength: mastodonWeightedLength(text3),
@@ -56937,8 +57111,9 @@ var init_operations3 = __esm({
     init_platforms();
     init_serialize();
     init_connection_list();
-    init_poll();
+    init_x_limits();
     init_providers();
+    init_poll();
     init_due_jobs();
     init_publish();
     init_publish_plan();
@@ -57048,9 +57223,9 @@ var server_ts_exports28 = {};
 __export(server_ts_exports28, {
   DELETE: () => DELETE3,
   GET: () => GET11,
-  PATCH: () => PATCH2
+  PATCH: () => PATCH3
 });
-var GET11, PATCH2, DELETE3;
+var GET11, PATCH3, DELETE3;
 var init_server_ts28 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/_server.ts.js"() {
     "use strict";
@@ -57066,7 +57241,7 @@ var init_server_ts28 = __esm({
         return handleError(err);
       }
     }, "GET");
-    PATCH2 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    PATCH3 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -57116,7 +57291,7 @@ var init_server_ts29 = __esm({
 var server_ts_exports30 = {};
 __export(server_ts_exports30, {
   DELETE: () => DELETE4,
-  PATCH: () => PATCH3,
+  PATCH: () => PATCH4,
   POST: () => POST19
 });
 function parseSegmentIndex(value) {
@@ -57144,7 +57319,7 @@ async function segmentProblem(locals, draft, segmentIndex) {
   if (segmentIndex < cards) return null;
   return `segmentIndex ${segmentIndex} is past the last segment (${cards - 1})`;
 }
-var MAX_SEGMENT_INDEX, MAX_ALT_LENGTH, MAX_FILES_PER_DRAFT, MAX_FILES_PER_USER, MAX_UPLOAD_BYTES, POST19, PATCH3, DELETE4;
+var MAX_SEGMENT_INDEX, MAX_ALT_LENGTH, MAX_FILES_PER_DRAFT, MAX_FILES_PER_USER, MAX_UPLOAD_BYTES, POST19, PATCH4, DELETE4;
 var init_server_ts30 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js"() {
     "use strict";
@@ -57253,7 +57428,7 @@ var init_server_ts30 = __esm({
         return handleError(err);
       }
     }, "POST");
-    PATCH3 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    PATCH4 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -57416,7 +57591,7 @@ var init_server_ts34 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.18.1",
+          version: "1.19.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -57601,8 +57776,9 @@ var init_server_ts39 = __esm({
     "use strict";
     init_http();
     init_require();
-    init_x_quote();
+    init_links();
     init_x_post_preview();
+    init_x_quote();
     init_timed_fetch();
     GET15 = /* @__PURE__ */ __name(async ({ url: url3, locals }) => {
       try {
@@ -68452,7 +68628,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.18.1";
+  const current = options2.current ?? "1.19.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -68725,7 +68901,7 @@ var init_instance_name = __esm({
 var server_ts_exports48 = {};
 __export(server_ts_exports48, {
   GET: () => GET23,
-  PATCH: () => PATCH4
+  PATCH: () => PATCH5
 });
 function normalizeDisplayName(input2) {
   if (input2 === void 0 || input2 === null) return {
@@ -68744,7 +68920,7 @@ function normalizeDisplayName(input2) {
     name
   };
 }
-var GET23, SETTINGS_KEYS, PATCH4;
+var GET23, SETTINGS_KEYS, PATCH5;
 var init_server_ts48 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js"() {
     "use strict";
@@ -68777,7 +68953,7 @@ var init_server_ts48 = __esm({
     }, "GET");
     SETTINGS_KEYS = Object.keys(DEFAULT_PROFILE_SETTINGS);
     __name(normalizeDisplayName, "normalizeDisplayName");
-    PATCH4 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    PATCH5 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -69307,7 +69483,7 @@ var init_server_ts54 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.18.1",
+          version: "1.19.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -69516,7 +69692,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.18.1"
+    currentVersion: "1.19.0"
   };
 }
 async function download(ctx, url3) {
@@ -70029,7 +70205,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.DjETEEE-.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.DjETEEE-.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.D1zm2jZe.js", app: "_app/immutable/entry/app.CEYwvpPD.js", imports: ["_app/immutable/entry/start.D1zm2jZe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Czn9Y6b1.js", "_app/immutable/chunks/D_c3Neth.js", "_app/immutable/chunks/B3mXLPic.js", "_app/immutable/chunks/BjUTUmll.js", "_app/immutable/entry/app.CEYwvpPD.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
