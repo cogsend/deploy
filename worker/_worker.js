@@ -10619,6 +10619,9 @@ function thumbCacheKey(storageKey) {
 function coverKey(storageKey) {
   return `cover/${storageKey}`;
 }
+function previewKey(storageKey) {
+  return `preview/${storageKey}`;
+}
 function thumbCandidate(mime, width, height) {
   const type = (mime || "").toLowerCase().split(";")[0].trim();
   if (type !== "image/jpeg" && type !== "image/png" && type !== "image/webp") return false;
@@ -10664,7 +10667,11 @@ async function deleteMediaObjects(store, keys) {
     key,
     thumbCacheKey(key),
     coverKey(key)
-  ] : [key, thumbCacheKey(key)]);
+  ] : [
+    key,
+    thumbCacheKey(key),
+    previewKey(key)
+  ]);
   if (!all.length) return;
   if (store.deleteMany) {
     await store.deleteMany(all);
@@ -10761,7 +10768,7 @@ async function serveMediaBytes(store, key, request2, opts) {
     }
   });
 }
-var MAX_MOOV_BYTES, MAX_TOP_LEVEL_BOXES, VIDEO_CODECS, AUDIO_CODECS, UNREADABLE_VIDEO, STORAGE_KEY_RE, PRIVATE_MEDIA_CACHE, SERVABLE_MIME_RE;
+var MAX_MOOV_BYTES, MAX_TOP_LEVEL_BOXES, VIDEO_CODECS, AUDIO_CODECS, UNREADABLE_VIDEO, STORAGE_KEY_RE, PRIVATE_MEDIA_CACHE, MAX_PREVIEW_BYTES, SERVABLE_MIME_RE;
 var init_media = __esm({
   ".svelte-kit/output/server/chunks/media.js"() {
     "use strict";
@@ -10819,6 +10826,8 @@ var init_media = __esm({
     PRIVATE_MEDIA_CACHE = "private, max-age=31536000, immutable";
     __name(thumbCacheKey, "thumbCacheKey");
     __name(coverKey, "coverKey");
+    __name(previewKey, "previewKey");
+    MAX_PREVIEW_BYTES = 1e6;
     __name(thumbCandidate, "thumbCandidate");
     __name(storedThumbnail, "storedThumbnail");
     __name(jpegResponse, "jpegResponse");
@@ -15091,9 +15100,9 @@ var init_providers = __esm({
             return createContainer(params2);
           }
           const children2 = [];
-          for (const imageUrl of urls) children2.push(await createContainer({
+          for (const imageUrl2 of urls) children2.push(await createContainer({
             media_type: "IMAGE",
-            image_url: imageUrl,
+            image_url: imageUrl2,
             is_carousel_item: "true"
           }));
           const params = {
@@ -17752,9 +17761,37 @@ async function runJanitorsIfDue(db, now = /* @__PURE__ */ new Date()) {
   await writeAppSetting(db, JANITOR_SETTING, String(now.getTime()));
   return true;
 }
+async function refreshMastodonLimits(db, env3, opts = {}) {
+  const now = opts.now ?? /* @__PURE__ */ new Date();
+  const stale = (await db.select({
+    id: connections.id,
+    instanceUrl: connections.instanceUrl,
+    metaJson: connections.metaJson
+  }).from(connections).where(and(eq(connections.platform, "mastodon"), eq(connections.status, "active"), isNotNull(connections.instanceUrl)))).map((row) => ({
+    ...row,
+    meta: parseJson(row.metaJson, {})
+  })).filter((row) => {
+    const at = Number(row.meta.limitsReadAt);
+    return !Number.isFinite(at) || now.getTime() - at >= 864e5 || at > now.getTime();
+  }).sort((a, b) => (Number(a.meta.limitsReadAt) || 0) - (Number(b.meta.limitsReadAt) || 0)).slice(0, MASTODON_LIMITS_PER_RUN);
+  const base = opts.fetchImpl ?? providerFetch;
+  const fetchImpl = opts.budget ? countingFetch(base, opts.budget) : base;
+  let asked = 0;
+  for (const row of stale) {
+    if (opts.budget && opts.budget.remaining < 8) break;
+    const limits = await mastodonInstanceLimits(row.instanceUrl ?? "", fetchImpl, isLocalAppUrl(env3.APP_URL)).catch(() => null);
+    asked += 1;
+    await db.update(connections).set({ metaJson: JSON.stringify({
+      ...row.meta,
+      ...limits ?? {},
+      limitsReadAt: now.getTime()
+    }) }).where(and(eq(connections.id, row.id), eq(connections.metaJson, row.metaJson)));
+  }
+  return asked;
+}
 async function runSchedulerTick(db, env3, opts) {
   await writeHeartbeat(db);
-  await runJanitorsIfDue(db);
+  const janitorsRan = await runJanitorsIfDue(db);
   await recoverStalePublishing(db);
   const due = await claimDueTargets(db);
   const results = [];
@@ -17810,6 +17847,14 @@ async function runSchedulerTick(db, env3, opts) {
       break;
     }
   }
+  if (janitorsRan) try {
+    await refreshMastodonLimits(db, env3, {
+      fetchImpl: opts.fetchImpl,
+      budget
+    });
+  } catch (err) {
+    console.error("[scheduler] mastodon limits refresh failed", err);
+  }
   let digest = {
     sent: false,
     failedCount: 0,
@@ -17835,7 +17880,7 @@ async function consumePublishJob(db, env3, store, targetId, fetchImpl, budget) {
     mustTry: true
   });
 }
-var HEARTBEAT_ID, DIGEST_ID, JANITOR_SETTING;
+var HEARTBEAT_ID, DIGEST_ID, JANITOR_SETTING, MASTODON_LIMITS_PER_RUN;
 var init_scheduler = __esm({
   ".svelte-kit/output/server/chunks/scheduler.js"() {
     "use strict";
@@ -17845,6 +17890,8 @@ var init_scheduler = __esm({
     init_app_settings();
     init_totp();
     init_platforms();
+    init_providers();
+    init_timed_fetch();
     init_due_jobs();
     init_publish();
     init_excerpt();
@@ -17861,6 +17908,8 @@ var init_scheduler = __esm({
     __name(claimDueTargets, "claimDueTargets");
     JANITOR_SETTING = "janitor_at";
     __name(runJanitorsIfDue, "runJanitorsIfDue");
+    MASTODON_LIMITS_PER_RUN = 3;
+    __name(refreshMastodonLimits, "refreshMastodonLimits");
     __name(runSchedulerTick, "runSchedulerTick");
     __name(consumePublishJob, "consumePublishJob");
   }
@@ -40498,7 +40547,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1792595288782");
+  response.headers.set("x-sveltekit-version", "1792599537965");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43199,7 +43248,7 @@ function server_data_serializer(event, state) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1gfvfxa";
+  const global = "__sveltekit_50fq6u";
   function get_replacer(index17) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -43943,7 +43992,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1gfvfxa";
+  const global = "__sveltekit_50fq6u";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state.prerendering || state.prerender_default === true))).join("\n			")}`;
@@ -43968,7 +44017,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1792595288782")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1792599537965")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -46519,7 +46568,7 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.CHnEGKwX.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/tUr8yDSR.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/DPS6lyn_.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/CvP7luaA.js"];
+    imports = ["_app/immutable/nodes/0.D_eu666u.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/tUr8yDSR.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/DCWaodEB.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/CvP7luaA.js"];
     stylesheets = ["_app/immutable/assets/0.BB-PP_KV.css"];
     fonts = [];
   }
@@ -48116,6 +48165,10 @@ function gridFor(count2) {
 function mediaUrl(m) {
   return `/api/media/${encodeURIComponent(m.storageKey)}`;
 }
+function imageUrl(m) {
+  const v = m.meta?.preview?.v;
+  return v ? `${mediaUrl(m)}?preview=${v}` : mediaUrl(m);
+}
 function coverUrl(m) {
   const v = m.meta?.cover?.v;
   return v ? `${mediaUrl(m)}?cover=${v}` : null;
@@ -48159,7 +48212,7 @@ function MediaPreview($$renderer, $$props) {
           $$renderer3.push(`<!--]--></button>`);
         }
         $$renderer3.push(`<!--]-->`);
-      } else $$renderer3.push(`<!--[-1--><img${attr("src", srcOf(m))}${attr("alt", label(m, i))} loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/>`);
+      } else $$renderer3.push(`<!--[-1--><img${attr("src", m.previewUrl || imageUrl(m))}${attr("alt", label(m, i))} loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/>`);
       $$renderer3.push(`<!--]--> `);
       if (toolbar) {
         $$renderer3.push(`<!--[0--><div class="absolute top-2 right-2 z-10 flex items-center gap-1.5">`);
@@ -48307,6 +48360,7 @@ var init_schedule_helpers = __esm({
     __name(frameFor, "frameFor");
     __name(gridFor, "gridFor");
     __name(mediaUrl, "mediaUrl");
+    __name(imageUrl, "imageUrl");
     __name(coverUrl, "coverUrl");
     __name(MediaPreview, "MediaPreview");
     __name(toDatetimeLocalValue, "toDatetimeLocalValue");
@@ -50121,7 +50175,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.D1hYROJs.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BM3iuY9t.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/DPS6lyn_.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/D3iaGwoa.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/BjAv5Xr9.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/C_kV1f_b.js"];
+    imports6 = ["_app/immutable/nodes/5.o2_cocWP.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/CHHG11Ma.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/DCWaodEB.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/D3iaGwoa.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/BjAv5Xr9.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/C_kV1f_b.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -52276,7 +52330,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id12 = "src/routes/posts/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.BBn2IEhs.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/J0Pux1Z4.js", "_app/immutable/chunks/BM3iuY9t.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/DPS6lyn_.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/C_kV1f_b.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/QXGyRFL3.js"];
+    imports14 = ["_app/immutable/nodes/13.j2vqSLQ1.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/J0Pux1Z4.js", "_app/immutable/chunks/CHHG11Ma.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/DCWaodEB.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/C_kV1f_b.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/QXGyRFL3.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -55760,7 +55814,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.20.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.20.2")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -55883,7 +55937,7 @@ var init__15 = __esm({
     "use strict";
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.CrtwfcP7.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DHMiDdm1.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/CvP7luaA.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/BjAv5Xr9.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/QXGyRFL3.js"];
+    imports15 = ["_app/immutable/nodes/14.DCoVKTBO.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DHMiDdm1.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/CvP7luaA.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/BjAv5Xr9.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/QXGyRFL3.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -58453,6 +58507,15 @@ async function copyVideo(store, item, storageKey) {
     return null;
   }
 }
+async function copyPreview(store, item, storageKey) {
+  const preview = parseJson(item.metaJson, {}).preview;
+  if (!preview || !store.copy) return null;
+  try {
+    return await store.copy(previewKey(item.storageKey), previewKey(storageKey)) ? preview : null;
+  } catch {
+    return null;
+  }
+}
 async function listDrafts(ctx, userId, requestedLimit) {
   const limit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(1, Math.floor(requestedLimit))) : 200;
   const rows = await ctx.db.select().from(drafts).where(eq(drafts.userId, userId)).orderBy(desc(drafts.updatedAt)).limit(limit + 1);
@@ -58591,6 +58654,7 @@ async function duplicateDraft(ctx, userId, draftId) {
       if (!validated.ok) continue;
       await ctx.media.put(storageKey, bytes, validated.mime);
       savedKeys.push(storageKey);
+      const preview = await copyPreview(ctx.media, item, storageKey);
       mediaValues.push({
         id: newId(),
         draftId: newDraftId,
@@ -58599,6 +58663,7 @@ async function duplicateDraft(ctx, userId, draftId) {
         size: bytes.length,
         width: item.width,
         height: item.height,
+        metaJson: preview ? JSON.stringify({ preview }) : null,
         altText: item.altText,
         sortOrder: item.sortOrder,
         segmentIndex: item.segmentIndex,
@@ -58878,6 +58943,7 @@ var init_operations3 = __esm({
       "direct"
     ]);
     __name(copyVideo, "copyVideo");
+    __name(copyPreview, "copyPreview");
     __name(listDrafts, "listDrafts");
     __name(createDraft, "createDraft");
     __name(duplicateDraft, "duplicateDraft");
@@ -59089,6 +59155,23 @@ __export(server_ts_exports30, {
   PATCH: () => PATCH4,
   POST: () => POST19
 });
+async function savePreview(locals, storageKey, file2) {
+  if (!file2 || file2.size > 1e6) return false;
+  const bytes = new Uint8Array(await file2.arrayBuffer());
+  const check2 = validateImageUpload({
+    mime: "image/jpeg",
+    size: bytes.length,
+    maxBytes: MAX_PREVIEW_BYTES,
+    bytes
+  });
+  if (!check2.ok || check2.mime !== "image/jpeg") return false;
+  try {
+    await locals.media.put(previewKey(storageKey), bytes, "image/jpeg");
+    return true;
+  } catch {
+    return false;
+  }
+}
 var MAX_UPLOAD_BYTES, MAX_FORM_VIDEO_BYTES, POST19, PATCH4, DELETE4;
 var init_server_ts30 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js"() {
@@ -59103,6 +59186,7 @@ var init_server_ts30 = __esm({
     init_drizzle_orm();
     MAX_UPLOAD_BYTES = 1e8;
     MAX_FORM_VIDEO_BYTES = 95e6;
+    __name(savePreview, "savePreview");
     POST19 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const declaredBytes = Number(request2.headers.get("content-length") ?? "");
@@ -59120,7 +59204,13 @@ var init_server_ts30 = __esm({
         const existing = await locals.db.select().from(draftMedia).where(eq(draftMedia.draftId, params.id));
         const existingOnSegment = existing.filter((m) => (m.segmentIndex ?? 0) === segmentIndex).length;
         const files = [];
-        for (const entry of [...form.getAll("files"), ...form.getAll("file")]) if (entry instanceof File && entry.size > 0 && !files.includes(entry)) files.push(entry);
+        const previews = [];
+        [...form.getAll("files"), ...form.getAll("file")].forEach((entry, n) => {
+          if (!(entry instanceof File) || entry.size <= 0 || files.includes(entry)) return;
+          files.push(entry);
+          const preview = form.get(`preview-${n}`);
+          previews.push(preview instanceof File && preview.size > 0 ? preview : null);
+        });
         if (!files.length) return fail("file required");
         for (const f of files) {
           const isVideo2 = (f.type || "").toLowerCase().startsWith("video/");
@@ -59150,6 +59240,7 @@ var init_server_ts30 = __esm({
             bytes,
             mime: file2.type || "image/jpeg"
           });
+          const imageMeta = (saved.video ? false : await savePreview(locals, saved.storageKey, previews[i])) ? { preview: { v: Date.now() } } : null;
           let media;
           try {
             [media] = await locals.db.insert(draftMedia).values({
@@ -59160,14 +59251,14 @@ var init_server_ts30 = __esm({
               size: saved.size,
               width: saved.width,
               height: saved.height,
-              metaJson: saved.video ? JSON.stringify(saved.video) : null,
+              metaJson: saved.video ? JSON.stringify(saved.video) : imageMeta ? JSON.stringify(imageMeta) : null,
               altText: i === 0 ? altText : null,
               sortOrder: existingOnSegment + i,
               segmentIndex,
               createdAt: /* @__PURE__ */ new Date()
             }).returning();
           } catch (err) {
-            await locals.media.delete(saved.storageKey).catch(() => {
+            await deleteMediaObjects(locals.media, [saved.storageKey]).catch(() => {
             });
             throw err;
           }
@@ -59700,7 +59791,7 @@ var init_server_ts38 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.20.1",
+          version: "1.20.2",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -70678,6 +70769,10 @@ var init_server_ts46 = __esm({
           if (!cover) return fail("Not found", 404);
           return jpegResponse(cover, PRIVATE_MEDIA_CACHE);
         }
+        if (url3.searchParams.has("preview") && !(media.mime || "").startsWith("video/")) {
+          const preview = await locals.media.get(previewKey(key));
+          if (preview) return jpegResponse(preview, PRIVATE_MEDIA_CACHE);
+        }
         const images = locals.bindings.IMAGES ?? null;
         if (images && url3.searchParams.get("thumb") === "1" && thumbCandidate(media.mime, media.width, media.height)) {
           const thumb = await storedThumbnail(locals.media, key, images);
@@ -70742,7 +70837,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.20.1";
+  const current = options2.current ?? "1.20.2";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -71598,7 +71693,7 @@ var init_server_ts58 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.20.1",
+          version: "1.20.2",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -71807,7 +71902,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.20.1"
+    currentVersion: "1.20.2"
   };
 }
 async function download(ctx, url3) {
@@ -72320,7 +72415,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.DmR4AzBi.js", app: "_app/immutable/entry/app.ozX7h2fH.js", imports: ["_app/immutable/entry/start.DmR4AzBi.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Tc5QHpbG.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/app.ozX7h2fH.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.DmR4AzBi.js", app: "_app/immutable/entry/app.CsgQFiEl.js", imports: ["_app/immutable/entry/start.DmR4AzBi.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Tc5QHpbG.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/app.CsgQFiEl.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
