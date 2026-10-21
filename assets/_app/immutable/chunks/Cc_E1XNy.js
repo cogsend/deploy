@@ -1,0 +1,1 @@
+import{n as e,r as t}from"./Bsdzxjyx.js";import{t as n}from"./CyPcduMV.js";var r={name:`check`,size:24,node:[[`path`,{d:`M20 6 9 17l-5-5`}]]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=e(o,i);n(a,t(()=>s,{get icon(){return r}}))}var o=new TextEncoder;function s(e){return o.encode(e)}function c(e){return s(e).length}export{a as n,c as t};

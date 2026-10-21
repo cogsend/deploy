@@ -1,0 +1,1 @@
+import{r as e}from"./vp87PCn2.js";function t(t){return t.status===401&&(e(`/login`,{refreshAll:!0}),!0)}export{t};

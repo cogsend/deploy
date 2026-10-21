@@ -5,6 +5,7 @@
 	"compatibility_flags": [
 		"nodejs_als"
 	],
+	"upload_source_maps": false,
 	"triggers": {
 		"crons": [
 			"* * * * *"
