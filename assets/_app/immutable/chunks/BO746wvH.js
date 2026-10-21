@@ -1,0 +1,1 @@
+import{n as e,r as t}from"./DHzAyJd-.js";import{t as n}from"./C0tB90Hs.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=e(a,r),s={name:`circle-x`,size:24,node:[[`circle`,{cx:`12`,cy:`12`,r:`10`}],[`path`,{d:`m15 9-6 6`}],[`path`,{d:`m9 9 6 6`}]],aliases:[`x-circle`]};n(i,t(()=>o,{get icon(){return s}}))}export{i as t};

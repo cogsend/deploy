@@ -1,1 +1,0 @@
-import{r as e}from"./D_c3Neth.js";function t(t){return t.status===401&&(e(`/login`,{refreshAll:!0}),!0)}export{t};
