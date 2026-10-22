@@ -10055,6 +10055,7 @@ function imageCap(platform2, mime) {
   if (platform2 === "bluesky") return BLUESKY_MAX_IMAGE_BYTES;
   if (platform2 === "linkedin") return LINKEDIN_MAX_IMAGE_BYTES;
   if (platform2 === "threads") return THREADS_MAX_IMAGE_BYTES;
+  if (platform2 === "instagram") return mime === "image/jpeg" ? INSTAGRAM_MAX_IMAGE_BYTES : null;
   if (platform2 === "x") return mime === "image/gif" ? X_MAX_GIF_BYTES : X_MAX_IMAGE_BYTES;
   return null;
 }
@@ -10066,6 +10067,32 @@ function imageOverCap(platform2, media) {
     if (cap !== null && m.size > cap) return `An image is over ${PLATFORM_LABEL[platform2]}'s ${cap / 1e6}MB limit`;
   }
   return null;
+}
+function instagramMediaProblems(media) {
+  if (media.length === 0) return ["Instagram needs a photo or video"];
+  const problems = [];
+  const videos = media.filter((m) => (m.mime || "").toLowerCase().startsWith("video/"));
+  const images = media.length - videos.length;
+  if (videos.length > 1 || videos.length && images) problems.push("Instagram posts a video on its own, as a Reel");
+  if (images > 10) problems.push(`Instagram takes up to 10 photos (${images} attached)`);
+  for (const m of media) {
+    const mime = (m.mime || "").toLowerCase();
+    if (mime.startsWith("video/")) continue;
+    if (mime === "image/gif") {
+      problems.push("Instagram doesn't take GIFs");
+      break;
+    }
+    if (mime !== "image/jpeg" && !m.hasJpegCopy) {
+      problems.push("Instagram takes JPEG only \u2014 attach this image again, or as a JPEG");
+      break;
+    }
+  }
+  if (media.some((m) => {
+    if ((m.mime || "").toLowerCase().startsWith("video/") || !m.width || !m.height) return false;
+    const aspect = m.width / m.height;
+    return aspect < INSTAGRAM_MIN_ASPECT || aspect > INSTAGRAM_MAX_ASPECT;
+  })) problems.push("Instagram takes photos from 4:5 tall to 1.91:1 wide");
+  return problems;
 }
 function videoMixProblem(videos, images) {
   if (videos > 1) return "Only one video per post";
@@ -10085,7 +10112,7 @@ function groupMediaBySegment(items) {
   }
   return map2;
 }
-var ALLOWED_IMAGE_MIMES, BLUESKY_MAX_IMAGE_BYTES, LINKEDIN_MAX_IMAGE_BYTES, X_MAX_IMAGE_BYTES, X_MAX_GIF_BYTES, THREADS_MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, PNG, JPEG, GIF87, GIF89, WEBP_RIFF, PLATFORM_LABEL;
+var ALLOWED_IMAGE_MIMES, BLUESKY_MAX_IMAGE_BYTES, LINKEDIN_MAX_IMAGE_BYTES, X_MAX_IMAGE_BYTES, X_MAX_GIF_BYTES, THREADS_MAX_IMAGE_BYTES, INSTAGRAM_MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, PNG, JPEG, GIF87, GIF89, WEBP_RIFF, PLATFORM_LABEL, INSTAGRAM_MIN_ASPECT, INSTAGRAM_MAX_ASPECT;
 var init_media_limits = __esm({
   ".svelte-kit/output/server/chunks/media-limits.js"() {
     "use strict";
@@ -10100,6 +10127,7 @@ var init_media_limits = __esm({
     X_MAX_IMAGE_BYTES = 5e6;
     X_MAX_GIF_BYTES = 15e6;
     THREADS_MAX_IMAGE_BYTES = 8e6;
+    INSTAGRAM_MAX_IMAGE_BYTES = 8e6;
     MAX_VIDEO_BYTES = 3e8;
     __name(looksLikeMp4, "looksLikeMp4");
     __name(validateVideoUpload, "validateVideoUpload");
@@ -10147,10 +10175,14 @@ var init_media_limits = __esm({
       bluesky: "Bluesky",
       linkedin: "LinkedIn",
       threads: "Threads",
+      instagram: "Instagram",
       x: "X"
     };
     __name(imageCap, "imageCap");
     __name(imageOverCap, "imageOverCap");
+    INSTAGRAM_MIN_ASPECT = 0.795;
+    INSTAGRAM_MAX_ASPECT = 1.91 + 5e-3;
+    __name(instagramMediaProblems, "instagramMediaProblems");
     __name(videoMixProblem, "videoMixProblem");
     __name(canAttachMoreImages, "canAttachMoreImages");
     __name(groupMediaBySegment, "groupMediaBySegment");
@@ -10622,6 +10654,9 @@ function coverKey(storageKey) {
 function previewKey(storageKey) {
   return `preview/${storageKey}`;
 }
+function jpegKey(storageKey) {
+  return `jpeg/${storageKey}`;
+}
 function thumbCandidate(mime, width, height) {
   const type = (mime || "").toLowerCase().split(";")[0].trim();
   if (type !== "image/jpeg" && type !== "image/png" && type !== "image/webp") return false;
@@ -10654,6 +10689,33 @@ async function storedThumbnail(store, key, images) {
     return null;
   }
 }
+function isAnimatedWebpBytes(bytes) {
+  if (bytes.length < 21) return false;
+  return String.fromCharCode(...bytes.slice(12, 16)) === "VP8X" && (bytes[20] & 2) !== 0;
+}
+async function makeStoredJpegCopy(store, key, width, images) {
+  const original = await store.get(key);
+  if (!original || isAnimatedWebpBytes(original)) return false;
+  try {
+    const copy = new Uint8Array(original.byteLength);
+    copy.set(original);
+    const response = await (await images.input(new Blob([copy]).stream()).transform({
+      width: width || 8192,
+      fit: "scale-down",
+      background: "#ffffff"
+    }).output({
+      format: "image/jpeg",
+      quality: 90
+    })).response();
+    if (!response.ok) return false;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (!bytes.byteLength || bytes.byteLength > 8e6) return false;
+    await store.put(jpegKey(key), bytes, "image/jpeg");
+    return true;
+  } catch {
+    return false;
+  }
+}
 function jpegResponse(bytes, cacheControl) {
   return new Response(bytes, { headers: {
     "Content-Type": "image/jpeg",
@@ -10670,7 +10732,8 @@ async function deleteMediaObjects(store, keys) {
   ] : [
     key,
     thumbCacheKey(key),
-    previewKey(key)
+    previewKey(key),
+    jpegKey(key)
   ]);
   if (!all.length) return;
   if (store.deleteMany) {
@@ -10768,7 +10831,7 @@ async function serveMediaBytes(store, key, request2, opts) {
     }
   });
 }
-var MAX_MOOV_BYTES, MAX_TOP_LEVEL_BOXES, VIDEO_CODECS, AUDIO_CODECS, UNREADABLE_VIDEO, STORAGE_KEY_RE, PRIVATE_MEDIA_CACHE, MAX_PREVIEW_BYTES, SERVABLE_MIME_RE;
+var MAX_MOOV_BYTES, MAX_TOP_LEVEL_BOXES, VIDEO_CODECS, AUDIO_CODECS, UNREADABLE_VIDEO, STORAGE_KEY_RE, PRIVATE_MEDIA_CACHE, SERVABLE_MIME_RE;
 var init_media = __esm({
   ".svelte-kit/output/server/chunks/media.js"() {
     "use strict";
@@ -10827,9 +10890,11 @@ var init_media = __esm({
     __name(thumbCacheKey, "thumbCacheKey");
     __name(coverKey, "coverKey");
     __name(previewKey, "previewKey");
-    MAX_PREVIEW_BYTES = 1e6;
+    __name(jpegKey, "jpegKey");
     __name(thumbCandidate, "thumbCandidate");
     __name(storedThumbnail, "storedThumbnail");
+    __name(isAnimatedWebpBytes, "isAnimatedWebpBytes");
+    __name(makeStoredJpegCopy, "makeStoredJpegCopy");
     __name(jpegResponse, "jpegResponse");
     __name(deleteMediaObjects, "deleteMediaObjects");
     SERVABLE_MIME_RE = /^(image\/(jpeg|png|webp|gif)|video\/mp4)$/;
@@ -10970,6 +11035,7 @@ var init_platforms = __esm({
     PLATFORM_ORDER = [
       "x",
       "threads",
+      "instagram",
       "linkedin",
       "mastodon",
       "bluesky"
@@ -11137,6 +11203,22 @@ function validateThreadsText(text3, maxChars = 500) {
     max: maxChars
   };
 }
+function validateInstagramText(text3, maxChars = INSTAGRAM_MAX_CHARS) {
+  const length = countGraphemes(text3);
+  if (length > maxChars) return tooLong(length, maxChars, "Instagram max 2200");
+  const hashtags = text3.match(/(?<![\p{L}\p{N}_&/#])#[\p{L}\p{N}_]+/gu)?.length ?? 0;
+  if (hashtags > 30) return {
+    ok: false,
+    length,
+    max: maxChars,
+    message: `Instagram takes up to 30 hashtags (${hashtags} used)`
+  };
+  return {
+    ok: true,
+    length,
+    max: maxChars
+  };
+}
 function graphemesOf(text3) {
   if (xSegmenter === void 0) try {
     xSegmenter = new Intl.Segmenter(void 0, { granularity: "grapheme" });
@@ -11193,7 +11275,7 @@ function xLimitFor(meta3) {
 function storedXLimit(value) {
   return typeof value === "number" && value >= 280 && value <= 25e3 ? Math.floor(value) : 280;
 }
-var LINKEDIN_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
+var LINKEDIN_MAX_CHARS, INSTAGRAM_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
 var init_x_limits = __esm({
   ".svelte-kit/output/server/chunks/x-limits.js"() {
     "use strict";
@@ -11205,8 +11287,10 @@ var init_x_limits = __esm({
     __name(validateBlueskyText, "validateBlueskyText");
     __name(validateMastodonText, "validateMastodonText");
     LINKEDIN_MAX_CHARS = 3e3;
+    INSTAGRAM_MAX_CHARS = 2200;
     __name(validateLinkedinText, "validateLinkedinText");
     __name(validateThreadsText, "validateThreadsText");
+    __name(validateInstagramText, "validateInstagramText");
     X_LIGHT_RANGES = [
       [0, 4351],
       [8192, 8205],
@@ -11293,6 +11377,22 @@ function limitsFor(platform2, meta3) {
         maxMs: 3e5,
         maxBytes: 1e9,
         codecs: ["avc", "hevc"],
+        maxWidth: 1920,
+        minFps: 23,
+        maxFps: 60,
+        faststart: true
+      };
+    case "instagram":
+      return {
+        minMs: 3e3,
+        maxMs: 9e5,
+        maxBytes: 3e8,
+        codecs: ["avc", "hevc"],
+        aspect: [
+          0.01,
+          10,
+          "1:100 and 10:1"
+        ],
         maxWidth: 1920,
         minFps: 23,
         maxFps: 60,
@@ -11420,6 +11520,7 @@ var init_zernio = __esm({
     TO_ZERNIO = {
       x: "twitter",
       threads: "threads",
+      instagram: "instagram",
       linkedin: "linkedin",
       bluesky: "bluesky"
     };
@@ -12867,19 +12968,169 @@ async function blueskyCreateSession(handle2, appPassword, pdsHost = DEFAULT_PDS,
     avatarUrl
   };
 }
-function authorUrn(creds, meta3) {
-  const urn = creds.personUrn || meta3?.personUrn;
-  if (urn) return urn.startsWith("urn:li:person:") ? urn : `urn:li:person:${urn}`;
-  const sub = creds.openIdSub;
-  if (sub) return `urn:li:person:${sub}`;
-  throw new ProviderError("LinkedIn credentials require personUrn (reconnect account)", { code: "auth" });
-}
 function singlePost(content) {
   const segments = content.thread && content.thread.length > 0 ? content.thread : [content];
   return {
     text: joinThreadTexts(segments.map((s2) => s2.text)),
     media: segments.flatMap((s2) => s2.media ?? [])
   };
+}
+function parseMetaError(body) {
+  try {
+    const err = JSON.parse(body)?.error;
+    if (!err || typeof err !== "object") return {};
+    const userMessage = typeof err.error_user_msg === "string" ? err.error_user_msg : void 0;
+    return {
+      ...typeof err.code === "number" ? { code: err.code } : {},
+      ...typeof err.error_subcode === "number" ? { subcode: err.error_subcode } : {},
+      ...userMessage || typeof err.message === "string" ? { message: userMessage || err.message } : {}
+    };
+  } catch {
+    return {};
+  }
+}
+function instagramUpstreamError(prefix, status, body) {
+  const { code, subcode, message: metaMessage } = parseMetaError(body);
+  const marker = code !== void 0 ? formatThreadsMetaMarker(code, subcode) : "";
+  const said = metaMessage || body.slice(0, 300);
+  const detail = body ? body.slice(0, 2e3) : void 0;
+  if (subcode === DAILY_LIMIT_SUBCODE) return new ProviderError(`Instagram's limit of 100 posts a day is reached \u2014 it is tried again in an hour${marker}`, {
+    status,
+    code: "rate_limited",
+    detail,
+    retryAfterMs: DAILY_LIMIT_RETRY_MS
+  });
+  const message = `${prefix} failed (${status}): ${said}${marker}`;
+  if (status === 401 || code !== void 0 && AUTH_CODES.has(code)) return new ProviderError(message, {
+    status,
+    code: "auth",
+    detail
+  });
+  if (status === 429 || code !== void 0 && RATE_CODES.has(code)) return new ProviderError(message, {
+    status,
+    code: "rate_limited",
+    detail
+  });
+  if (status >= 500 || code !== void 0 && TRANSIENT_CODES.has(code) || subcode !== void 0 && MEDIA_FETCH_SUBCODES.has(subcode)) return new ProviderError(message, {
+    status,
+    code: "upstream",
+    detail
+  });
+  return new ProviderError(message, {
+    status,
+    code: "forbidden",
+    detail
+  });
+}
+function isJpeg(m) {
+  return (m.mime || "").toLowerCase() === "image/jpeg";
+}
+async function permalink(id2, token, fetchImpl) {
+  try {
+    const res = await fetchImpl(`${GRAPH}/${encodeURIComponent(id2)}?fields=permalink&access_token=${encodeURIComponent(token)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data.permalink === "string" && /^https:\/\/(www\.)?instagram\.com\//.test(data.permalink) ? data.permalink : null;
+  } catch {
+    return null;
+  }
+}
+function tokenAwareError(prefix, status, body) {
+  const err = instagramUpstreamError(prefix, status, body);
+  if (err.code !== "auth" && status !== 403) return err;
+  return new ProviderError(`${err.message} \u2014 reconnect`, {
+    status: 401,
+    code: "auth",
+    detail: err.detail
+  });
+}
+function instagramCallbackUrl(appUrl) {
+  return `${appUrl.replace(/\/$/, "")}/api/connections/instagram/callback`;
+}
+function instagramAuthorizeUrl(appId, appUrl, state) {
+  return `https://www.instagram.com/oauth/authorize?${new URLSearchParams({
+    client_id: appId,
+    redirect_uri: instagramCallbackUrl(appUrl),
+    scope: SCOPES.join(","),
+    response_type: "code",
+    state
+  }).toString()}`;
+}
+async function fetchProfile(token, fetchImpl) {
+  const res = await fetchImpl(`${GRAPH}/me?fields=${PROFILE_FIELDS}&access_token=${encodeURIComponent(token)}`);
+  if (!res.ok) throw tokenAwareError("Instagram profile", res.status, await res.text());
+  const raw = await res.json();
+  return raw.data?.[0] ?? raw;
+}
+function profileFacts(profile) {
+  const rawId = profile.user_id;
+  const userId = rawId !== void 0 && rawId !== null && rawId !== "" ? String(rawId) : void 0;
+  const username = typeof profile.username === "string" ? profile.username.trim() : void 0;
+  const name = typeof profile.name === "string" ? profile.name.trim() : void 0;
+  return {
+    userId,
+    username: username || void 0,
+    displayName: name || username || "Instagram",
+    avatarUrl: profile.profile_picture_url,
+    accountType: typeof profile.account_type === "string" ? profile.account_type : void 0
+  };
+}
+async function instagramExchangeCode(args, fetchImpl = providerFetch) {
+  const tokRes = await fetchImpl("https://api.instagram.com/oauth/access_token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: args.appId,
+      client_secret: args.appSecret,
+      grant_type: "authorization_code",
+      redirect_uri: instagramCallbackUrl(args.appUrl),
+      code: args.code.replace(/#_$/, "")
+    })
+  });
+  if (!tokRes.ok) throw Object.assign(/* @__PURE__ */ new Error(`Instagram token exchange failed (${tokRes.status}): ${(await tokRes.text()).slice(0, 300)}`), { status: tokRes.status });
+  const raw = await tokRes.json();
+  const shortToken = raw.data?.[0]?.access_token ?? raw.access_token;
+  if (!shortToken) throw new Error("Instagram exchange returned no access_token");
+  const longRes = await fetchImpl(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(args.appSecret)}&access_token=${encodeURIComponent(shortToken)}`);
+  if (!longRes.ok) throw Object.assign(/* @__PURE__ */ new Error(`Instagram long-lived exchange failed (${longRes.status}): ${(await longRes.text()).slice(0, 300)}`), { status: longRes.status });
+  const long = await longRes.json();
+  if (!long.access_token) throw new Error("Instagram exchange returned no long-lived token");
+  const facts = profileFacts(await fetchProfile(long.access_token, fetchImpl));
+  if (facts.accountType && !POSTING_ACCOUNT_TYPES.has(facts.accountType.toUpperCase())) throw new Error(PERSONAL_ACCOUNT_MESSAGE);
+  if (!facts.userId) throw new Error("Instagram did not say which account this is");
+  return {
+    accessToken: long.access_token,
+    expiresAt: long.expires_in ? Date.now() + long.expires_in * 1e3 : void 0,
+    tokenType: "bearer",
+    scopes: SCOPES,
+    clientId: args.appId,
+    clientSecret: args.appSecret,
+    igUserId: facts.userId,
+    igUsername: facts.username,
+    igAccountType: facts.accountType,
+    handle: facts.username ? `@${facts.username}` : void 0,
+    displayName: facts.displayName,
+    avatarUrl: facts.avatarUrl,
+    maxCharacters: INSTAGRAM_MAX_CHARS
+  };
+}
+async function instagramVerify(creds, fetchImpl = providerFetch) {
+  if (!creds.accessToken) throw new Error("Missing accessToken");
+  const facts = profileFacts(await fetchProfile(creds.accessToken, fetchImpl));
+  return {
+    displayName: facts.displayName,
+    avatarUrl: facts.avatarUrl,
+    handle: facts.username ? `@${facts.username}` : void 0,
+    userId: facts.userId,
+    username: facts.username
+  };
+}
+function authorUrn(creds, meta3) {
+  const urn = creds.personUrn || meta3?.personUrn;
+  if (urn) return urn.startsWith("urn:li:person:") ? urn : `urn:li:person:${urn}`;
+  const sub = creds.openIdSub;
+  if (sub) return `urn:li:person:${sub}`;
+  throw new ProviderError("LinkedIn credentials require personUrn (reconnect account)", { code: "auth" });
 }
 function escapeLittleText(text3) {
   return text3.replace(/[\\|{}@[\]()<>#*_~]/g, (ch, offset) => {
@@ -14172,13 +14423,15 @@ async function createOrAdopt(opts) {
     return existingId;
   }
 }
-async function mediaItemFor(media, mediaUrlFor) {
+async function mediaItemFor(media, mediaUrlFor, platform2) {
   if (!media.storageKey) throw new Error("Zernio posts need stored media");
   const mime = (media.mime || "").toLowerCase();
+  const type = mime.startsWith("video/") ? "video" : mime === "image/gif" ? "gif" : "image";
+  const jpeg = platform2 === "instagram" && type === "image" && mime !== "image/jpeg";
   return {
-    type: mime.startsWith("video/") ? "video" : mime === "image/gif" ? "gif" : "image",
-    url: await mediaUrlFor(media.storageKey),
-    mimeType: media.mime,
+    type,
+    url: await mediaUrlFor(media.storageKey, jpeg ? "jpeg" : void 0),
+    mimeType: jpeg ? "image/jpeg" : media.mime,
     ...media.alt ? { altText: media.alt } : {}
   };
 }
@@ -14187,12 +14440,12 @@ async function buildZernioPostBody(opts) {
   if (!zernioPlatform) throw new Error(`Zernio does not support ${platformName(opts.platform)}`);
   const segments = opts.content.thread && opts.content.thread.length > 0 ? opts.content.thread : [opts.content];
   if (segments.some((s2) => (s2.media?.length ?? 0) > 0) && !opts.mediaUrlFor) throw new Error("Zernio posts need a media signer");
-  const items = /* @__PURE__ */ __name(async (media) => Promise.all((media ?? []).map((m) => mediaItemFor(m, opts.mediaUrlFor))), "items");
+  const items = /* @__PURE__ */ __name(async (media) => Promise.all((media ?? []).map((m) => mediaItemFor(m, opts.mediaUrlFor, opts.platform))), "items");
   const target = {
     platform: zernioPlatform,
     accountId: opts.accountId
   };
-  if (segments.length === 1 || opts.platform === "linkedin") {
+  if (segments.length === 1 || !supportsThreads(opts.platform)) {
     const text3 = segments.map((s2) => s2.text || "").filter(Boolean).join("\n\n");
     const mediaItems = await items(segments.flatMap((s2) => s2.media ?? []));
     return {
@@ -14328,7 +14581,7 @@ function providerFor(conn) {
 function estimateKeyFor(conn) {
   return isZernioConnection(conn.metaJson) ? "zernio" : conn.platform;
 }
-var MISSING_VIDEO_MESSAGE, DEFAULT_PDS, ACCESS_JWT_SKEW_MS, VIDEO_SERVICE, VIDEO_SERVICE_DID, VIDEO_JOB_POLLS, VIDEO_JOB_POLL_MS, blueskyProvider, LINKEDIN_MAX_CHARS2, LINKEDIN_VIDEO_MIMES, LINKEDIN_VERSION, REFRESH_SKEW_MS$2, LINKEDIN_MAX_ALT_TEXT, VIDEO_RESERVE_CALLS, VIDEO_STATUS_POLLS$1, VIDEO_STATUS_POLL_MS$1, linkedinProvider, MAX_INSTANCE_REDIRECTS, MEDIA_PROCESS_POLL_ATTEMPTS, MEDIA_PROCESS_POLL_MS, VIDEO_STATUS_POLLS, VIDEO_STATUS_POLL_MS, mastodonProvider, THREADS_IMAGE_MIMES, THREADS_API_VERSION, REFRESH_SKEW_MS$1, CONTAINER_STATUS_ATTEMPTS, CONTAINER_STATUS_POLL_MS, CAROUSEL_CHILD_ROUNDS, CAROUSEL_CHILD_CALL_BUDGET, CAROUSEL_STATUS_CONCURRENCY, CAROUSEL_PARENT_POLL_ATTEMPTS, MEDIA_FETCH_RETRY_DELAYS_MS, CAROUSEL_FETCH_RETRY_DELAYS_MS, CAROUSEL_NO_RETRY_ABOVE, THREADS_SEGMENT_DELAY_MS, PERMALINK_ATTEMPTS, PERMALINK_RETRY_DELAYS_MS, META_PERMISSION_TEXT, THREADS_PROFILE_FIELDS, threadsProvider, X_IMAGE_MIMES, X_UPLOAD_CHUNK_BYTES, X_MEDIA_POLL_ATTEMPTS, X_MEDIA_POLL_MAX_WAIT_MS, REFRESH_SKEW_MS, X_API, X_AUTHORIZE_URL, X_SCOPES, isVideo, X_VIDEO_RESERVE_CALLS, xProvider, providers$1, providers;
+var MISSING_VIDEO_MESSAGE, DEFAULT_PDS, ACCESS_JWT_SKEW_MS, VIDEO_SERVICE, VIDEO_SERVICE_DID, VIDEO_JOB_POLLS, VIDEO_JOB_POLL_MS, blueskyProvider, GRAPH, SCOPES, PROFILE_FIELDS, POSTING_ACCOUNT_TYPES, REFRESH_SKEW_MS$3, MAX_ALT_TEXT, PHOTO_POLLS, PHOTO_POLL_MS, REEL_POLLS, REEL_POLL_MS, POLL_RESERVE, DAILY_LIMIT_RETRY_MS, AUTH_CODES, RATE_CODES, TRANSIENT_CODES, MEDIA_FETCH_SUBCODES, DAILY_LIMIT_SUBCODE, instagramProvider, PERSONAL_ACCOUNT_MESSAGE, LINKEDIN_MAX_CHARS2, LINKEDIN_VIDEO_MIMES, LINKEDIN_VERSION, REFRESH_SKEW_MS$2, LINKEDIN_MAX_ALT_TEXT, VIDEO_RESERVE_CALLS, VIDEO_STATUS_POLLS$1, VIDEO_STATUS_POLL_MS$1, linkedinProvider, MAX_INSTANCE_REDIRECTS, MEDIA_PROCESS_POLL_ATTEMPTS, MEDIA_PROCESS_POLL_MS, VIDEO_STATUS_POLLS, VIDEO_STATUS_POLL_MS, mastodonProvider, THREADS_IMAGE_MIMES, THREADS_API_VERSION, REFRESH_SKEW_MS$1, CONTAINER_STATUS_ATTEMPTS, CONTAINER_STATUS_POLL_MS, CAROUSEL_CHILD_ROUNDS, CAROUSEL_CHILD_CALL_BUDGET, CAROUSEL_STATUS_CONCURRENCY, CAROUSEL_PARENT_POLL_ATTEMPTS, MEDIA_FETCH_RETRY_DELAYS_MS, CAROUSEL_FETCH_RETRY_DELAYS_MS, CAROUSEL_NO_RETRY_ABOVE, THREADS_SEGMENT_DELAY_MS, PERMALINK_ATTEMPTS, PERMALINK_RETRY_DELAYS_MS, META_PERMISSION_TEXT, THREADS_PROFILE_FIELDS, threadsProvider, X_IMAGE_MIMES, X_UPLOAD_CHUNK_BYTES, X_MEDIA_POLL_ATTEMPTS, X_MEDIA_POLL_MAX_WAIT_MS, REFRESH_SKEW_MS, X_API, X_AUTHORIZE_URL, X_SCOPES, isVideo, X_VIDEO_RESERVE_CALLS, xProvider, providers$1, providers;
 var init_providers = __esm({
   ".svelte-kit/output/server/chunks/providers.js"() {
     "use strict";
@@ -14501,12 +14754,281 @@ var init_providers = __esm({
       }
     };
     __name(blueskyCreateSession, "blueskyCreateSession");
+    __name(singlePost, "singlePost");
+    GRAPH = `https://graph.instagram.com/v26.0`;
+    SCOPES = ["instagram_business_basic", "instagram_business_content_publish"];
+    PROFILE_FIELDS = "user_id,username,name,account_type,profile_picture_url";
+    POSTING_ACCOUNT_TYPES = /* @__PURE__ */ new Set(["BUSINESS", "MEDIA_CREATOR"]);
+    REFRESH_SKEW_MS$3 = 6048e5;
+    MAX_ALT_TEXT = 1e3;
+    PHOTO_POLLS = 6;
+    PHOTO_POLL_MS = 2e3;
+    REEL_POLLS = 12;
+    REEL_POLL_MS = 3e3;
+    POLL_RESERVE = 4;
+    DAILY_LIMIT_RETRY_MS = 36e5;
+    AUTH_CODES = /* @__PURE__ */ new Set([190, 200]);
+    RATE_CODES = /* @__PURE__ */ new Set([
+      4,
+      9,
+      17,
+      32,
+      613
+    ]);
+    TRANSIENT_CODES = /* @__PURE__ */ new Set([1, 2]);
+    MEDIA_FETCH_SUBCODES = /* @__PURE__ */ new Set([
+      2207003,
+      2207027,
+      2207052
+    ]);
+    DAILY_LIMIT_SUBCODE = 2207042;
+    __name(parseMetaError, "parseMetaError");
+    __name(instagramUpstreamError, "instagramUpstreamError");
+    __name(isJpeg, "isJpeg");
+    instagramProvider = {
+      id: "instagram",
+      mediaByUrl: true,
+      capabilities: {
+        maxImages: 10,
+        maxImageBytes: INSTAGRAM_MAX_IMAGE_BYTES,
+        supportsCW: false,
+        supportsVisibility: false,
+        supportsThreads: false
+      },
+      validate(content, meta3) {
+        const { text: text3, media } = singlePost(content);
+        const issues = [];
+        const checked = validateInstagramText(text3);
+        if (!checked.ok) issues.push({
+          field: "text",
+          message: checked.message ?? "Caption too long"
+        });
+        const problems = instagramMediaProblems(media);
+        for (const message of problems) issues.push({
+          field: "media",
+          message,
+          code: "instagram_media"
+        });
+        if (problems.length) return issues;
+        if (media.some((m) => isJpeg(m) && mediaByteLength(m) > 8e6)) issues.push({
+          field: "media",
+          message: "An image is over Instagram's 8MB limit"
+        });
+        issues.push(...videoValidation("instagram", media, meta3, "media"));
+        return issues;
+      },
+      async publish(content, creds, _meta, fetchImpl = providerFetch, opts) {
+        const token = creds.accessToken;
+        if (!token) throw new ProviderError("Instagram credentials are missing a token (reconnect)", { code: "auth" });
+        const done = opts?.resume?.segmentIds?.[0];
+        if (done) return {
+          remotePostId: done,
+          remoteUrl: opts?.resume?.remoteUrl ?? void 0
+        };
+        const mediaUrlFor = opts?.mediaUrlFor;
+        if (!mediaUrlFor) throw new Error("Instagram posts need a media signer");
+        const account = encodeURIComponent(creds.igUserId || "me");
+        const { text: text3, media } = singlePost(content);
+        async function graphPost(path3, params, label) {
+          const res = await fetchImpl(`${GRAPH}/${path3}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              ...params,
+              access_token: token
+            })
+          });
+          if (!res.ok) throw instagramUpstreamError(label, res.status, await res.text());
+          const data = await res.json().catch(() => ({}));
+          return typeof data.id === "string" || typeof data.id === "number" ? String(data.id) : "";
+        }
+        __name(graphPost, "graphPost");
+        async function createContainer(params) {
+          const id2 = await graphPost(`${account}/media`, params, "Instagram media");
+          if (!id2) throw new ProviderError("Instagram returned no media container", { code: "upstream" });
+          return id2;
+        }
+        __name(createContainer, "createContainer");
+        async function containerState(id2) {
+          let res;
+          try {
+            res = await fetchImpl(`${GRAPH}/${encodeURIComponent(id2)}?fields=status_code,status&access_token=${encodeURIComponent(token)}`);
+          } catch {
+            return null;
+          }
+          if (!res.ok) return null;
+          const data = await res.json().catch(() => ({}));
+          const code = typeof data.status_code === "string" ? data.status_code : "";
+          if (code === "FINISHED" || code === "PUBLISHED") return { state: "ready" };
+          if (code === "ERROR" || code === "EXPIRED") return {
+            state: "failed",
+            code,
+            status: typeof data.status === "string" && data.status ? data.status : code
+          };
+          return code ? { state: "working" } : null;
+        }
+        __name(containerState, "containerState");
+        async function photosReady(ids) {
+          let waiting = [...ids];
+          await pollVideo({
+            polls: PHOTO_POLLS,
+            delayMs: PHOTO_POLL_MS,
+            reserve: POLL_RESERVE + waiting.length,
+            callsLeft: opts?.callsLeft,
+            timeLeft: opts?.timeLeft
+          }, async () => {
+            const still = [];
+            for (const id2 of waiting) {
+              const state = await containerState(id2);
+              if (state?.state === "failed") throw new ProviderError(`Instagram could not take a photo: ${state.status}`, {
+                code: "forbidden",
+                detail: state.status
+              });
+              if (state?.state !== "ready") still.push(id2);
+            }
+            waiting = still;
+            return waiting.length ? null : true;
+          });
+        }
+        __name(photosReady, "photosReady");
+        function photoParams(m, url3) {
+          const params = { image_url: url3 };
+          const alt = m.alt?.trim();
+          if (alt) params.alt_text = alt.slice(0, MAX_ALT_TEXT);
+          return params;
+        }
+        __name(photoParams, "photoParams");
+        async function photoUrl(m) {
+          if (!m.storageKey) throw new Error("Instagram photo is missing its storage key");
+          return mediaUrlFor(m.storageKey, isJpeg(m) ? void 0 : "jpeg");
+        }
+        __name(photoUrl, "photoUrl");
+        async function reelContainer(video2, fresh = false) {
+          if (!video2.storageKey) throw new Error("Instagram video is missing its storage key");
+          const resumed = fresh ? null : resumedVideoState(opts?.resume, 0, video2.storageKey);
+          let id2 = typeof resumed?.containerId === "string" ? resumed.containerId : "";
+          if (!id2) {
+            const params = {
+              media_type: "REELS",
+              video_url: await mediaUrlFor(video2.storageKey),
+              share_to_feed: "true"
+            };
+            if (text3) params.caption = text3;
+            if (video2.coverKey) params.cover_url = await mediaUrlFor(video2.storageKey, "cover");
+            id2 = await createContainer(params);
+          }
+          const containerId2 = id2;
+          let expired = false;
+          const ready = await pollVideo({
+            polls: REEL_POLLS,
+            delayMs: REEL_POLL_MS,
+            reserve: POLL_RESERVE,
+            callsLeft: opts?.callsLeft,
+            timeLeft: opts?.timeLeft
+          }, async () => {
+            const state = await containerState(containerId2);
+            if (state?.state === "ready") return containerId2;
+            if (state?.state === "failed") {
+              if (state.code === "EXPIRED" && resumed) {
+                expired = true;
+                return containerId2;
+              }
+              throw new ProviderError(`Instagram could not take the video: ${state.status}`, {
+                code: "forbidden",
+                detail: state.status
+              });
+            }
+            return null;
+          });
+          if (expired) return reelContainer(video2, true);
+          if (ready) return ready;
+          throw processingError("Instagram", {
+            segment: 0,
+            storageKey: video2.storageKey,
+            state: { containerId: containerId2 }
+          });
+        }
+        __name(reelContainer, "reelContainer");
+        let containerId;
+        const video = media.find(isVideoAttachment);
+        if (video) containerId = await reelContainer(video);
+        else if (media.length === 1) {
+          const params = photoParams(media[0], await photoUrl(media[0]));
+          if (text3) params.caption = text3;
+          containerId = await createContainer(params);
+          await photosReady([containerId]);
+        } else {
+          const children2 = [];
+          for (const m of media) children2.push(await createContainer({
+            ...photoParams(m, await photoUrl(m)),
+            is_carousel_item: "true"
+          }));
+          await photosReady(children2);
+          const params = {
+            media_type: "CAROUSEL",
+            children: children2.join(",")
+          };
+          if (text3) params.caption = text3;
+          containerId = await createContainer(params);
+          await photosReady([containerId]);
+        }
+        let postId;
+        try {
+          postId = await graphPost(`${account}/media_publish`, { creation_id: containerId }, "Instagram publish");
+        } catch (err) {
+          if (err instanceof ProviderError) throw err;
+          throw unconfirmedPostError("Instagram", err);
+        }
+        const remoteUrl = postId ? await permalink(postId, token, fetchImpl) : null;
+        await opts?.checkpoint?.({
+          segmentIds: postId ? [postId] : [],
+          remoteUrl
+        });
+        return {
+          remotePostId: postId || void 0,
+          remoteUrl: remoteUrl ?? void 0
+        };
+      },
+      async refreshIfNeeded(creds, fetchImpl = providerFetch) {
+        if (!creds.accessToken) return creds;
+        if (creds.expiresAt && creds.expiresAt - Date.now() > REFRESH_SKEW_MS$3) return creds;
+        try {
+          const res = await fetchImpl(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(creds.accessToken)}`);
+          if (!res.ok) {
+            const err = tokenAwareError("Instagram token refresh", res.status, await res.text());
+            if (err.code === "auth") throw err;
+            return creds;
+          }
+          const data = await res.json();
+          if (!data.access_token) throw new ProviderError("Instagram token refresh returned no token \u2014 reconnect", {
+            status: 401,
+            code: "auth"
+          });
+          return {
+            ...creds,
+            accessToken: data.access_token,
+            expiresAt: data.expires_in ? Date.now() + data.expires_in * 1e3 : creds.expiresAt
+          };
+        } catch (err) {
+          if (err?.status === 401) throw err;
+          return creds;
+        }
+      }
+    };
+    __name(permalink, "permalink");
+    __name(tokenAwareError, "tokenAwareError");
+    __name(instagramCallbackUrl, "instagramCallbackUrl");
+    __name(instagramAuthorizeUrl, "instagramAuthorizeUrl");
+    __name(fetchProfile, "fetchProfile");
+    __name(profileFacts, "profileFacts");
+    PERSONAL_ACCOUNT_MESSAGE = "Instagram only lets Business and Creator accounts post through its API \u2014 switch the account type in Instagram's settings, then connect again";
+    __name(instagramExchangeCode, "instagramExchangeCode");
+    __name(instagramVerify, "instagramVerify");
     LINKEDIN_MAX_CHARS2 = 3e3;
     LINKEDIN_VIDEO_MIMES = ["video/mp4"];
     LINKEDIN_VERSION = "202609";
     REFRESH_SKEW_MS$2 = 6048e5;
     __name(authorUrn, "authorUrn");
-    __name(singlePost, "singlePost");
     __name(escapeLittleText, "escapeLittleText");
     LINKEDIN_MAX_ALT_TEXT = 4086;
     __name(linkedinAltText, "linkedinAltText");
@@ -15496,6 +16018,7 @@ var init_providers = __esm({
       mastodon: mastodonProvider,
       linkedin: linkedinProvider,
       threads: threadsProvider,
+      instagram: instagramProvider,
       x: xProvider
     };
     __name(getProvider, "getProvider");
@@ -15546,18 +16069,22 @@ var init_due_jobs = __esm({
 });
 
 // .svelte-kit/output/server/chunks/public-media.js
-function messageFor(key, exp) {
-  return `media-public:${key}:${exp}`;
+function isPublicMediaVariant(value) {
+  return value === "jpeg" || value === "cover";
+}
+function messageFor(key, exp, variant) {
+  return variant ? `media-public:${key}:${variant}:${exp}` : `media-public:${key}:${exp}`;
 }
 async function signingKey(secret) {
   return hmacHex(secret, "subkey:media-url:v1");
 }
-async function signPublicMediaUrl(secret, appUrl, storageKey, nowMs = Date.now()) {
+async function signPublicMediaUrl(secret, appUrl, storageKey, nowMs = Date.now(), variant) {
   const exp = nowMs + PUBLIC_MEDIA_TTL_MS;
-  const sig = await hmacHex(await signingKey(secret), messageFor(storageKey, exp));
-  return `${appUrl.replace(/\/$/, "")}/api/media/public/${encodeURIComponent(storageKey)}?exp=${exp}&sig=${sig}`;
+  const sig = await hmacHex(await signingKey(secret), messageFor(storageKey, exp, variant));
+  const v = variant ? `&v=${variant}` : "";
+  return `${appUrl.replace(/\/$/, "")}/api/media/public/${encodeURIComponent(storageKey)}?exp=${exp}${v}&sig=${sig}`;
 }
-async function verifyPublicMediaSig(secret, storageKey, exp, sig, nowMs = Date.now()) {
+async function verifyPublicMediaSig(secret, storageKey, exp, sig, nowMs = Date.now(), variant) {
   if (!Number.isInteger(exp) || exp <= nowMs) return {
     ok: false,
     error: "URL expired"
@@ -15566,7 +16093,7 @@ async function verifyPublicMediaSig(secret, storageKey, exp, sig, nowMs = Date.n
     ok: false,
     error: "URL lifetime too long"
   };
-  const expected = await hmacHex(await signingKey(secret), messageFor(storageKey, exp));
+  const expected = await hmacHex(await signingKey(secret), messageFor(storageKey, exp, variant));
   const a = utf8Bytes(sig);
   const b = utf8Bytes(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return {
@@ -15582,6 +16109,7 @@ var init_public_media = __esm({
     init_bytes();
     init_crypto();
     PUBLIC_MEDIA_TTL_MS = 72e5;
+    __name(isPublicMediaVariant, "isPublicMediaVariant");
     __name(messageFor, "messageFor");
     __name(signingKey, "signingKey");
     __name(signPublicMediaUrl, "signPublicMediaUrl");
@@ -15646,6 +16174,7 @@ async function buildNormalizedPost(db, draftId, platform2) {
   const options2 = parseJson(variant?.optionsJson, {});
   const toAttachment = /* @__PURE__ */ __name((m) => {
     const video = isVideoMedia(m) ? parseJson(m.metaJson, null) : null;
+    const image = video ? null : parseJson(m.metaJson, {});
     return {
       storageKey: m.storageKey,
       mime: m.mime,
@@ -15656,7 +16185,8 @@ async function buildNormalizedPost(db, draftId, platform2) {
       ...video ? {
         video,
         coverKey: video.cover ? coverKey(m.storageKey) : void 0
-      } : {}
+      } : {},
+      ...image?.jpeg ? { hasJpegCopy: true } : {}
     };
   }, "toAttachment");
   const mediaForSegment = /* @__PURE__ */ __name((segmentIndex) => media.filter((m) => (m.segmentIndex ?? 0) === segmentIndex).map(toAttachment), "mediaForSegment");
@@ -15742,10 +16272,10 @@ async function hydrateMedia(content, store) {
   }, "fill");
   return fill(content);
 }
-function publicMediaUrlFor(env3, storageKey) {
+function publicMediaUrlFor(env3, storageKey, variant) {
   const base = httpsBaseUrl(env3.MEDIA_PUBLIC_BASE_URL);
-  if (base) return `${base}/${encodeURIComponent(storageKey)}`;
-  return signPublicMediaUrl(env3.APP_ENCRYPTION_KEY, env3.APP_URL, storageKey);
+  if (base && variant !== "cover") return `${base}/${variant ? `${variant}/` : ""}${encodeURIComponent(storageKey)}`;
+  return signPublicMediaUrl(env3.APP_ENCRYPTION_KEY, env3.APP_URL, storageKey, Date.now(), variant);
 }
 function httpsBaseUrl(raw) {
   const value = raw?.trim().replace(/\/+$/, "");
@@ -15786,6 +16316,11 @@ function publishCallEstimate(platform2, content) {
       break;
     case "threads":
       platformCalls += segments.length * 4 + images.length * 3 + 4;
+      platformCalls -= videos.length * (VIDEO_START_CALLS - 3);
+      storage = 0;
+      break;
+    case "instagram":
+      platformCalls += images.length * 3 + 4;
       platformCalls -= videos.length * (VIDEO_START_CALLS - 3);
       storage = 0;
       break;
@@ -15960,7 +16495,7 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
       }, fetchImpl, {
         resume: resumeFrom ?? void 0,
         allowLocalHosts: isLocalAppUrl(env3.APP_URL),
-        mediaUrlFor: /* @__PURE__ */ __name((storageKey) => publicMediaUrlFor(env3, storageKey), "mediaUrlFor"),
+        mediaUrlFor: /* @__PURE__ */ __name((storageKey, variant) => publicMediaUrlFor(env3, storageKey, variant), "mediaUrlFor"),
         mediaReader: mediaReaderFor(store),
         callsLeft: /* @__PURE__ */ __name(() => options2.budget?.remaining ?? Infinity, "callsLeft"),
         timeLeft: /* @__PURE__ */ __name(() => options2.deadline === void 0 ? Infinity : options2.deadline - Date.now(), "timeLeft"),
@@ -16030,7 +16565,8 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
         now,
         partial: partial2,
         errorDetail,
-        lastCheckpoint: resumeState.last
+        lastCheckpoint: resumeState.last,
+        retryAfterMs: err instanceof ProviderError ? err.retryAfterMs : void 0
       }),
       error: finalMessage
     };
@@ -16112,7 +16648,7 @@ async function markFailed(db, targetId, draftId, attemptId, message, claimedGene
   let retryAt = park?.retryAt;
   if (nextStatus === "scheduled" && !park) {
     const when = opts.scheduledFor ? opts.scheduledFor instanceof Date ? opts.scheduledFor.getTime() : new Date(opts.scheduledFor).getTime() : null;
-    if (when == null || Number.isNaN(when) || when <= now.getTime() + 5e3) retryAt = new Date(now.getTime() + retryDelayMs(claimedGeneration));
+    if (when == null || Number.isNaN(when) || when <= now.getTime() + 5e3) retryAt = new Date(now.getTime() + Math.max(retryDelayMs(claimedGeneration), opts.retryAfterMs ?? 0));
   }
   const failed = await db.update(publishTargets).set({
     status: nextStatus,
@@ -16262,6 +16798,10 @@ function humanizedCause(raw) {
   if (oauthCode) return oauthCode;
   if (s2.includes("401") || s2.includes("unauthorized") || s2.includes("invalid credentials") || s2.includes("createsession failed") || s2.includes("need reconnect")) return "Account needs reconnect \u2014 password or token expired";
   if (s2.includes("403") || s2.includes("forbidden")) return "The platform refused this post (permissions or policy)";
+  if (s2.startsWith("instagram")) {
+    if (isThreadsAuthFailure(s2)) return "Instagram refused with a permissions error \u2014 reconnect the account and retry";
+    if (isThreadsMediaFetchFailure(s2)) return "Instagram could not download the image \u2014 retry to publish it";
+  }
   if (isThreadsAuthFailure(s2)) return "Threads refused with a permissions error \u2014 reconnect the account and retry";
   if (isThreadsMediaFetchFailure(s2)) return "Threads could not download the image \u2014 retry to publish it";
   if (/threads (container|publish) failed \(4(?!29)\d/.test(s2)) return "Threads could not create this post \u2014 check the post and the app setup, then retry";
@@ -39215,6 +39755,8 @@ async function envFromPlatform(platformEnv, options2 = {}) {
     LINKEDIN_CLIENT_SECRET: asString(platformEnv?.LINKEDIN_CLIENT_SECRET) ?? fallback2.LINKEDIN_CLIENT_SECRET,
     THREADS_APP_ID: asString(platformEnv?.THREADS_APP_ID) ?? fallback2.THREADS_APP_ID,
     THREADS_APP_SECRET: asString(platformEnv?.THREADS_APP_SECRET) ?? fallback2.THREADS_APP_SECRET,
+    INSTAGRAM_APP_ID: asString(platformEnv?.INSTAGRAM_APP_ID) ?? fallback2.INSTAGRAM_APP_ID,
+    INSTAGRAM_APP_SECRET: asString(platformEnv?.INSTAGRAM_APP_SECRET) ?? fallback2.INSTAGRAM_APP_SECRET,
     X_CLIENT_ID: asString(platformEnv?.X_CLIENT_ID) ?? fallback2.X_CLIENT_ID,
     X_CLIENT_SECRET: asString(platformEnv?.X_CLIENT_SECRET) ?? fallback2.X_CLIENT_SECRET,
     RESEND_API_KEY: asString(platformEnv?.RESEND_API_KEY) ?? fallback2.RESEND_API_KEY,
@@ -39289,7 +39831,7 @@ async function authorizeMcpRequest(request2, url3, db, state) {
 }
 function isPublicPath(path3) {
   if (path3 === "/login" || path3 === "/login/setup-2fa" || path3 === "/login/verify") return true;
-  if (path3 === "/api/health" || path3.startsWith("/api/media/public/") || path3.startsWith("/api/connections/mastodon/callback") || path3.startsWith("/api/connections/linkedin/callback") || path3.startsWith("/api/connections/threads/callback") || path3.startsWith("/api/connections/x/callback") || path3.startsWith("/api/connections/zernio/callback")) return true;
+  if (path3 === "/api/health" || path3.startsWith("/api/media/public/") || path3.startsWith("/api/connections/mastodon/callback") || path3.startsWith("/api/connections/linkedin/callback") || path3.startsWith("/api/connections/threads/callback") || path3.startsWith("/api/connections/instagram/callback") || path3.startsWith("/api/connections/x/callback") || path3.startsWith("/api/connections/zernio/callback")) return true;
   if (path3 === "/api/auth/login" || path3 === "/api/auth/claim" || path3 === "/api/auth/logout" || path3 === "/api/auth/me") return true;
   if (path3.startsWith("/api/auth/totp/enroll") || path3.startsWith("/api/auth/totp/verify")) return true;
   return false;
@@ -39675,6 +40217,8 @@ CREATE INDEX IF NOT EXISTS api_keys_user_idx ON api_keys (user_id);
       LINKEDIN_CLIENT_SECRET: external_exports.string().min(1).optional(),
       THREADS_APP_ID: external_exports.string().min(1).optional(),
       THREADS_APP_SECRET: external_exports.string().min(1).optional(),
+      INSTAGRAM_APP_ID: external_exports.string().min(1).optional(),
+      INSTAGRAM_APP_SECRET: external_exports.string().min(1).optional(),
       X_CLIENT_ID: external_exports.string().min(1).optional(),
       X_CLIENT_SECRET: external_exports.string().min(1).optional(),
       RESEND_API_KEY: external_exports.string().min(1).optional(),
@@ -40547,7 +41091,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1792599537965");
+  response.headers.set("x-sveltekit-version", "1792660305415");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43248,7 +43792,7 @@ function server_data_serializer(event, state) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_50fq6u";
+  const global = "__sveltekit_kshc66";
   function get_replacer(index17) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -43992,7 +44536,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_50fq6u";
+  const global = "__sveltekit_kshc66";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state.prerendering || state.prerender_default === true))).join("\n			")}`;
@@ -44017,7 +44561,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1792599537965")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1792660305415")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -46568,8 +47112,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.D_eu666u.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/tUr8yDSR.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/DCWaodEB.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/CvP7luaA.js"];
-    stylesheets = ["_app/immutable/assets/0.BB-PP_KV.css"];
+    imports = ["_app/immutable/nodes/0.iPsjf5QI.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/tUr8yDSR.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CtwZ6nWe.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/CvP7luaA.js"];
+    stylesheets = ["_app/immutable/assets/0.tKRh2_sd.css"];
     fonts = [];
   }
 });
@@ -46926,6 +47470,16 @@ var init_platform_setup = __esm({
         redirectField: "the Threads use case \u2192 Redirect Callback URLs",
         docsAnchor: "threads"
       },
+      instagram: {
+        secrets: ["INSTAGRAM_APP_ID", "INSTAGRAM_APP_SECRET"],
+        callbackPath: "/api/connections/instagram/callback",
+        consoleUrl: "https://developers.facebook.com/apps/",
+        consoleName: "Meta for Developers",
+        consoleRequirement: "Create a Business app, add the Instagram product, and open API setup with Instagram business login. Its Instagram app ID and secret are the ones to use, not the Meta app\u2019s own.",
+        redirectField: "API setup with Instagram business login \u2192 Set up Instagram business login \u2192 OAuth redirect URIs",
+        docsAnchor: "instagram",
+        note: "Only Business and Creator accounts can post through the API."
+      },
       x: {
         secrets: ["X_CLIENT_ID"],
         optionalSecrets: ["X_CLIENT_SECRET"],
@@ -46948,6 +47502,7 @@ var init_platform_setup = __esm({
       "mastodon",
       "linkedin",
       "threads",
+      "instagram",
       "x"
     ];
     __name(joinPlatformNames, "joinPlatformNames");
@@ -47232,17 +47787,20 @@ var init_page_server_ts2 = __esm({
           configured: {
             linkedin: false,
             threads: false,
+            instagram: false,
             x: false
           },
           secrets: {},
           sources: {
             linkedin: null,
             threads: null,
+            instagram: null,
             x: null
           },
           savedClientIds: {
             linkedin: null,
             threads: null,
+            instagram: null,
             x: null
           },
           appUrl: locals.env.APP_URL,
@@ -47359,6 +47917,7 @@ var init_platform_marks = __esm({
       x: "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z",
       linkedin: "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z",
       threads: "M18.263 11.097c-.03-3.486-1.92-5.586-5.111-5.586-2.13 0-3.922.963-4.863 2.499l2.062 1.438c.535-.843 1.272-1.543 2.628-1.543 1.528 0 2.318.85 2.544 2.431a15 15 0 0 0-2.236-.173c-4.125 0-6.068 1.867-6.068 4.336s1.943 3.99 4.804 3.99c3.139 0 5.013-2.115 5.781-4.735.798.361 1.348 1.204 1.348 2.47 0 3.387-3.907 5.232-7.22 5.232-4.885 0-8.077-3.207-8.077-8.424 0-6.392 4.223-10.487 9.9-10.487 3.808 0 5.69 1.671 6.97 3.914l2.108-1.475C21.44 2.078 18.331 0 13.663 0 6.227 0 1.168 5.277 1.168 12.934c0 7 4.953 11.066 10.856 11.066 4.878 0 9.809-2.846 9.809-7.716 0-2.545-1.46-4.231-3.569-5.187m-6.33 4.855c-1.077 0-2.026-.512-2.026-1.453 0-1.483 1.822-1.934 3.606-1.934.678 0 1.34.045 1.927.173-.422 1.927-1.671 3.215-3.508 3.214Z",
+      instagram: "M7 0h10a7 7 0 0 1 7 7v10a7 7 0 0 1-7 7H7a7 7 0 0 1-7-7V7a7 7 0 0 1 7-7zm0 2.16a4.84 4.84 0 0 0-4.84 4.84v10A4.84 4.84 0 0 0 7 21.84h10a4.84 4.84 0 0 0 4.84-4.84V7A4.84 4.84 0 0 0 17 2.16zM12 5.84a6.16 6.16 0 1 1 0 12.32 6.16 6.16 0 1 1 0-12.32zM12 8a4 4 0 1 0 0 8 4 4 0 1 0 0-8zm6.406-3.846a1.44 1.44 0 1 1 0 2.88 1.44 1.44 0 1 1 0-2.88z",
       mastodon: "M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.62 3.68.55 2.237 2.777 4.098 4.96 4.857 2.336.792 4.849.923 7.256.38.265-.061.527-.132.786-.213.585-.184 1.27-.39 1.774-.753a.057.057 0 0 0 .023-.043v-1.809a.052.052 0 0 0-.02-.041.053.053 0 0 0-.046-.01 20.282 20.282 0 0 1-4.709.545c-2.73 0-3.463-1.284-3.674-1.818a5.593 5.593 0 0 1-.319-1.433.053.053 0 0 1 .066-.054c1.517.363 3.072.546 4.632.546.376 0 .75 0 1.125-.01 1.57-.044 3.224-.124 4.768-.422.038-.008.077-.015.11-.024 2.435-.464 4.753-1.92 4.989-5.604.008-.145.03-1.52.03-1.67.002-.512.167-3.63-.024-5.545zm-3.748 9.195h-2.561V8.29c0-1.309-.55-1.976-1.67-1.976-1.23 0-1.846.79-1.846 2.35v3.403h-2.546V8.663c0-1.56-.617-2.35-1.848-2.35-1.112 0-1.668.668-1.67 1.977v6.218H4.822V8.102c0-1.31.337-2.35 1.011-3.12.696-.77 1.608-1.164 2.74-1.164 1.311 0 2.302.5 2.962 1.498l.638 1.06.638-1.06c.66-.999 1.65-1.498 2.96-1.498 1.13 0 2.043.395 2.74 1.164.675.77 1.012 1.81 1.012 3.12z"
     };
     __name(platformMark, "platformMark");
@@ -47394,6 +47953,7 @@ function AccountAvatar($$renderer, $$props) {
       mastodon: "#6364ff",
       linkedin: "#0a66c2",
       threads: "#000000",
+      instagram: "#e4405f",
       x: "#000000"
     };
     const badgeLabel = {
@@ -47401,6 +47961,7 @@ function AccountAvatar($$renderer, $$props) {
       mastodon: "Mastodon",
       linkedin: "LinkedIn",
       threads: "Threads",
+      instagram: "Instagram",
       x: "X"
     };
     const bg = derived2(() => badgeBg[platform2] ?? "#6b7280");
@@ -47481,6 +48042,7 @@ function _page2($$renderer, $$props) {
     let configured = data.configured ?? {
       linkedin: true,
       threads: true,
+      instagram: true,
       x: true
     };
     data.secrets;
@@ -47518,6 +48080,7 @@ function _page2($$renderer, $$props) {
         if (payload2.configured && typeof payload2.configured === "object") configured = {
           linkedin: payload2.configured.linkedin !== false,
           threads: payload2.configured.threads !== false,
+          instagram: payload2.configured.instagram !== false,
           x: payload2.configured.x !== false
         };
         if (payload2.secrets && typeof payload2.secrets === "object") payload2.secrets;
@@ -47670,7 +48233,7 @@ var init__4 = __esm({
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.CR1rQ1LB.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/DHMiDdm1.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/D3iaGwoa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/BjAv5Xr9.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/C_kV1f_b.js", "_app/immutable/chunks/QXGyRFL3.js", "_app/immutable/chunks/vp87PCn2.js"];
+    imports4 = ["_app/immutable/nodes/3.C6VyfLDr.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/DHMiDdm1.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/D3iaGwoa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/DyWvIGLt.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DtXDGwOl.js", "_app/immutable/chunks/QXGyRFL3.js", "_app/immutable/chunks/vp87PCn2.js"];
     stylesheets4 = [];
     fonts4 = [];
   }
@@ -47885,7 +48448,8 @@ var init_page_server_ts3 = __esm({
         connections: rows.map(serializeConnection),
         settings: parseProfileSettings(userRows[0]?.settingsJson ?? null),
         displayName: userRows[0]?.displayName ?? user.displayName ?? null,
-        draft
+        draft,
+        canMakeJpegCopies: Boolean(locals.bindings?.IMAGES)
       };
     }, "load");
   }
@@ -48350,6 +48914,7 @@ var init_schedule_helpers = __esm({
       bluesky: "text-sky-500",
       linkedin: "text-blue-600",
       threads: "text-stone-900",
+      instagram: "text-pink-600",
       x: "text-stone-900"
     };
     __name(platformColorClass, "platformColorClass");
@@ -48459,11 +49024,13 @@ function isOverSelectedPlatformLimit(params) {
   const mastodonMax = params.mastodonMax ?? PLATFORM_LIMITS.mastodon;
   const linkedinMax = params.linkedinMax ?? PLATFORM_LIMITS.linkedin;
   const threadsMax = params.threadsMax ?? PLATFORM_LIMITS.threads;
+  const instagramMax = params.instagramMax ?? PLATFORM_LIMITS.instagram;
   const xMax = params.xMax ?? PLATFORM_LIMITS.x;
   if (selected.has("bluesky") && params.blueskyLen > blueskyMax) return true;
   if (selected.has("mastodon") && params.mastodonLen > mastodonMax) return true;
   if (selected.has("linkedin") && (params.linkedinLen ?? 0) > linkedinMax) return true;
   if (selected.has("threads") && (params.threadsLen ?? 0) > threadsMax) return true;
+  if (selected.has("instagram") && (params.instagramLen ?? 0) > instagramMax) return true;
   if (selected.has("x") && (params.xLen ?? 0) > xMax) return true;
   return false;
 }
@@ -48686,7 +49253,7 @@ function PostStatusBanner($$renderer, $$props) {
 }
 function Editor($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
-    let { initialConnections = [], initialSettings = null, initialDraft = null, displayName = null } = $$props;
+    let { initialConnections = [], initialSettings = null, initialDraft = null, displayName = null, canMakeJpegCopies = false } = $$props;
     function openedDraft() {
       const id2 = page.url.searchParams.get("id");
       if (!initialDraft || !id2 || initialDraft.id !== id2) return null;
@@ -48844,6 +49411,7 @@ function Editor($$renderer, $$props) {
       const mastoText = effectivePlatformBody(baseBody, overrides, "mastodon");
       const linkedinText = effectivePlatformBody(baseBody, overrides, "linkedin");
       const threadsText = effectivePlatformBody(baseBody, overrides, "threads");
+      const instagramText = effectivePlatformBody(baseBody, overrides, "instagram");
       const xText = effectivePlatformBody(baseBody, overrides, "x");
       const linkedinFlat = flattenThreadBody(linkedinText);
       return {
@@ -48862,6 +49430,10 @@ function Editor($$renderer, $$props) {
         threads: {
           len: maxThreadSegmentLength(threadsText, countGraphemes),
           max: PLATFORM_LIMITS.threads
+        },
+        instagram: {
+          len: countGraphemes(flattenThreadBody(instagramText)),
+          max: PLATFORM_LIMITS.instagram
         },
         x: {
           len: maxThreadSegmentLength(xText, xWeightedLength),
@@ -48890,6 +49462,15 @@ function Editor($$renderer, $$props) {
       return null;
     });
     const linkedinMediaOver = derived2(() => linkedinMediaProblem() !== null);
+    const instagramMediaProblem = derived2(() => {
+      if (!selectedPlatforms().has("instagram")) return null;
+      return instagramMediaProblems(media.map((m) => ({
+        mime: m.mime,
+        width: m.width,
+        height: m.height,
+        hasJpegCopy: canMakeJpegCopies || Boolean(m.meta?.jpeg)
+      })))[0] ?? null;
+    });
     derived2(() => isOverSelectedPlatformLimit({
       selectedPlatforms: selectedPlatforms(),
       blueskyLen: counters().bluesky.len,
@@ -48900,6 +49481,8 @@ function Editor($$renderer, $$props) {
       linkedinMax: counters().linkedin.max,
       threadsLen: counters().threads.len,
       threadsMax: counters().threads.max,
+      instagramLen: counters().instagram.len,
+      instagramMax: counters().instagram.max,
       xLen: counters().x.len,
       xMax: counters().x.max
     }) || threadsLinksOver() || linkedinMediaOver() || blueskyBytesOver() > 0 && (selectedPlatforms().has("bluesky") || isPlatformCustomized(overrides, "bluesky")));
@@ -49372,7 +49955,7 @@ function Editor($$renderer, $$props) {
       }
       return null;
     });
-    function fitProblems(list, withLinkedIn) {
+    function fitProblems(list, threadWide) {
       const rows = /* @__PURE__ */ new Map();
       for (const m of list) {
         if (!isVideoItem(m)) continue;
@@ -49387,15 +49970,20 @@ function Editor($$renderer, $$props) {
           message: over
         });
       }
-      if (withLinkedIn && linkedinMediaProblem() && !rows.has("linkedin")) rows.set("linkedin", {
+      if (threadWide && linkedinMediaProblem() && !rows.has("linkedin")) rows.set("linkedin", {
         platform: "linkedin",
         level: "error",
         message: linkedinMediaProblem()
       });
+      if (threadWide && instagramMediaProblem() && !rows.has("instagram")) rows.set("instagram", {
+        platform: "instagram",
+        level: "error",
+        message: instagramMediaProblem()
+      });
       return [...rows.values()];
     }
     __name(fitProblems, "fitProblems");
-    const firstMediaCard = derived2(() => Math.min(...mediaBySegment().keys()));
+    const firstMediaCard = derived2(() => media.length ? Math.min(...mediaBySegment().keys()) : 0);
     function cardFit(index17) {
       return fitProblems(cardMedia(index17), activeTab !== "global" && !supportsThreads(activeTab) || index17 === firstMediaCard());
     }
@@ -49966,7 +50554,8 @@ function _page4($$renderer, $$props) {
       initialConnections: data.connections,
       initialSettings: data.settings,
       initialDraft: data.draft,
-      displayName: data.displayName
+      displayName: data.displayName,
+      canMakeJpegCopies: data.canMakeJpegCopies
     });
   });
 }
@@ -50134,6 +50723,7 @@ var init_page_svelte4 = __esm({
       mastodon: 500,
       linkedin: 3e3,
       threads: 500,
+      instagram: 2200,
       x: 280
     };
     __name(platformLimit, "platformLimit");
@@ -50175,7 +50765,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.o2_cocWP.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/CHHG11Ma.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/DCWaodEB.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/D3iaGwoa.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/BjAv5Xr9.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/C_kV1f_b.js"];
+    imports6 = ["_app/immutable/nodes/5.DJrft7kA.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/Dl4abIec.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/CtwZ6nWe.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/D3iaGwoa.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/DyWvIGLt.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DtXDGwOl.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -50425,11 +51015,18 @@ function categorizeFailure(platform2, message) {
   if (!s2.trim()) return `${name} failure`;
   const isThreads = platform2 === "threads" || !platform2 && s2.includes("threads");
   const isLinkedIn = platform2 === "linkedin" || !platform2 && s2.includes("linkedin");
+  const isInstagram = platform2 === "instagram" || !platform2 && s2.includes("instagram");
   if (isThreads) {
     if (isThreadsMediaFetchFailure(raw)) return "Threads media timeout";
     if (isThreadsAuthFailure(raw)) return "Threads permission";
     if (s2.includes("429") || s2.includes("rate limit")) return "Threads rate limit";
     if (s2.includes("does not support") || s2.includes("not supported")) return "Threads unsupported content";
+  }
+  if (isInstagram) {
+    if (isThreadsMediaFetchFailure(raw)) return "Instagram media timeout";
+    if (isThreadsAuthFailure(raw)) return "Instagram permission";
+    if (s2.includes("100 posts a day")) return "Instagram daily limit";
+    if (s2.includes("needs a photo or video")) return "Instagram needs media";
   }
   if (isLinkedIn) {
     if (s2.includes("does not support threads") || s2.includes("single post")) return "LinkedIn threads unsupported";
@@ -50957,7 +51554,7 @@ var init__9 = __esm({
     index10 = 8;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports9 = ["_app/immutable/nodes/8.Dwt-LoPB.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/tUr8yDSR.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/BjAv5Xr9.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/QXGyRFL3.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports9 = ["_app/immutable/nodes/8.Dg4b2x62.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/tUr8yDSR.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/DyWvIGLt.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/QXGyRFL3.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets9 = [];
     fonts9 = [];
   }
@@ -52330,7 +52927,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id12 = "src/routes/posts/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.j2vqSLQ1.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/J0Pux1Z4.js", "_app/immutable/chunks/CHHG11Ma.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/DCWaodEB.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/C_kV1f_b.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/QXGyRFL3.js"];
+    imports14 = ["_app/immutable/nodes/13.DVE4sj6x.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/J0Pux1Z4.js", "_app/immutable/chunks/Dl4abIec.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/CtwZ6nWe.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/DtXDGwOl.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/QXGyRFL3.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -55814,7 +56411,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.20.2")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.21.0-beta.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -55937,7 +56534,7 @@ var init__15 = __esm({
     "use strict";
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.DCoVKTBO.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DHMiDdm1.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/DfsqagYk.js", "_app/immutable/chunks/CvP7luaA.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/BjAv5Xr9.js", "_app/immutable/chunks/CW3ifZ8r.js", "_app/immutable/chunks/QXGyRFL3.js"];
+    imports15 = ["_app/immutable/nodes/14.RiCLMWiP.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DHMiDdm1.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/CvP7luaA.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/DyWvIGLt.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/QXGyRFL3.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -56856,14 +57453,14 @@ var init_platform_setup2 = __esm({
   }
 });
 
-// .svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js
+// .svelte-kit/output/server/entries/endpoints/api/connections/instagram/_server.ts.js
 var server_ts_exports13 = {};
 __export(server_ts_exports13, {
   POST: () => POST9
 });
 var POST9;
 var init_server_ts13 = __esm({
-  ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js"() {
+  ".svelte-kit/output/server/entries/endpoints/api/connections/instagram/_server.ts.js"() {
     "use strict";
     init_client();
     init_bytes();
@@ -56877,6 +57474,105 @@ var init_server_ts13 = __esm({
     init_providers();
     init_platform_setup2();
     POST9 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
+      try {
+        const user = requireSession(locals.user, locals.authMethod);
+        const credentials = await resolvePlatformCredentials(locals.db, locals.env, "instagram");
+        const appId = credentials?.values.INSTAGRAM_APP_ID;
+        const appSecret = credentials?.values.INSTAGRAM_APP_SECRET;
+        if (!appId || !appSecret) return platformNotConfigured("instagram");
+        const state = randomHex(16);
+        const sessionId = cookies.get("cog_session") ?? `machine:${user.id}`;
+        const bound = await bindOAuthState({
+          secret: locals.env.AUTH_SECRET,
+          pendingId: state,
+          sessionId
+        });
+        await locals.db.insert(oauthPending).values({
+          id: state,
+          userId: user.id,
+          instanceUrl: "instagram",
+          clientId: appId,
+          clientSecretEnc: await encryptSecret(appSecret, locals.env.APP_ENCRYPTION_KEY),
+          expiresAt: new Date(Date.now() + OAUTH_PENDING_TTL_MS),
+          createdAt: /* @__PURE__ */ new Date()
+        });
+        return ok({ authorizeUrl: instagramAuthorizeUrl(appId, locals.env.APP_URL, bound) });
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "POST");
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/connections/instagram/callback/_server.ts.js
+var server_ts_exports14 = {};
+__export(server_ts_exports14, {
+  GET: () => GET5
+});
+var GET5;
+var init_server_ts14 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/connections/instagram/callback/_server.ts.js"() {
+    "use strict";
+    init_crypto();
+    init_oauth_callback();
+    init_providers();
+    GET5 = createOAuthCallback({
+      platform: "instagram",
+      pendingMarker: "instagram",
+      accountIdKey: "igUserId",
+      async complete({ pending: pending2, code, env: env3 }) {
+        const appSecret = await decryptSecret(pending2.clientSecretEnc, env3.APP_ENCRYPTION_KEY);
+        const exchanged = await instagramExchangeCode({
+          appId: pending2.clientId,
+          appSecret,
+          code,
+          appUrl: env3.APP_URL
+        });
+        return {
+          credentials: {
+            accessToken: exchanged.accessToken,
+            expiresAt: exchanged.expiresAt,
+            tokenType: exchanged.tokenType,
+            scopes: exchanged.scopes,
+            clientId: pending2.clientId,
+            igUserId: exchanged.igUserId,
+            igUsername: exchanged.igUsername
+          },
+          displayName: exchanged.displayName,
+          handle: exchanged.handle,
+          avatarUrl: exchanged.avatarUrl,
+          meta: {
+            igUserId: exchanged.igUserId,
+            igAccountType: exchanged.igAccountType,
+            maxCharacters: exchanged.maxCharacters
+          }
+        };
+      }
+    });
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js
+var server_ts_exports15 = {};
+__export(server_ts_exports15, {
+  POST: () => POST10
+});
+var POST10;
+var init_server_ts15 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js"() {
+    "use strict";
+    init_client();
+    init_bytes();
+    init_crypto();
+    init_human_error();
+    init_http();
+    init_auth();
+    init_require();
+    init_platform_credentials();
+    init_oauth_state();
+    init_providers();
+    init_platform_setup2();
+    POST10 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const credentials = await resolvePlatformCredentials(locals.db, locals.env, "linkedin");
@@ -56908,18 +57604,18 @@ var init_server_ts13 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/linkedin/callback/_server.ts.js
-var server_ts_exports14 = {};
-__export(server_ts_exports14, {
-  GET: () => GET5
+var server_ts_exports16 = {};
+__export(server_ts_exports16, {
+  GET: () => GET6
 });
-var GET5;
-var init_server_ts14 = __esm({
+var GET6;
+var init_server_ts16 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_providers();
-    GET5 = createOAuthCallback({
+    GET6 = createOAuthCallback({
       platform: "linkedin",
       pendingMarker: "linkedin",
       accountIdKey: "personUrn",
@@ -56957,12 +57653,12 @@ var init_server_ts14 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/mastodon/_server.ts.js
-var server_ts_exports15 = {};
-__export(server_ts_exports15, {
-  POST: () => POST10
+var server_ts_exports17 = {};
+__export(server_ts_exports17, {
+  POST: () => POST11
 });
-var POST10;
-var init_server_ts15 = __esm({
+var POST11;
+var init_server_ts17 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/mastodon/_server.ts.js"() {
     "use strict";
     init_client();
@@ -56975,7 +57671,7 @@ var init_server_ts15 = __esm({
     init_oauth_state();
     init_providers();
     init_timed_fetch();
-    POST10 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies }) => {
+    POST11 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => null);
@@ -57016,12 +57712,12 @@ var init_server_ts15 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/mastodon/callback/_server.ts.js
-var server_ts_exports16 = {};
-__export(server_ts_exports16, {
-  GET: () => GET6
+var server_ts_exports18 = {};
+__export(server_ts_exports18, {
+  GET: () => GET7
 });
-var GET6;
-var init_server_ts16 = __esm({
+var GET7;
+var init_server_ts18 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/mastodon/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
@@ -57029,7 +57725,7 @@ var init_server_ts16 = __esm({
     init_oauth_callback();
     init_providers();
     init_timed_fetch();
-    GET6 = createOAuthCallback({
+    GET7 = createOAuthCallback({
       platform: "mastodon",
       matchInstanceUrl: true,
       async complete({ pending: pending2, code, env: env3 }) {
@@ -57060,12 +57756,12 @@ var init_server_ts16 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/threads/_server.ts.js
-var server_ts_exports17 = {};
-__export(server_ts_exports17, {
-  POST: () => POST11
+var server_ts_exports19 = {};
+__export(server_ts_exports19, {
+  POST: () => POST12
 });
-var POST11;
-var init_server_ts17 = __esm({
+var POST12;
+var init_server_ts19 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/threads/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57079,7 +57775,7 @@ var init_server_ts17 = __esm({
     init_oauth_state();
     init_providers();
     init_platform_setup2();
-    POST11 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
+    POST12 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const credentials = await resolvePlatformCredentials(locals.db, locals.env, "threads");
@@ -57111,18 +57807,18 @@ var init_server_ts17 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/threads/callback/_server.ts.js
-var server_ts_exports18 = {};
-__export(server_ts_exports18, {
-  GET: () => GET7
+var server_ts_exports20 = {};
+__export(server_ts_exports20, {
+  GET: () => GET8
 });
-var GET7;
-var init_server_ts18 = __esm({
+var GET8;
+var init_server_ts20 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/threads/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_providers();
-    GET7 = createOAuthCallback({
+    GET8 = createOAuthCallback({
       platform: "threads",
       pendingMarker: "threads",
       accountIdKey: "threadsUserId",
@@ -57158,12 +57854,12 @@ var init_server_ts18 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/x/_server.ts.js
-var server_ts_exports19 = {};
-__export(server_ts_exports19, {
-  POST: () => POST12
+var server_ts_exports21 = {};
+__export(server_ts_exports21, {
+  POST: () => POST13
 });
-var POST12;
-var init_server_ts19 = __esm({
+var POST13;
+var init_server_ts21 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/x/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57177,7 +57873,7 @@ var init_server_ts19 = __esm({
     init_oauth_state();
     init_providers();
     init_platform_setup2();
-    POST12 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
+    POST13 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const credentials = await resolvePlatformCredentials(locals.db, locals.env, "x");
@@ -57211,19 +57907,19 @@ var init_server_ts19 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/x/callback/_server.ts.js
-var server_ts_exports20 = {};
-__export(server_ts_exports20, {
-  GET: () => GET8
+var server_ts_exports22 = {};
+__export(server_ts_exports22, {
+  GET: () => GET9
 });
-var GET8;
-var init_server_ts20 = __esm({
+var GET9;
+var init_server_ts22 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/x/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_x_limits();
     init_providers();
-    GET8 = createOAuthCallback({
+    GET9 = createOAuthCallback({
       platform: "x",
       pendingMarker: "x",
       accountIdKey: "xUserId",
@@ -57381,12 +58077,12 @@ var init_zernio_import = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/accounts/_server.ts.js
-var server_ts_exports21 = {};
-__export(server_ts_exports21, {
-  POST: () => POST13
+var server_ts_exports23 = {};
+__export(server_ts_exports23, {
+  POST: () => POST14
 });
-var POST13;
-var init_server_ts21 = __esm({
+var POST14;
+var init_server_ts23 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/accounts/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57394,7 +58090,7 @@ var init_server_ts21 = __esm({
     init_require();
     init_zernio2();
     init_zernio_import();
-    POST13 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST14 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => ({}));
@@ -57435,12 +58131,12 @@ var init_server_ts21 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/callback/_server.ts.js
-var server_ts_exports22 = {};
-__export(server_ts_exports22, {
-  GET: () => GET9
+var server_ts_exports24 = {};
+__export(server_ts_exports24, {
+  GET: () => GET10
 });
-var GET9;
-var init_server_ts22 = __esm({
+var GET10;
+var init_server_ts24 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/callback/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57453,7 +58149,7 @@ var init_server_ts22 = __esm({
     init_zernio_import();
     init_exports();
     init_drizzle_orm();
-    GET9 = /* @__PURE__ */ __name(async ({ url: url3, locals, cookies }) => {
+    GET10 = /* @__PURE__ */ __name(async ({ url: url3, locals, cookies }) => {
       const appUrl = locals.env.APP_URL.replace(/\/$/, "");
       const state = url3.searchParams.get("pending");
       const candidate = splitOAuthState(state);
@@ -57501,12 +58197,12 @@ var init_server_ts22 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/connect/_server.ts.js
-var server_ts_exports23 = {};
-__export(server_ts_exports23, {
-  POST: () => POST14
+var server_ts_exports25 = {};
+__export(server_ts_exports25, {
+  POST: () => POST15
 });
-var POST14;
-var init_server_ts23 = __esm({
+var POST15;
+var init_server_ts25 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/connect/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57521,7 +58217,7 @@ var init_server_ts23 = __esm({
     init_zernio();
     init_zernio2();
     init_zernio_import();
-    POST14 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies }) => {
+    POST15 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => ({}));
@@ -57568,12 +58264,12 @@ var init_server_ts23 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/import/_server.ts.js
-var server_ts_exports24 = {};
-__export(server_ts_exports24, {
-  POST: () => POST15
+var server_ts_exports26 = {};
+__export(server_ts_exports26, {
+  POST: () => POST16
 });
-var POST15;
-var init_server_ts24 = __esm({
+var POST16;
+var init_server_ts26 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/import/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57581,7 +58277,7 @@ var init_server_ts24 = __esm({
     init_serialize();
     init_zernio2();
     init_zernio_import();
-    POST15 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST16 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => ({}));
@@ -57825,13 +58521,13 @@ var init_publish_plan = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js
-var server_ts_exports25 = {};
-__export(server_ts_exports25, {
+var server_ts_exports27 = {};
+__export(server_ts_exports27, {
   DELETE: () => DELETE2,
   PATCH: () => PATCH2
 });
 var DELETE2, PATCH2;
-var init_server_ts25 = __esm({
+var init_server_ts27 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57915,12 +58611,12 @@ var init_server_ts25 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/_id_/verify/_server.ts.js
-var server_ts_exports26 = {};
-__export(server_ts_exports26, {
-  POST: () => POST16
+var server_ts_exports28 = {};
+__export(server_ts_exports28, {
+  POST: () => POST17
 });
-var POST16;
-var init_server_ts26 = __esm({
+var POST17;
+var init_server_ts28 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/verify/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57933,7 +58629,7 @@ var init_server_ts26 = __esm({
     init_zernio2();
     init_providers();
     init_drizzle_orm();
-    POST16 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    POST17 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       const { id: id2 } = params;
       let conn;
       try {
@@ -58060,6 +58756,48 @@ var init_server_ts26 = __esm({
             displayName: info.displayName || conn.displayName,
             avatarUrl: info.avatarUrl || conn.avatarUrl,
             handle: info.handle || conn.handle,
+            ...Object.keys(credsPatch).length ? { credentialsEncrypted: await encryptJson({
+              ...checkCreds,
+              ...credsPatch
+            }, locals.env.APP_ENCRYPTION_KEY) } : {},
+            updatedAt: /* @__PURE__ */ new Date()
+          }).where(owned);
+        } else if (conn.platform === "instagram") {
+          let checkCreds = creds;
+          try {
+            const refreshed = await getProvider("instagram").refreshIfNeeded(creds);
+            if (refreshed.accessToken && refreshed.accessToken !== creds.accessToken) {
+              checkCreds = refreshed;
+              await locals.db.update(connections).set({
+                credentialsEncrypted: await encryptJson(refreshed, locals.env.APP_ENCRYPTION_KEY),
+                updatedAt: /* @__PURE__ */ new Date()
+              }).where(owned);
+            }
+          } catch (err) {
+            if (err?.status === 401) {
+              await locals.db.update(connections).set({
+                status: "expired",
+                updatedAt: /* @__PURE__ */ new Date()
+              }).where(owned);
+              return fail("Token expired \u2014 reconnect", 401);
+            }
+          }
+          const info = await instagramVerify(checkCreds);
+          const meta3 = parseJson(conn.metaJson, {});
+          const metaChanged = Boolean(info.userId && meta3.igUserId !== info.userId);
+          const credsPatch = {
+            ...info.userId && info.userId !== checkCreds.igUserId ? { igUserId: info.userId } : {},
+            ...info.username && info.username !== checkCreds.igUsername ? { igUsername: info.username } : {}
+          };
+          await locals.db.update(connections).set({
+            status: "active",
+            displayName: info.displayName || conn.displayName,
+            avatarUrl: info.avatarUrl || conn.avatarUrl,
+            handle: info.handle || conn.handle,
+            ...metaChanged ? { metaJson: JSON.stringify({
+              ...meta3,
+              igUserId: info.userId
+            }) } : {},
             ...Object.keys(credsPatch).length ? { credentialsEncrypted: await encryptJson({
               ...checkCreds,
               ...credsPatch
@@ -58288,7 +59026,7 @@ function validatePost(input2) {
   if (text3.length > MAX_VALIDATE_LENGTH) invalid(`text must be ${MAX_VALIDATE_LENGTH} characters or fewer`, 413);
   const platform2 = input2.platform;
   const maxCharacters = input2.maxCharacters;
-  const bluesky = validateBlueskyText(text3), mastodon = validateMastodonText(text3, maxCharacters ?? 500), linkedin = validateLinkedinText(text3), threads = validateThreadsText(text3), x = validateXText(text3);
+  const bluesky = validateBlueskyText(text3), mastodon = validateMastodonText(text3, maxCharacters ?? 500), linkedin = validateLinkedinText(text3), threads = validateThreadsText(text3), instagram = validateInstagramText(text3), x = validateXText(text3);
   const issues = platform2 && isPlatformId(platform2) ? getProvider(platform2).validate({ text: text3 }, { maxCharacters }) : [];
   return {
     graphemes: countGraphemes(text3),
@@ -58297,6 +59035,7 @@ function validatePost(input2) {
     mastodon,
     linkedin,
     threads,
+    instagram,
     x,
     issues
   };
@@ -58328,6 +59067,42 @@ async function updateDraft(ctx, userId, id2, body) {
   }).where(eq(drafts.id, id2));
   return { ok: true };
 }
+async function makeMissingJpegCopies(ctx, draftId) {
+  const images = ctx.bindings?.IMAGES;
+  if (!images) return false;
+  const missing = (await ctx.db.select().from(draftMedia).where(eq(draftMedia.draftId, draftId))).filter((row) => {
+    const mime = (row.mime || "").toLowerCase();
+    if (mime !== "image/png" && mime !== "image/webp") return false;
+    return !parseJson(row.metaJson, {}).jpeg;
+  });
+  for (const row of missing) {
+    if (ctx.budget && ctx.budget.remaining < 29) return true;
+    ctx.budget?.count();
+    if (!await makeStoredJpegCopy(ctx.media, row.storageKey, row.width, images)) continue;
+    const meta3 = {
+      ...parseJson(row.metaJson, {}),
+      jpeg: { v: 1 }
+    };
+    await ctx.db.update(draftMedia).set({ metaJson: JSON.stringify(meta3) }).where(eq(draftMedia.id, row.id));
+  }
+  return false;
+}
+async function refuseUnfitForInstagram(ctx, draftId, conns) {
+  if (!conns.some((c) => c.platform === "instagram")) return;
+  const deferred2 = await makeMissingJpegCopies(ctx, draftId);
+  const content = await buildNormalizedPost(ctx.db, draftId, "instagram");
+  const issues = getProvider("instagram").validate(content);
+  if (issues.length) {
+    if (deferred2 && issues.some((issue2) => issue2.message.includes("JPEG"))) invalid("Instagram: still making JPEG copies of the photos \u2014 try again", 503, {
+      platform: "instagram",
+      retryable: true
+    });
+    invalid(`Instagram: ${issues[0].message}`, 400, {
+      platform: "instagram",
+      issues: issues.map((issue2) => issue2.message)
+    });
+  }
+}
 async function scheduleDraft(ctx, userId, draftId, body) {
   if (!await first(ctx.db.select().from(drafts).where(and(eq(drafts.id, draftId), eq(drafts.userId, userId))))) invalid("Not found", 404);
   if (!body || typeof body !== "object") invalid("Invalid JSON body");
@@ -58350,6 +59125,7 @@ async function scheduleDraft(ctx, userId, draftId, body) {
     alreadyPublished: already,
     inFlight: flight
   });
+  await refuseUnfitForInstagram(ctx, draftId, conns);
   const ensured = await ensureTargets(ctx.db, draftId, conns, "schedule", runAt2, now);
   const blocked = ensured.filter((i) => i.alreadyPublished || i.inFlight);
   if (blocked.length) invalid(blocked.some((i) => i.inFlight) ? "Already publishing" : "Already published", 409, {
@@ -58507,14 +59283,19 @@ async function copyVideo(store, item, storageKey) {
     return null;
   }
 }
-async function copyPreview(store, item, storageKey) {
-  const preview = parseJson(item.metaJson, {}).preview;
-  if (!preview || !store.copy) return null;
-  try {
-    return await store.copy(previewKey(item.storageKey), previewKey(storageKey)) ? preview : null;
-  } catch {
-    return null;
+async function copyImageVariants(store, item, storageKey) {
+  const stored = parseJson(item.metaJson, {});
+  const copied = {};
+  const variants = [["preview", previewKey], ["jpeg", jpegKey]];
+  for (const [name, keyOf] of variants) {
+    const variant = stored[name];
+    if (!variant || !store.copy) continue;
+    try {
+      if (await store.copy(keyOf(item.storageKey), keyOf(storageKey))) copied[name] = variant;
+    } catch {
+    }
   }
+  return Object.keys(copied).length ? copied : null;
 }
 async function listDrafts(ctx, userId, requestedLimit) {
   const limit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(1, Math.floor(requestedLimit))) : 200;
@@ -58654,7 +59435,7 @@ async function duplicateDraft(ctx, userId, draftId) {
       if (!validated.ok) continue;
       await ctx.media.put(storageKey, bytes, validated.mime);
       savedKeys.push(storageKey);
-      const preview = await copyPreview(ctx.media, item, storageKey);
+      const imageMeta = await copyImageVariants(ctx.media, item, storageKey);
       mediaValues.push({
         id: newId(),
         draftId: newDraftId,
@@ -58663,7 +59444,7 @@ async function duplicateDraft(ctx, userId, draftId) {
         size: bytes.length,
         width: item.width,
         height: item.height,
-        metaJson: preview ? JSON.stringify({ preview }) : null,
+        metaJson: imageMeta ? JSON.stringify(imageMeta) : null,
         altText: item.altText,
         sortOrder: item.sortOrder,
         segmentIndex: item.segmentIndex,
@@ -58716,7 +59497,7 @@ async function setDraftVariant(ctx, userId, draftId, input2) {
     if (!body.ok) invalid(body.error);
   }
   const platform2 = String(fields.platform || "");
-  if (!VARIANT_PLATFORMS.has(platform2)) invalid("platform must be mastodon, bluesky, linkedin, threads, or x");
+  if (!VARIANT_PLATFORMS.has(platform2)) invalid("platform must be mastodon, bluesky, linkedin, threads, instagram, or x");
   const existing = await first(ctx.db.select().from(draftVariants).where(and(eq(draftVariants.draftId, draftId), eq(draftVariants.platform, platform2))));
   const now = /* @__PURE__ */ new Date();
   const optionsJson = fields.options !== void 0 ? JSON.stringify(fields.options ?? {}) : existing?.optionsJson ?? "{}";
@@ -58768,8 +59549,11 @@ async function publishDraft(ctx, userId, draftId, requestBody) {
   const userConnections = await ctx.db.select().from(connections).where(and(eq(connections.userId, userId), inArray(connections.id, connectionIds2), eq(connections.status, "active")));
   if (userConnections.length !== connectionIds2.length) invalid("One or more connections not found");
   const now = /* @__PURE__ */ new Date();
-  const inFlight = (await classifyConnections(ctx.db, draftId, userConnections, now)).filter((item) => item.kind === "inFlight").map((item) => item.connectionId);
+  const classified = await classifyConnections(ctx.db, draftId, userConnections, now);
+  const inFlight = classified.filter((item) => item.kind === "inFlight").map((item) => item.connectionId);
   if (inFlight.length) invalid("Already publishing", 409, { inFlight });
+  const published = new Set(classified.filter((item) => item.kind === "published").map((item) => item.connectionId));
+  await refuseUnfitForInstagram(ctx, draftId, userConnections.filter((row) => !published.has(row.id)));
   const ensured = await ensureTargets(ctx.db, draftId, userConnections, "now", null, now);
   const results = [];
   let stopped = null;
@@ -58917,6 +59701,8 @@ var init_operations3 = __esm({
     MAX_VALIDATE_LENGTH = 2e5;
     __name(validatePost, "validatePost");
     __name(updateDraft, "updateDraft");
+    __name(makeMissingJpegCopies, "makeMissingJpegCopies");
+    __name(refuseUnfitForInstagram, "refuseUnfitForInstagram");
     __name(scheduleDraft, "scheduleDraft");
     __name(cancelDelivery, "cancelDelivery");
     __name(retryDelivery, "retryDelivery");
@@ -58934,6 +59720,7 @@ var init_operations3 = __esm({
       "bluesky",
       "linkedin",
       "threads",
+      "instagram",
       "x"
     ]);
     VISIBILITIES = /* @__PURE__ */ new Set([
@@ -58943,7 +59730,7 @@ var init_operations3 = __esm({
       "direct"
     ]);
     __name(copyVideo, "copyVideo");
-    __name(copyPreview, "copyPreview");
+    __name(copyImageVariants, "copyImageVariants");
     __name(listDrafts, "listDrafts");
     __name(createDraft, "createDraft");
     __name(duplicateDraft, "duplicateDraft");
@@ -58961,20 +59748,20 @@ var init_operations3 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_server.ts.js
-var server_ts_exports27 = {};
-__export(server_ts_exports27, {
-  GET: () => GET10,
-  POST: () => POST17
+var server_ts_exports29 = {};
+__export(server_ts_exports29, {
+  GET: () => GET11,
+  POST: () => POST18
 });
-var GET10, POST17;
-var init_server_ts27 = __esm({
+var GET11, POST18;
+var init_server_ts29 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
     init_post_list();
-    GET10 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET11 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -58985,7 +59772,7 @@ var init_server_ts27 = __esm({
         return handleError(err);
       }
     }, "GET");
-    POST17 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST18 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -59007,20 +59794,20 @@ var init_server_ts27 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/_server.ts.js
-var server_ts_exports28 = {};
-__export(server_ts_exports28, {
+var server_ts_exports30 = {};
+__export(server_ts_exports30, {
   DELETE: () => DELETE3,
-  GET: () => GET11,
+  GET: () => GET12,
   PATCH: () => PATCH3
 });
-var GET11, PATCH3, DELETE3;
-var init_server_ts28 = __esm({
+var GET12, PATCH3, DELETE3;
+var init_server_ts30 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    GET11 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    GET12 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -59052,18 +59839,18 @@ var init_server_ts28 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/duplicate/_server.ts.js
-var server_ts_exports29 = {};
-__export(server_ts_exports29, {
-  POST: () => POST18
+var server_ts_exports31 = {};
+__export(server_ts_exports31, {
+  POST: () => POST19
 });
-var POST18;
-var init_server_ts29 = __esm({
+var POST19;
+var init_server_ts31 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/duplicate/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST18 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    POST19 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -59149,31 +59936,31 @@ var init_draft_media = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js
-var server_ts_exports30 = {};
-__export(server_ts_exports30, {
+var server_ts_exports32 = {};
+__export(server_ts_exports32, {
   DELETE: () => DELETE4,
   PATCH: () => PATCH4,
-  POST: () => POST19
+  POST: () => POST20
 });
-async function savePreview(locals, storageKey, file2) {
-  if (!file2 || file2.size > 1e6) return false;
+async function saveJpegVariant(locals, key, file2, maxBytes) {
+  if (!file2 || file2.size > maxBytes) return false;
   const bytes = new Uint8Array(await file2.arrayBuffer());
   const check2 = validateImageUpload({
     mime: "image/jpeg",
     size: bytes.length,
-    maxBytes: MAX_PREVIEW_BYTES,
+    maxBytes,
     bytes
   });
   if (!check2.ok || check2.mime !== "image/jpeg") return false;
   try {
-    await locals.media.put(previewKey(storageKey), bytes, "image/jpeg");
+    await locals.media.put(key, bytes, "image/jpeg");
     return true;
   } catch {
     return false;
   }
 }
-var MAX_UPLOAD_BYTES, MAX_FORM_VIDEO_BYTES, POST19, PATCH4, DELETE4;
-var init_server_ts30 = __esm({
+var MAX_UPLOAD_BYTES, MAX_FORM_VIDEO_BYTES, POST20, PATCH4, DELETE4;
+var init_server_ts32 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js"() {
     "use strict";
     init_client();
@@ -59186,8 +59973,8 @@ var init_server_ts30 = __esm({
     init_drizzle_orm();
     MAX_UPLOAD_BYTES = 1e8;
     MAX_FORM_VIDEO_BYTES = 95e6;
-    __name(savePreview, "savePreview");
-    POST19 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    __name(saveJpegVariant, "saveJpegVariant");
+    POST20 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const declaredBytes = Number(request2.headers.get("content-length") ?? "");
         if (Number.isFinite(declaredBytes) && declaredBytes > MAX_UPLOAD_BYTES) return fail("Upload too large", 413);
@@ -59205,11 +59992,16 @@ var init_server_ts30 = __esm({
         const existingOnSegment = existing.filter((m) => (m.segmentIndex ?? 0) === segmentIndex).length;
         const files = [];
         const previews = [];
+        const jpegs = [];
+        const fileField = /* @__PURE__ */ __name((name) => {
+          const value = form.get(name);
+          return value instanceof File && value.size > 0 ? value : null;
+        }, "fileField");
         [...form.getAll("files"), ...form.getAll("file")].forEach((entry, n) => {
           if (!(entry instanceof File) || entry.size <= 0 || files.includes(entry)) return;
           files.push(entry);
-          const preview = form.get(`preview-${n}`);
-          previews.push(preview instanceof File && preview.size > 0 ? preview : null);
+          previews.push(fileField(`preview-${n}`));
+          jpegs.push(fileField(`jpeg-${n}`));
         });
         if (!files.length) return fail("file required");
         for (const f of files) {
@@ -59240,7 +60032,13 @@ var init_server_ts30 = __esm({
             bytes,
             mime: file2.type || "image/jpeg"
           });
-          const imageMeta = (saved.video ? false : await savePreview(locals, saved.storageKey, previews[i])) ? { preview: { v: Date.now() } } : null;
+          const imageMeta = {};
+          if (!saved.video) {
+            const v = Date.now();
+            const key = saved.storageKey;
+            if (await saveJpegVariant(locals, previewKey(key), previews[i], 1e6)) imageMeta.preview = { v };
+            if (saved.mime !== "image/jpeg" && await saveJpegVariant(locals, jpegKey(key), jpegs[i], 8e6)) imageMeta.jpeg = { v };
+          }
           let media;
           try {
             [media] = await locals.db.insert(draftMedia).values({
@@ -59251,7 +60049,7 @@ var init_server_ts30 = __esm({
               size: saved.size,
               width: saved.width,
               height: saved.height,
-              metaJson: saved.video ? JSON.stringify(saved.video) : imageMeta ? JSON.stringify(imageMeta) : null,
+              metaJson: saved.video ? JSON.stringify(saved.video) : Object.keys(imageMeta).length ? JSON.stringify(imageMeta) : null,
               altText: i === 0 ? altText : null,
               sortOrder: existingOnSegment + i,
               segmentIndex,
@@ -59332,8 +60130,8 @@ var init_server_ts30 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/cover/_server.ts.js
-var server_ts_exports31 = {};
-__export(server_ts_exports31, {
+var server_ts_exports33 = {};
+__export(server_ts_exports33, {
   DELETE: () => DELETE5,
   PUT: () => PUT
 });
@@ -59349,7 +60147,7 @@ async function guard(locals, draftId) {
   return rejectIfNotEditable(locals.db, draftId);
 }
 var MAX_COVER_BYTES, PUT, DELETE5;
-var init_server_ts31 = __esm({
+var init_server_ts33 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/cover/_server.ts.js"() {
     "use strict";
     init_client();
@@ -59480,10 +60278,10 @@ var init_media_uploads = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js
-var server_ts_exports32 = {};
-__export(server_ts_exports32, {
+var server_ts_exports34 = {};
+__export(server_ts_exports34, {
   DELETE: () => DELETE6,
-  POST: () => POST20
+  POST: () => POST21
 });
 async function readJson(request2) {
   try {
@@ -59493,8 +60291,8 @@ async function readJson(request2) {
     return null;
   }
 }
-var POST20, DELETE6;
-var init_server_ts32 = __esm({
+var POST21, DELETE6;
+var init_server_ts34 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js"() {
     "use strict";
     init_http();
@@ -59503,7 +60301,7 @@ var init_server_ts32 = __esm({
     init_draft_media();
     init_media_uploads();
     __name(readJson, "readJson");
-    POST20 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST21 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -59561,9 +60359,9 @@ var init_server_ts32 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js
-var server_ts_exports33 = {};
-__export(server_ts_exports33, {
-  POST: () => POST21
+var server_ts_exports35 = {};
+__export(server_ts_exports35, {
+  POST: () => POST22
 });
 function readParts(value, count2) {
   if (!Array.isArray(value) || value.length !== count2) return null;
@@ -59581,8 +60379,8 @@ function readParts(value, count2) {
 async function keyInUse(db, key) {
   return (await db.select({ id: draftMedia.id }).from(draftMedia).where(eq(draftMedia.storageKey, key)).limit(1)).length > 0;
 }
-var POST21;
-var init_server_ts33 = __esm({
+var POST22;
+var init_server_ts35 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js"() {
     "use strict";
     init_client();
@@ -59595,7 +60393,7 @@ var init_server_ts33 = __esm({
     init_drizzle_orm();
     __name(readParts, "readParts");
     __name(keyInUse, "keyInUse");
-    POST21 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST22 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -59651,12 +60449,12 @@ var init_server_ts33 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js
-var server_ts_exports34 = {};
-__export(server_ts_exports34, {
+var server_ts_exports36 = {};
+__export(server_ts_exports36, {
   PUT: () => PUT2
 });
 var PUT2;
-var init_server_ts34 = __esm({
+var init_server_ts36 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js"() {
     "use strict";
     init_http();
@@ -59688,18 +60486,18 @@ var init_server_ts34 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js
-var server_ts_exports35 = {};
-__export(server_ts_exports35, {
-  POST: () => POST22
+var server_ts_exports37 = {};
+__export(server_ts_exports37, {
+  POST: () => POST23
 });
-var POST22;
-var init_server_ts35 = __esm({
+var POST23;
+var init_server_ts37 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST22 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST23 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -59713,18 +60511,18 @@ var init_server_ts35 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/schedule/_server.ts.js
-var server_ts_exports36 = {};
-__export(server_ts_exports36, {
-  POST: () => POST23
+var server_ts_exports38 = {};
+__export(server_ts_exports38, {
+  POST: () => POST24
 });
-var POST23;
-var init_server_ts36 = __esm({
+var POST24;
+var init_server_ts38 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/schedule/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST23 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST24 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -59738,13 +60536,13 @@ var init_server_ts36 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js
-var server_ts_exports37 = {};
-__export(server_ts_exports37, {
+var server_ts_exports39 = {};
+__export(server_ts_exports39, {
   DELETE: () => DELETE7,
   PUT: () => PUT3
 });
 var PUT3, DELETE7;
-var init_server_ts37 = __esm({
+var init_server_ts39 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js"() {
     "use strict";
     init_http();
@@ -59773,25 +60571,25 @@ var init_server_ts37 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/health/_server.ts.js
-var server_ts_exports38 = {};
-__export(server_ts_exports38, {
-  GET: () => GET12
+var server_ts_exports40 = {};
+__export(server_ts_exports40, {
+  GET: () => GET13
 });
-var GET12;
-var init_server_ts38 = __esm({
+var GET13;
+var init_server_ts40 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/health/_server.ts.js"() {
     "use strict";
     init_client();
     init_exports();
     init_drizzle_orm();
-    GET12 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET13 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         await locals.db.run(sql`SELECT 1`);
         const account = await first(locals.db.select({ id: users.id }).from(users).limit(1));
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.20.2",
+          version: "1.21.0-beta.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -59807,19 +60605,19 @@ var init_server_ts38 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js
-var server_ts_exports39 = {};
-__export(server_ts_exports39, {
-  GET: () => GET13
+var server_ts_exports41 = {};
+__export(server_ts_exports41, {
+  GET: () => GET14
 });
-var GET13;
-var init_server_ts39 = __esm({
+var GET14;
+var init_server_ts41 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_time_zone();
     init_insights_report();
-    GET13 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET14 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -59833,18 +60631,18 @@ var init_server_ts39 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/internal/publish/_server.ts.js
-var server_ts_exports40 = {};
-__export(server_ts_exports40, {
-  POST: () => POST24
+var server_ts_exports42 = {};
+__export(server_ts_exports42, {
+  POST: () => POST25
 });
-var POST24;
-var init_server_ts40 = __esm({
+var POST25;
+var init_server_ts42 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/internal/publish/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST24 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST25 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         assertScheduler(request2, locals.env);
         const body = await request2.json().catch(() => null);
@@ -59861,18 +60659,18 @@ var init_server_ts40 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/internal/tick/_server.ts.js
-var server_ts_exports41 = {};
-__export(server_ts_exports41, {
-  POST: () => POST25
+var server_ts_exports43 = {};
+__export(server_ts_exports43, {
+  POST: () => POST26
 });
-var POST25;
-var init_server_ts41 = __esm({
+var POST26;
+var init_server_ts43 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/internal/tick/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST25 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST26 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         await assertSchedulerOrTickToken(request2, locals.env, locals.db);
         const task = runSchedulerTick(locals.db, locals.env, {
@@ -59891,11 +60689,11 @@ var init_server_ts41 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js
-var server_ts_exports42 = {};
-__export(server_ts_exports42, {
+var server_ts_exports44 = {};
+__export(server_ts_exports44, {
   DELETE: () => DELETE8,
-  GET: () => GET14,
-  POST: () => POST26
+  GET: () => GET15,
+  POST: () => POST27
 });
 function metadataOf(active) {
   if (!active) return null;
@@ -59906,8 +60704,8 @@ function metadataOf(active) {
     scopes: parseApiScopes(Array.isArray(active.scopes) ? JSON.stringify(active.scopes) : active.scopes)
   };
 }
-var GET14, POST26, DELETE8;
-var init_server_ts42 = __esm({
+var GET15, POST27, DELETE8;
+var init_server_ts44 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js"() {
     "use strict";
     init_http();
@@ -59915,7 +60713,7 @@ var init_server_ts42 = __esm({
     init_require();
     init_api_keys();
     __name(metadataOf, "metadataOf");
-    GET14 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET15 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const active = await getActiveApiKey(locals.db, user.id);
@@ -59924,7 +60722,7 @@ var init_server_ts42 = __esm({
         return handleError(err);
       }
     }, "GET");
-    POST26 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST27 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const text3 = await request2?.text().catch(() => "") ?? "";
@@ -59966,12 +60764,12 @@ var init_server_ts42 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js
-var server_ts_exports43 = {};
-__export(server_ts_exports43, {
-  GET: () => GET15
+var server_ts_exports45 = {};
+__export(server_ts_exports45, {
+  GET: () => GET16
 });
-var GET15;
-var init_server_ts43 = __esm({
+var GET16;
+var init_server_ts45 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js"() {
     "use strict";
     init_http();
@@ -59980,7 +60778,7 @@ var init_server_ts43 = __esm({
     init_x_post_preview();
     init_x_quote();
     init_timed_fetch();
-    GET15 = /* @__PURE__ */ __name(async ({ url: url3, locals }) => {
+    GET16 = /* @__PURE__ */ __name(async ({ url: url3, locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "write");
@@ -70193,11 +70991,11 @@ data:
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js
-var server_ts_exports44 = {};
-__export(server_ts_exports44, {
+var server_ts_exports46 = {};
+__export(server_ts_exports46, {
   DELETE: () => DELETE9,
-  GET: () => GET16,
-  POST: () => POST27
+  GET: () => GET17,
+  POST: () => POST28
 });
 function concise(name, result) {
   const draft = result.draft;
@@ -70413,8 +71211,8 @@ function createServer(event) {
   }).strict(), (input2, ctx, uid) => rescheduleDelivery(ctx, uid, input2.targetId, { runAt: input2.runAt }));
   return server2;
 }
-var id, boundedLimit, platform, runAt, connectionIds, draftFields, variantOptions, annotations, dateTime, validationCheck, validationIssue, connectionSchema, connectionSummarySchema, variantSchema, mediaSchema, targetSchema, draftSchema, queueDraftSchema, queueTargetSchema, mcpOutputSchemas, eventByRequest, handler, POST27, GET16, DELETE9;
-var init_server_ts44 = __esm({
+var id, boundedLimit, platform, runAt, connectionIds, draftFields, variantOptions, annotations, dateTime, validationCheck, validationIssue, connectionSchema, connectionSummarySchema, variantSchema, mediaSchema, targetSchema, draftSchema, queueDraftSchema, queueTargetSchema, mcpOutputSchemas, eventByRequest, handler, POST28, GET17, DELETE9;
+var init_server_ts46 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js"() {
     "use strict";
     init_human_error();
@@ -70430,6 +71228,7 @@ var init_server_ts44 = __esm({
       "bluesky",
       "linkedin",
       "threads",
+      "instagram",
       "x"
     ]);
     runAt = external_exports.string().min(1).max(64);
@@ -70600,6 +71399,7 @@ var init_server_ts44 = __esm({
         configured: external_exports.object({
           linkedin: external_exports.boolean(),
           threads: external_exports.boolean(),
+          instagram: external_exports.boolean(),
           x: external_exports.boolean()
         }).passthrough(),
         appUrl: external_exports.string()
@@ -70622,6 +71422,7 @@ var init_server_ts44 = __esm({
         mastodon: validationCheck,
         linkedin: validationCheck,
         threads: validationCheck,
+        instagram: validationCheck,
         x: validationCheck,
         issues: external_exports.array(validationIssue)
       }).passthrough(),
@@ -70675,7 +71476,7 @@ var init_server_ts44 = __esm({
       legacy: "reject",
       responseMode: "json"
     });
-    POST27 = /* @__PURE__ */ __name(async (event) => {
+    POST28 = /* @__PURE__ */ __name(async (event) => {
       const parsedBody = isJsonContentType(event.request.headers.get("content-type")) ? await event.request.json().catch(() => void 0) : void 0;
       if (parsedBody && typeof parsedBody === "object" && "method" in parsedBody && parsedBody.method === "subscriptions/listen") {
         const requestId = "id" in parsedBody ? parsedBody.id : void 0;
@@ -70697,7 +71498,7 @@ var init_server_ts44 = __esm({
         eventByRequest.delete(event.request);
       }
     }, "POST");
-    GET16 = /* @__PURE__ */ __name(async () => new Response("Method not allowed", {
+    GET17 = /* @__PURE__ */ __name(async () => new Response("Method not allowed", {
       status: 405,
       headers: { Allow: "POST" }
     }), "GET");
@@ -70709,12 +71510,12 @@ var init_server_ts44 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js
-var server_ts_exports45 = {};
-__export(server_ts_exports45, {
-  GET: () => GET17
+var server_ts_exports47 = {};
+__export(server_ts_exports47, {
+  GET: () => GET18
 });
-var GET17;
-var init_server_ts45 = __esm({
+var GET18;
+var init_server_ts47 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -70722,15 +71523,25 @@ var init_server_ts45 = __esm({
     init_media();
     init_public_media();
     init_drizzle_orm();
-    GET17 = /* @__PURE__ */ __name(async ({ params, url: url3, locals, request: request2 }) => {
+    GET18 = /* @__PURE__ */ __name(async ({ params, url: url3, locals, request: request2 }) => {
       try {
         const key = assertSafeStorageKey(params.key);
         const exp = Number(url3.searchParams.get("exp"));
         const sig = url3.searchParams.get("sig") ?? "";
-        const checked = await verifyPublicMediaSig(locals.env.APP_ENCRYPTION_KEY, key, exp, sig);
+        const v = url3.searchParams.get("v");
+        if (v !== null && !isPublicMediaVariant(v)) return fail("Unknown variant", 400);
+        const variant = v ?? void 0;
+        const checked = await verifyPublicMediaSig(locals.env.APP_ENCRYPTION_KEY, key, exp, sig, void 0, variant);
         if (!checked.ok) return fail(checked.error, 403);
         const media = await first(locals.db.select().from(draftMedia).where(eq(draftMedia.storageKey, key)));
         if (!media) return fail("Not found", 404);
+        if (variant) {
+          const variantKey = variant === "jpeg" ? jpegKey(key) : coverKey(key);
+          return await serveMediaBytes(locals.media, variantKey, request2, {
+            mime: "image/jpeg",
+            cacheControl: "no-store"
+          });
+        }
         return await serveMediaBytes(locals.media, key, request2, {
           mime: media.mime,
           cacheControl: "no-store"
@@ -70743,12 +71554,12 @@ var init_server_ts45 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/media/_key_/_server.ts.js
-var server_ts_exports46 = {};
-__export(server_ts_exports46, {
-  GET: () => GET18
+var server_ts_exports48 = {};
+__export(server_ts_exports48, {
+  GET: () => GET19
 });
-var GET18;
-var init_server_ts46 = __esm({
+var GET19;
+var init_server_ts48 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/media/_key_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -70756,7 +71567,7 @@ var init_server_ts46 = __esm({
     init_require();
     init_media();
     init_drizzle_orm();
-    GET18 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
+    GET19 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -70790,18 +71601,18 @@ var init_server_ts46 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js
-var server_ts_exports47 = {};
-__export(server_ts_exports47, {
-  GET: () => GET19
+var server_ts_exports49 = {};
+__export(server_ts_exports49, {
+  GET: () => GET20
 });
-var GET19;
-var init_server_ts47 = __esm({
+var GET20;
+var init_server_ts49 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_post_list();
-    GET19 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET20 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -70837,7 +71648,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.20.2";
+  const current = options2.current ?? "1.21.0-beta.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -70935,18 +71746,18 @@ var init_release = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js
-var server_ts_exports48 = {};
-__export(server_ts_exports48, {
-  GET: () => GET20
+var server_ts_exports50 = {};
+__export(server_ts_exports50, {
+  GET: () => GET21
 });
-var GET20;
-var init_server_ts48 = __esm({
+var GET21;
+var init_server_ts50 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_release();
-    GET20 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET21 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -70960,12 +71771,12 @@ var init_server_ts48 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js
-var server_ts_exports49 = {};
-__export(server_ts_exports49, {
-  GET: () => GET21
+var server_ts_exports51 = {};
+__export(server_ts_exports51, {
+  GET: () => GET22
 });
-var GET21;
-var init_server_ts49 = __esm({
+var GET22;
+var init_server_ts51 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js"() {
     "use strict";
     init_http();
@@ -70973,7 +71784,7 @@ var init_server_ts49 = __esm({
     init_require();
     init_scheduler();
     init_scheduler_status();
-    GET21 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET22 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -70997,18 +71808,18 @@ var init_server_ts49 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/test/_server.ts.js
-var server_ts_exports50 = {};
-__export(server_ts_exports50, {
-  POST: () => POST28
+var server_ts_exports52 = {};
+__export(server_ts_exports52, {
+  POST: () => POST29
 });
-var POST28;
-var init_server_ts50 = __esm({
+var POST29;
+var init_server_ts52 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/test/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST28 = /* @__PURE__ */ __name(async ({ locals }) => {
+    POST29 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "write");
@@ -71030,20 +71841,20 @@ var init_server_ts50 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js
-var server_ts_exports51 = {};
-__export(server_ts_exports51, {
+var server_ts_exports53 = {};
+__export(server_ts_exports53, {
   DELETE: () => DELETE10,
-  GET: () => GET22,
-  POST: () => POST29
+  GET: () => GET23,
+  POST: () => POST30
 });
-var GET22, POST29, DELETE10;
-var init_server_ts51 = __esm({
+var GET23, POST30, DELETE10;
+var init_server_ts53 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js"() {
     "use strict";
     init_http();
     init_tick_token();
     init_require();
-    GET22 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET23 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const status = await readTickToken(locals.db);
@@ -71052,7 +71863,7 @@ var init_server_ts51 = __esm({
         return handleError(err);
       }
     }, "GET");
-    POST29 = /* @__PURE__ */ __name(async ({ locals }) => {
+    POST30 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const { token, prefix, createdAt } = await rotateTickToken(locals.db);
@@ -71107,9 +71918,9 @@ var init_instance_name = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js
-var server_ts_exports52 = {};
-__export(server_ts_exports52, {
-  GET: () => GET23,
+var server_ts_exports54 = {};
+__export(server_ts_exports54, {
+  GET: () => GET24,
   PATCH: () => PATCH5
 });
 function normalizeDisplayName(input2) {
@@ -71129,8 +71940,8 @@ function normalizeDisplayName(input2) {
     name
   };
 }
-var GET23, SETTINGS_KEYS, PATCH5;
-var init_server_ts52 = __esm({
+var GET24, SETTINGS_KEYS, PATCH5;
+var init_server_ts54 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js"() {
     "use strict";
     init_client();
@@ -71142,7 +71953,7 @@ var init_server_ts52 = __esm({
     init_release();
     init_instance_name();
     init_drizzle_orm();
-    GET23 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET24 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -71211,8 +72022,8 @@ var init_server_ts52 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js
-var server_ts_exports53 = {};
-__export(server_ts_exports53, {
+var server_ts_exports55 = {};
+__export(server_ts_exports55, {
   DELETE: () => DELETE11,
   PUT: () => PUT4
 });
@@ -71230,7 +72041,7 @@ function platformFrom(param) {
   return param && isOAuthPlatform(param) ? param : null;
 }
 var PUT4, DELETE11;
-var init_server_ts53 = __esm({
+var init_server_ts55 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js"() {
     "use strict";
     init_http();
@@ -71274,12 +72085,12 @@ var init_server_ts53 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js
-var server_ts_exports54 = {};
-__export(server_ts_exports54, {
-  POST: () => POST30
+var server_ts_exports56 = {};
+__export(server_ts_exports56, {
+  POST: () => POST31
 });
-var POST30;
-var init_server_ts54 = __esm({
+var POST31;
+var init_server_ts56 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js"() {
     "use strict";
     init_client();
@@ -71290,7 +72101,7 @@ var init_server_ts54 = __esm({
     init_publish_plan();
     init_request_limits();
     init_drizzle_orm();
-    POST30 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST31 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -71594,18 +72405,18 @@ var init_server_ts54 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/cancel/_server.ts.js
-var server_ts_exports55 = {};
-__export(server_ts_exports55, {
-  POST: () => POST31
+var server_ts_exports57 = {};
+__export(server_ts_exports57, {
+  POST: () => POST32
 });
-var POST31;
-var init_server_ts55 = __esm({
+var POST32;
+var init_server_ts57 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/cancel/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST31 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    POST32 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -71618,18 +72429,18 @@ var init_server_ts55 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/reschedule/_server.ts.js
-var server_ts_exports56 = {};
-__export(server_ts_exports56, {
-  POST: () => POST32
+var server_ts_exports58 = {};
+__export(server_ts_exports58, {
+  POST: () => POST33
 });
-var POST32;
-var init_server_ts56 = __esm({
+var POST33;
+var init_server_ts58 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/reschedule/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST32 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST33 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -71643,18 +72454,18 @@ var init_server_ts56 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/retry/_server.ts.js
-var server_ts_exports57 = {};
-__export(server_ts_exports57, {
-  POST: () => POST33
+var server_ts_exports59 = {};
+__export(server_ts_exports59, {
+  POST: () => POST34
 });
-var POST33;
-var init_server_ts57 = __esm({
+var POST34;
+var init_server_ts59 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/retry/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST33 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    POST34 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -71667,19 +72478,19 @@ var init_server_ts57 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js
-var server_ts_exports58 = {};
-__export(server_ts_exports58, {
-  GET: () => GET24
+var server_ts_exports60 = {};
+__export(server_ts_exports60, {
+  GET: () => GET25
 });
-var GET24;
-var init_server_ts58 = __esm({
+var GET25;
+var init_server_ts60 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_saved_token();
     init_github_update();
-    GET24 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET25 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const [job, previous, target, savedToken] = await Promise.all([
@@ -71693,7 +72504,7 @@ var init_server_ts58 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.20.2",
+          version: "1.21.0-beta.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -71718,13 +72529,13 @@ var init_server_ts58 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js
-var server_ts_exports59 = {};
-__export(server_ts_exports59, {
+var server_ts_exports61 = {};
+__export(server_ts_exports61, {
   DELETE: () => DELETE12,
-  POST: () => POST34
+  POST: () => POST35
 });
-var POST34, DELETE12;
-var init_server_ts59 = __esm({
+var POST35, DELETE12;
+var init_server_ts61 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js"() {
     "use strict";
     init_http();
@@ -71733,7 +72544,7 @@ var init_server_ts59 = __esm({
     init_rate_limit();
     init_require();
     init_saved_token();
-    POST34 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST35 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => null);
@@ -71763,12 +72574,12 @@ var init_server_ts59 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js
-var server_ts_exports60 = {};
-__export(server_ts_exports60, {
-  POST: () => POST35
+var server_ts_exports62 = {};
+__export(server_ts_exports62, {
+  POST: () => POST36
 });
-var POST35;
-var init_server_ts60 = __esm({
+var POST36;
+var init_server_ts62 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js"() {
     "use strict";
     init_http();
@@ -71777,7 +72588,7 @@ var init_server_ts60 = __esm({
     init_rate_limit();
     init_require();
     init_saved_token();
-    POST35 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST36 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => null);
@@ -71797,9 +72608,9 @@ var init_server_ts60 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js
-var server_ts_exports61 = {};
-__export(server_ts_exports61, {
-  POST: () => POST36
+var server_ts_exports63 = {};
+__export(server_ts_exports63, {
+  POST: () => POST37
 });
 function cloudflareApi(token, { fetchImpl = fetch, budget } = {}) {
   const scrub = /* @__PURE__ */ __name((text3) => token ? text3.split(token).join("[token]") : text3, "scrub");
@@ -71902,7 +72713,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.20.2"
+    currentVersion: "1.21.0-beta.1"
   };
 }
 async function download(ctx, url3) {
@@ -72245,8 +73056,8 @@ async function dropJob(ctx, job) {
   await ctx.store.delete(stagedKeys(job.version)).catch(() => void 0);
   await clearJob(ctx.db);
 }
-var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST36;
-var init_server_ts61 = __esm({
+var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST37;
+var init_server_ts63 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js"() {
     "use strict";
     init_bytes();
@@ -72320,7 +73131,7 @@ var init_server_ts61 = __esm({
       rollback: /* @__PURE__ */ __name((ctx) => stepRollback(ctx), "rollback"),
       abort: /* @__PURE__ */ __name((ctx) => stepAbort(ctx), "abort")
     };
-    POST36 = /* @__PURE__ */ __name(async (event) => {
+    POST37 = /* @__PURE__ */ __name(async (event) => {
       try {
         requireSession(event.locals.user, event.locals.authMethod);
         const run2 = Object.hasOwn(STEPS, event.params.step) ? STEPS[event.params.step] : null;
@@ -72344,18 +73155,18 @@ var init_server_ts61 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js
-var server_ts_exports62 = {};
-__export(server_ts_exports62, {
-  POST: () => POST37
+var server_ts_exports64 = {};
+__export(server_ts_exports64, {
+  POST: () => POST38
 });
-var POST37;
-var init_server_ts62 = __esm({
+var POST38;
+var init_server_ts64 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST37 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST38 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -72415,7 +73226,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.DmR4AzBi.js", app: "_app/immutable/entry/app.CsgQFiEl.js", imports: ["_app/immutable/entry/start.DmR4AzBi.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Tc5QHpbG.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/app.CsgQFiEl.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.DmR4AzBi.js", app: "_app/immutable/entry/app.B-FmelW5.js", imports: ["_app/immutable/entry/start.DmR4AzBi.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Tc5QHpbG.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/app.B-FmelW5.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -72541,354 +73352,368 @@ var manifest2 = (() => {
         endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts12(), server_ts_exports12)))
       },
       {
+        id: "/api/connections/instagram",
+        pattern: /^\/api\/connections\/instagram\/?$/,
+        params: [],
+        page: null,
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts13(), server_ts_exports13)))
+      },
+      {
+        id: "/api/connections/instagram/callback",
+        pattern: /^\/api\/connections\/instagram\/callback\/?$/,
+        params: [],
+        page: null,
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts14(), server_ts_exports14)))
+      },
+      {
         id: "/api/connections/linkedin",
         pattern: /^\/api\/connections\/linkedin\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts13(), server_ts_exports13)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts15(), server_ts_exports15)))
       },
       {
         id: "/api/connections/linkedin/callback",
         pattern: /^\/api\/connections\/linkedin\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts14(), server_ts_exports14)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts16(), server_ts_exports16)))
       },
       {
         id: "/api/connections/mastodon",
         pattern: /^\/api\/connections\/mastodon\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts15(), server_ts_exports15)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts17(), server_ts_exports17)))
       },
       {
         id: "/api/connections/mastodon/callback",
         pattern: /^\/api\/connections\/mastodon\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts16(), server_ts_exports16)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts18(), server_ts_exports18)))
       },
       {
         id: "/api/connections/threads",
         pattern: /^\/api\/connections\/threads\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts17(), server_ts_exports17)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts19(), server_ts_exports19)))
       },
       {
         id: "/api/connections/threads/callback",
         pattern: /^\/api\/connections\/threads\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts18(), server_ts_exports18)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts20(), server_ts_exports20)))
       },
       {
         id: "/api/connections/x",
         pattern: /^\/api\/connections\/x\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts19(), server_ts_exports19)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts21(), server_ts_exports21)))
       },
       {
         id: "/api/connections/x/callback",
         pattern: /^\/api\/connections\/x\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts20(), server_ts_exports20)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts22(), server_ts_exports22)))
       },
       {
         id: "/api/connections/zernio/accounts",
         pattern: /^\/api\/connections\/zernio\/accounts\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts21(), server_ts_exports21)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts23(), server_ts_exports23)))
       },
       {
         id: "/api/connections/zernio/callback",
         pattern: /^\/api\/connections\/zernio\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts22(), server_ts_exports22)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts24(), server_ts_exports24)))
       },
       {
         id: "/api/connections/zernio/connect",
         pattern: /^\/api\/connections\/zernio\/connect\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts23(), server_ts_exports23)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts25(), server_ts_exports25)))
       },
       {
         id: "/api/connections/zernio/import",
         pattern: /^\/api\/connections\/zernio\/import\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts24(), server_ts_exports24)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts26(), server_ts_exports26)))
       },
       {
         id: "/api/connections/[id]",
         pattern: /^\/api\/connections\/([^/]+?)\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts25(), server_ts_exports25)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts27(), server_ts_exports27)))
       },
       {
         id: "/api/connections/[id]/verify",
         pattern: /^\/api\/connections\/([^/]+?)\/verify\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts26(), server_ts_exports26)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts28(), server_ts_exports28)))
       },
       {
         id: "/api/drafts",
         pattern: /^\/api\/drafts\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts27(), server_ts_exports27)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts29(), server_ts_exports29)))
       },
       {
         id: "/api/drafts/[id]",
         pattern: /^\/api\/drafts\/([^/]+?)\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts28(), server_ts_exports28)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts30(), server_ts_exports30)))
       },
       {
         id: "/api/drafts/[id]/duplicate",
         pattern: /^\/api\/drafts\/([^/]+?)\/duplicate\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts29(), server_ts_exports29)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts31(), server_ts_exports31)))
       },
       {
         id: "/api/drafts/[id]/media",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts30(), server_ts_exports30)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts32(), server_ts_exports32)))
       },
       {
         id: "/api/drafts/[id]/media/cover",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/cover\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts31(), server_ts_exports31)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts33(), server_ts_exports33)))
       },
       {
         id: "/api/drafts/[id]/media/uploads",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts32(), server_ts_exports32)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts34(), server_ts_exports34)))
       },
       {
         id: "/api/drafts/[id]/media/uploads/complete",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/complete\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts33(), server_ts_exports33)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts35(), server_ts_exports35)))
       },
       {
         id: "/api/drafts/[id]/media/uploads/part",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/part\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts34(), server_ts_exports34)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts36(), server_ts_exports36)))
       },
       {
         id: "/api/drafts/[id]/publish",
         pattern: /^\/api\/drafts\/([^/]+?)\/publish\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts35(), server_ts_exports35)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts37(), server_ts_exports37)))
       },
       {
         id: "/api/drafts/[id]/schedule",
         pattern: /^\/api\/drafts\/([^/]+?)\/schedule\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts36(), server_ts_exports36)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts38(), server_ts_exports38)))
       },
       {
         id: "/api/drafts/[id]/variants",
         pattern: /^\/api\/drafts\/([^/]+?)\/variants\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts37(), server_ts_exports37)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts39(), server_ts_exports39)))
       },
       {
         id: "/api/health",
         pattern: /^\/api\/health\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts38(), server_ts_exports38)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts40(), server_ts_exports40)))
       },
       {
         id: "/api/insights",
         pattern: /^\/api\/insights\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts39(), server_ts_exports39)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts41(), server_ts_exports41)))
       },
       {
         id: "/api/internal/publish",
         pattern: /^\/api\/internal\/publish\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts40(), server_ts_exports40)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts42(), server_ts_exports42)))
       },
       {
         id: "/api/internal/tick",
         pattern: /^\/api\/internal\/tick\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts41(), server_ts_exports41)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts43(), server_ts_exports43)))
       },
       {
         id: "/api/key",
         pattern: /^\/api\/key\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts42(), server_ts_exports42)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts44(), server_ts_exports44)))
       },
       {
         id: "/api/link-preview",
         pattern: /^\/api\/link-preview\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts43(), server_ts_exports43)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts45(), server_ts_exports45)))
       },
       {
         id: "/api/mcp",
         pattern: /^\/api\/mcp\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts44(), server_ts_exports44)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts46(), server_ts_exports46)))
       },
       {
         id: "/api/media/public/[key]",
         pattern: /^\/api\/media\/public\/([^/]+?)\/?$/,
         params: [{ "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts45(), server_ts_exports45)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts47(), server_ts_exports47)))
       },
       {
         id: "/api/media/[key]",
         pattern: /^\/api\/media\/([^/]+?)\/?$/,
         params: [{ "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts46(), server_ts_exports46)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts48(), server_ts_exports48)))
       },
       {
         id: "/api/queue",
         pattern: /^\/api\/queue\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts47(), server_ts_exports47)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts49(), server_ts_exports49)))
       },
       {
         id: "/api/release",
         pattern: /^\/api\/release\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts48(), server_ts_exports48)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts50(), server_ts_exports50)))
       },
       {
         id: "/api/scheduler/health",
         pattern: /^\/api\/scheduler\/health\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts49(), server_ts_exports49)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts51(), server_ts_exports51)))
       },
       {
         id: "/api/scheduler/test",
         pattern: /^\/api\/scheduler\/test\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts50(), server_ts_exports50)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts52(), server_ts_exports52)))
       },
       {
         id: "/api/scheduler/tick-token",
         pattern: /^\/api\/scheduler\/tick-token\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts51(), server_ts_exports51)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts53(), server_ts_exports53)))
       },
       {
         id: "/api/settings",
         pattern: /^\/api\/settings\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts52(), server_ts_exports52)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
       },
       {
         id: "/api/settings/platform-apps/[platform]",
         pattern: /^\/api\/settings\/platform-apps\/([^/]+?)\/?$/,
         params: [{ "name": "platform", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts53(), server_ts_exports53)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
       },
       {
         id: "/api/targets/bulk",
         pattern: /^\/api\/targets\/bulk\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
       },
       {
         id: "/api/targets/[id]/cancel",
         pattern: /^\/api\/targets\/([^/]+?)\/cancel\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
       },
       {
         id: "/api/targets/[id]/reschedule",
         pattern: /^\/api\/targets\/([^/]+?)\/reschedule\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
       },
       {
         id: "/api/targets/[id]/retry",
         pattern: /^\/api\/targets\/([^/]+?)\/retry\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts59(), server_ts_exports59)))
       },
       {
         id: "/api/update",
         pattern: /^\/api\/update\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts60(), server_ts_exports60)))
       },
       {
         id: "/api/update/remember",
         pattern: /^\/api\/update\/remember\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts59(), server_ts_exports59)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts61(), server_ts_exports61)))
       },
       {
         id: "/api/update/unlock",
         pattern: /^\/api\/update\/unlock\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts60(), server_ts_exports60)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts62(), server_ts_exports62)))
       },
       {
         id: "/api/update/[step]",
         pattern: /^\/api\/update\/([^/]+?)\/?$/,
         params: [{ "name": "step", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts61(), server_ts_exports61)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts63(), server_ts_exports63)))
       },
       {
         id: "/api/validate",
         pattern: /^\/api\/validate\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts62(), server_ts_exports62)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts64(), server_ts_exports64)))
       },
       {
         id: "/compose",
