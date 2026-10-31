@@ -1552,22 +1552,22 @@ function unflatten(parsed, revivers, options2) {
   );
   const hydrated = Array(values.length);
   let hydrating = null;
-  function hydrate(index19, standalone = false) {
-    if (index19 === UNDEFINED) return ops.fromPrimitive(void 0);
-    if (index19 === NAN) return ops.fromPrimitive(NaN);
-    if (index19 === POSITIVE_INFINITY) return ops.fromPrimitive(Infinity);
-    if (index19 === NEGATIVE_INFINITY) return ops.fromPrimitive(-Infinity);
-    if (index19 === NEGATIVE_ZERO) return ops.fromPrimitive(-0);
-    if (standalone || typeof index19 !== "number") {
+  function hydrate(index18, standalone = false) {
+    if (index18 === UNDEFINED) return ops.fromPrimitive(void 0);
+    if (index18 === NAN) return ops.fromPrimitive(NaN);
+    if (index18 === POSITIVE_INFINITY) return ops.fromPrimitive(Infinity);
+    if (index18 === NEGATIVE_INFINITY) return ops.fromPrimitive(-Infinity);
+    if (index18 === NEGATIVE_ZERO) return ops.fromPrimitive(-0);
+    if (standalone || typeof index18 !== "number") {
       throw new Error(`Invalid input`);
     }
-    if (index19 in hydrated) return hydrated[index19];
-    if (index19 >= values.length) {
+    if (index18 in hydrated) return hydrated[index18];
+    if (index18 >= values.length) {
       throw new Error(`Invalid input`);
     }
-    const value = values[index19];
+    const value = values[index18];
     if (!value || typeof value !== "object") {
-      hydrated[index19] = ops.fromPrimitive(value);
+      hydrated[index18] = ops.fromPrimitive(value);
     } else if (Array.isArray(value)) {
       if (typeof value[0] === "string") {
         const type = value[0];
@@ -1578,52 +1578,52 @@ function unflatten(parsed, revivers, options2) {
             i = values.push(value[1]) - 1;
           }
           if (Object.hasOwn(hydrated, i)) {
-            return hydrated[index19] = reviver(hydrated[i]);
+            return hydrated[index18] = reviver(hydrated[i]);
           }
           hydrating ??= /* @__PURE__ */ new Set();
           if (hydrating.has(i)) {
             throw new Error("Invalid circular reference");
           }
           hydrating.add(i);
-          hydrated[index19] = reviver(hydrate(i));
+          hydrated[index18] = reviver(hydrate(i));
           hydrating.delete(i);
-          return hydrated[index19];
+          return hydrated[index18];
         }
         switch (type) {
           case "Date":
-            hydrated[index19] = ops.fromISOString(value[1]);
+            hydrated[index18] = ops.fromISOString(value[1]);
             break;
           case "Set":
             const set2 = ops.createSet();
-            hydrated[index19] = set2;
+            hydrated[index18] = set2;
             for (let i = 1; i < value.length; i += 1) {
               ops.addValue(set2, hydrate(value[i]));
             }
             break;
           case "Map":
             const map2 = ops.createMap();
-            hydrated[index19] = map2;
+            hydrated[index18] = map2;
             for (let i = 1; i < value.length; i += 2) {
               ops.addEntry(map2, hydrate(value[i]), hydrate(value[i + 1]));
             }
             break;
           case "RegExp":
-            hydrated[index19] = ops.fromRegExpInfo(value[1], value[2]);
+            hydrated[index18] = ops.fromRegExpInfo(value[1], value[2]);
             break;
           case "Object": {
             const wrapped_index = value[1];
             if (typeof values[wrapped_index] === "object" && values[wrapped_index][0] !== "BigInt") {
               throw new Error("Invalid input");
             }
-            hydrated[index19] = ops.box(hydrate(wrapped_index));
+            hydrated[index18] = ops.box(hydrate(wrapped_index));
             break;
           }
           case "BigInt":
-            hydrated[index19] = ops.fromPrimitive(BigInt(value[1]));
+            hydrated[index18] = ops.fromPrimitive(BigInt(value[1]));
             break;
           case "null":
             const obj = ops.createNullPrototypeObject();
-            hydrated[index19] = obj;
+            hydrated[index18] = obj;
             for (let i = 1; i < value.length; i += 2) {
               const key = value[i];
               if (typeof key !== "string") {
@@ -1652,7 +1652,7 @@ function unflatten(parsed, revivers, options2) {
               throw new Error("Invalid data");
             }
             const buffer2 = hydrate(value[1]);
-            hydrated[index19] = ops.fromViewInfo(type, buffer2, value[2], value[3]);
+            hydrated[index18] = ops.fromViewInfo(type, buffer2, value[2], value[3]);
             break;
           }
           case "ArrayBuffer": {
@@ -1660,7 +1660,7 @@ function unflatten(parsed, revivers, options2) {
             if (typeof base643 !== "string") {
               throw new Error("Invalid ArrayBuffer encoding");
             }
-            hydrated[index19] = ops.fromArrayBuffer(decode64(base643));
+            hydrated[index18] = ops.fromArrayBuffer(decode64(base643));
             break;
           }
           case "URL":
@@ -1673,7 +1673,7 @@ function unflatten(parsed, revivers, options2) {
           case "Temporal.PlainMonthDay":
           case "Temporal.PlainYearMonth":
           case "Temporal.ZonedDateTime": {
-            hydrated[index19] = ops.fromStringValue(type, value[1]);
+            hydrated[index18] = ops.fromStringValue(type, value[1]);
             break;
           }
           default:
@@ -1685,7 +1685,7 @@ function unflatten(parsed, revivers, options2) {
           throw new Error("Invalid input");
         }
         const array3 = ops.createSparseArray(len);
-        hydrated[index19] = array3;
+        hydrated[index18] = array3;
         for (let i = 2; i < value.length; i += 2) {
           const idx = value[i];
           if (!is_valid_array_index(idx) || idx >= len) {
@@ -1695,7 +1695,7 @@ function unflatten(parsed, revivers, options2) {
         }
       } else {
         const array3 = ops.createArray(value.length);
-        hydrated[index19] = array3;
+        hydrated[index18] = array3;
         for (let i = 0; i < value.length; i += 1) {
           const n = value[i];
           if (n === HOLE) continue;
@@ -1704,7 +1704,7 @@ function unflatten(parsed, revivers, options2) {
       }
     } else {
       const object2 = ops.createObject();
-      hydrated[index19] = object2;
+      hydrated[index18] = object2;
       for (const key of Object.keys(value)) {
         if (key === "__proto__") {
           throw new Error("Cannot parse an object with a `__proto__` property");
@@ -1712,7 +1712,7 @@ function unflatten(parsed, revivers, options2) {
         ops.set(object2, key, hydrate(value[key]));
       }
     }
-    return hydrated[index19];
+    return hydrated[index18];
   }
   __name(hydrate, "hydrate");
   return hydrate(0);
@@ -1745,7 +1745,7 @@ function run(async, value, reducers, options2) {
   }
   const keys = [];
   let p = 0;
-  function flatten(thing, index20) {
+  function flatten(thing, index19) {
     const type = ops.typeOf(thing);
     if (type === "undefined") return UNDEFINED;
     let number4;
@@ -1762,13 +1762,13 @@ function run(async, value, reducers, options2) {
       /** @type {number} */
       indexes.get(id2)
     );
-    index20 ??= p++;
-    indexes.set(id2, index20);
+    index19 ??= p++;
+    indexes.set(id2, index19);
     for (const { key, fn } of custom2) {
       const value2 = fn(thing);
       if (value2) {
-        stringified[index20] = `["${key}",${flatten(value2)}]`;
-        return index20;
+        stringified[index19] = `["${key}",${flatten(value2)}]`;
+        return index19;
       }
     }
     if (type === "function") {
@@ -1789,8 +1789,8 @@ function run(async, value, reducers, options2) {
         );
       }
       str = ops.toPromise(thing).then((value2) => {
-        const i = flatten(value2, index20);
-        if (i < 0) stringified[index20] = i;
+        const i = flatten(value2, index19);
+        if (i < 0) stringified[index19] = i;
       });
       str.catch(() => {
       });
@@ -1963,12 +1963,12 @@ function run(async, value, reducers, options2) {
         }
       }
     }
-    stringified[index20] = str;
-    return index20;
+    stringified[index19] = str;
+    return index19;
   }
   __name(flatten, "flatten");
-  const index19 = flatten(value);
-  if (index19 < 0) return `${index19}`;
+  const index18 = flatten(value);
+  if (index18 < 0) return `${index18}`;
   return stringified;
 }
 function stringify_primitive2(thing) {
@@ -3570,8 +3570,8 @@ function haveSameKeys(left, right) {
   if (leftKeys.length !== rightKeys.length) {
     return false;
   }
-  for (const [index19, key] of leftKeys.entries()) {
-    if (key !== rightKeys[index19]) {
+  for (const [index18, key] of leftKeys.entries()) {
+    if (key !== rightKeys[index18]) {
       return false;
     }
   }
@@ -5709,8 +5709,8 @@ var init_dialect = __esm({
         }
         const joinsArray = [];
         if (joins) {
-          for (const [index19, joinMeta] of joins.entries()) {
-            if (index19 === 0) {
+          for (const [index18, joinMeta] of joins.entries()) {
+            if (index18 === 0) {
               joinsArray.push(sql` `);
             }
             const table = joinMeta.table;
@@ -5730,7 +5730,7 @@ var init_dialect = __esm({
                 sql`${sql.raw(joinMeta.joinType)} join ${table}${onSql}`
               );
             }
-            if (index19 < joins.length - 1) {
+            if (index18 < joins.length - 1) {
               joinsArray.push(sql` `);
             }
           }
@@ -5743,9 +5743,9 @@ var init_dialect = __esm({
       buildOrderBy(orderBy) {
         const orderByList = [];
         if (orderBy) {
-          for (const [index19, orderByValue] of orderBy.entries()) {
+          for (const [index18, orderByValue] of orderBy.entries()) {
             orderByList.push(orderByValue);
-            if (index19 < orderBy.length - 1) {
+            if (index18 < orderBy.length - 1) {
               orderByList.push(sql`, `);
             }
           }
@@ -5798,9 +5798,9 @@ var init_dialect = __esm({
         const havingSql = having ? sql` having ${having}` : void 0;
         const groupByList = [];
         if (groupBy) {
-          for (const [index19, groupByValue] of groupBy.entries()) {
+          for (const [index18, groupByValue] of groupBy.entries()) {
             groupByList.push(groupByValue);
-            if (index19 < groupBy.length - 1) {
+            if (index18 < groupBy.length - 1) {
               groupByList.push(sql`, `);
             }
           }
@@ -11113,10 +11113,10 @@ function maxThreadSegmentLength(body, countFn) {
   }
   return max;
 }
-function updateSegment(segments, index19, text3) {
-  if (index19 < 0 || index19 >= segments.length) return segments;
+function updateSegment(segments, index18, text3) {
+  if (index18 < 0 || index18 >= segments.length) return segments;
   const next = segments.slice();
-  next[index19] = text3;
+  next[index18] = text3;
   return next;
 }
 var THREAD_DELIMITER;
@@ -11962,25 +11962,25 @@ function strayXPostLinks(text3) {
   }
   return out;
 }
-function keepXQuoteOnX(body, index19) {
+function keepXQuoteOnX(body, index18) {
   const segments = splitThreadSegments(body);
-  const quote = trailingXQuote(segments[index19] ?? "");
+  const quote = trailingXQuote(segments[index18] ?? "");
   if (!quote || !quote.visible.trim()) return null;
   return {
     x: body,
-    global: joinThreadSegments(updateSegment(segments, index19, quote.visible))
+    global: joinThreadSegments(updateSegment(segments, index18, quote.visible))
   };
 }
-function shareXQuote(globalBody, xBody, index19) {
-  const quote = trailingXQuote(splitThreadSegments(xBody)[index19] ?? "");
+function shareXQuote(globalBody, xBody, index18) {
+  const quote = trailingXQuote(splitThreadSegments(xBody)[index18] ?? "");
   const segments = splitThreadSegments(globalBody);
-  if (!quote || index19 >= segments.length) return null;
-  const current = segments[index19];
+  if (!quote || index18 >= segments.length) return null;
+  const current = segments[index18];
   ANY_RE.lastIndex = 0;
   let m;
   while ((m = ANY_RE.exec(current)) !== null) if (m[2] === quote.id) return null;
   const shared = attachXQuote(current, quote.url, current === "" ? "" : quote.sep || "\n");
-  const global = joinThreadSegments(updateSegment(segments, index19, shared));
+  const global = joinThreadSegments(updateSegment(segments, index18, shared));
   return {
     global,
     xFollows: sameSegments(global, xBody)
@@ -20958,11 +20958,11 @@ function capSize(inst, size) {
     return parse5(payload2, ctx);
   };
 }
-function handleArrayResult(result, final, index19) {
+function handleArrayResult(result, final, index18) {
   if (result.issues.length) {
-    final.issues.push(...prefixIssues(index19, result.issues));
+    final.issues.push(...prefixIssues(index18, result.issues));
   }
-  final.value[index19] = result.value;
+  final.value[index18] = result.value;
 }
 function handlePropertyResult(result, final, key, input2, optin, optout) {
   const isPresent = key in input2;
@@ -21175,14 +21175,14 @@ function mergeValues(a, b) {
       return { valid: false, mergeErrorPath: [] };
     }
     const newArray = [];
-    for (let index19 = 0; index19 < a.length; index19++) {
-      const itemA = a[index19];
-      const itemB = b[index19];
+    for (let index18 = 0; index18 < a.length; index18++) {
+      const itemA = a[index18];
+      const itemB = b[index18];
       const sharedValue = mergeValues(itemA, itemB);
       if (!sharedValue.valid) {
         return {
           valid: false,
-          mergeErrorPath: [index19, ...sharedValue.mergeErrorPath]
+          mergeErrorPath: [index18, ...sharedValue.mergeErrorPath]
         };
       }
       newArray.push(sharedValue.data);
@@ -21250,11 +21250,11 @@ function getTupleOptStart(items, key) {
   }
   return 0;
 }
-function handleTupleResult(result, final, index19) {
+function handleTupleResult(result, final, index18) {
   if (result.issues.length) {
-    final.issues.push(...prefixIssues(index19, result.issues));
+    final.issues.push(...prefixIssues(index18, result.issues));
   }
-  final.value[index19] = result.value;
+  final.value[index18] = result.value;
 }
 function handleTupleResults(itemResults, final, items, input2, optoutStart) {
   for (let i = 0; i < items.length; i++) {
@@ -38360,7 +38360,7 @@ function detectVersion(schema, defaultTarget) {
   return defaultTarget ?? "draft-2020-12";
 }
 function applyMinItems(items, minItems) {
-  return items.map((item, index19) => index19 < minItems ? item : item.optional());
+  return items.map((item, index18) => index18 < minItems ? item : item.optional());
 }
 function decodeJSONPointerSegment(segment) {
   return segment.replace(/~1/g, "/").replace(/~0/g, "~");
@@ -40809,15 +40809,15 @@ async function deserialize_binary_form(request2, form_id) {
   if (!request2.body) throw deserialize_error("no body");
   const reader = request2.body.getReader();
   const chunks = [];
-  function get_chunk(index19) {
-    if (index19 in chunks) return chunks[index19];
+  function get_chunk(index18) {
+    if (index18 in chunks) return chunks[index18];
     let i = chunks.length;
-    while (i <= index19) {
+    while (i <= index18) {
       const previous = chunks[i - 1] ?? Promise.resolve(void 0);
       chunks[i] = previous.then(() => reader.read()).then((chunk) => chunk.value);
       i++;
     }
-    return chunks[index19];
+    return chunks[index18];
   }
   __name(get_chunk, "get_chunk");
   async function get_buffer(offset, length) {
@@ -40857,11 +40857,11 @@ async function deserialize_binary_form(request2, form_id) {
     files_start_offset = HEADER_BYTES + data_length + file_offsets_length;
   }
   const file_spans = [];
-  const [data, meta3] = parse(text_decoder.decode(data_buffer), { File: /* @__PURE__ */ __name(([name, type, size, last_modified, index19]) => {
-    if (typeof name !== "string" || typeof type !== "string" || !Number.isSafeInteger(size) || size < 0 || !Number.isSafeInteger(last_modified) || !Number.isSafeInteger(index19) || index19 < 0) throw deserialize_error("invalid file metadata");
-    let offset = file_offsets[index19];
+  const [data, meta3] = parse(text_decoder.decode(data_buffer), { File: /* @__PURE__ */ __name(([name, type, size, last_modified, index18]) => {
+    if (typeof name !== "string" || typeof type !== "string" || !Number.isSafeInteger(size) || size < 0 || !Number.isSafeInteger(last_modified) || !Number.isSafeInteger(index18) || index18 < 0) throw deserialize_error("invalid file metadata");
+    let offset = file_offsets[index18];
     if (offset === void 0) throw deserialize_error("duplicate file offset table index");
-    file_offsets[index19] = void 0;
+    file_offsets[index18] = void 0;
     offset += files_start_offset;
     file_spans.push({
       offset,
@@ -40894,8 +40894,8 @@ function deserialize_error(message) {
 }
 async function* read_range(get_chunk, offset, length) {
   let chunk_start = 0;
-  for (let index19 = 0; ; index19++) {
-    const chunk = await get_chunk(index19);
+  for (let index18 = 0; ; index18++) {
+    const chunk = await get_chunk(index18);
     if (!chunk) return;
     const chunk_end = chunk_start + chunk.byteLength;
     if (chunk_end > offset) {
@@ -41168,7 +41168,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1793435744977");
+  response.headers.set("x-sveltekit-version", "1793439367530");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -42457,9 +42457,9 @@ function element(renderer, tag, attributes_fn = noop2, children_fn = noop2) {
   }
   renderer.push("<!---->");
 }
-function render(component15, options2 = {}) {
+function render(component14, options2 = {}) {
   if (options2.csp?.hash && options2.csp.nonce) invalid_csp();
-  return Renderer.render(component15, options2);
+  return Renderer.render(component14, options2);
 }
 function head(hash3, renderer, fn) {
   renderer.head((renderer2) => {
@@ -43125,8 +43125,8 @@ var init_server3 = __esm({
       * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string; csp?: Csp }} [options]
       * @returns {RenderOutput}
       */
-      static render(component15, options2 = {}) {
-        return new RenderResult(() => Renderer2.#render(component15, options2), () => init_render_context().then(() => with_render_context(() => Renderer2.#render_async(component15, options2))));
+      static render(component14, options2 = {}) {
+        return new RenderResult(() => Renderer2.#render(component14, options2), () => init_render_context().then(() => with_render_context(() => Renderer2.#render_async(component14, options2))));
       }
       /**
       * Collect all of the `onDestroy` callbacks registered during rendering. In an async context, this is only safe to call
@@ -43137,7 +43137,7 @@ var init_server3 = __esm({
       * @returns {Iterable<() => void>}
       */
       *#collect_on_destroy() {
-        for (const component15 of this.#traverse_components()) yield* component15.#collect_ondestroy();
+        for (const component14 of this.#traverse_components()) yield* component14.#collect_ondestroy();
       }
       /**
       * Performs a depth-first search of renderers, yielding the deepest components first, then additional components as we backtrack up the tree.
@@ -43189,7 +43189,7 @@ var init_server3 = __esm({
       * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string }} options
       * @returns {AccumulatedContent}
       */
-      static #render(component15, options2) {
+      static #render(component14, options2) {
         var previous_context = ssr_context;
         const renderer = Renderer2.#create("sync", options2);
         let result;
@@ -43197,7 +43197,7 @@ var init_server3 = __esm({
         let failed = false;
         try {
           try {
-            Renderer2.#open_render(renderer, component15, options2);
+            Renderer2.#open_render(renderer, component14, options2);
             result = Renderer2.#close_render(renderer.#collect_content(), renderer);
           } catch (error63) {
             render_error = error63;
@@ -43219,7 +43219,7 @@ var init_server3 = __esm({
       * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string; csp?: Csp }} options
       * @returns {Promise<AccumulatedContent & { hashes: { script: Sha256Source[] } }>}
       */
-      static async #render_async(component15, options2) {
+      static async #render_async(component14, options2) {
         const previous_context = ssr_context;
         const renderer = Renderer2.#create("async", options2);
         let result;
@@ -43227,7 +43227,7 @@ var init_server3 = __esm({
         let failed = false;
         try {
           try {
-            Renderer2.#open_render(renderer, component15, options2);
+            Renderer2.#open_render(renderer, component14, options2);
             const content = await renderer.#collect_content_async();
             const hydratables = await renderer.#collect_hydratables();
             if (hydratables !== null) content.head = hydratables + content.head;
@@ -43311,7 +43311,7 @@ var init_server3 = __esm({
       * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string; csp?: Csp; transformError?: (error: unknown) => unknown }} options
       * @returns {void}
       */
-      static #open_render(renderer, component15, options2) {
+      static #open_render(renderer, component14, options2) {
         var previous_context = ssr_context;
         try {
           set_ssr_context({
@@ -43321,7 +43321,7 @@ var init_server3 = __esm({
             i: false
           });
           renderer.push(BLOCK_OPEN);
-          component15(renderer, options2.props ?? {});
+          component14(renderer, options2.props ?? {});
           renderer.push(BLOCK_CLOSE);
         } finally {
           set_ssr_context(previous_context);
@@ -43513,22 +43513,22 @@ function parseCookie(str, options2) {
   if (len < 2)
     return obj;
   const dec = options2?.decode || decode3;
-  let index19 = 0;
+  let index18 = 0;
   do {
-    const eqIdx = eqIndex(str, index19, len);
+    const eqIdx = eqIndex(str, index18, len);
     if (eqIdx === len)
       break;
-    const endIdx = endIndex(str, index19, len);
+    const endIdx = endIndex(str, index18, len);
     if (eqIdx > endIdx) {
-      index19 = str.lastIndexOf(";", eqIdx - 1) + 1;
+      index18 = str.lastIndexOf(";", eqIdx - 1) + 1;
       continue;
     }
-    const key = valueSlice(str, index19, eqIdx);
+    const key = valueSlice(str, index18, eqIdx);
     if (obj[key] === void 0) {
       obj[key] = dec(valueSlice(str, eqIdx + 1, endIdx));
     }
-    index19 = endIdx + 1;
-  } while (index19 < len);
+    index18 = endIdx + 1;
+  } while (index18 < len);
   return obj;
 }
 function stringifySetCookie(cookie, options2) {
@@ -43618,12 +43618,12 @@ function parseSetCookie(str, options2) {
     name: valueSlice(str, 0, eqIdx),
     value: dec(valueSlice(str, eqIdx + 1, endIdx))
   } : { name: "", value: dec(valueSlice(str, 0, endIdx)) };
-  let index19 = endIdx + 1;
-  while (index19 < len) {
-    const endIdx2 = endIndex(str, index19, len);
-    if (eqIdx < index19)
-      eqIdx = eqIndex(str, index19, len);
-    const attr2 = eqIdx < endIdx2 ? valueSlice(str, index19, eqIdx) : valueSlice(str, index19, endIdx2);
+  let index18 = endIdx + 1;
+  while (index18 < len) {
+    const endIdx2 = endIndex(str, index18, len);
+    if (eqIdx < index18)
+      eqIdx = eqIndex(str, index18, len);
+    const attr2 = eqIdx < endIdx2 ? valueSlice(str, index18, eqIdx) : valueSlice(str, index18, endIdx2);
     const val = eqIdx < endIdx2 ? valueSlice(str, eqIdx + 1, endIdx2) : void 0;
     switch (attr2.toLowerCase()) {
       case "httponly":
@@ -43669,17 +43669,17 @@ function parseSetCookie(str, options2) {
         }
         break;
     }
-    index19 = endIdx2 + 1;
+    index18 = endIdx2 + 1;
   }
   return setCookie;
 }
 function endIndex(str, min2, len) {
-  const index19 = str.indexOf(";", min2);
-  return index19 === -1 ? len : index19;
+  const index18 = str.indexOf(";", min2);
+  return index18 === -1 ? len : index18;
 }
 function eqIndex(str, min2, len) {
-  const index19 = str.indexOf("=", min2);
-  return index19 === -1 ? len : index19;
+  const index18 = str.indexOf("=", min2);
+  return index18 === -1 ? len : index18;
 }
 function valueSlice(str, min2, max) {
   if (min2 === max)
@@ -43870,8 +43870,8 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1c8p3n9";
-  function get_replacer(index19) {
+  const global = "__sveltekit_1wm9f4j";
+  function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
         const id2 = promise_id++;
@@ -43894,7 +43894,7 @@ function server_data_serializer(event, state2) {
               str = uneval([, error63], replacer);
             }
             return {
-              index: index19,
+              index: index18,
               str: `${global}.resolve(${id2}, ${str.includes("app.decode") ? `(app) => ${str}` : `() => ${str}`})`
             };
           }
@@ -43937,8 +43937,8 @@ function server_data_serializer(event, state2) {
 `;
       return {
         data: `[${compact(max_nodes > -1 ? strings.slice(0, max_nodes) : strings).join(",")}]`,
-        chunks: promise_id > 1 ? iterator.iterate(({ index: index19, str }) => {
-          if (max_nodes > -1 && index19 >= max_nodes) return "";
+        chunks: promise_id > 1 ? iterator.iterate(({ index: index18, str }) => {
+          if (max_nodes > -1 && index18 >= max_nodes) return "";
           return open2 + str + close;
         }) : null
       };
@@ -44483,8 +44483,8 @@ async function render_response({ branch, fetched, page_config, status, error: er
   }
   const client = manifest.client;
   const modulepreloads = new Set(client?.imports);
-  const stylesheets18 = new Set(client?.stylesheets);
-  const fonts18 = new Map(client?.fonts.map((font) => [font.file, font]));
+  const stylesheets17 = new Set(client?.stylesheets);
+  const fonts17 = new Map(client?.fonts.map((font) => [font.file, font]));
   const inline_styles = /* @__PURE__ */ new Map();
   let rendered;
   const form_value = action_result?.type === "success" || action_result?.type === "failure" ? action_result.data ?? null : null;
@@ -44569,8 +44569,8 @@ async function render_response({ branch, fetched, page_config, status, error: er
   };
   for (const { node: node2 } of branch) {
     for (const url3 of node2.imports) modulepreloads.add(url3);
-    for (const url3 of node2.stylesheets) stylesheets18.add(url3);
-    for (const font of node2.fonts) fonts18.set(font.file, font);
+    for (const url3 of node2.stylesheets) stylesheets17.add(url3);
+    for (const font of node2.fonts) fonts17.set(font.file, font);
     if (node2.inline_styles && !client?.inline) Object.entries(await node2.inline_styles()).forEach(([filename, css]) => {
       if (typeof css === "string") {
         inline_styles.set(filename, css);
@@ -44595,13 +44595,13 @@ async function render_response({ branch, fetched, page_config, status, error: er
   const add_preload = /* @__PURE__ */ __name((path3, attributes2) => {
     head2.add_link_tag(path3, attributes2);
   }, "add_preload");
-  for (const dep of stylesheets18) {
+  for (const dep of stylesheets17) {
     const path3 = prefixed(dep);
     const attributes2 = ['rel="stylesheet"'];
     if (inline_styles.has(dep)) attributes2.push("disabled", 'media="(max-width: 0)"');
     head2.add_stylesheet(path3, attributes2);
   }
-  for (const { file: file2, filename } of fonts18.values()) {
+  for (const { file: file2, filename } of fonts17.values()) {
     const path3 = prefixed(file2);
     if (resolve_opts.preload({
       type: "font",
@@ -44614,7 +44614,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1c8p3n9";
+  const global = "__sveltekit_1wm9f4j";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44639,7 +44639,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1793435744977")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1793439367530")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -45015,8 +45015,8 @@ async function render_page(event, state2, page2, nodes, resolve_opts) {
         }
         const error63 = await handle_error_and_jsonify(event, state2, err);
         const status2 = error63.status;
-        for (const { error: index19, idx } of nearest_error_pages(i, branch, page2.errors)) {
-          const node3 = await manifest.nodes[index19]();
+        for (const { error: index18, idx } of nearest_error_pages(i, branch, page2.errors)) {
+          const node3 = await manifest.nodes[index18]();
           data_serializer.set_max_nodes(idx);
           const layouts = compact(branch.slice(0, idx));
           const nodes2 = new PageNodes(layouts.map((layout) => layout.node));
@@ -46271,8 +46271,8 @@ var init_instance = __esm({
       * @param {Component} component
       * @param {Component | undefined} error
       */
-      constructor(component15, error63) {
-        this.component = component15;
+      constructor(component14, error63) {
+        this.component = component14;
         this.error = error63;
       }
     };
@@ -46719,8 +46719,8 @@ var init_Icon = __esm({
       "stroke-linecap": "round",
       "stroke-linejoin": "round"
     };
-    mergeClasses = /* @__PURE__ */ __name((...classes) => classes.filter((className, index19, array3) => {
-      return Boolean(className) && className.trim() !== "" && array3.indexOf(className) === index19;
+    mergeClasses = /* @__PURE__ */ __name((...classes) => classes.filter((className, index18, array3) => {
+      return Boolean(className) && className.trim() !== "" && array3.indexOf(className) === index18;
     }).join(" ").trim(), "mergeClasses");
     __name(isDefined, "isDefined");
     __name(buildLucideIconNode, "buildLucideIconNode");
@@ -47193,8 +47193,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.DtrhabfM.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Clz7HNYt.js"];
-    stylesheets = ["_app/immutable/assets/0.DNMj9rGc.css"];
+    imports = ["_app/immutable/nodes/0.BbUmQ2ok.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    stylesheets = ["_app/immutable/assets/0.ls2gGq-i.css"];
     fonts = [];
   }
 });
@@ -48266,10 +48266,10 @@ function _page2($$renderer, $$props) {
     else {
       $$renderer2.push(`<!--[-1--><!--[-->`);
       const each_array_1 = ensure_array_like(connections2);
-      for (let index19 = 0, $$length = each_array_1.length; index19 < $$length; index19++) {
-        let account = each_array_1[index19];
+      for (let index18 = 0, $$length = each_array_1.length; index18 < $$length; index18++) {
+        let account = each_array_1[index18];
         const needsReconnect2 = account.status !== "active";
-        $$renderer2.push(`<div${attr_class(`group flex flex-col justify-between gap-4 p-4 transition-colors hover:bg-stone-50/50 sm:flex-row sm:items-center sm:px-6 sm:py-4 ${index19 !== connections2.length - 1 ? "border-b border-stone-100" : ""}`)}><div class="flex items-center gap-4">`);
+        $$renderer2.push(`<div${attr_class(`group flex flex-col justify-between gap-4 p-4 transition-colors hover:bg-stone-50/50 sm:flex-row sm:items-center sm:px-6 sm:py-4 ${index18 !== connections2.length - 1 ? "border-b border-stone-100" : ""}`)}><div class="flex items-center gap-4">`);
         AccountAvatar($$renderer2, {
           platform: account.platform,
           handle: account.handle,
@@ -48363,132 +48363,6 @@ var init__5 = __esm({
     imports5 = ["_app/immutable/nodes/4.Bu6g3PL1.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js"];
     stylesheets5 = [];
     fonts5 = [];
-  }
-});
-
-// .svelte-kit/output/server/entries/pages/api/_page.svelte.js
-var page_svelte_exports3 = {};
-__export(page_svelte_exports3, {
-  default: () => _page3
-});
-function _page3($$renderer) {
-  const origin2 = typeof window !== "undefined" ? window.location.origin : "";
-  const snippets = [
-    {
-      title: "List drafts",
-      code: `curl ${origin2}/api/drafts \\
-  -H "Authorization: Bearer $COGSEND_API_KEY"`
-    },
-    {
-      title: "Create a draft and publish it now",
-      code: `DRAFT=$(curl -s ${origin2}/api/drafts \\
-  -H "Authorization: Bearer $COGSEND_API_KEY" \\
-  -H 'Content-Type: application/json' \\
-  -d '{"baseBody":"Hello from the API"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["draft"]["id"])')
-CONNS=$(curl -s ${origin2}/api/connections \\
-  -H "Authorization: Bearer $COGSEND_API_KEY" | python3 -c 'import json,sys; print(json.load(sys.stdin)["connections"][0]["id"])')
-curl ${origin2}/api/drafts/$DRAFT/publish \\
-  -H "Authorization: Bearer $COGSEND_API_KEY" \\
-  -H 'Content-Type: application/json' \\
-  -d "{\\"connectionIds\\":[\\"$CONNS\\"]}"`
-    },
-    {
-      title: "Schedule for later",
-      code: `curl ${origin2}/api/drafts/$DRAFT/schedule \\
-  -H "Authorization: Bearer $COGSEND_API_KEY" \\
-  -H 'Content-Type: application/json' \\
-  -d '{"connectionIds":["<connection-id>"],"runAt":"2030-01-01T09:00:00Z"}'`
-    },
-    {
-      title: "Check the queue",
-      code: `curl ${origin2}/api/queue \\
-  -H "Authorization: Bearer $COGSEND_API_KEY"`
-    },
-    {
-      title: "MCP Inspector CLI (list tools)",
-      code: `: "\${COGSEND_API_KEY:?Load it from a secret manager}"
-npx @modelcontextprotocol/inspector --cli \\
-  "${origin2}/api/mcp" \\
-  --transport http \\
-  --protocol-era modern \\
-  --method tools/list \\
-  --header "Authorization: Bearer $COGSEND_API_KEY"`
-    },
-    {
-      title: "Generic MCP client configuration template",
-      code: `{
-  "mcpServers": {
-    "cogsend": {
-      "type": "http",
-      "url": "${origin2}/api/mcp",
-      "headers": {
-        "Authorization": "Bearer $COGSEND_API_KEY"
-      }
-    }
-  }
-}`
-    }
-  ];
-  $$renderer.push(`<div class="mx-auto flex w-full max-w-2xl flex-1 flex-col py-8 pb-20"><div class="mb-12"><h1 class="text-3xl font-bold tracking-tight text-stone-900">API Documentation</h1> <p class="mt-4 text-[15px] leading-relaxed text-stone-600">Use your personal API key for REST API requests or connect an MCP client to the stateless
-			Streamable HTTP endpoint at <code>/api/mcp</code>. Generate or revoke your key in <a href="/settings" class="font-medium text-stone-900 underline underline-offset-4 hover:text-stone-600">Settings \u2192 API access</a>.</p></div> <div class="flex flex-col gap-12"><section><h2 class="mb-4 text-xl font-bold tracking-tight text-stone-900">Authentication</h2> <p class="mb-4 text-[15px] leading-relaxed text-stone-600">Provide your API key in the headers of every request. You can use the standard <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px] font-medium text-stone-900">Authorization: Bearer &lt;key></code> header or the custom <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px] font-medium text-stone-900">X-API-Key: &lt;key></code> header.</p> <div class="group relative mb-6"><pre class="overflow-x-auto rounded-xl border border-stone-200/60 bg-stone-50 p-4 font-mono text-[13px] text-stone-900">Authorization: Bearer cog_\u2026</pre> <button type="button" aria-label="Copy authorization header" aria-live="polite" class="absolute top-3 right-3 rounded-md border border-stone-200/80 bg-white px-2 py-1 text-xs font-medium text-stone-600 opacity-100 transition-opacity group-hover:opacity-100 hover:bg-stone-100 hover:text-stone-900 focus:opacity-100 focus-visible:opacity-100 sm:opacity-0">Copy</button></div> <ul class="list-disc space-y-2 pl-5 text-[15px] text-stone-600 marker:text-stone-500"><li><strong class="font-medium text-stone-900">Capabilities:</strong> The API key can be used to
-					manage drafts, upload media, publish posts, schedule deliveries, and read queue status.</li> <li><strong class="font-medium text-stone-900">Restrictions:</strong> The key cannot be used to
-					connect or disconnect social accounts, rotate credentials, or revoke itself. These actions require
-					a secure browser session.</li> <li><strong class="font-medium text-stone-900">Scopes:</strong> Choose <strong>Read-only</strong> or <strong>Read + write</strong> when generating or replacing a key;
-					Read + write is the default and includes read access. A read-only key can use MCP's connection,
-					draft, validation, and queue tools; write tools require Read + write. The detailed MCP tool
-					map is below.</li> <li><strong class="font-medium text-stone-900">Key lifecycle:</strong> Only one personal key is
-					active at a time. The raw key is shown once and only its hash is stored. Generating a replacement
-					immediately revokes the previous key.</li> <li><strong class="font-medium text-stone-900">Errors:</strong> Failed requests return a JSON
-					object with an <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">error</code> property.</li> <li><strong class="font-medium text-stone-900">Publishing:</strong> Direct publishes return
-					per-connection results inline. Reusing a connection within the same draft returns <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">skipped</code>.
-					Scheduling a duplicate target returns a 409 Conflict.</li></ul> <p class="mt-6 text-[14px] font-medium text-stone-500">If a key ever touches a log or screenshot, rotate it in Settings \u2014 the old one stops working
-				immediately.</p></section> <section><h2 class="mb-6 text-xl font-bold tracking-tight text-stone-900">Endpoints</h2> <dl class="space-y-3 font-mono text-[13px] text-stone-600"><div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/mcp</dt> <dd>stateless Streamable HTTP MCP endpoint; personal bearer key required</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">GET /api/drafts</dt> <dd>list drafts with variants, media, targets</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts</dt> <dd>{"title?", "baseBody?", "selectedConnectionIds?"} \u2192 201 {draft}</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">PATCH /api/drafts/:id</dt> <dd>edit title/body/selectedConnectionIds (409 while publishing)</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">PUT /api/drafts/:id/variants</dt> <dd>{"platform", "body?", "options?"} \u2192 the per-platform copy</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts/:id/media</dt> <dd>multipart: file(s), segmentIndex, altText? \u2192 201 {media}</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts/:id/duplicate</dt> <dd>clone a draft (media included) into a new draft</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">GET|POST|DELETE /api/drafts/:id/share</dt> <dd>read-only preview link: POST {"expiresInDays?"} (default 14, max 30) \u2192 201 {share:{url, expiresAt}}; a new one replaces the old</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts/:id/publish</dt> <dd>{"connectionIds":[]} \u2192 {results[], draft}</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts/:id/schedule</dt> <dd>{"connectionIds":[],"runAt":ISO} \u2192 {targets}</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">GET /api/queue</dt> <dd>upcoming + recent delivery targets</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/targets/:id/cancel|retry</dt> <dd>cancel or retry one delivery</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/targets/bulk</dt> <dd>cancel, retry, or reschedule several deliveries at once</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">GET /api/connections</dt> <dd>account ids, platforms, statuses, and which platforms this deployment can connect</dd></div></dl></section> <section aria-labelledby="mcp-server-heading"><h2 id="mcp-server-heading" class="mb-4 text-xl font-bold tracking-tight text-stone-900">MCP server</h2> <p class="mb-4 text-[15px] leading-relaxed text-stone-600">Connect to <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">${escape_html(origin2)}/api/mcp</code> using Streamable HTTP. Send an active personal key in <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">Authorization: Bearer \u2026</code> on every request. MCP does not accept cookies, <code>X-API-Key</code>, the legacy <code>API_TOKEN</code>, scheduler credentials, or query-string credentials. Requests are
-				stateless JSON. Tool results include text summaries and structured data; GET and DELETE
-				return 405. If Cloudflare Access protects the instance with Service Auth, also send <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> using locally stored environment values. The Access guide
-				covers the policy choice for clients that cannot send these headers.</p> <p class="mb-3 text-[15px] leading-relaxed text-stone-600"><strong class="font-medium text-stone-900">Read scope:</strong> <code>list_connections</code>, <code>list_drafts</code>, <code>get_draft</code>, <code>validate_post</code>, <code>list_queue</code>.</p> <p class="mb-4 text-[15px] leading-relaxed text-stone-600"><strong class="font-medium text-stone-900">Write scope:</strong> <code>create_draft</code>, <code>update_draft</code>, <code>duplicate_draft</code>, <code>delete_draft</code>, <code>set_draft_variant</code>, <code>delete_draft_variant</code>, <code>publish_draft</code>, <code>schedule_draft</code>, <code>cancel_delivery</code>, <code>retry_delivery</code>, <code>reschedule_delivery</code>. Write includes read.</p> <p class="mb-4 text-[14px] leading-relaxed text-stone-600">The tools annotated as destructive are <code>update_draft</code>, <code>set_draft_variant</code>, <code>delete_draft</code>, <code>delete_draft_variant</code>, <code>publish_draft</code>, <code>schedule_draft</code>, <code>cancel_delivery</code>, <code>retry_delivery</code>, and <code>reschedule_delivery</code>. <code>publish_draft</code> and <code>retry_delivery</code> are also open-world operations. Verify content, destination, and timing
-				before approving publish, retry, schedule, or reschedule.</p> <div class="mb-6 rounded-xl border border-amber-200/70 bg-amber-50/60 p-4"><p class="text-[14px] leading-relaxed text-amber-950">Use an MCP client that asks you to approve destructive and open-world actions. Review
-					content and destination before <code>publish_draft</code> or <code>retry_delivery</code>,
-					which can post to external services. Tool annotations are hints, not authorization or
-					enforced consent; CogSend has no server-side preview/commit step in v1.</p> <p class="mt-2 text-[14px] leading-relaxed text-amber-950">MCP v1 does not expose media operations, settings, insights, account/provider management,
-					key management, scheduler administration, the internal publish endpoint, arbitrary HTTP
-					requests, prompts, resources, or sampling. The current SDK revision does not implement MCP <code>ping</code>; a ping can return JSON-RPC <code>-32601</code> / HTTP 404.</p></div> <h3 class="mb-2 text-[15px] font-semibold text-stone-900">Try it with MCP Inspector</h3> <ol class="mb-4 list-decimal space-y-2 pl-5 text-[14px] leading-relaxed text-stone-600"><li>Generate a Read-only or Read + write key in Settings and copy it while it is shown once.</li> <li>Run <code>npx @modelcontextprotocol/inspector</code> to open the official Inspector.</li> <li>Choose Streamable HTTP, enter the endpoint above, and configure the Authorization header
-					with your key. Connect and try <code>list_connections</code>.</li> <li>Review the arguments before invoking destructive or open-world tools; configure agent
-					clients to require your approval.</li></ol> <p class="text-[13px] leading-relaxed text-stone-500">The copyable CLI example below uses shell expansion for <code>$COGSEND_API_KEY</code>. The
-				generic configuration is a template: client-specific variable interpolation is not
-				guaranteed. Never commit a real key.</p></section> <section><h2 class="mb-6 text-xl font-bold tracking-tight text-stone-900">Examples</h2> <div class="flex flex-col gap-8"><!--[-->`);
-  const each_array = ensure_array_like(snippets);
-  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-    let s2 = each_array[$$index];
-    $$renderer.push(`<div><h3 class="mb-3 text-[15px] font-semibold text-stone-900">${escape_html(s2.title)}</h3> <div class="group relative"><pre class="overflow-x-auto rounded-xl border border-stone-200/60 bg-stone-50 p-4 font-mono text-[13px] text-stone-900">${escape_html(s2.code)}</pre> <button type="button"${attr("aria-label", `Copy ${s2.title} snippet`)} aria-live="polite" class="absolute top-3 right-3 rounded-md border border-stone-200/80 bg-white px-2 py-1 text-xs font-medium text-stone-600 opacity-100 transition-opacity group-hover:opacity-100 hover:bg-stone-100 hover:text-stone-900 focus:opacity-100 focus-visible:opacity-100 sm:opacity-0">Copy</button></div></div>`);
-  }
-  $$renderer.push(`<!--]--></div></section></div></div>`);
-}
-var init_page_svelte3 = __esm({
-  ".svelte-kit/output/server/entries/pages/api/_page.svelte.js"() {
-    "use strict";
-    init_server3();
-    __name(_page3, "_page");
-  }
-});
-
-// .svelte-kit/output/server/nodes/5.js
-var __exports6 = {};
-__export(__exports6, {
-  component: () => component6,
-  fonts: () => fonts6,
-  imports: () => imports6,
-  index: () => index7,
-  stylesheets: () => stylesheets6
-});
-var index7, component_cache6, component6, imports6, stylesheets6, fonts6;
-var init__6 = __esm({
-  ".svelte-kit/output/server/nodes/5.js"() {
-    "use strict";
-    index7 = 5;
-    component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
-    imports6 = ["_app/immutable/nodes/5.BylT057h.js", "_app/immutable/chunks/CKBqBhm7.js"];
-    stylesheets6 = [];
-    fonts6 = [];
   }
 });
 
@@ -49231,9 +49105,9 @@ var init_user = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/compose/_page.svelte.js
-var page_svelte_exports4 = {};
-__export(page_svelte_exports4, {
-  default: () => _page4
+var page_svelte_exports3 = {};
+__export(page_svelte_exports3, {
+  default: () => _page3
 });
 function Calendar($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
@@ -49730,9 +49604,9 @@ function Editor($$renderer, $$props) {
     }
     __name(getPlatformStatus, "getPlatformStatus");
     const mediaBySegment = derived2(() => groupMediaBySegment(media));
-    function cardMedia(index19) {
+    function cardMedia(index18) {
       if (activeTab !== "global" && !supportsThreads(activeTab)) return media;
-      return mediaBySegment().get(index19) ?? [];
+      return mediaBySegment().get(index18) ?? [];
     }
     __name(cardMedia, "cardMedia");
     derived2(() => {
@@ -50232,8 +50106,8 @@ function Editor($$renderer, $$props) {
     }
     __name(fitProblems, "fitProblems");
     const firstMediaCard = derived2(() => media.length ? Math.min(...mediaBySegment().keys()) : 0);
-    function cardFit(index19) {
-      return fitProblems(cardMedia(index19), activeTab !== "global" && !supportsThreads(activeTab) || index19 === firstMediaCard());
+    function cardFit(index18) {
+      return fitProblems(cardMedia(index18), activeTab !== "global" && !supportsThreads(activeTab) || index18 === firstMediaCard());
     }
     __name(cardFit, "cardFit");
     const fitErrorPlatforms = derived2(() => new Set(fitProblems(media, true).filter((r2) => r2.level === "error").map((r2) => r2.platform)));
@@ -50516,12 +50390,12 @@ function Editor($$renderer, $$props) {
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--></div> <div class="relative flex-1"><div class="flex flex-col gap-6"><!--[-->`);
     const each_array_2 = ensure_array_like(segments());
-    for (let index19 = 0, $$length = each_array_2.length; index19 < $$length; index19++) {
-      let segment = each_array_2[index19];
+    for (let index18 = 0, $$length = each_array_2.length; index18 < $$length; index18++) {
+      let segment = each_array_2[index18];
       const segLen = countForCard(segment);
       const isOver = segLen > maxChars();
-      const segMedia = cardMedia(index19);
-      const quote = cardQuote(index19);
+      const segMedia = cardMedia(index18);
+      const quote = cardQuote(index18);
       const strayLinks = xQuoteActive() ? strayXPostLinks(segment) : [];
       $$renderer2.push(`<div class="group relative flex gap-4 sm:gap-6"><div class="relative z-10 hidden flex-shrink-0 flex-col items-center sm:flex">`);
       if (avatarSrc() && failedAvatarSrc !== avatarSrc()) $$renderer2.push(`<!--[0--><img${attr("src", avatarSrc())} alt="Avatar" referrerpolicy="no-referrer" class="relative z-10 h-10 w-10 rounded-full border-[3px] border-stone-50 bg-white object-cover shadow-sm" onerror="this.__e=event"/>`);
@@ -50535,26 +50409,26 @@ function Editor($$renderer, $$props) {
         $$renderer2.push(`<!--]--></span>`);
       }
       $$renderer2.push(`<!--]--> `);
-      if (index19 < segments().length - 1) $$renderer2.push(`<!--[0--><div class="absolute top-10 bottom-[-24px] left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-stone-200/80"></div>`);
+      if (index18 < segments().length - 1) $$renderer2.push(`<!--[0--><div class="absolute top-10 bottom-[-24px] left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-stone-200/80"></div>`);
       else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index19)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index19)}${attr("data-testid", `segment-input-${stringify3(index19)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", index19 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index19 === 0 ? "Post text" : `Post ${index19 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
-      const $$body = escape_html(hiddenQuote(index19)?.visible ?? segment);
+      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index18)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index18)}${attr("data-testid", `segment-input-${stringify3(index18)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", index18 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index18 === 0 ? "Post text" : `Post ${index18 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
+      const $$body = escape_html(hiddenQuote(index18)?.visible ?? segment);
       if ($$body) $$renderer2.push(`${$$body}`);
       $$renderer2.push(`</textarea> `);
-      if (segMedia.length > 0 || jobsFor(index19).length > 0) {
+      if (segMedia.length > 0 || jobsFor(index18).length > 0) {
         $$renderer2.push("<!--[0-->");
-        const job = jobsFor(index19)[0];
-        $$renderer2.push(`<div class="mt-3"${attr("data-testid", `segment-media-${stringify3(index19)}`)}>`);
+        const job = jobsFor(index18)[0];
+        $$renderer2.push(`<div class="mt-3"${attr("data-testid", `segment-media-${stringify3(index18)}`)}>`);
         {
           let toolbar2 = function($$renderer3, m) {
             const hasAlt = Boolean((m.altText || "").trim());
             const kind = isVideoItem(m) ? "video" : "image";
-            $$renderer3.push(`<button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`min-h-7 rounded-full px-2.5 text-[11px] font-bold tracking-wide shadow-sm backdrop-blur-sm ${hasAlt ? "bg-black/60 text-white hover:bg-black/75" : "bg-amber-400 text-black hover:bg-amber-300"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", `${hasAlt ? "Edit" : "Add"} alt text for ${kind} ${index19 + 1}`)}>ALT</button> `);
-            if (!editLocked() && isVideoItem(m)) $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `video-cover-${stringify3(m.id)}`)} class="min-h-7 rounded-full bg-black/60 px-2.5 text-[11px] font-bold tracking-wide text-white shadow-sm backdrop-blur-sm hover:bg-black/75" title="Choose the cover"${attr("aria-label", `Choose the cover for video ${index19 + 1}`)}>COVER</button>`);
+            $$renderer3.push(`<button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`min-h-7 rounded-full px-2.5 text-[11px] font-bold tracking-wide shadow-sm backdrop-blur-sm ${hasAlt ? "bg-black/60 text-white hover:bg-black/75" : "bg-amber-400 text-black hover:bg-amber-300"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", `${hasAlt ? "Edit" : "Add"} alt text for ${kind} ${index18 + 1}`)}>ALT</button> `);
+            if (!editLocked() && isVideoItem(m)) $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `video-cover-${stringify3(m.id)}`)} class="min-h-7 rounded-full bg-black/60 px-2.5 text-[11px] font-bold tracking-wide text-white shadow-sm backdrop-blur-sm hover:bg-black/75" title="Choose the cover"${attr("aria-label", `Choose the cover for video ${index18 + 1}`)}>COVER</button>`);
             else $$renderer3.push("<!--[-1-->");
             $$renderer3.push(`<!--]--> `);
             if (!editLocked()) {
-              $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm backdrop-blur-sm hover:bg-black/75"${attr("title", `Remove ${kind} ${index19 + 1}`)}${attr("aria-label", `Remove ${kind} ${index19 + 1}`)}>`);
+              $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm backdrop-blur-sm hover:bg-black/75"${attr("title", `Remove ${kind} ${index18 + 1}`)}${attr("aria-label", `Remove ${kind} ${index18 + 1}`)}>`);
               X($$renderer3, { class: "h-3.5 w-3.5" });
               $$renderer3.push(`<!----></button>`);
             } else $$renderer3.push("<!--[-1-->");
@@ -50570,9 +50444,9 @@ function Editor($$renderer, $$props) {
               label: `${job.phase === "uploading" ? "Uploading" : job.phase === "converting" ? "Converting" : "Reading"} ${Math.round(job.progress * 100)}%`,
               fraction: job.progress,
               onCancel: /* @__PURE__ */ __name(() => job.controller.abort(), "onCancel"),
-              cancelLabel: `Cancel the video for post ${index19 + 1}`,
-              testId: `video-progress-${index19}`,
-              cancelTestId: `video-cancel-${index19}`
+              cancelLabel: `Cancel the video for post ${index18 + 1}`,
+              testId: `video-progress-${index18}`,
+              cancelTestId: `video-cancel-${index18}`
             } : null,
             toolbar: toolbar2,
             $$slots: { toolbar: true }
@@ -50584,26 +50458,26 @@ function Editor($$renderer, $$props) {
       const each_array_3 = ensure_array_like(segMedia);
       for (let $$index_2 = 0, $$length2 = each_array_3.length; $$index_2 < $$length2; $$index_2++) {
         let m = each_array_3[$$index_2];
-        if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", isVideoItem(m) ? "Describe this video\u2026" : "Describe this image\u2026")}${attr("aria-label", `Alt text for ${isVideoItem(m) ? "video" : "image"} ${index19 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
+        if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", isVideoItem(m) ? "Describe this video\u2026" : "Describe this image\u2026")}${attr("aria-label", `Alt text for ${isVideoItem(m) ? "video" : "image"} ${index18 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
         else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
       }
       $$renderer2.push(`<!--]--> `);
       MediaFit($$renderer2, {
-        problems: cardFit(index19),
+        problems: cardFit(index18),
         onUncheck: editLocked() ? void 0 : uncheckPlatform,
-        testId: `media-fit-${stringify3(index19)}`
+        testId: `media-fit-${stringify3(index18)}`
       });
       $$renderer2.push(`<!----> `);
       if (quote) {
         $$renderer2.push("<!--[0-->");
         XQuoteCard($$renderer2, {
           url: quote.url,
-          onRemove: editLocked() ? void 0 : () => removeQuote(index19),
+          onRemove: editLocked() ? void 0 : () => removeQuote(index18),
           otherPlatforms: quoteLinkPlatforms(),
-          onOnlyOnX: !editLocked() && canQuoteOnlyOnX(index19) ? () => quoteOnlyOnX(index19) : void 0,
+          onOnlyOnX: !editLocked() && canQuoteOnlyOnX(index18) ? () => quoteOnlyOnX(index18) : void 0,
           withheldFrom: xWithheldFrom(),
-          onShareWithAll: !editLocked() && sharedQuote(index19) ? () => shareQuoteWithAll(index19) : void 0
+          onShareWithAll: !editLocked() && sharedQuote(index18) ? () => shareQuoteWithAll(index18) : void 0
         });
       } else {
         $$renderer2.push("<!--[-1-->");
@@ -50613,7 +50487,7 @@ function Editor($$renderer, $$props) {
         });
       }
       $$renderer2.push(`<!--]--> `);
-      if (xQuoteActive() && counters().x.max > X_FOLD && xWeightedLength(segment) > X_FOLD) $$renderer2.push(`<!--[0--><p class="mt-3 text-[12px] font-medium text-stone-500"${attr("data-testid", `x-fold-${stringify3(index19)}`)}>X shows about the first ${escape_html(X_FOLD)} characters, then Show more.</p>`);
+      if (xQuoteActive() && counters().x.max > X_FOLD && xWeightedLength(segment) > X_FOLD) $$renderer2.push(`<!--[0--><p class="mt-3 text-[12px] font-medium text-stone-500"${attr("data-testid", `x-fold-${stringify3(index18)}`)}>X shows about the first ${escape_html(X_FOLD)} characters, then Show more.</p>`);
       else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> `);
       if (strayLinks.length > 0 && !editLocked()) {
@@ -50637,7 +50511,7 @@ function Editor($$renderer, $$props) {
         $$renderer2.push("<!--[0-->");
         if (tabSupportsThreads()) {
           $$renderer2.push("<!--[0-->");
-          if (index19 === segments().length - 1) {
+          if (index18 === segments().length - 1) {
             $$renderer2.push(`<!--[0--><button type="button" data-testid="add-thread-post" class="flex items-center gap-1.5 rounded-full border border-stone-100 bg-stone-50 px-3 py-1.5 text-[12px] font-bold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900">`);
             Plus($$renderer2, { class: "h-3.5 w-3.5" });
             $$renderer2.push(`<!----> Thread</button>`);
@@ -50646,10 +50520,10 @@ function Editor($$renderer, $$props) {
         } else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]--> `);
         if (segments().length > 1) {
-          $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-segment-${stringify3(index19)}`)} class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Remove post from thread" aria-label="Remove post from thread">`);
+          $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-segment-${stringify3(index18)}`)} class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Remove post from thread" aria-label="Remove post from thread">`);
           Trash($$renderer2, { class: "h-3.5 w-3.5" });
           $$renderer2.push(`<!----></button>`);
-        } else if (index19 === 0 && canDiscard()) {
+        } else if (index18 === 0 && canDiscard()) {
           $$renderer2.push(`<!--[1--><button type="button" data-testid="discard-draft" class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"${attr("title", discardCopy().label)}${attr("aria-label", discardCopy().label)}>`);
           Trash($$renderer2, { class: "h-3.5 w-3.5" });
           $$renderer2.push(`<!----></button>`);
@@ -50658,10 +50532,10 @@ function Editor($$renderer, $$props) {
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--></div> <div class="quote-picker-container relative flex items-center gap-3">`);
       if (xQuoteActive() && !quote && !editLocked()) {
-        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `quote-post-${stringify3(index19)}`)}${attr_class(`flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 pointer-coarse:opacity-100 ${quotePickerFor === index19 ? "opacity-100" : ""}`)}${attr("aria-label", `Quote one of your X posts in post ${index19 + 1}`)}${attr("aria-expanded", quotePickerFor === index19)} title="Quote one of your X posts">`);
+        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `quote-post-${stringify3(index18)}`)}${attr_class(`flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 pointer-coarse:opacity-100 ${quotePickerFor === index18 ? "opacity-100" : ""}`)}${attr("aria-label", `Quote one of your X posts in post ${index18 + 1}`)}${attr("aria-expanded", quotePickerFor === index18)} title="Quote one of your X posts">`);
         Quote($$renderer2, { class: "h-4 w-4" });
         $$renderer2.push(`<!----></button> `);
-        if (quotePickerFor === index19) {
+        if (quotePickerFor === index18) {
           $$renderer2.push(`<!--[0--><div class="absolute top-full right-0 z-40 mt-2 w-72 max-w-[calc(100vw-3rem)] scroll-mb-32 rounded-[1rem] border border-stone-200/80 bg-white p-2 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] after:pointer-events-none after:absolute after:top-full after:left-0 after:h-32 after:w-px after:content-['']" role="dialog" aria-label="Quote one of your X posts" data-testid="quote-picker"><div class="mb-1 px-2 py-1"><span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">Your X posts</span></div> `);
           $$renderer2.push(`<!--[1--><p class="px-2 py-2 text-[12px] font-medium text-stone-500">Loading\u2026</p>`);
           $$renderer2.push(`<!--]--></div>`);
@@ -50670,11 +50544,11 @@ function Editor($$renderer, $$props) {
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> `);
       if (!editLocked()) {
-        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index19)}`)}${attr("disabled", uploadingSegment === index19, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index19 ? `Uploading to post ${index19 + 1}` : `Add image to post ${index19 + 1}`)}${attr("title", uploadingSegment === index19 ? "Uploading\u2026" : "Add Image")}>`);
+        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index18)}`)}${attr("disabled", uploadingSegment === index18, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index18 ? `Uploading to post ${index18 + 1}` : `Add image to post ${index18 + 1}`)}${attr("title", uploadingSegment === index18 ? "Uploading\u2026" : "Add Image")}>`);
         Image($$renderer2, { class: "h-4 w-4" });
-        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA)} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index19)}`)}/>`);
+        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA)} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index18)}`)}/>`);
       } else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--> <div${attr("data-testid", `segment-count-${stringify3(index19)}`)}${attr_class(`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider transition-colors ${isOver ? "border border-red-100 bg-red-50 text-red-600" : "border border-stone-100 bg-stone-50 text-stone-500"}`)}>${escape_html(segLen)}/${escape_html(maxChars())}</div></div></div></div></div>`);
+      $$renderer2.push(`<!--]--> <div${attr("data-testid", `segment-count-${stringify3(index18)}`)}${attr_class(`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider transition-colors ${isOver ? "border border-red-100 bg-red-50 text-red-600" : "border border-stone-100 bg-stone-50 text-stone-500"}`)}>${escape_html(segLen)}/${escape_html(maxChars())}</div></div></div></div></div>`);
     }
     $$renderer2.push(`<!--]--></div></div> `);
     if (!editLocked()) {
@@ -50805,7 +50679,7 @@ function Editor($$renderer, $$props) {
     $$renderer2.push(`<!--]-->`);
   });
 }
-function _page4($$renderer, $$props) {
+function _page3($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;
     Editor($$renderer2, {
@@ -50818,7 +50692,7 @@ function _page4($$renderer, $$props) {
   });
 }
 var __iconData$8, __iconData$7, __iconData$6, __iconData$5, __iconData$4, __iconData$3, __iconData$2, __iconData$12, __iconData13, PLATFORM_LIMITS;
-var init_page_svelte4 = __esm({
+var init_page_svelte3 = __esm({
   ".svelte-kit/output/server/entries/pages/compose/_page.svelte.js"() {
     "use strict";
     init_bytes();
@@ -51012,32 +50886,32 @@ var init_page_svelte4 = __esm({
     __name(XQuoteCard, "XQuoteCard");
     __name(PostStatusBanner, "PostStatusBanner");
     __name(Editor, "Editor");
-    __name(_page4, "_page");
+    __name(_page3, "_page");
   }
 });
 
-// .svelte-kit/output/server/nodes/6.js
-var __exports7 = {};
-__export(__exports7, {
-  component: () => component7,
-  fonts: () => fonts7,
-  imports: () => imports7,
-  index: () => index8,
+// .svelte-kit/output/server/nodes/5.js
+var __exports6 = {};
+__export(__exports6, {
+  component: () => component6,
+  fonts: () => fonts6,
+  imports: () => imports6,
+  index: () => index7,
   server: () => page_server_ts_exports3,
   server_id: () => server_id4,
-  stylesheets: () => stylesheets7
+  stylesheets: () => stylesheets6
 });
-var index8, component_cache7, component7, server_id4, imports7, stylesheets7, fonts7;
-var init__7 = __esm({
-  ".svelte-kit/output/server/nodes/6.js"() {
+var index7, component_cache6, component6, server_id4, imports6, stylesheets6, fonts6;
+var init__6 = __esm({
+  ".svelte-kit/output/server/nodes/5.js"() {
     "use strict";
     init_page_server_ts3();
-    index8 = 6;
-    component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
+    index7 = 5;
+    component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports7 = ["_app/immutable/nodes/6.fyv8vYVm.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
-    stylesheets7 = [];
-    fonts7 = [];
+    imports6 = ["_app/immutable/nodes/5.fyv8vYVm.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
+    stylesheets6 = [];
+    fonts6 = [];
   }
 });
 
@@ -51057,26 +50931,26 @@ var init_page_server_ts4 = __esm({
   }
 });
 
-// .svelte-kit/output/server/nodes/7.js
-var __exports8 = {};
-__export(__exports8, {
-  fonts: () => fonts8,
-  imports: () => imports8,
-  index: () => index9,
+// .svelte-kit/output/server/nodes/6.js
+var __exports7 = {};
+__export(__exports7, {
+  fonts: () => fonts7,
+  imports: () => imports7,
+  index: () => index8,
   server: () => page_server_ts_exports4,
   server_id: () => server_id5,
-  stylesheets: () => stylesheets8
+  stylesheets: () => stylesheets7
 });
-var index9, server_id5, imports8, stylesheets8, fonts8;
-var init__8 = __esm({
-  ".svelte-kit/output/server/nodes/7.js"() {
+var index8, server_id5, imports7, stylesheets7, fonts7;
+var init__7 = __esm({
+  ".svelte-kit/output/server/nodes/6.js"() {
     "use strict";
     init_page_server_ts4();
-    index9 = 7;
+    index8 = 6;
     server_id5 = "src/routes/connections/+page.server.ts";
-    imports8 = [];
-    stylesheets8 = [];
-    fonts8 = [];
+    imports7 = [];
+    stylesheets7 = [];
+    fonts7 = [];
   }
 });
 
@@ -51096,26 +50970,26 @@ var init_page_server_ts5 = __esm({
   }
 });
 
-// .svelte-kit/output/server/nodes/8.js
-var __exports9 = {};
-__export(__exports9, {
-  fonts: () => fonts9,
-  imports: () => imports9,
-  index: () => index10,
+// .svelte-kit/output/server/nodes/7.js
+var __exports8 = {};
+__export(__exports8, {
+  fonts: () => fonts8,
+  imports: () => imports8,
+  index: () => index9,
   server: () => page_server_ts_exports5,
   server_id: () => server_id6,
-  stylesheets: () => stylesheets9
+  stylesheets: () => stylesheets8
 });
-var index10, server_id6, imports9, stylesheets9, fonts9;
-var init__9 = __esm({
-  ".svelte-kit/output/server/nodes/8.js"() {
+var index9, server_id6, imports8, stylesheets8, fonts8;
+var init__8 = __esm({
+  ".svelte-kit/output/server/nodes/7.js"() {
     "use strict";
     init_page_server_ts5();
-    index10 = 8;
+    index9 = 7;
     server_id6 = "src/routes/drafts/+page.server.ts";
-    imports9 = [];
-    stylesheets9 = [];
-    fonts9 = [];
+    imports8 = [];
+    stylesheets8 = [];
+    fonts8 = [];
   }
 });
 
@@ -51239,7 +51113,7 @@ function windowKeys(nowMs, days, timeZone) {
 }
 function boundsFor(keys, timeZone, weekly, winStart, winEnd) {
   const bucketCount = weekly ? keys.length / 7 : keys.length;
-  const startOf = /* @__PURE__ */ __name((index19) => localDayStartMs(keys[index19] ?? keys[0], timeZone), "startOf");
+  const startOf = /* @__PURE__ */ __name((index18) => localDayStartMs(keys[index18] ?? keys[0], timeZone), "startOf");
   const bounds = [];
   for (let i = 0; i < bucketCount; i++) {
     const first2 = weekly ? i * 7 : i;
@@ -51526,15 +51400,15 @@ var init_page_server_ts6 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/insights/_page.svelte.js
-var page_svelte_exports5 = {};
-__export(page_svelte_exports5, {
-  default: () => _page5
+var page_svelte_exports4 = {};
+__export(page_svelte_exports4, {
+  default: () => _page4
 });
 function Chart_column($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData14 }]));
 }
-function _page5($$renderer, $$props) {
+function _page4($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data: pageData } = $$props;
     let range = pageData.insights?.range.days ?? 30;
@@ -51567,11 +51441,11 @@ function _page5($$renderer, $$props) {
     const buckets = derived2(() => stats?.series.current ?? []);
     const previousBuckets = derived2(() => stats?.series.previous ?? []);
     derived2(() => Math.max(1, ...buckets().map((b) => b.published), ...previousBuckets().map((b) => b.published)));
-    function showBarLabel(index19) {
+    function showBarLabel(index18) {
       const n = buckets().length;
-      if (n <= 7 || index19 === n - 1) return true;
+      if (n <= 7 || index18 === n - 1) return true;
       const step = n <= 31 ? 5 : 3;
-      return index19 % step === 0 && n - 1 - index19 >= step / 2;
+      return index18 % step === 0 && n - 1 - index18 >= step / 2;
     }
     __name(showBarLabel, "showBarLabel");
     const hasFailures = derived2(() => buckets().some((b) => b.failed > 0));
@@ -51588,8 +51462,8 @@ function _page5($$renderer, $$props) {
     const cumulativeMax = derived2(() => Math.max(1, ...cumulative().current, ...cumulative().previous));
     const CHART_W = 600;
     const CHART_H = 150;
-    function pointX(index19, count2) {
-      return (index19 + 0.5) / count2 * CHART_W;
+    function pointX(index18, count2) {
+      return (index18 + 0.5) / count2 * CHART_W;
     }
     __name(pointX, "pointX");
     function pointY(value) {
@@ -51608,8 +51482,8 @@ function _page5($$renderer, $$props) {
       return `${currentLine()} L${pointX(n - 1, n).toFixed(1)},146 L${pointX(0, n).toFixed(1)},146 Z`;
     });
     const active = derived2(() => null);
-    function pct(index19, count2) {
-      return (index19 + 0.5) / count2 * 100;
+    function pct(index18, count2) {
+      return (index18 + 0.5) / count2 * 100;
     }
     __name(pct, "pct");
     const reading = derived2(() => {
@@ -51747,9 +51621,9 @@ function _page5($$renderer, $$props) {
       $$renderer2.push(`<!--]--></p> <div class="mt-7 mb-2.5 flex items-center justify-between gap-3"><h2 class="text-[15px] font-extrabold tracking-tight text-stone-900">Accounts</h2> <p class="text-[12px] font-semibold text-stone-500">${escape_html(stats.range.days === 90 ? "13 weeks" : `${stats.range.days} days`)} \xB7 ${escape_html(accounts().length)}
 				${escape_html(accounts().length === 1 ? "account" : "accounts")}</p></div> <div class="overflow-hidden rounded-[2rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)]" data-testid="insights-accounts"><!--[-->`);
       const each_array_5 = ensure_array_like(accounts());
-      for (let index19 = 0, $$length = each_array_5.length; index19 < $$length; index19++) {
-        let account = each_array_5[index19];
-        $$renderer2.push(`<div${attr_class(`flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:flex-nowrap sm:gap-4 ${index19 !== accounts().length - 1 ? "border-b border-stone-100" : ""}`)} data-testid="insight-account"><div class="flex min-w-0 items-center gap-3">`);
+      for (let index18 = 0, $$length = each_array_5.length; index18 < $$length; index18++) {
+        let account = each_array_5[index18];
+        $$renderer2.push(`<div${attr_class(`flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:flex-nowrap sm:gap-4 ${index18 !== accounts().length - 1 ? "border-b border-stone-100" : ""}`)} data-testid="insight-account"><div class="flex min-w-0 items-center gap-3">`);
         AccountAvatar($$renderer2, {
           platform: account.platform,
           handle: account.handle,
@@ -51775,7 +51649,7 @@ function _page5($$renderer, $$props) {
   });
 }
 var __iconData14;
-var init_page_svelte5 = __esm({
+var init_page_svelte4 = __esm({
   ".svelte-kit/output/server/entries/pages/insights/_page.svelte.js"() {
     "use strict";
     init_human_error();
@@ -51801,32 +51675,32 @@ var init_page_svelte5 = __esm({
     };
     __iconData14.node;
     __name(Chart_column, "Chart_column");
-    __name(_page5, "_page");
+    __name(_page4, "_page");
   }
 });
 
-// .svelte-kit/output/server/nodes/9.js
-var __exports10 = {};
-__export(__exports10, {
-  component: () => component8,
-  fonts: () => fonts10,
-  imports: () => imports10,
-  index: () => index11,
+// .svelte-kit/output/server/nodes/8.js
+var __exports9 = {};
+__export(__exports9, {
+  component: () => component7,
+  fonts: () => fonts9,
+  imports: () => imports9,
+  index: () => index10,
   server: () => page_server_ts_exports6,
   server_id: () => server_id7,
-  stylesheets: () => stylesheets10
+  stylesheets: () => stylesheets9
 });
-var index11, component_cache8, component8, server_id7, imports10, stylesheets10, fonts10;
-var init__10 = __esm({
-  ".svelte-kit/output/server/nodes/9.js"() {
+var index10, component_cache7, component7, server_id7, imports9, stylesheets9, fonts9;
+var init__9 = __esm({
+  ".svelte-kit/output/server/nodes/8.js"() {
     "use strict";
     init_page_server_ts6();
-    index11 = 9;
-    component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
+    index10 = 8;
+    component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports10 = ["_app/immutable/nodes/9.BwOCiXgU.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/B3an5izS.js"];
-    stylesheets10 = [];
-    fonts10 = [];
+    imports9 = ["_app/immutable/nodes/8.BwOCiXgU.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/B3an5izS.js"];
+    stylesheets9 = [];
+    fonts9 = [];
   }
 });
 
@@ -51851,11 +51725,11 @@ var init_page_server_ts7 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/login/_page.svelte.js
-var page_svelte_exports6 = {};
-__export(page_svelte_exports6, {
-  default: () => _page6
+var page_svelte_exports5 = {};
+__export(page_svelte_exports5, {
+  default: () => _page5
 });
-function _page6($$renderer, $$props) {
+function _page5($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;
     let email3 = "";
@@ -51880,38 +51754,38 @@ function _page6($$renderer, $$props) {
     $$renderer2.push(`<!--]--></div></div>`);
   });
 }
-var init_page_svelte6 = __esm({
+var init_page_svelte5 = __esm({
   ".svelte-kit/output/server/entries/pages/login/_page.svelte.js"() {
     "use strict";
     init_server3();
     init_navigation();
     init_favicon();
-    __name(_page6, "_page");
+    __name(_page5, "_page");
   }
 });
 
-// .svelte-kit/output/server/nodes/10.js
-var __exports11 = {};
-__export(__exports11, {
-  component: () => component9,
-  fonts: () => fonts11,
-  imports: () => imports11,
-  index: () => index12,
+// .svelte-kit/output/server/nodes/9.js
+var __exports10 = {};
+__export(__exports10, {
+  component: () => component8,
+  fonts: () => fonts10,
+  imports: () => imports10,
+  index: () => index11,
   server: () => page_server_ts_exports7,
   server_id: () => server_id8,
-  stylesheets: () => stylesheets11
+  stylesheets: () => stylesheets10
 });
-var index12, component_cache9, component9, server_id8, imports11, stylesheets11, fonts11;
-var init__11 = __esm({
-  ".svelte-kit/output/server/nodes/10.js"() {
+var index11, component_cache8, component8, server_id8, imports10, stylesheets10, fonts10;
+var init__10 = __esm({
+  ".svelte-kit/output/server/nodes/9.js"() {
     "use strict";
     init_page_server_ts7();
-    index12 = 10;
-    component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
+    index11 = 9;
+    component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id8 = "src/routes/login/+page.server.ts";
-    imports11 = ["_app/immutable/nodes/10.C4aBPiOF.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CL0Rsr0s.js"];
-    stylesheets11 = [];
-    fonts11 = [];
+    imports10 = ["_app/immutable/nodes/9.C4aBPiOF.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CL0Rsr0s.js"];
+    stylesheets10 = [];
+    fonts10 = [];
   }
 });
 
@@ -51934,49 +51808,49 @@ var init_page_server_ts8 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/login/setup-2fa/_page.svelte.js
-var page_svelte_exports7 = {};
-__export(page_svelte_exports7, {
-  default: () => _page7
+var page_svelte_exports6 = {};
+__export(page_svelte_exports6, {
+  default: () => _page6
 });
-function _page7($$renderer, $$props) {
+function _page6($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     $$renderer2.push(`<div class="flex min-h-dvh items-center justify-center px-4 py-10"><div class="w-full max-w-md"><div class="mb-6 text-center"><h1 class="text-2xl font-semibold tracking-tight">Set up authenticator</h1> <p class="mt-1 text-sm text-stone-500">Required. Works with Google Authenticator, 1Password, Authy, and any standard app.</p></div> `);
     $$renderer2.push(`<!--[0--><p class="text-center text-sm text-stone-500">Preparing your codes\u2026</p>`);
     $$renderer2.push(`<!--]--></div></div>`);
   });
 }
-var init_page_svelte7 = __esm({
+var init_page_svelte6 = __esm({
   ".svelte-kit/output/server/entries/pages/login/setup-2fa/_page.svelte.js"() {
     "use strict";
     init_server3();
     init_navigation();
     init_index_server();
-    __name(_page7, "_page");
+    __name(_page6, "_page");
   }
 });
 
-// .svelte-kit/output/server/nodes/11.js
-var __exports12 = {};
-__export(__exports12, {
-  component: () => component10,
-  fonts: () => fonts12,
-  imports: () => imports12,
-  index: () => index13,
+// .svelte-kit/output/server/nodes/10.js
+var __exports11 = {};
+__export(__exports11, {
+  component: () => component9,
+  fonts: () => fonts11,
+  imports: () => imports11,
+  index: () => index12,
   server: () => page_server_ts_exports8,
   server_id: () => server_id9,
-  stylesheets: () => stylesheets12
+  stylesheets: () => stylesheets11
 });
-var index13, component_cache10, component10, server_id9, imports12, stylesheets12, fonts12;
-var init__12 = __esm({
-  ".svelte-kit/output/server/nodes/11.js"() {
+var index12, component_cache9, component9, server_id9, imports11, stylesheets11, fonts11;
+var init__11 = __esm({
+  ".svelte-kit/output/server/nodes/10.js"() {
     "use strict";
     init_page_server_ts8();
-    index13 = 11;
-    component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
+    index12 = 10;
+    component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
     server_id9 = "src/routes/login/setup-2fa/+page.server.ts";
-    imports12 = ["_app/immutable/nodes/11.dJHHSTFl.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js"];
-    stylesheets12 = [];
-    fonts12 = [];
+    imports11 = ["_app/immutable/nodes/10.dJHHSTFl.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js"];
+    stylesheets11 = [];
+    fonts11 = [];
   }
 });
 
@@ -52000,11 +51874,11 @@ var init_page_server_ts9 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/login/verify/_page.svelte.js
-var page_svelte_exports8 = {};
-__export(page_svelte_exports8, {
-  default: () => _page8
+var page_svelte_exports7 = {};
+__export(page_svelte_exports7, {
+  default: () => _page7
 });
-function _page8($$renderer, $$props) {
+function _page7($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let code = "";
     let loading = false;
@@ -52013,37 +51887,37 @@ function _page8($$renderer, $$props) {
     $$renderer2.push(`<!--]--> <button type="submit"${attr("disabled", loading, true)} class="w-full rounded-full bg-stone-900 py-2.5 text-sm font-medium text-white disabled:opacity-50">${escape_html("Continue")}</button> <button type="button" class="w-full text-xs text-stone-500 underline">${escape_html("Use a backup code")}</button></form> <p class="mt-4 text-center text-xs text-stone-500"><a href="/login" class="underline">Back to sign in</a></p></div></div>`);
   });
 }
-var init_page_svelte8 = __esm({
+var init_page_svelte7 = __esm({
   ".svelte-kit/output/server/entries/pages/login/verify/_page.svelte.js"() {
     "use strict";
     init_server3();
     init_navigation();
-    __name(_page8, "_page");
+    __name(_page7, "_page");
   }
 });
 
-// .svelte-kit/output/server/nodes/12.js
-var __exports13 = {};
-__export(__exports13, {
-  component: () => component11,
-  fonts: () => fonts13,
-  imports: () => imports13,
-  index: () => index14,
+// .svelte-kit/output/server/nodes/11.js
+var __exports12 = {};
+__export(__exports12, {
+  component: () => component10,
+  fonts: () => fonts12,
+  imports: () => imports12,
+  index: () => index13,
   server: () => page_server_ts_exports9,
   server_id: () => server_id10,
-  stylesheets: () => stylesheets13
+  stylesheets: () => stylesheets12
 });
-var index14, component_cache11, component11, server_id10, imports13, stylesheets13, fonts13;
-var init__13 = __esm({
-  ".svelte-kit/output/server/nodes/12.js"() {
+var index13, component_cache10, component10, server_id10, imports12, stylesheets12, fonts12;
+var init__12 = __esm({
+  ".svelte-kit/output/server/nodes/11.js"() {
     "use strict";
     init_page_server_ts9();
-    index14 = 12;
-    component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
+    index13 = 11;
+    component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
     server_id10 = "src/routes/login/verify/+page.server.ts";
-    imports13 = ["_app/immutable/nodes/12._Nj2-b-A.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js"];
-    stylesheets13 = [];
-    fonts13 = [];
+    imports12 = ["_app/immutable/nodes/11._Nj2-b-A.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js"];
+    stylesheets12 = [];
+    fonts12 = [];
   }
 });
 
@@ -52063,26 +51937,26 @@ var init_page_server_ts10 = __esm({
   }
 });
 
-// .svelte-kit/output/server/nodes/13.js
-var __exports14 = {};
-__export(__exports14, {
-  fonts: () => fonts14,
-  imports: () => imports14,
-  index: () => index15,
+// .svelte-kit/output/server/nodes/12.js
+var __exports13 = {};
+__export(__exports13, {
+  fonts: () => fonts13,
+  imports: () => imports13,
+  index: () => index14,
   server: () => page_server_ts_exports10,
   server_id: () => server_id11,
-  stylesheets: () => stylesheets14
+  stylesheets: () => stylesheets13
 });
-var index15, server_id11, imports14, stylesheets14, fonts14;
-var init__14 = __esm({
-  ".svelte-kit/output/server/nodes/13.js"() {
+var index14, server_id11, imports13, stylesheets13, fonts13;
+var init__13 = __esm({
+  ".svelte-kit/output/server/nodes/12.js"() {
     "use strict";
     init_page_server_ts10();
-    index15 = 13;
+    index14 = 12;
     server_id11 = "src/routes/outbox/+page.server.ts";
-    imports14 = [];
-    stylesheets14 = [];
-    fonts14 = [];
+    imports13 = [];
+    stylesheets13 = [];
+    fonts13 = [];
   }
 });
 
@@ -52239,11 +52113,11 @@ var init_page_server_ts11 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/p/_token_/_page.svelte.js
-var page_svelte_exports9 = {};
-__export(page_svelte_exports9, {
-  default: () => _page9
+var page_svelte_exports8 = {};
+__export(page_svelte_exports8, {
+  default: () => _page8
 });
-function _page9($$renderer, $$props) {
+function _page8($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;
     let selected = null;
@@ -52272,9 +52146,9 @@ function _page9($$renderer, $$props) {
     if (active()) {
       $$renderer2.push(`<!--[0--><ol class="flex flex-col gap-4" data-testid="share-cards"><!--[-->`);
       const each_array_1 = ensure_array_like(active().cards);
-      for (let index19 = 0, $$length = each_array_1.length; index19 < $$length; index19++) {
-        let card = each_array_1[index19];
-        $$renderer2.push(`<li${attr("data-testid", `share-card-${stringify3(index19)}`)} class="flex min-w-0 flex-col gap-3 rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)]">`);
+      for (let index18 = 0, $$length = each_array_1.length; index18 < $$length; index18++) {
+        let card = each_array_1[index18];
+        $$renderer2.push(`<li${attr("data-testid", `share-card-${stringify3(index18)}`)} class="flex min-w-0 flex-col gap-3 rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)]">`);
         if (card.text) $$renderer2.push(`<!--[0--><p class="text-[15px] leading-relaxed font-medium break-words whitespace-pre-wrap">${escape_html(card.text)}</p>`);
         else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]--> `);
@@ -52297,38 +52171,38 @@ function _page9($$renderer, $$props) {
     $$renderer2.push(`<!--]--> <footer class="mt-10 text-center text-[12px] font-medium text-stone-500">This link stops working ${escape_html(formatRelativeTime(data.expiresAt))}, or once the post goes out.</footer></div></main>`);
   });
 }
-var init_page_svelte9 = __esm({
+var init_page_svelte8 = __esm({
   ".svelte-kit/output/server/entries/pages/p/_token_/_page.svelte.js"() {
     "use strict";
     init_server3();
     init_MediaPreview();
     init_relative_time();
-    __name(_page9, "_page");
+    __name(_page8, "_page");
   }
 });
 
-// .svelte-kit/output/server/nodes/14.js
-var __exports15 = {};
-__export(__exports15, {
-  component: () => component12,
-  fonts: () => fonts15,
-  imports: () => imports15,
-  index: () => index16,
+// .svelte-kit/output/server/nodes/13.js
+var __exports14 = {};
+__export(__exports14, {
+  component: () => component11,
+  fonts: () => fonts14,
+  imports: () => imports14,
+  index: () => index15,
   server: () => page_server_ts_exports11,
   server_id: () => server_id12,
-  stylesheets: () => stylesheets15
+  stylesheets: () => stylesheets14
 });
-var index16, component_cache12, component12, server_id12, imports15, stylesheets15, fonts15;
-var init__15 = __esm({
-  ".svelte-kit/output/server/nodes/14.js"() {
+var index15, component_cache11, component11, server_id12, imports14, stylesheets14, fonts14;
+var init__14 = __esm({
+  ".svelte-kit/output/server/nodes/13.js"() {
     "use strict";
     init_page_server_ts11();
-    index16 = 14;
-    component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
+    index15 = 13;
+    component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id12 = "src/routes/p/[token]/+page.server.ts";
-    imports15 = ["_app/immutable/nodes/14.a7yyJhsw.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
-    stylesheets15 = [];
-    fonts15 = [];
+    imports14 = ["_app/immutable/nodes/13.a7yyJhsw.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
+    stylesheets14 = [];
+    fonts14 = [];
   }
 });
 
@@ -52555,9 +52429,9 @@ var init_pencil = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/posts/_page.svelte.js
-var page_svelte_exports10 = {};
-__export(page_svelte_exports10, {
-  default: () => _page10
+var page_svelte_exports9 = {};
+__export(page_svelte_exports9, {
+  default: () => _page9
 });
 function Calendar_clock($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
@@ -52606,7 +52480,7 @@ function emptyPostsBody(tab) {
   if (tab === "failed") return "Nothing failed to publish. You're all caught up!";
   return `You don't have any ${tab} posts right now. Go to the composer to write a new one!`;
 }
-function _page10($$renderer, $$props) {
+function _page9($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     const TAB_VALUES = [
       "all",
@@ -53327,7 +53201,7 @@ function _page10($$renderer, $$props) {
   });
 }
 var __iconData$32, __iconData$22, __iconData$13, __iconData16, pending, AUTH_ERROR_PATTERN;
-var init_page_svelte10 = __esm({
+var init_page_svelte9 = __esm({
   ".svelte-kit/output/server/entries/pages/posts/_page.svelte.js"() {
     "use strict";
     init_human_error();
@@ -53421,32 +53295,46 @@ var init_page_svelte10 = __esm({
     __name(retryTargetIds, "retryTargetIds");
     __name(emptyPostsHeading, "emptyPostsHeading");
     __name(emptyPostsBody, "emptyPostsBody");
-    __name(_page10, "_page");
+    __name(_page9, "_page");
   }
 });
 
-// .svelte-kit/output/server/nodes/15.js
-var __exports16 = {};
-__export(__exports16, {
-  component: () => component13,
-  fonts: () => fonts16,
-  imports: () => imports16,
-  index: () => index17,
+// .svelte-kit/output/server/nodes/14.js
+var __exports15 = {};
+__export(__exports15, {
+  component: () => component12,
+  fonts: () => fonts15,
+  imports: () => imports15,
+  index: () => index16,
   server: () => page_server_ts_exports12,
   server_id: () => server_id13,
-  stylesheets: () => stylesheets16
+  stylesheets: () => stylesheets15
 });
-var index17, component_cache13, component13, server_id13, imports16, stylesheets16, fonts16;
-var init__16 = __esm({
-  ".svelte-kit/output/server/nodes/15.js"() {
+var index16, component_cache12, component12, server_id13, imports15, stylesheets15, fonts15;
+var init__15 = __esm({
+  ".svelte-kit/output/server/nodes/14.js"() {
     "use strict";
     init_page_server_ts12();
-    index17 = 15;
-    component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
+    index16 = 14;
+    component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id13 = "src/routes/posts/+page.server.ts";
-    imports16 = ["_app/immutable/nodes/15.DcJZX1Aq.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/W8_OUZDm.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
-    stylesheets16 = [];
-    fonts16 = [];
+    imports15 = ["_app/immutable/nodes/14.DcJZX1Aq.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/W8_OUZDm.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    stylesheets15 = [];
+    fonts15 = [];
+  }
+});
+
+// .svelte-kit/output/server/chunks/docs-links.js
+var DOCS_URL, docsLinks;
+var init_docs_links = __esm({
+  ".svelte-kit/output/server/chunks/docs-links.js"() {
+    "use strict";
+    DOCS_URL = "https://cogsend.com/docs/";
+    docsLinks = {
+      home: DOCS_URL,
+      api: `${DOCS_URL}api/`,
+      mcp: `${DOCS_URL}mcp/`
+    };
   }
 });
 
@@ -54681,8 +54569,8 @@ function buildLocalizeFn(args) {
       const width = options2?.width ? String(options2.width) : args.defaultWidth;
       valuesArray = args.values[width] || args.values[defaultWidth];
     }
-    const index19 = args.argumentCallback ? args.argumentCallback(value) : value;
-    return valuesArray[index19];
+    const index18 = args.argumentCallback ? args.argumentCallback(value) : value;
+    return valuesArray[index18];
   };
 }
 var init_buildLocalizeFn = __esm({
@@ -55030,7 +54918,7 @@ var init_match = __esm({
         defaultMatchWidth: "wide",
         parsePatterns: parseQuarterPatterns,
         defaultParseWidth: "any",
-        valueCallback: /* @__PURE__ */ __name((index19) => index19 + 1, "valueCallback")
+        valueCallback: /* @__PURE__ */ __name((index18) => index18 + 1, "valueCallback")
       }),
       month: buildMatchFn({
         matchPatterns: matchMonthPatterns,
@@ -56390,9 +56278,9 @@ var init_date_fns = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/settings/_page.svelte.js
-var page_svelte_exports11 = {};
-__export(page_svelte_exports11, {
-  default: () => _page11
+var page_svelte_exports10 = {};
+__export(page_svelte_exports10, {
+  default: () => _page10
 });
 function UpdatePanel($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
@@ -56428,7 +56316,7 @@ function UpdatePanel($$renderer, $$props) {
     $$renderer2.push(`<!--]-->`);
   });
 }
-function _page11($$renderer, $$props) {
+function _page10($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;
     let msg = null;
@@ -56848,7 +56736,7 @@ function _page11($$renderer, $$props) {
     $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--></div></form></div> <div class="min-w-0 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8" aria-label="API access" data-testid="api-key-section"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">API access</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Use this personal API key for scripts, Shortcuts, and cron jobs. Choose whether it can only
 				read or also change and publish drafts. For security, it cannot manage social accounts,
-				change credentials, or generate new API keys. See the <a href="/api" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">API reference</a> for full details.</p> <fieldset class="mb-5 space-y-2" data-testid="api-key-scopes"><legend class="mb-2 text-[12px] font-bold text-stone-700">New key permissions</legend> <label class="flex cursor-pointer items-start gap-2 text-[13px] text-stone-700"><input type="radio" name="api-key-scopes" value="read"${attr("checked", false, true)}/> <span><strong>Read-only</strong> \u2014 view connections, drafts, and queue.</span></label> <label class="flex cursor-pointer items-start gap-2 text-[13px] text-stone-700"><input type="radio" name="api-key-scopes" value="read-write"${attr("checked", true, true)}/> <span><strong>Read + write</strong> \u2014 manage drafts and publish; includes read. (Default)</span></label></fieldset> `);
+				change credentials, or generate new API keys. See the <a${attr("href", docsLinks.api)} target="_blank" rel="noopener" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">API reference</a> for full details.</p> <fieldset class="mb-5 space-y-2" data-testid="api-key-scopes"><legend class="mb-2 text-[12px] font-bold text-stone-700">New key permissions</legend> <label class="flex cursor-pointer items-start gap-2 text-[13px] text-stone-700"><input type="radio" name="api-key-scopes" value="read"${attr("checked", false, true)}/> <span><strong>Read-only</strong> \u2014 view connections, drafts, and queue.</span></label> <label class="flex cursor-pointer items-start gap-2 text-[13px] text-stone-700"><input type="radio" name="api-key-scopes" value="read-write"${attr("checked", true, true)}/> <span><strong>Read + write</strong> \u2014 manage drafts and publish; includes read. (Default)</span></label></fieldset> `);
     if (keyLoading) $$renderer2.push(`<!--[0--><p class="text-sm font-medium text-stone-500">Loading\u2026</p>`);
     else if (keyRevealed) {
       $$renderer2.push(`<!--[1--><div class="space-y-4" data-testid="api-key-reveal"><div class="rounded-xl border border-amber-200/50 bg-amber-50/50 p-4"><p class="text-[13px] font-bold text-amber-900">`);
@@ -56896,7 +56784,7 @@ function _page11($$renderer, $$props) {
       $$renderer2.push(`<!--]--></p></div>`);
     }
     $$renderer2.push(`<!--]--></div> <p class="mt-5 max-w-prose text-[12px] leading-relaxed text-stone-500">Give an agent a Read-only key unless it needs to change drafts or publish, and have your
-					client ask before it publishes. Tools, scopes and Cloudflare Access headers are in the <a href="/api#mcp-server-heading" class="font-bold text-stone-900 underline">API reference</a>.</p></section></div> <div class="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Two-factor authentication</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Authenticator app (Google Authenticator, 1Password, Authy, \u2026) plus one-time backup codes.
+					client ask before it publishes. Tools, scopes and Cloudflare Access headers are in the <a${attr("href", docsLinks.mcp)} target="_blank" rel="noopener" class="font-bold text-stone-900 underline">MCP docs</a>.</p></section></div> <div class="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Two-factor authentication</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Authenticator app (Google Authenticator, 1Password, Authy, \u2026) plus one-time backup codes.
 				This cannot be turned off.</p> `);
     if (totpOn) $$renderer2.push(`<!--[0--><div class="mb-5 flex items-center gap-3 rounded-xl border border-emerald-200/50 bg-emerald-50/50 p-3"><div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div> <div><p class="text-[13px] font-bold text-emerald-900">Active</p> <p class="text-[11px] font-medium text-emerald-700">${escape_html(backupRemaining)} backup code${escape_html(backupRemaining === 1 ? "" : "s")} remaining</p></div></div>`);
     else $$renderer2.push("<!--[-1-->");
@@ -56928,7 +56816,7 @@ function _page11($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.22.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.23.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57010,9 +56898,10 @@ function _page11($$renderer, $$props) {
     $$renderer2.push(`<!---->`);
   });
 }
-var init_page_svelte11 = __esm({
+var init_page_svelte10 = __esm({
   ".svelte-kit/output/server/entries/pages/settings/_page.svelte.js"() {
     "use strict";
+    init_docs_links();
     init_human_error();
     init_profile_settings();
     init_platforms();
@@ -57032,28 +56921,43 @@ var init_page_svelte11 = __esm({
     init_session_expired();
     init_date_fns();
     __name(UpdatePanel, "UpdatePanel");
-    __name(_page11, "_page");
+    __name(_page10, "_page");
   }
 });
 
-// .svelte-kit/output/server/nodes/16.js
-var __exports17 = {};
-__export(__exports17, {
-  component: () => component14,
-  fonts: () => fonts17,
-  imports: () => imports17,
-  index: () => index18,
-  stylesheets: () => stylesheets17
+// .svelte-kit/output/server/nodes/15.js
+var __exports16 = {};
+__export(__exports16, {
+  component: () => component13,
+  fonts: () => fonts16,
+  imports: () => imports16,
+  index: () => index17,
+  stylesheets: () => stylesheets16
 });
-var index18, component_cache14, component14, imports17, stylesheets17, fonts17;
-var init__17 = __esm({
-  ".svelte-kit/output/server/nodes/16.js"() {
+var index17, component_cache13, component13, imports16, stylesheets16, fonts16;
+var init__16 = __esm({
+  ".svelte-kit/output/server/nodes/15.js"() {
     "use strict";
-    index18 = 16;
-    component14 = /* @__PURE__ */ __name(async () => component_cache14 ??= (await Promise.resolve().then(() => (init_page_svelte11(), page_svelte_exports11))).default, "component");
-    imports17 = ["_app/immutable/nodes/16.k2lOwv5Y.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Clz7HNYt.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
-    stylesheets17 = [];
-    fonts17 = [];
+    index17 = 15;
+    component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
+    imports16 = ["_app/immutable/nodes/15.ClLaJSEe.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    stylesheets16 = [];
+    fonts16 = [];
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/_server.ts.js
+var server_ts_exports = {};
+__export(server_ts_exports, {
+  GET: () => GET
+});
+var GET;
+var init_server_ts = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/_server.ts.js"() {
+    "use strict";
+    init_docs_links();
+    init_exports();
+    GET = /* @__PURE__ */ __name(() => redirect(302, docsLinks.api, { external: true }), "GET");
   }
 });
 
@@ -57219,13 +57123,13 @@ var init_credentials = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/account/_server.ts.js
-var server_ts_exports = {};
-__export(server_ts_exports, {
-  GET: () => GET,
+var server_ts_exports2 = {};
+__export(server_ts_exports2, {
+  GET: () => GET2,
   PATCH: () => PATCH
 });
-var GET, PATCH;
-var init_server_ts = __esm({
+var GET2, PATCH;
+var init_server_ts2 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/account/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57238,7 +57142,7 @@ var init_server_ts = __esm({
     init_saved_token();
     init_credentials();
     init_drizzle_orm();
-    GET = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET2 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         return ok({ email: locals.user?.email ?? null });
@@ -57344,12 +57248,12 @@ var init_cookies = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/claim/_server.ts.js
-var server_ts_exports2 = {};
-__export(server_ts_exports2, {
+var server_ts_exports3 = {};
+__export(server_ts_exports3, {
   POST: () => POST
 });
 var CLAIM_LABEL, POST;
-var init_server_ts2 = __esm({
+var init_server_ts3 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/claim/_server.ts.js"() {
     "use strict";
     init_bytes();
@@ -57403,12 +57307,12 @@ var init_server_ts2 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/login/_server.ts.js
-var server_ts_exports3 = {};
-__export(server_ts_exports3, {
+var server_ts_exports4 = {};
+__export(server_ts_exports4, {
   POST: () => POST2
 });
 var POST2;
-var init_server_ts3 = __esm({
+var init_server_ts4 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/login/_server.ts.js"() {
     "use strict";
     init_crypto();
@@ -57461,12 +57365,12 @@ var init_server_ts3 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/logout/_server.ts.js
-var server_ts_exports4 = {};
-__export(server_ts_exports4, {
+var server_ts_exports5 = {};
+__export(server_ts_exports5, {
   POST: () => POST3
 });
 var POST3;
-var init_server_ts4 = __esm({
+var init_server_ts5 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/logout/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57487,10 +57391,10 @@ var init_server_ts4 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/me/_server.ts.js
-var server_ts_exports5 = {};
-__export(server_ts_exports5, {
+var server_ts_exports6 = {};
+__export(server_ts_exports6, {
   DELETE: () => DELETE,
-  GET: () => GET2
+  GET: () => GET3
 });
 async function deleteMedia(locals, userId) {
   let deleted = 0;
@@ -57516,8 +57420,8 @@ async function deleteMedia(locals, userId) {
     done: false
   };
 }
-var GET2, MEDIA_DELETE_BATCH, MAX_MEDIA_BATCHES, DELETE;
-var init_server_ts5 = __esm({
+var GET3, MEDIA_DELETE_BATCH, MAX_MEDIA_BATCHES, DELETE;
+var init_server_ts6 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/me/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57531,7 +57435,7 @@ var init_server_ts5 = __esm({
     init_cookies();
     init_media();
     init_drizzle_orm();
-    GET2 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET3 = /* @__PURE__ */ __name(async ({ locals }) => {
       const user = locals.user;
       return ok({
         user: isFullyVerified(user) ? {
@@ -57588,12 +57492,12 @@ var init_server_ts5 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/confirm/_server.ts.js
-var server_ts_exports6 = {};
-__export(server_ts_exports6, {
+var server_ts_exports7 = {};
+__export(server_ts_exports7, {
   POST: () => POST4
 });
 var POST4;
-var init_server_ts6 = __esm({
+var init_server_ts7 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/confirm/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57618,12 +57522,12 @@ var init_server_ts6 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/start/_server.ts.js
-var server_ts_exports7 = {};
-__export(server_ts_exports7, {
+var server_ts_exports8 = {};
+__export(server_ts_exports8, {
   POST: () => POST5
 });
 var POST5;
-var init_server_ts7 = __esm({
+var init_server_ts8 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/start/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57648,12 +57552,12 @@ var init_server_ts7 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/rotate/start/_server.ts.js
-var server_ts_exports8 = {};
-__export(server_ts_exports8, {
+var server_ts_exports9 = {};
+__export(server_ts_exports9, {
   POST: () => POST6
 });
 var POST6;
-var init_server_ts8 = __esm({
+var init_server_ts9 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/rotate/start/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57682,18 +57586,18 @@ var init_server_ts8 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/status/_server.ts.js
-var server_ts_exports9 = {};
-__export(server_ts_exports9, {
-  GET: () => GET3
+var server_ts_exports10 = {};
+__export(server_ts_exports10, {
+  GET: () => GET4
 });
-var GET3;
-var init_server_ts9 = __esm({
+var GET4;
+var init_server_ts10 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/status/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_totp();
-    GET3 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET4 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         return ok(await totpStatus(locals.db, user.id));
@@ -57705,12 +57609,12 @@ var init_server_ts9 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/verify/_server.ts.js
-var server_ts_exports10 = {};
-__export(server_ts_exports10, {
+var server_ts_exports11 = {};
+__export(server_ts_exports11, {
   POST: () => POST7
 });
 var POST7;
-var init_server_ts10 = __esm({
+var init_server_ts11 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/verify/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57738,18 +57642,18 @@ var init_server_ts10 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/_server.ts.js
-var server_ts_exports11 = {};
-__export(server_ts_exports11, {
-  GET: () => GET4
+var server_ts_exports12 = {};
+__export(server_ts_exports12, {
+  GET: () => GET5
 });
-var GET4;
-var init_server_ts11 = __esm({
+var GET5;
+var init_server_ts12 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_connection_list();
-    GET4 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET5 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -57884,12 +57788,12 @@ var init_oauth_callback = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/bluesky/_server.ts.js
-var server_ts_exports12 = {};
-__export(server_ts_exports12, {
+var server_ts_exports13 = {};
+__export(server_ts_exports13, {
   POST: () => POST8
 });
 var POST8;
-var init_server_ts12 = __esm({
+var init_server_ts13 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/bluesky/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57971,12 +57875,12 @@ var init_platform_setup2 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/instagram/_server.ts.js
-var server_ts_exports13 = {};
-__export(server_ts_exports13, {
+var server_ts_exports14 = {};
+__export(server_ts_exports14, {
   POST: () => POST9
 });
 var POST9;
-var init_server_ts13 = __esm({
+var init_server_ts14 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/instagram/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58022,18 +57926,18 @@ var init_server_ts13 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/instagram/callback/_server.ts.js
-var server_ts_exports14 = {};
-__export(server_ts_exports14, {
-  GET: () => GET5
+var server_ts_exports15 = {};
+__export(server_ts_exports15, {
+  GET: () => GET6
 });
-var GET5;
-var init_server_ts14 = __esm({
+var GET6;
+var init_server_ts15 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/instagram/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_providers();
-    GET5 = createOAuthCallback({
+    GET6 = createOAuthCallback({
       platform: "instagram",
       pendingMarker: "instagram",
       accountIdKey: "igUserId",
@@ -58070,12 +57974,12 @@ var init_server_ts14 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js
-var server_ts_exports15 = {};
-__export(server_ts_exports15, {
+var server_ts_exports16 = {};
+__export(server_ts_exports16, {
   POST: () => POST10
 });
 var POST10;
-var init_server_ts15 = __esm({
+var init_server_ts16 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58121,18 +58025,18 @@ var init_server_ts15 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/linkedin/callback/_server.ts.js
-var server_ts_exports16 = {};
-__export(server_ts_exports16, {
-  GET: () => GET6
+var server_ts_exports17 = {};
+__export(server_ts_exports17, {
+  GET: () => GET7
 });
-var GET6;
-var init_server_ts16 = __esm({
+var GET7;
+var init_server_ts17 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_providers();
-    GET6 = createOAuthCallback({
+    GET7 = createOAuthCallback({
       platform: "linkedin",
       pendingMarker: "linkedin",
       accountIdKey: "personUrn",
@@ -58170,12 +58074,12 @@ var init_server_ts16 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/mastodon/_server.ts.js
-var server_ts_exports17 = {};
-__export(server_ts_exports17, {
+var server_ts_exports18 = {};
+__export(server_ts_exports18, {
   POST: () => POST11
 });
 var POST11;
-var init_server_ts17 = __esm({
+var init_server_ts18 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/mastodon/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58229,12 +58133,12 @@ var init_server_ts17 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/mastodon/callback/_server.ts.js
-var server_ts_exports18 = {};
-__export(server_ts_exports18, {
-  GET: () => GET7
+var server_ts_exports19 = {};
+__export(server_ts_exports19, {
+  GET: () => GET8
 });
-var GET7;
-var init_server_ts18 = __esm({
+var GET8;
+var init_server_ts19 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/mastodon/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
@@ -58242,7 +58146,7 @@ var init_server_ts18 = __esm({
     init_oauth_callback();
     init_providers();
     init_timed_fetch();
-    GET7 = createOAuthCallback({
+    GET8 = createOAuthCallback({
       platform: "mastodon",
       matchInstanceUrl: true,
       async complete({ pending: pending2, code, env: env3 }) {
@@ -58273,12 +58177,12 @@ var init_server_ts18 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/threads/_server.ts.js
-var server_ts_exports19 = {};
-__export(server_ts_exports19, {
+var server_ts_exports20 = {};
+__export(server_ts_exports20, {
   POST: () => POST12
 });
 var POST12;
-var init_server_ts19 = __esm({
+var init_server_ts20 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/threads/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58324,18 +58228,18 @@ var init_server_ts19 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/threads/callback/_server.ts.js
-var server_ts_exports20 = {};
-__export(server_ts_exports20, {
-  GET: () => GET8
+var server_ts_exports21 = {};
+__export(server_ts_exports21, {
+  GET: () => GET9
 });
-var GET8;
-var init_server_ts20 = __esm({
+var GET9;
+var init_server_ts21 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/threads/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_providers();
-    GET8 = createOAuthCallback({
+    GET9 = createOAuthCallback({
       platform: "threads",
       pendingMarker: "threads",
       accountIdKey: "threadsUserId",
@@ -58371,12 +58275,12 @@ var init_server_ts20 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/x/_server.ts.js
-var server_ts_exports21 = {};
-__export(server_ts_exports21, {
+var server_ts_exports22 = {};
+__export(server_ts_exports22, {
   POST: () => POST13
 });
 var POST13;
-var init_server_ts21 = __esm({
+var init_server_ts22 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/x/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58424,19 +58328,19 @@ var init_server_ts21 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/x/callback/_server.ts.js
-var server_ts_exports22 = {};
-__export(server_ts_exports22, {
-  GET: () => GET9
+var server_ts_exports23 = {};
+__export(server_ts_exports23, {
+  GET: () => GET10
 });
-var GET9;
-var init_server_ts22 = __esm({
+var GET10;
+var init_server_ts23 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/x/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_x_limits();
     init_providers();
-    GET9 = createOAuthCallback({
+    GET10 = createOAuthCallback({
       platform: "x",
       pendingMarker: "x",
       accountIdKey: "xUserId",
@@ -58594,12 +58498,12 @@ var init_zernio_import = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/accounts/_server.ts.js
-var server_ts_exports23 = {};
-__export(server_ts_exports23, {
+var server_ts_exports24 = {};
+__export(server_ts_exports24, {
   POST: () => POST14
 });
 var POST14;
-var init_server_ts23 = __esm({
+var init_server_ts24 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/accounts/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58648,12 +58552,12 @@ var init_server_ts23 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/callback/_server.ts.js
-var server_ts_exports24 = {};
-__export(server_ts_exports24, {
-  GET: () => GET10
+var server_ts_exports25 = {};
+__export(server_ts_exports25, {
+  GET: () => GET11
 });
-var GET10;
-var init_server_ts24 = __esm({
+var GET11;
+var init_server_ts25 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/callback/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58666,7 +58570,7 @@ var init_server_ts24 = __esm({
     init_zernio_import();
     init_exports();
     init_drizzle_orm();
-    GET10 = /* @__PURE__ */ __name(async ({ url: url3, locals, cookies }) => {
+    GET11 = /* @__PURE__ */ __name(async ({ url: url3, locals, cookies }) => {
       const appUrl = locals.env.APP_URL.replace(/\/$/, "");
       const state2 = url3.searchParams.get("pending");
       const candidate = splitOAuthState(state2);
@@ -58714,12 +58618,12 @@ var init_server_ts24 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/connect/_server.ts.js
-var server_ts_exports25 = {};
-__export(server_ts_exports25, {
+var server_ts_exports26 = {};
+__export(server_ts_exports26, {
   POST: () => POST15
 });
 var POST15;
-var init_server_ts25 = __esm({
+var init_server_ts26 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/connect/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58781,12 +58685,12 @@ var init_server_ts25 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/import/_server.ts.js
-var server_ts_exports26 = {};
-__export(server_ts_exports26, {
+var server_ts_exports27 = {};
+__export(server_ts_exports27, {
   POST: () => POST16
 });
 var POST16;
-var init_server_ts26 = __esm({
+var init_server_ts27 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/import/_server.ts.js"() {
     "use strict";
     init_http();
@@ -59038,13 +58942,13 @@ var init_publish_plan = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js
-var server_ts_exports27 = {};
-__export(server_ts_exports27, {
+var server_ts_exports28 = {};
+__export(server_ts_exports28, {
   DELETE: () => DELETE2,
   PATCH: () => PATCH2
 });
 var DELETE2, PATCH2;
-var init_server_ts27 = __esm({
+var init_server_ts28 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -59128,12 +59032,12 @@ var init_server_ts27 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/_id_/verify/_server.ts.js
-var server_ts_exports28 = {};
-__export(server_ts_exports28, {
+var server_ts_exports29 = {};
+__export(server_ts_exports29, {
   POST: () => POST17
 });
 var POST17;
-var init_server_ts28 = __esm({
+var init_server_ts29 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/verify/_server.ts.js"() {
     "use strict";
     init_client();
@@ -59969,7 +59873,7 @@ async function duplicateDraft(ctx, userId, draftId) {
       });
     }
     const newMedia = [];
-    for (let index19 = 0; index19 < mediaValues.length; index19 += MEDIA_INSERT_CHUNK) newMedia.push(...await ctx.db.insert(draftMedia).values(mediaValues.slice(index19, index19 + MEDIA_INSERT_CHUNK)).returning());
+    for (let index18 = 0; index18 < mediaValues.length; index18 += MEDIA_INSERT_CHUNK) newMedia.push(...await ctx.db.insert(draftMedia).values(mediaValues.slice(index18, index18 + MEDIA_INSERT_CHUNK)).returning());
     return { draft: serializeDraft(draft, {
       variants: newVariants,
       media: newMedia,
@@ -60265,20 +60169,20 @@ var init_operations3 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_server.ts.js
-var server_ts_exports29 = {};
-__export(server_ts_exports29, {
-  GET: () => GET11,
+var server_ts_exports30 = {};
+__export(server_ts_exports30, {
+  GET: () => GET12,
   POST: () => POST18
 });
-var GET11, POST18;
-var init_server_ts29 = __esm({
+var GET12, POST18;
+var init_server_ts30 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
     init_post_list();
-    GET11 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET12 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -60311,20 +60215,20 @@ var init_server_ts29 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/_server.ts.js
-var server_ts_exports30 = {};
-__export(server_ts_exports30, {
+var server_ts_exports31 = {};
+__export(server_ts_exports31, {
   DELETE: () => DELETE3,
-  GET: () => GET12,
+  GET: () => GET13,
   PATCH: () => PATCH3
 });
-var GET12, PATCH3, DELETE3;
-var init_server_ts30 = __esm({
+var GET13, PATCH3, DELETE3;
+var init_server_ts31 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    GET12 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    GET13 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -60356,12 +60260,12 @@ var init_server_ts30 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/duplicate/_server.ts.js
-var server_ts_exports31 = {};
-__export(server_ts_exports31, {
+var server_ts_exports32 = {};
+__export(server_ts_exports32, {
   POST: () => POST19
 });
 var POST19;
-var init_server_ts31 = __esm({
+var init_server_ts32 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/duplicate/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60453,8 +60357,8 @@ var init_draft_media = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js
-var server_ts_exports32 = {};
-__export(server_ts_exports32, {
+var server_ts_exports33 = {};
+__export(server_ts_exports33, {
   DELETE: () => DELETE4,
   PATCH: () => PATCH4,
   POST: () => POST20
@@ -60477,7 +60381,7 @@ async function saveJpegVariant(locals, key, file2, maxBytes) {
   }
 }
 var MAX_UPLOAD_BYTES, MAX_FORM_VIDEO_BYTES, POST20, PATCH4, DELETE4;
-var init_server_ts32 = __esm({
+var init_server_ts33 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js"() {
     "use strict";
     init_client();
@@ -60648,8 +60552,8 @@ var init_server_ts32 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/cover/_server.ts.js
-var server_ts_exports33 = {};
-__export(server_ts_exports33, {
+var server_ts_exports34 = {};
+__export(server_ts_exports34, {
   DELETE: () => DELETE5,
   PUT: () => PUT
 });
@@ -60665,7 +60569,7 @@ async function guard(locals, draftId) {
   return rejectIfNotEditable(locals.db, draftId);
 }
 var MAX_COVER_BYTES, PUT, DELETE5;
-var init_server_ts33 = __esm({
+var init_server_ts34 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/cover/_server.ts.js"() {
     "use strict";
     init_client();
@@ -60796,8 +60700,8 @@ var init_media_uploads = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js
-var server_ts_exports34 = {};
-__export(server_ts_exports34, {
+var server_ts_exports35 = {};
+__export(server_ts_exports35, {
   DELETE: () => DELETE6,
   POST: () => POST21
 });
@@ -60810,7 +60714,7 @@ async function readJson(request2) {
   }
 }
 var POST21, DELETE6;
-var init_server_ts34 = __esm({
+var init_server_ts35 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60877,8 +60781,8 @@ var init_server_ts34 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js
-var server_ts_exports35 = {};
-__export(server_ts_exports35, {
+var server_ts_exports36 = {};
+__export(server_ts_exports36, {
   POST: () => POST22
 });
 function readParts(value, count2) {
@@ -60898,7 +60802,7 @@ async function keyInUse(db, key) {
   return (await db.select({ id: draftMedia.id }).from(draftMedia).where(eq(draftMedia.storageKey, key)).limit(1)).length > 0;
 }
 var POST22;
-var init_server_ts35 = __esm({
+var init_server_ts36 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js"() {
     "use strict";
     init_client();
@@ -60967,12 +60871,12 @@ var init_server_ts35 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js
-var server_ts_exports36 = {};
-__export(server_ts_exports36, {
+var server_ts_exports37 = {};
+__export(server_ts_exports37, {
   PUT: () => PUT2
 });
 var PUT2;
-var init_server_ts36 = __esm({
+var init_server_ts37 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61004,12 +60908,12 @@ var init_server_ts36 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js
-var server_ts_exports37 = {};
-__export(server_ts_exports37, {
+var server_ts_exports38 = {};
+__export(server_ts_exports38, {
   POST: () => POST23
 });
 var POST23;
-var init_server_ts37 = __esm({
+var init_server_ts38 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61029,12 +60933,12 @@ var init_server_ts37 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/schedule/_server.ts.js
-var server_ts_exports38 = {};
-__export(server_ts_exports38, {
+var server_ts_exports39 = {};
+__export(server_ts_exports39, {
   POST: () => POST24
 });
 var POST24;
-var init_server_ts38 = __esm({
+var init_server_ts39 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/schedule/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61054,10 +60958,10 @@ var init_server_ts38 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/share/_server.ts.js
-var server_ts_exports39 = {};
-__export(server_ts_exports39, {
+var server_ts_exports40 = {};
+__export(server_ts_exports40, {
   DELETE: () => DELETE7,
-  GET: () => GET13,
+  GET: () => GET14,
   POST: () => POST25
 });
 async function ownsDraft(db, draftId, userId) {
@@ -61071,8 +60975,8 @@ function present(appUrl, link) {
     expiresAt: link.expiresAt
   } };
 }
-var GET13, POST25, DELETE7;
-var init_server_ts39 = __esm({
+var GET14, POST25, DELETE7;
+var init_server_ts40 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/share/_server.ts.js"() {
     "use strict";
     init_client();
@@ -61083,7 +60987,7 @@ var init_server_ts39 = __esm({
     init_drizzle_orm();
     __name(ownsDraft, "ownsDraft");
     __name(present, "present");
-    GET13 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    GET14 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -61128,13 +61032,13 @@ var init_server_ts39 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js
-var server_ts_exports40 = {};
-__export(server_ts_exports40, {
+var server_ts_exports41 = {};
+__export(server_ts_exports41, {
   DELETE: () => DELETE8,
   PUT: () => PUT3
 });
 var PUT3, DELETE8;
-var init_server_ts40 = __esm({
+var init_server_ts41 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61163,25 +61067,25 @@ var init_server_ts40 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/health/_server.ts.js
-var server_ts_exports41 = {};
-__export(server_ts_exports41, {
-  GET: () => GET14
+var server_ts_exports42 = {};
+__export(server_ts_exports42, {
+  GET: () => GET15
 });
-var GET14;
-var init_server_ts41 = __esm({
+var GET15;
+var init_server_ts42 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/health/_server.ts.js"() {
     "use strict";
     init_client();
     init_exports();
     init_drizzle_orm();
-    GET14 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET15 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         await locals.db.run(sql`SELECT 1`);
         const account = await first(locals.db.select({ id: users.id }).from(users).limit(1));
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.22.1",
+          version: "1.23.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -61197,19 +61101,19 @@ var init_server_ts41 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js
-var server_ts_exports42 = {};
-__export(server_ts_exports42, {
-  GET: () => GET15
+var server_ts_exports43 = {};
+__export(server_ts_exports43, {
+  GET: () => GET16
 });
-var GET15;
-var init_server_ts42 = __esm({
+var GET16;
+var init_server_ts43 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_time_zone();
     init_insights_report();
-    GET15 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET16 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -61223,12 +61127,12 @@ var init_server_ts42 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/internal/publish/_server.ts.js
-var server_ts_exports43 = {};
-__export(server_ts_exports43, {
+var server_ts_exports44 = {};
+__export(server_ts_exports44, {
   POST: () => POST26
 });
 var POST26;
-var init_server_ts43 = __esm({
+var init_server_ts44 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/internal/publish/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61251,12 +61155,12 @@ var init_server_ts43 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/internal/tick/_server.ts.js
-var server_ts_exports44 = {};
-__export(server_ts_exports44, {
+var server_ts_exports45 = {};
+__export(server_ts_exports45, {
   POST: () => POST27
 });
 var POST27;
-var init_server_ts44 = __esm({
+var init_server_ts45 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/internal/tick/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61281,10 +61185,10 @@ var init_server_ts44 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js
-var server_ts_exports45 = {};
-__export(server_ts_exports45, {
+var server_ts_exports46 = {};
+__export(server_ts_exports46, {
   DELETE: () => DELETE9,
-  GET: () => GET16,
+  GET: () => GET17,
   POST: () => POST28
 });
 function metadataOf(active) {
@@ -61296,8 +61200,8 @@ function metadataOf(active) {
     scopes: parseApiScopes(Array.isArray(active.scopes) ? JSON.stringify(active.scopes) : active.scopes)
   };
 }
-var GET16, POST28, DELETE9;
-var init_server_ts45 = __esm({
+var GET17, POST28, DELETE9;
+var init_server_ts46 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61305,7 +61209,7 @@ var init_server_ts45 = __esm({
     init_require();
     init_api_keys();
     __name(metadataOf, "metadataOf");
-    GET16 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET17 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const active = await getActiveApiKey(locals.db, user.id);
@@ -61356,12 +61260,12 @@ var init_server_ts45 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js
-var server_ts_exports46 = {};
-__export(server_ts_exports46, {
-  GET: () => GET17
+var server_ts_exports47 = {};
+__export(server_ts_exports47, {
+  GET: () => GET18
 });
-var GET17;
-var init_server_ts46 = __esm({
+var GET18;
+var init_server_ts47 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61370,7 +61274,7 @@ var init_server_ts46 = __esm({
     init_x_post_preview();
     init_x_quote();
     init_timed_fetch();
-    GET17 = /* @__PURE__ */ __name(async ({ url: url3, locals }) => {
+    GET18 = /* @__PURE__ */ __name(async ({ url: url3, locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "write");
@@ -65175,7 +65079,7 @@ function describeUnsupportedProperties(pruned, fallback2) {
   return offenders.length > 0 ? offenders.join(", ") : fallback2;
 }
 function findDroppedConstraintPaths(original, parsed, path3 = "") {
-  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index19) => findDroppedConstraintPaths(item, parsed[index19], `${path3}[${index19}]`));
+  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index18) => findDroppedConstraintPaths(item, parsed[index18], `${path3}[${index18}]`));
   if (!isJsonObject(original) || !isJsonObject(parsed)) return [];
   return Object.entries(original).flatMap(([key, value]) => {
     const childPath = path3 ? `${path3}.${key}` : key;
@@ -65403,7 +65307,7 @@ function validateToolName(name) {
   if (name.startsWith("-") || name.endsWith("-")) warnings.push("Tool name starts or ends with a dash, which may cause parsing issues in some contexts");
   if (name.startsWith(".") || name.endsWith(".")) warnings.push("Tool name starts or ends with a dot, which may cause parsing issues in some contexts");
   if (!TOOL_NAME_REGEX.test(name)) {
-    const invalidChars = [...name].filter((char) => !/[A-Za-z0-9._-]/.test(char)).filter((char, index19, arr) => arr.indexOf(char) === index19);
+    const invalidChars = [...name].filter((char) => !/[A-Za-z0-9._-]/.test(char)).filter((char, index18, arr) => arr.indexOf(char) === index18);
     warnings.push(`Tool name contains invalid characters: ${invalidChars.map((c) => `"${c}"`).join(", ")}`, "Allowed characters are: A-Z, a-z, 0-9, underscore (_), dash (-), and dot (.)");
     return {
       isValid: false,
@@ -67494,18 +67398,18 @@ var init_src_Cqbh3MYc = __esm({
         if (!string4) throw new TypeError("argument string is required");
         var header = typeof string4 === "object" ? getcontenttype(string4) : string4;
         if (typeof header !== "string") throw new TypeError("argument string is required to be a string");
-        var index19 = header.indexOf(";");
-        var type = index19 !== -1 ? header.slice(0, index19).trim() : header.trim();
+        var index18 = header.indexOf(";");
+        var type = index18 !== -1 ? header.slice(0, index18).trim() : header.trim();
         if (!TYPE_REGEXP.test(type)) throw new TypeError("invalid media type");
         var obj = new ContentType(type.toLowerCase());
-        if (index19 !== -1) {
+        if (index18 !== -1) {
           var key;
           var match2;
           var value;
-          PARAM_REGEXP.lastIndex = index19;
+          PARAM_REGEXP.lastIndex = index18;
           while (match2 = PARAM_REGEXP.exec(header)) {
-            if (match2.index !== index19) throw new TypeError("invalid parameter format");
-            index19 += match2[0].length;
+            if (match2.index !== index18) throw new TypeError("invalid parameter format");
+            index18 += match2[0].length;
             key = match2[1].toLowerCase();
             value = match2[2];
             if (value.charCodeAt(0) === 34) {
@@ -67514,7 +67418,7 @@ var init_src_Cqbh3MYc = __esm({
             }
             obj.parameters[key] = value;
           }
-          if (index19 !== header.length) throw new TypeError("invalid parameter format");
+          if (index18 !== header.length) throw new TypeError("invalid parameter format");
         }
         return obj;
       }
@@ -67673,14 +67577,14 @@ function regex(str) {
 function ucs2length(s2) {
   let result = 0;
   let length = s2.length;
-  let index19 = 0;
+  let index18 = 0;
   let charCode;
-  while (index19 < length) {
+  while (index18 < length) {
     result++;
-    charCode = s2.charCodeAt(index19++);
-    if (charCode >= 55296 && charCode <= 56319 && index19 < length) {
-      charCode = s2.charCodeAt(index19);
-      if ((charCode & 64512) == 56320) index19++;
+    charCode = s2.charCodeAt(index18++);
+    if (charCode >= 55296 && charCode <= 56319 && index18 < length) {
+      charCode = s2.charCodeAt(index18);
+      if ((charCode & 64512) == 56320) index18++;
     }
   }
   return result;
@@ -68764,7 +68668,7 @@ function assertScope(scope, location2) {
 }
 function validateScopeChallenge(challenge) {
   if (challenge === null || typeof challenge !== "object" || !Array.isArray(challenge.scopes) || challenge.scopes.length === 0) throw new TypeError("scope challenge must contain at least one scope");
-  for (const [index19, scope] of challenge.scopes.entries()) assertScope(scope, `scope challenge scopes[${index19}]`);
+  for (const [index18, scope] of challenge.scopes.entries()) assertScope(scope, `scope challenge scopes[${index18}]`);
   if (challenge.errorDescription !== void 0 && typeof challenge.errorDescription !== "string") throw new TypeError("scope challenge errorDescription must be a string");
   if (challenge.errorDescription !== void 0 && !/^[\u0020-\u0021\u0023-\u005B\u005D-\u007E]+$/.test(challenge.errorDescription)) throw new TypeError("scope challenge errorDescription must satisfy the RFC 6750 error-description grammar");
   return challenge;
@@ -69205,7 +69109,7 @@ var init_mcp_DIH4cS6P = __esm({
         };
       }
       _loggingLevels = /* @__PURE__ */ new Map();
-      LOG_LEVEL_SEVERITY = new Map(LoggingLevelSchema.options.map((level, index19) => [level, index19]));
+      LOG_LEVEL_SEVERITY = new Map(LoggingLevelSchema.options.map((level, index18) => [level, index18]));
       isMessageIgnored = /* @__PURE__ */ __name((level, sessionId) => {
         const currentLevel = this._loggingLevels.get(sessionId);
         return currentLevel ? this.LOG_LEVEL_SEVERITY.get(level) < this.LOG_LEVEL_SEVERITY.get(currentLevel) : false;
@@ -71583,10 +71487,10 @@ data:
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js
-var server_ts_exports47 = {};
-__export(server_ts_exports47, {
+var server_ts_exports48 = {};
+__export(server_ts_exports48, {
   DELETE: () => DELETE10,
-  GET: () => GET18,
+  GET: () => GET19,
   POST: () => POST29
 });
 function concise(name, result) {
@@ -71803,8 +71707,8 @@ function createServer(event) {
   }).strict(), (input2, ctx, uid) => rescheduleDelivery(ctx, uid, input2.targetId, { runAt: input2.runAt }));
   return server2;
 }
-var id, boundedLimit, platform, runAt, connectionIds, draftFields, variantOptions, annotations, dateTime, validationCheck, validationIssue, connectionSchema, connectionSummarySchema, variantSchema, mediaSchema, targetSchema, draftSchema, queueDraftSchema, queueTargetSchema, mcpOutputSchemas, eventByRequest, handler, POST29, GET18, DELETE10;
-var init_server_ts47 = __esm({
+var id, boundedLimit, platform, runAt, connectionIds, draftFields, variantOptions, annotations, dateTime, validationCheck, validationIssue, connectionSchema, connectionSummarySchema, variantSchema, mediaSchema, targetSchema, draftSchema, queueDraftSchema, queueTargetSchema, mcpOutputSchemas, eventByRequest, handler, POST29, GET19, DELETE10;
+var init_server_ts48 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js"() {
     "use strict";
     init_human_error();
@@ -72090,7 +71994,7 @@ var init_server_ts47 = __esm({
         eventByRequest.delete(event.request);
       }
     }, "POST");
-    GET18 = /* @__PURE__ */ __name(async () => new Response("Method not allowed", {
+    GET19 = /* @__PURE__ */ __name(async () => new Response("Method not allowed", {
       status: 405,
       headers: { Allow: "POST" }
     }), "GET");
@@ -72102,12 +72006,12 @@ var init_server_ts47 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js
-var server_ts_exports48 = {};
-__export(server_ts_exports48, {
-  GET: () => GET19
+var server_ts_exports49 = {};
+__export(server_ts_exports49, {
+  GET: () => GET20
 });
-var GET19;
-var init_server_ts48 = __esm({
+var GET20;
+var init_server_ts49 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -72115,7 +72019,7 @@ var init_server_ts48 = __esm({
     init_media();
     init_public_media();
     init_drizzle_orm();
-    GET19 = /* @__PURE__ */ __name(async ({ params, url: url3, locals, request: request2 }) => {
+    GET20 = /* @__PURE__ */ __name(async ({ params, url: url3, locals, request: request2 }) => {
       try {
         const key = assertSafeStorageKey(params.key);
         const exp = Number(url3.searchParams.get("exp"));
@@ -72146,12 +72050,12 @@ var init_server_ts48 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/media/_key_/_server.ts.js
-var server_ts_exports49 = {};
-__export(server_ts_exports49, {
-  GET: () => GET20
+var server_ts_exports50 = {};
+__export(server_ts_exports50, {
+  GET: () => GET21
 });
-var GET20;
-var init_server_ts49 = __esm({
+var GET21;
+var init_server_ts50 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/media/_key_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -72159,7 +72063,7 @@ var init_server_ts49 = __esm({
     init_require();
     init_media();
     init_drizzle_orm();
-    GET20 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
+    GET21 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -72193,18 +72097,18 @@ var init_server_ts49 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js
-var server_ts_exports50 = {};
-__export(server_ts_exports50, {
-  GET: () => GET21
+var server_ts_exports51 = {};
+__export(server_ts_exports51, {
+  GET: () => GET22
 });
-var GET21;
-var init_server_ts50 = __esm({
+var GET22;
+var init_server_ts51 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_post_list();
-    GET21 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET22 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -72240,7 +72144,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.22.1";
+  const current = options2.current ?? "1.23.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -72338,18 +72242,18 @@ var init_release = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js
-var server_ts_exports51 = {};
-__export(server_ts_exports51, {
-  GET: () => GET22
+var server_ts_exports52 = {};
+__export(server_ts_exports52, {
+  GET: () => GET23
 });
-var GET22;
-var init_server_ts51 = __esm({
+var GET23;
+var init_server_ts52 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_release();
-    GET22 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET23 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -72363,12 +72267,12 @@ var init_server_ts51 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js
-var server_ts_exports52 = {};
-__export(server_ts_exports52, {
-  GET: () => GET23
+var server_ts_exports53 = {};
+__export(server_ts_exports53, {
+  GET: () => GET24
 });
-var GET23;
-var init_server_ts52 = __esm({
+var GET24;
+var init_server_ts53 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js"() {
     "use strict";
     init_http();
@@ -72376,7 +72280,7 @@ var init_server_ts52 = __esm({
     init_require();
     init_scheduler();
     init_scheduler_status();
-    GET23 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET24 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -72400,12 +72304,12 @@ var init_server_ts52 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/test/_server.ts.js
-var server_ts_exports53 = {};
-__export(server_ts_exports53, {
+var server_ts_exports54 = {};
+__export(server_ts_exports54, {
   POST: () => POST30
 });
 var POST30;
-var init_server_ts53 = __esm({
+var init_server_ts54 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/test/_server.ts.js"() {
     "use strict";
     init_http();
@@ -72433,20 +72337,20 @@ var init_server_ts53 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js
-var server_ts_exports54 = {};
-__export(server_ts_exports54, {
+var server_ts_exports55 = {};
+__export(server_ts_exports55, {
   DELETE: () => DELETE11,
-  GET: () => GET24,
+  GET: () => GET25,
   POST: () => POST31
 });
-var GET24, POST31, DELETE11;
-var init_server_ts54 = __esm({
+var GET25, POST31, DELETE11;
+var init_server_ts55 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js"() {
     "use strict";
     init_http();
     init_tick_token();
     init_require();
-    GET24 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET25 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const status = await readTickToken(locals.db);
@@ -72510,9 +72414,9 @@ var init_instance_name = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js
-var server_ts_exports55 = {};
-__export(server_ts_exports55, {
-  GET: () => GET25,
+var server_ts_exports56 = {};
+__export(server_ts_exports56, {
+  GET: () => GET26,
   PATCH: () => PATCH5
 });
 function normalizeDisplayName(input2) {
@@ -72532,8 +72436,8 @@ function normalizeDisplayName(input2) {
     name
   };
 }
-var GET25, SETTINGS_KEYS, PATCH5;
-var init_server_ts55 = __esm({
+var GET26, SETTINGS_KEYS, PATCH5;
+var init_server_ts56 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js"() {
     "use strict";
     init_client();
@@ -72545,7 +72449,7 @@ var init_server_ts55 = __esm({
     init_release();
     init_instance_name();
     init_drizzle_orm();
-    GET25 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET26 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -72614,8 +72518,8 @@ var init_server_ts55 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js
-var server_ts_exports56 = {};
-__export(server_ts_exports56, {
+var server_ts_exports57 = {};
+__export(server_ts_exports57, {
   DELETE: () => DELETE12,
   PUT: () => PUT4
 });
@@ -72633,7 +72537,7 @@ function platformFrom(param) {
   return param && isOAuthPlatform(param) ? param : null;
 }
 var PUT4, DELETE12;
-var init_server_ts56 = __esm({
+var init_server_ts57 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js"() {
     "use strict";
     init_http();
@@ -72677,12 +72581,12 @@ var init_server_ts56 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js
-var server_ts_exports57 = {};
-__export(server_ts_exports57, {
+var server_ts_exports58 = {};
+__export(server_ts_exports58, {
   POST: () => POST32
 });
 var POST32;
-var init_server_ts57 = __esm({
+var init_server_ts58 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js"() {
     "use strict";
     init_client();
@@ -72997,12 +72901,12 @@ var init_server_ts57 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/cancel/_server.ts.js
-var server_ts_exports58 = {};
-__export(server_ts_exports58, {
+var server_ts_exports59 = {};
+__export(server_ts_exports59, {
   POST: () => POST33
 });
 var POST33;
-var init_server_ts58 = __esm({
+var init_server_ts59 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/cancel/_server.ts.js"() {
     "use strict";
     init_http();
@@ -73021,12 +72925,12 @@ var init_server_ts58 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/reschedule/_server.ts.js
-var server_ts_exports59 = {};
-__export(server_ts_exports59, {
+var server_ts_exports60 = {};
+__export(server_ts_exports60, {
   POST: () => POST34
 });
 var POST34;
-var init_server_ts59 = __esm({
+var init_server_ts60 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/reschedule/_server.ts.js"() {
     "use strict";
     init_http();
@@ -73046,12 +72950,12 @@ var init_server_ts59 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/retry/_server.ts.js
-var server_ts_exports60 = {};
-__export(server_ts_exports60, {
+var server_ts_exports61 = {};
+__export(server_ts_exports61, {
   POST: () => POST35
 });
 var POST35;
-var init_server_ts60 = __esm({
+var init_server_ts61 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/retry/_server.ts.js"() {
     "use strict";
     init_http();
@@ -73070,19 +72974,19 @@ var init_server_ts60 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js
-var server_ts_exports61 = {};
-__export(server_ts_exports61, {
-  GET: () => GET26
+var server_ts_exports62 = {};
+__export(server_ts_exports62, {
+  GET: () => GET27
 });
-var GET26;
-var init_server_ts61 = __esm({
+var GET27;
+var init_server_ts62 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_saved_token();
     init_github_update();
-    GET26 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET27 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const [job, previous, target, savedToken] = await Promise.all([
@@ -73096,7 +73000,7 @@ var init_server_ts61 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.22.1",
+          version: "1.23.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73121,13 +73025,13 @@ var init_server_ts61 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js
-var server_ts_exports62 = {};
-__export(server_ts_exports62, {
+var server_ts_exports63 = {};
+__export(server_ts_exports63, {
   DELETE: () => DELETE13,
   POST: () => POST36
 });
 var POST36, DELETE13;
-var init_server_ts62 = __esm({
+var init_server_ts63 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js"() {
     "use strict";
     init_http();
@@ -73166,12 +73070,12 @@ var init_server_ts62 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js
-var server_ts_exports63 = {};
-__export(server_ts_exports63, {
+var server_ts_exports64 = {};
+__export(server_ts_exports64, {
   POST: () => POST37
 });
 var POST37;
-var init_server_ts63 = __esm({
+var init_server_ts64 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js"() {
     "use strict";
     init_http();
@@ -73200,8 +73104,8 @@ var init_server_ts63 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js
-var server_ts_exports64 = {};
-__export(server_ts_exports64, {
+var server_ts_exports65 = {};
+__export(server_ts_exports65, {
   POST: () => POST38
 });
 function cloudflareApi(token, { fetchImpl = fetch, budget } = {}) {
@@ -73305,7 +73209,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.22.1"
+    currentVersion: "1.23.0"
   };
 }
 async function download(ctx, url3) {
@@ -73649,7 +73553,7 @@ async function dropJob(ctx, job) {
   await clearJob(ctx.db);
 }
 var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST38;
-var init_server_ts64 = __esm({
+var init_server_ts65 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js"() {
     "use strict";
     init_bytes();
@@ -73747,12 +73651,12 @@ var init_server_ts64 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js
-var server_ts_exports65 = {};
-__export(server_ts_exports65, {
+var server_ts_exports66 = {};
+__export(server_ts_exports66, {
   POST: () => POST39
 });
 var POST39;
-var init_server_ts65 = __esm({
+var init_server_ts66 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js"() {
     "use strict";
     init_http();
@@ -73773,19 +73677,19 @@ var init_server_ts65 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/p/_token_/media/_key_/_server.ts.js
-var server_ts_exports66 = {};
-__export(server_ts_exports66, {
-  GET: () => GET27
+var server_ts_exports67 = {};
+__export(server_ts_exports67, {
+  GET: () => GET28
 });
-var SHARED_MEDIA_CACHE, GET27;
-var init_server_ts66 = __esm({
+var SHARED_MEDIA_CACHE, GET28;
+var init_server_ts67 = __esm({
   ".svelte-kit/output/server/entries/endpoints/p/_token_/media/_key_/_server.ts.js"() {
     "use strict";
     init_http();
     init_media();
     init_draft_shares();
     SHARED_MEDIA_CACHE = "private, max-age=300";
-    GET27 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
+    GET28 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
       try {
         const key = assertSafeStorageKey(params.key);
         const media = await resolveSharedMedia(locals.db, locals.env.APP_ENCRYPTION_KEY, params.token, key);
@@ -73856,7 +73760,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.DlBSuy97.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.DlBSuy97.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.Dl2dbh5F.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.Dl2dbh5F.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -73873,8 +73777,7 @@ var manifest2 = (() => {
       __memo(() => Promise.resolve().then(() => (init__13(), __exports13))),
       __memo(() => Promise.resolve().then(() => (init__14(), __exports14))),
       __memo(() => Promise.resolve().then(() => (init__15(), __exports15))),
-      __memo(() => Promise.resolve().then(() => (init__16(), __exports16))),
-      __memo(() => Promise.resolve().then(() => (init__17(), __exports17)))
+      __memo(() => Promise.resolve().then(() => (init__16(), __exports16)))
     ],
     remotes: {},
     routes: [
@@ -73896,532 +73799,532 @@ var manifest2 = (() => {
         id: "/api",
         pattern: /^\/api\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 5 },
-        endpoint: null
+        page: null,
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts(), server_ts_exports)))
       },
       {
         id: "/api/account",
         pattern: /^\/api\/account\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts(), server_ts_exports)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts2(), server_ts_exports2)))
       },
       {
         id: "/api/auth/claim",
         pattern: /^\/api\/auth\/claim\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts2(), server_ts_exports2)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts3(), server_ts_exports3)))
       },
       {
         id: "/api/auth/login",
         pattern: /^\/api\/auth\/login\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts3(), server_ts_exports3)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts4(), server_ts_exports4)))
       },
       {
         id: "/api/auth/logout",
         pattern: /^\/api\/auth\/logout\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts4(), server_ts_exports4)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts5(), server_ts_exports5)))
       },
       {
         id: "/api/auth/me",
         pattern: /^\/api\/auth\/me\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts5(), server_ts_exports5)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts6(), server_ts_exports6)))
       },
       {
         id: "/api/auth/totp/enroll/confirm",
         pattern: /^\/api\/auth\/totp\/enroll\/confirm\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts6(), server_ts_exports6)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts7(), server_ts_exports7)))
       },
       {
         id: "/api/auth/totp/enroll/start",
         pattern: /^\/api\/auth\/totp\/enroll\/start\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts7(), server_ts_exports7)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts8(), server_ts_exports8)))
       },
       {
         id: "/api/auth/totp/rotate/start",
         pattern: /^\/api\/auth\/totp\/rotate\/start\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts8(), server_ts_exports8)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts9(), server_ts_exports9)))
       },
       {
         id: "/api/auth/totp/status",
         pattern: /^\/api\/auth\/totp\/status\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts9(), server_ts_exports9)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts10(), server_ts_exports10)))
       },
       {
         id: "/api/auth/totp/verify",
         pattern: /^\/api\/auth\/totp\/verify\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts10(), server_ts_exports10)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts11(), server_ts_exports11)))
       },
       {
         id: "/api/connections",
         pattern: /^\/api\/connections\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts11(), server_ts_exports11)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts12(), server_ts_exports12)))
       },
       {
         id: "/api/connections/bluesky",
         pattern: /^\/api\/connections\/bluesky\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts12(), server_ts_exports12)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts13(), server_ts_exports13)))
       },
       {
         id: "/api/connections/instagram",
         pattern: /^\/api\/connections\/instagram\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts13(), server_ts_exports13)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts14(), server_ts_exports14)))
       },
       {
         id: "/api/connections/instagram/callback",
         pattern: /^\/api\/connections\/instagram\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts14(), server_ts_exports14)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts15(), server_ts_exports15)))
       },
       {
         id: "/api/connections/linkedin",
         pattern: /^\/api\/connections\/linkedin\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts15(), server_ts_exports15)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts16(), server_ts_exports16)))
       },
       {
         id: "/api/connections/linkedin/callback",
         pattern: /^\/api\/connections\/linkedin\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts16(), server_ts_exports16)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts17(), server_ts_exports17)))
       },
       {
         id: "/api/connections/mastodon",
         pattern: /^\/api\/connections\/mastodon\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts17(), server_ts_exports17)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts18(), server_ts_exports18)))
       },
       {
         id: "/api/connections/mastodon/callback",
         pattern: /^\/api\/connections\/mastodon\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts18(), server_ts_exports18)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts19(), server_ts_exports19)))
       },
       {
         id: "/api/connections/threads",
         pattern: /^\/api\/connections\/threads\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts19(), server_ts_exports19)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts20(), server_ts_exports20)))
       },
       {
         id: "/api/connections/threads/callback",
         pattern: /^\/api\/connections\/threads\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts20(), server_ts_exports20)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts21(), server_ts_exports21)))
       },
       {
         id: "/api/connections/x",
         pattern: /^\/api\/connections\/x\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts21(), server_ts_exports21)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts22(), server_ts_exports22)))
       },
       {
         id: "/api/connections/x/callback",
         pattern: /^\/api\/connections\/x\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts22(), server_ts_exports22)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts23(), server_ts_exports23)))
       },
       {
         id: "/api/connections/zernio/accounts",
         pattern: /^\/api\/connections\/zernio\/accounts\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts23(), server_ts_exports23)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts24(), server_ts_exports24)))
       },
       {
         id: "/api/connections/zernio/callback",
         pattern: /^\/api\/connections\/zernio\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts24(), server_ts_exports24)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts25(), server_ts_exports25)))
       },
       {
         id: "/api/connections/zernio/connect",
         pattern: /^\/api\/connections\/zernio\/connect\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts25(), server_ts_exports25)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts26(), server_ts_exports26)))
       },
       {
         id: "/api/connections/zernio/import",
         pattern: /^\/api\/connections\/zernio\/import\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts26(), server_ts_exports26)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts27(), server_ts_exports27)))
       },
       {
         id: "/api/connections/[id]",
         pattern: /^\/api\/connections\/([^/]+?)\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts27(), server_ts_exports27)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts28(), server_ts_exports28)))
       },
       {
         id: "/api/connections/[id]/verify",
         pattern: /^\/api\/connections\/([^/]+?)\/verify\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts28(), server_ts_exports28)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts29(), server_ts_exports29)))
       },
       {
         id: "/api/drafts",
         pattern: /^\/api\/drafts\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts29(), server_ts_exports29)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts30(), server_ts_exports30)))
       },
       {
         id: "/api/drafts/[id]",
         pattern: /^\/api\/drafts\/([^/]+?)\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts30(), server_ts_exports30)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts31(), server_ts_exports31)))
       },
       {
         id: "/api/drafts/[id]/duplicate",
         pattern: /^\/api\/drafts\/([^/]+?)\/duplicate\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts31(), server_ts_exports31)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts32(), server_ts_exports32)))
       },
       {
         id: "/api/drafts/[id]/media",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts32(), server_ts_exports32)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts33(), server_ts_exports33)))
       },
       {
         id: "/api/drafts/[id]/media/cover",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/cover\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts33(), server_ts_exports33)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts34(), server_ts_exports34)))
       },
       {
         id: "/api/drafts/[id]/media/uploads",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts34(), server_ts_exports34)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts35(), server_ts_exports35)))
       },
       {
         id: "/api/drafts/[id]/media/uploads/complete",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/complete\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts35(), server_ts_exports35)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts36(), server_ts_exports36)))
       },
       {
         id: "/api/drafts/[id]/media/uploads/part",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/part\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts36(), server_ts_exports36)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts37(), server_ts_exports37)))
       },
       {
         id: "/api/drafts/[id]/publish",
         pattern: /^\/api\/drafts\/([^/]+?)\/publish\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts37(), server_ts_exports37)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts38(), server_ts_exports38)))
       },
       {
         id: "/api/drafts/[id]/schedule",
         pattern: /^\/api\/drafts\/([^/]+?)\/schedule\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts38(), server_ts_exports38)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts39(), server_ts_exports39)))
       },
       {
         id: "/api/drafts/[id]/share",
         pattern: /^\/api\/drafts\/([^/]+?)\/share\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts39(), server_ts_exports39)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts40(), server_ts_exports40)))
       },
       {
         id: "/api/drafts/[id]/variants",
         pattern: /^\/api\/drafts\/([^/]+?)\/variants\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts40(), server_ts_exports40)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts41(), server_ts_exports41)))
       },
       {
         id: "/api/health",
         pattern: /^\/api\/health\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts41(), server_ts_exports41)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts42(), server_ts_exports42)))
       },
       {
         id: "/api/insights",
         pattern: /^\/api\/insights\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts42(), server_ts_exports42)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts43(), server_ts_exports43)))
       },
       {
         id: "/api/internal/publish",
         pattern: /^\/api\/internal\/publish\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts43(), server_ts_exports43)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts44(), server_ts_exports44)))
       },
       {
         id: "/api/internal/tick",
         pattern: /^\/api\/internal\/tick\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts44(), server_ts_exports44)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts45(), server_ts_exports45)))
       },
       {
         id: "/api/key",
         pattern: /^\/api\/key\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts45(), server_ts_exports45)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts46(), server_ts_exports46)))
       },
       {
         id: "/api/link-preview",
         pattern: /^\/api\/link-preview\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts46(), server_ts_exports46)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts47(), server_ts_exports47)))
       },
       {
         id: "/api/mcp",
         pattern: /^\/api\/mcp\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts47(), server_ts_exports47)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts48(), server_ts_exports48)))
       },
       {
         id: "/api/media/public/[key]",
         pattern: /^\/api\/media\/public\/([^/]+?)\/?$/,
         params: [{ "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts48(), server_ts_exports48)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts49(), server_ts_exports49)))
       },
       {
         id: "/api/media/[key]",
         pattern: /^\/api\/media\/([^/]+?)\/?$/,
         params: [{ "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts49(), server_ts_exports49)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts50(), server_ts_exports50)))
       },
       {
         id: "/api/queue",
         pattern: /^\/api\/queue\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts50(), server_ts_exports50)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts51(), server_ts_exports51)))
       },
       {
         id: "/api/release",
         pattern: /^\/api\/release\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts51(), server_ts_exports51)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts52(), server_ts_exports52)))
       },
       {
         id: "/api/scheduler/health",
         pattern: /^\/api\/scheduler\/health\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts52(), server_ts_exports52)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts53(), server_ts_exports53)))
       },
       {
         id: "/api/scheduler/test",
         pattern: /^\/api\/scheduler\/test\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts53(), server_ts_exports53)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
       },
       {
         id: "/api/scheduler/tick-token",
         pattern: /^\/api\/scheduler\/tick-token\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
       },
       {
         id: "/api/settings",
         pattern: /^\/api\/settings\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
       },
       {
         id: "/api/settings/platform-apps/[platform]",
         pattern: /^\/api\/settings\/platform-apps\/([^/]+?)\/?$/,
         params: [{ "name": "platform", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
       },
       {
         id: "/api/targets/bulk",
         pattern: /^\/api\/targets\/bulk\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
       },
       {
         id: "/api/targets/[id]/cancel",
         pattern: /^\/api\/targets\/([^/]+?)\/cancel\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts59(), server_ts_exports59)))
       },
       {
         id: "/api/targets/[id]/reschedule",
         pattern: /^\/api\/targets\/([^/]+?)\/reschedule\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts59(), server_ts_exports59)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts60(), server_ts_exports60)))
       },
       {
         id: "/api/targets/[id]/retry",
         pattern: /^\/api\/targets\/([^/]+?)\/retry\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts60(), server_ts_exports60)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts61(), server_ts_exports61)))
       },
       {
         id: "/api/update",
         pattern: /^\/api\/update\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts61(), server_ts_exports61)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts62(), server_ts_exports62)))
       },
       {
         id: "/api/update/remember",
         pattern: /^\/api\/update\/remember\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts62(), server_ts_exports62)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts63(), server_ts_exports63)))
       },
       {
         id: "/api/update/unlock",
         pattern: /^\/api\/update\/unlock\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts63(), server_ts_exports63)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts64(), server_ts_exports64)))
       },
       {
         id: "/api/update/[step]",
         pattern: /^\/api\/update\/([^/]+?)\/?$/,
         params: [{ "name": "step", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts64(), server_ts_exports64)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts65(), server_ts_exports65)))
       },
       {
         id: "/api/validate",
         pattern: /^\/api\/validate\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts65(), server_ts_exports65)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts66(), server_ts_exports66)))
       },
       {
         id: "/compose",
         pattern: /^\/compose\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 6 },
+        page: { layouts: [0], errors: [1], leaf: 5 },
         endpoint: null
       },
       {
         id: "/connections",
         pattern: /^\/connections\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 7 },
+        page: { layouts: [0], errors: [1], leaf: 6 },
         endpoint: null
       },
       {
         id: "/drafts",
         pattern: /^\/drafts\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 8 },
+        page: { layouts: [0], errors: [1], leaf: 7 },
         endpoint: null
       },
       {
         id: "/insights",
         pattern: /^\/insights\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 9 },
+        page: { layouts: [0], errors: [1], leaf: 8 },
         endpoint: null
       },
       {
         id: "/login",
         pattern: /^\/login\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 10 },
+        page: { layouts: [0], errors: [1], leaf: 9 },
         endpoint: null
       },
       {
         id: "/login/setup-2fa",
         pattern: /^\/login\/setup-2fa\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 11 },
+        page: { layouts: [0], errors: [1], leaf: 10 },
         endpoint: null
       },
       {
         id: "/login/verify",
         pattern: /^\/login\/verify\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 12 },
+        page: { layouts: [0], errors: [1], leaf: 11 },
         endpoint: null
       },
       {
         id: "/outbox",
         pattern: /^\/outbox\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 13 },
+        page: { layouts: [0], errors: [1], leaf: 12 },
         endpoint: null
       },
       {
         id: "/posts",
         pattern: /^\/posts\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 15 },
+        page: { layouts: [0], errors: [1], leaf: 14 },
         endpoint: null
       },
       {
         id: "/p/[token]",
         pattern: /^\/p\/([^/]+?)\/?$/,
         params: [{ "name": "token", "optional": false, "rest": false, "chained": false }],
-        page: { layouts: [0, ,], errors: [1, 2], leaf: 14 },
+        page: { layouts: [0, ,], errors: [1, 2], leaf: 13 },
         endpoint: null
       },
       {
@@ -74429,13 +74332,13 @@ var manifest2 = (() => {
         pattern: /^\/p\/([^/]+?)\/media\/([^/]+?)\/?$/,
         params: [{ "name": "token", "optional": false, "rest": false, "chained": false }, { "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts66(), server_ts_exports66)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts67(), server_ts_exports67)))
       },
       {
         id: "/settings",
         pattern: /^\/settings\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 16 },
+        page: { layouts: [0], errors: [1], leaf: 15 },
         endpoint: null
       }
     ],
