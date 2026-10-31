@@ -10082,6 +10082,9 @@ function imageOverCap(platform2, media) {
   }
   return null;
 }
+function jpegCopyExpected(meta3, canMakeJpegCopies) {
+  return Boolean(meta3?.jpeg) || canMakeJpegCopies && !meta3?.animated;
+}
 function instagramMediaProblems(media) {
   if (media.length === 0) return ["Instagram needs a photo or video"];
   const problems = [];
@@ -10194,6 +10197,7 @@ var init_media_limits = __esm({
     };
     __name(imageCap, "imageCap");
     __name(imageOverCap, "imageOverCap");
+    __name(jpegCopyExpected, "jpegCopyExpected");
     INSTAGRAM_MIN_ASPECT = 0.795;
     INSTAGRAM_MAX_ASPECT = 1.91 + 5e-3;
     __name(instagramMediaProblems, "instagramMediaProblems");
@@ -13036,7 +13040,7 @@ function instagramUpstreamError(prefix, status, body) {
     detail
   });
 }
-function mayHavePublished(err) {
+function mayHavePublished$1(err) {
   if (err.code !== "upstream") return false;
   const { subcode } = parseMetaError(err.detail ?? "");
   return subcode === void 0 || !MEDIA_FETCH_SUBCODES.has(subcode);
@@ -13806,6 +13810,11 @@ function threadsUpstreamError(prefix, status, body) {
     detail
   });
   return base;
+}
+function mayHavePublished(err) {
+  if (err.code || isThreadsMediaFetchFailure(err.message)) return false;
+  const code = parseThreadsMetaMarker(err.message)?.code;
+  return (err.status ?? 0) >= 500 || code !== void 0 && META_TRANSIENT_CODES.includes(code);
 }
 async function threadsInspectToken(token, fetchImpl) {
   let res;
@@ -14604,7 +14613,7 @@ function providerFor(conn) {
 function estimateKeyFor(conn) {
   return isZernioConnection(conn.metaJson) ? "zernio" : conn.platform;
 }
-var MISSING_VIDEO_MESSAGE, DEFAULT_PDS, ACCESS_JWT_SKEW_MS, VIDEO_SERVICE, VIDEO_SERVICE_DID, VIDEO_JOB_POLLS, VIDEO_JOB_POLL_MS, blueskyProvider, GRAPH, SCOPES, PROFILE_FIELDS, POSTING_ACCOUNT_TYPES, REFRESH_SKEW_MS$3, MAX_ALT_TEXT, PHOTO_POLLS, PHOTO_POLL_MS, REEL_POLLS, REEL_POLL_MS, POLL_RESERVE, DAILY_LIMIT_RETRY_MS, AUTH_CODES, RATE_CODES, TRANSIENT_CODES, MEDIA_FETCH_SUBCODES, DAILY_LIMIT_SUBCODE, RETRIED_PHOTO_CODES, instagramProvider, PERSONAL_ACCOUNT_MESSAGE, LINKEDIN_MAX_CHARS2, LINKEDIN_VIDEO_MIMES, LINKEDIN_VERSION, REFRESH_SKEW_MS$2, LINKEDIN_MAX_ALT_TEXT, VIDEO_RESERVE_CALLS, VIDEO_STATUS_POLLS$1, VIDEO_STATUS_POLL_MS$1, linkedinProvider, MAX_INSTANCE_REDIRECTS, MEDIA_PROCESS_POLL_ATTEMPTS, MEDIA_PROCESS_POLL_MS, VIDEO_STATUS_POLLS, VIDEO_STATUS_POLL_MS, mastodonProvider, THREADS_IMAGE_MIMES, THREADS_API_VERSION, REFRESH_SKEW_MS$1, CONTAINER_STATUS_ATTEMPTS, CONTAINER_STATUS_POLL_MS, CAROUSEL_CHILD_ROUNDS, CAROUSEL_CHILD_CALL_BUDGET, CAROUSEL_STATUS_CONCURRENCY, CAROUSEL_PARENT_POLL_ATTEMPTS, MEDIA_FETCH_RETRY_DELAYS_MS, CAROUSEL_FETCH_RETRY_DELAYS_MS, CAROUSEL_NO_RETRY_ABOVE, THREADS_SEGMENT_DELAY_MS, PERMALINK_ATTEMPTS, PERMALINK_RETRY_DELAYS_MS, META_PERMISSION_TEXT, THREADS_PROFILE_FIELDS, threadsProvider, X_IMAGE_MIMES, X_UPLOAD_CHUNK_BYTES, X_MEDIA_POLL_ATTEMPTS, X_MEDIA_POLL_MAX_WAIT_MS, REFRESH_SKEW_MS, X_API, X_AUTHORIZE_URL, X_SCOPES, isVideo, X_VIDEO_RESERVE_CALLS, xProvider, providers$1, providers;
+var MISSING_VIDEO_MESSAGE, DEFAULT_PDS, ACCESS_JWT_SKEW_MS, VIDEO_SERVICE, VIDEO_SERVICE_DID, VIDEO_JOB_POLLS, VIDEO_JOB_POLL_MS, blueskyProvider, GRAPH, SCOPES, PROFILE_FIELDS, POSTING_ACCOUNT_TYPES, REFRESH_SKEW_MS$3, MAX_ALT_TEXT, PHOTO_POLLS, PHOTO_POLL_MS, REEL_POLLS, REEL_POLL_MS, POLL_RESERVE, DAILY_LIMIT_RETRY_MS, AUTH_CODES, RATE_CODES, TRANSIENT_CODES, MEDIA_FETCH_SUBCODES, DAILY_LIMIT_SUBCODE, RETRIED_PHOTO_CODES, instagramProvider, PERSONAL_ACCOUNT_MESSAGE, LINKEDIN_MAX_CHARS2, LINKEDIN_VIDEO_MIMES, LINKEDIN_VERSION, REFRESH_SKEW_MS$2, LINKEDIN_MAX_ALT_TEXT, VIDEO_RESERVE_CALLS, VIDEO_STATUS_POLLS$1, VIDEO_STATUS_POLL_MS$1, linkedinProvider, MAX_INSTANCE_REDIRECTS, MEDIA_PROCESS_POLL_ATTEMPTS, MEDIA_PROCESS_POLL_MS, VIDEO_STATUS_POLLS, VIDEO_STATUS_POLL_MS, mastodonProvider, THREADS_IMAGE_MIMES, THREADS_API_VERSION, REFRESH_SKEW_MS$1, CONTAINER_STATUS_ATTEMPTS, CONTAINER_STATUS_POLL_MS, CAROUSEL_CHILD_ROUNDS, CAROUSEL_CHILD_CALL_BUDGET, CAROUSEL_STATUS_CONCURRENCY, CAROUSEL_PARENT_POLL_ATTEMPTS, MEDIA_FETCH_RETRY_DELAYS_MS, CAROUSEL_FETCH_RETRY_DELAYS_MS, CAROUSEL_NO_RETRY_ABOVE, THREADS_SEGMENT_DELAY_MS, PERMALINK_ATTEMPTS, PERMALINK_RETRY_DELAYS_MS, META_TRANSIENT_CODES, META_PERMISSION_TEXT, THREADS_PROFILE_FIELDS, threadsProvider, X_IMAGE_MIMES, X_UPLOAD_CHUNK_BYTES, X_MEDIA_POLL_ATTEMPTS, X_MEDIA_POLL_MAX_WAIT_MS, REFRESH_SKEW_MS, X_API, X_AUTHORIZE_URL, X_SCOPES, isVideo, X_VIDEO_RESERVE_CALLS, xProvider, providers$1, providers;
 var init_providers = __esm({
   ".svelte-kit/output/server/chunks/providers.js"() {
     "use strict";
@@ -14808,7 +14817,7 @@ var init_providers = __esm({
     RETRIED_PHOTO_CODES = /* @__PURE__ */ new Set([...MEDIA_FETCH_SUBCODES, 2207001]);
     __name(parseMetaError, "parseMetaError");
     __name(instagramUpstreamError, "instagramUpstreamError");
-    __name(mayHavePublished, "mayHavePublished");
+    __name(mayHavePublished$1, "mayHavePublished$1");
     __name(isRetriedPhotoFailure, "isRetriedPhotoFailure");
     __name(isJpeg, "isJpeg");
     instagramProvider = {
@@ -15006,7 +15015,7 @@ var init_providers = __esm({
         try {
           postId = await graphPost(`${account}/media_publish`, { creation_id: containerId }, "Instagram publish");
         } catch (err) {
-          if (err instanceof ProviderError && !mayHavePublished(err)) throw err;
+          if (err instanceof ProviderError && !mayHavePublished$1(err)) throw err;
           throw unconfirmedPostError("Instagram", err);
         }
         await opts?.checkpoint?.({ segmentIds: postId ? [postId] : [] });
@@ -15201,7 +15210,10 @@ var init_providers = __esm({
         } catch (err) {
           throw unconfirmedPostError("LinkedIn", err);
         }
-        if (!res.ok) throw Object.assign(/* @__PURE__ */ new Error(`LinkedIn post failed (${res.status}): ${(await res.text()).slice(0, 300)}`), { status: res.status });
+        if (!res.ok) {
+          const failed = Object.assign(/* @__PURE__ */ new Error(`LinkedIn post failed (${res.status}): ${(await res.text()).slice(0, 300)}`), { status: res.status });
+          throw res.status >= 500 ? unconfirmedPostError("LinkedIn", failed) : failed;
+        }
         const restId = res.headers.get("x-restli-id") || res.headers.get("X-Restli-Id");
         const data = await res.json().catch(() => ({}));
         const candidate = restId || data.id || data.urn;
@@ -15419,6 +15431,7 @@ var init_providers = __esm({
     THREADS_SEGMENT_DELAY_MS = 300;
     PERMALINK_ATTEMPTS = 3;
     PERMALINK_RETRY_DELAYS_MS = [400, 1200];
+    META_TRANSIENT_CODES = [1, 2];
     __name(sleep$2, "sleep$2");
     __name(threadsUserId, "threadsUserId");
     __name(normalizeSegment, "normalizeSegment");
@@ -15427,6 +15440,7 @@ var init_providers = __esm({
     __name(parseMetaCode, "parseMetaCode");
     __name(threadsPermissionDenied, "threadsPermissionDenied");
     __name(threadsUpstreamError, "threadsUpstreamError");
+    __name(mayHavePublished, "mayHavePublished");
     __name(threadsInspectToken, "threadsInspectToken");
     THREADS_PROFILE_FIELDS = "id,username,name,threads_profile_picture_url";
     __name(isResolvedThreadsUsername, "isResolvedThreadsUsername");
@@ -15627,7 +15641,10 @@ var init_providers = __esm({
           } catch (err) {
             throw unconfirmedPostError("Threads", err);
           }
-          if (!pubRes.ok) throw threadsUpstreamError("Threads publish", pubRes.status, await pubRes.text());
+          if (!pubRes.ok) {
+            const err = threadsUpstreamError("Threads publish", pubRes.status, await pubRes.text());
+            throw mayHavePublished(err) ? unconfirmedPostError("Threads", err) : err;
+          }
           const id2 = (await pubRes.json().catch(() => ({}))).id;
           return typeof id2 === "string" || typeof id2 === "number" ? String(id2) : "";
         }
@@ -15960,7 +15977,8 @@ var init_providers = __esm({
               const detail = (await res.text()).slice(0, 300);
               if (video && isVideoLengthRefusal(detail)) throw videoTooLong(res.status, detail);
               if (xWeightedLength(text3) > 280 && isLongPostRefusal(res.status, detail)) throw longPostRefused(res.status, detail);
-              throw Object.assign(/* @__PURE__ */ new Error(`X post failed (${res.status}): ${detail}`), { status: res.status });
+              const failed = Object.assign(/* @__PURE__ */ new Error(`X post failed (${res.status}): ${detail}`), { status: res.status });
+              throw res.status >= 500 ? unconfirmedPostError("X", failed) : failed;
             }
             const data = await res.json().catch(() => ({}));
             const id2 = typeof data.data?.id === "string" ? data.data.id : "";
@@ -41150,7 +41168,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1793392052782");
+  response.headers.set("x-sveltekit-version", "1793435744977");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43852,7 +43870,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_10s35tn";
+  const global = "__sveltekit_1c8p3n9";
   function get_replacer(index19) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44596,7 +44614,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_10s35tn";
+  const global = "__sveltekit_1c8p3n9";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44621,7 +44639,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1793392052782")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1793435744977")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -49682,7 +49700,7 @@ function Editor($$renderer, $$props) {
         mime: m.mime,
         width: m.width,
         height: m.height,
-        hasJpegCopy: canMakeJpegCopies || Boolean(m.meta?.jpeg)
+        hasJpegCopy: jpegCopyExpected(m.meta, canMakeJpegCopies)
       })))[0] ?? null;
     });
     derived2(() => isOverSelectedPlatformLimit({
@@ -51017,7 +51035,7 @@ var init__7 = __esm({
     index8 = 6;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports7 = ["_app/immutable/nodes/6.Doe1eTi_.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
+    imports7 = ["_app/immutable/nodes/6.fyv8vYVm.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
     stylesheets7 = [];
     fonts7 = [];
   }
@@ -56910,7 +56928,7 @@ function _page11($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.22.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.22.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57033,7 +57051,7 @@ var init__17 = __esm({
     "use strict";
     index18 = 16;
     component14 = /* @__PURE__ */ __name(async () => component_cache14 ??= (await Promise.resolve().then(() => (init_page_svelte11(), page_svelte_exports11))).default, "component");
-    imports17 = ["_app/immutable/nodes/16.2sNv-_-_.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Clz7HNYt.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    imports17 = ["_app/immutable/nodes/16.k2lOwv5Y.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Clz7HNYt.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
     stylesheets17 = [];
     fonts17 = [];
   }
@@ -59351,13 +59369,14 @@ var init_server_ts28 = __esm({
           const res = await mastodonVerifyCredentials(creds.instanceUrl, creds.accessToken, void 0, isLocalAppUrl(locals.env.APP_URL));
           await res.body?.cancel().catch(() => {
           });
-          if (res.status === 401 || res.status === 403) {
+          if (res.status === 401) {
             await locals.db.update(connections).set({
               status: "expired",
               updatedAt: /* @__PURE__ */ new Date()
             }).where(owned);
             return fail("Mastodon token expired \u2014 reconnect", 401);
           }
+          if (res.status === 403) return fail("Mastodon refused this account", 403);
           if (!res.ok) return fail("Mastodon verify temporarily unavailable", 502);
           const limits = await mastodonInstanceLimits(creds.instanceUrl, void 0, isLocalAppUrl(locals.env.APP_URL)).catch(() => null);
           await locals.db.update(connections).set({
@@ -59374,8 +59393,7 @@ var init_server_ts28 = __esm({
           status: "active"
         });
       } catch (err) {
-        const status = err?.status;
-        if (status === 401 || status === 403) await locals.db.update(connections).set({
+        if (err?.status === 401) await locals.db.update(connections).set({
           status: "expired",
           updatedAt: /* @__PURE__ */ new Date()
         }).where(owned);
@@ -59784,7 +59802,7 @@ async function copyVideo(store, item, storageKey) {
 }
 async function copyImageVariants(store, item, storageKey) {
   const stored = parseJson(item.metaJson, {});
-  const copied = {};
+  const copied = stored.animated ? { animated: true } : {};
   const variants = [["preview", previewKey], ["jpeg", jpegKey]];
   for (const [name, keyOf] of variants) {
     const variant = stored[name];
@@ -60535,6 +60553,7 @@ var init_server_ts32 = __esm({
           if (!saved.video) {
             const v = Date.now();
             const key = saved.storageKey;
+            if (saved.mime === "image/webp" && isAnimatedWebpBytes(bytes)) imageMeta.animated = true;
             if (await saveJpegVariant(locals, previewKey(key), previews[i], 1e6)) imageMeta.preview = { v };
             if (saved.mime !== "image/jpeg" && await saveJpegVariant(locals, jpegKey(key), jpegs[i], 8e6)) imageMeta.jpeg = { v };
           }
@@ -61162,7 +61181,7 @@ var init_server_ts41 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.22.0",
+          version: "1.22.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -72221,7 +72240,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.22.0";
+  const current = options2.current ?? "1.22.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73077,7 +73096,7 @@ var init_server_ts61 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.22.0",
+          version: "1.22.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73286,7 +73305,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.22.0"
+    currentVersion: "1.22.1"
   };
 }
 async function download(ctx, url3) {
@@ -73837,7 +73856,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.LCfVw0QA.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.LCfVw0QA.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.DlBSuy97.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.DlBSuy97.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
