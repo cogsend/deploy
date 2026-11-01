@@ -1,0 +1,1 @@
+var e=new TextEncoder;function t(t){return e.encode(t)}function n(e){return t(e).length}export{n as t};

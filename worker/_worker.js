@@ -1552,22 +1552,22 @@ function unflatten(parsed, revivers, options2) {
   );
   const hydrated = Array(values.length);
   let hydrating = null;
-  function hydrate(index17, standalone = false) {
-    if (index17 === UNDEFINED) return ops.fromPrimitive(void 0);
-    if (index17 === NAN) return ops.fromPrimitive(NaN);
-    if (index17 === POSITIVE_INFINITY) return ops.fromPrimitive(Infinity);
-    if (index17 === NEGATIVE_INFINITY) return ops.fromPrimitive(-Infinity);
-    if (index17 === NEGATIVE_ZERO) return ops.fromPrimitive(-0);
-    if (standalone || typeof index17 !== "number") {
+  function hydrate(index18, standalone = false) {
+    if (index18 === UNDEFINED) return ops.fromPrimitive(void 0);
+    if (index18 === NAN) return ops.fromPrimitive(NaN);
+    if (index18 === POSITIVE_INFINITY) return ops.fromPrimitive(Infinity);
+    if (index18 === NEGATIVE_INFINITY) return ops.fromPrimitive(-Infinity);
+    if (index18 === NEGATIVE_ZERO) return ops.fromPrimitive(-0);
+    if (standalone || typeof index18 !== "number") {
       throw new Error(`Invalid input`);
     }
-    if (index17 in hydrated) return hydrated[index17];
-    if (index17 >= values.length) {
+    if (index18 in hydrated) return hydrated[index18];
+    if (index18 >= values.length) {
       throw new Error(`Invalid input`);
     }
-    const value = values[index17];
+    const value = values[index18];
     if (!value || typeof value !== "object") {
-      hydrated[index17] = ops.fromPrimitive(value);
+      hydrated[index18] = ops.fromPrimitive(value);
     } else if (Array.isArray(value)) {
       if (typeof value[0] === "string") {
         const type = value[0];
@@ -1578,52 +1578,52 @@ function unflatten(parsed, revivers, options2) {
             i = values.push(value[1]) - 1;
           }
           if (Object.hasOwn(hydrated, i)) {
-            return hydrated[index17] = reviver(hydrated[i]);
+            return hydrated[index18] = reviver(hydrated[i]);
           }
           hydrating ??= /* @__PURE__ */ new Set();
           if (hydrating.has(i)) {
             throw new Error("Invalid circular reference");
           }
           hydrating.add(i);
-          hydrated[index17] = reviver(hydrate(i));
+          hydrated[index18] = reviver(hydrate(i));
           hydrating.delete(i);
-          return hydrated[index17];
+          return hydrated[index18];
         }
         switch (type) {
           case "Date":
-            hydrated[index17] = ops.fromISOString(value[1]);
+            hydrated[index18] = ops.fromISOString(value[1]);
             break;
           case "Set":
             const set2 = ops.createSet();
-            hydrated[index17] = set2;
+            hydrated[index18] = set2;
             for (let i = 1; i < value.length; i += 1) {
               ops.addValue(set2, hydrate(value[i]));
             }
             break;
           case "Map":
             const map2 = ops.createMap();
-            hydrated[index17] = map2;
+            hydrated[index18] = map2;
             for (let i = 1; i < value.length; i += 2) {
               ops.addEntry(map2, hydrate(value[i]), hydrate(value[i + 1]));
             }
             break;
           case "RegExp":
-            hydrated[index17] = ops.fromRegExpInfo(value[1], value[2]);
+            hydrated[index18] = ops.fromRegExpInfo(value[1], value[2]);
             break;
           case "Object": {
             const wrapped_index = value[1];
             if (typeof values[wrapped_index] === "object" && values[wrapped_index][0] !== "BigInt") {
               throw new Error("Invalid input");
             }
-            hydrated[index17] = ops.box(hydrate(wrapped_index));
+            hydrated[index18] = ops.box(hydrate(wrapped_index));
             break;
           }
           case "BigInt":
-            hydrated[index17] = ops.fromPrimitive(BigInt(value[1]));
+            hydrated[index18] = ops.fromPrimitive(BigInt(value[1]));
             break;
           case "null":
             const obj = ops.createNullPrototypeObject();
-            hydrated[index17] = obj;
+            hydrated[index18] = obj;
             for (let i = 1; i < value.length; i += 2) {
               const key = value[i];
               if (typeof key !== "string") {
@@ -1652,7 +1652,7 @@ function unflatten(parsed, revivers, options2) {
               throw new Error("Invalid data");
             }
             const buffer2 = hydrate(value[1]);
-            hydrated[index17] = ops.fromViewInfo(type, buffer2, value[2], value[3]);
+            hydrated[index18] = ops.fromViewInfo(type, buffer2, value[2], value[3]);
             break;
           }
           case "ArrayBuffer": {
@@ -1660,7 +1660,7 @@ function unflatten(parsed, revivers, options2) {
             if (typeof base643 !== "string") {
               throw new Error("Invalid ArrayBuffer encoding");
             }
-            hydrated[index17] = ops.fromArrayBuffer(decode64(base643));
+            hydrated[index18] = ops.fromArrayBuffer(decode64(base643));
             break;
           }
           case "URL":
@@ -1673,7 +1673,7 @@ function unflatten(parsed, revivers, options2) {
           case "Temporal.PlainMonthDay":
           case "Temporal.PlainYearMonth":
           case "Temporal.ZonedDateTime": {
-            hydrated[index17] = ops.fromStringValue(type, value[1]);
+            hydrated[index18] = ops.fromStringValue(type, value[1]);
             break;
           }
           default:
@@ -1685,7 +1685,7 @@ function unflatten(parsed, revivers, options2) {
           throw new Error("Invalid input");
         }
         const array3 = ops.createSparseArray(len);
-        hydrated[index17] = array3;
+        hydrated[index18] = array3;
         for (let i = 2; i < value.length; i += 2) {
           const idx = value[i];
           if (!is_valid_array_index(idx) || idx >= len) {
@@ -1695,7 +1695,7 @@ function unflatten(parsed, revivers, options2) {
         }
       } else {
         const array3 = ops.createArray(value.length);
-        hydrated[index17] = array3;
+        hydrated[index18] = array3;
         for (let i = 0; i < value.length; i += 1) {
           const n = value[i];
           if (n === HOLE) continue;
@@ -1704,7 +1704,7 @@ function unflatten(parsed, revivers, options2) {
       }
     } else {
       const object2 = ops.createObject();
-      hydrated[index17] = object2;
+      hydrated[index18] = object2;
       for (const key of Object.keys(value)) {
         if (key === "__proto__") {
           throw new Error("Cannot parse an object with a `__proto__` property");
@@ -1712,7 +1712,7 @@ function unflatten(parsed, revivers, options2) {
         ops.set(object2, key, hydrate(value[key]));
       }
     }
-    return hydrated[index17];
+    return hydrated[index18];
   }
   __name(hydrate, "hydrate");
   return hydrate(0);
@@ -1745,7 +1745,7 @@ function run(async, value, reducers, options2) {
   }
   const keys = [];
   let p = 0;
-  function flatten(thing, index18) {
+  function flatten(thing, index19) {
     const type = ops.typeOf(thing);
     if (type === "undefined") return UNDEFINED;
     let number4;
@@ -1762,13 +1762,13 @@ function run(async, value, reducers, options2) {
       /** @type {number} */
       indexes.get(id2)
     );
-    index18 ??= p++;
-    indexes.set(id2, index18);
+    index19 ??= p++;
+    indexes.set(id2, index19);
     for (const { key, fn } of custom2) {
       const value2 = fn(thing);
       if (value2) {
-        stringified[index18] = `["${key}",${flatten(value2)}]`;
-        return index18;
+        stringified[index19] = `["${key}",${flatten(value2)}]`;
+        return index19;
       }
     }
     if (type === "function") {
@@ -1789,8 +1789,8 @@ function run(async, value, reducers, options2) {
         );
       }
       str = ops.toPromise(thing).then((value2) => {
-        const i = flatten(value2, index18);
-        if (i < 0) stringified[index18] = i;
+        const i = flatten(value2, index19);
+        if (i < 0) stringified[index19] = i;
       });
       str.catch(() => {
       });
@@ -1963,12 +1963,12 @@ function run(async, value, reducers, options2) {
         }
       }
     }
-    stringified[index18] = str;
-    return index18;
+    stringified[index19] = str;
+    return index19;
   }
   __name(flatten, "flatten");
-  const index17 = flatten(value);
-  if (index17 < 0) return `${index17}`;
+  const index18 = flatten(value);
+  if (index18 < 0) return `${index18}`;
   return stringified;
 }
 function stringify_primitive2(thing) {
@@ -3570,8 +3570,8 @@ function haveSameKeys(left, right) {
   if (leftKeys.length !== rightKeys.length) {
     return false;
   }
-  for (const [index17, key] of leftKeys.entries()) {
-    if (key !== rightKeys[index17]) {
+  for (const [index18, key] of leftKeys.entries()) {
+    if (key !== rightKeys[index18]) {
       return false;
     }
   }
@@ -5709,8 +5709,8 @@ var init_dialect = __esm({
         }
         const joinsArray = [];
         if (joins) {
-          for (const [index17, joinMeta] of joins.entries()) {
-            if (index17 === 0) {
+          for (const [index18, joinMeta] of joins.entries()) {
+            if (index18 === 0) {
               joinsArray.push(sql` `);
             }
             const table = joinMeta.table;
@@ -5730,7 +5730,7 @@ var init_dialect = __esm({
                 sql`${sql.raw(joinMeta.joinType)} join ${table}${onSql}`
               );
             }
-            if (index17 < joins.length - 1) {
+            if (index18 < joins.length - 1) {
               joinsArray.push(sql` `);
             }
           }
@@ -5743,9 +5743,9 @@ var init_dialect = __esm({
       buildOrderBy(orderBy) {
         const orderByList = [];
         if (orderBy) {
-          for (const [index17, orderByValue] of orderBy.entries()) {
+          for (const [index18, orderByValue] of orderBy.entries()) {
             orderByList.push(orderByValue);
-            if (index17 < orderBy.length - 1) {
+            if (index18 < orderBy.length - 1) {
               orderByList.push(sql`, `);
             }
           }
@@ -5798,9 +5798,9 @@ var init_dialect = __esm({
         const havingSql = having ? sql` having ${having}` : void 0;
         const groupByList = [];
         if (groupBy) {
-          for (const [index17, groupByValue] of groupBy.entries()) {
+          for (const [index18, groupByValue] of groupBy.entries()) {
             groupByList.push(groupByValue);
-            if (index17 < groupBy.length - 1) {
+            if (index18 < groupBy.length - 1) {
               groupByList.push(sql`, `);
             }
           }
@@ -8736,7 +8736,7 @@ function chunkIds(ids, size = 100) {
 async function first(rows) {
   return (await rows)[0];
 }
-var __defProp2, __exportAll, schema_exports, users, sessions, oauthPending, connections, drafts, draftVariants, draftMedia, publishTargets, publishAttempts, schedulerHeartbeats, totpBackupCodes, apiKeys, mfaChallenges, notificationState, appSettings;
+var __defProp2, __exportAll, schema_exports, users, sessions, oauthPending, connections, drafts, draftVariants, draftMedia, draftShares, publishTargets, publishAttempts, schedulerHeartbeats, totpBackupCodes, apiKeys, mfaChallenges, notificationState, appSettings;
 var init_client = __esm({
   ".svelte-kit/output/server/chunks/client.js"() {
     "use strict";
@@ -8757,6 +8757,7 @@ var init_client = __esm({
       appSettings: /* @__PURE__ */ __name(() => appSettings, "appSettings"),
       connections: /* @__PURE__ */ __name(() => connections, "connections"),
       draftMedia: /* @__PURE__ */ __name(() => draftMedia, "draftMedia"),
+      draftShares: /* @__PURE__ */ __name(() => draftShares, "draftShares"),
       draftVariants: /* @__PURE__ */ __name(() => draftVariants, "draftVariants"),
       drafts: /* @__PURE__ */ __name(() => drafts, "drafts"),
       mfaChallenges: /* @__PURE__ */ __name(() => mfaChallenges, "mfaChallenges"),
@@ -8862,6 +8863,13 @@ var init_client = __esm({
       index("draft_media_draft_segment_idx").on(t.draftId, t.segmentIndex),
       index("draft_media_storage_key_idx").on(t.storageKey)
     ]);
+    draftShares = sqliteTable("draft_shares", {
+      id: text2("id").primaryKey(),
+      draftId: text2("draft_id").notNull().references(() => drafts.id, { onDelete: "cascade" }),
+      tokenHash: text2("token_hash").notNull(),
+      expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+      createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull()
+    }, (t) => [uniqueIndex("draft_shares_token_uq").on(t.tokenHash), uniqueIndex("draft_shares_draft_uq").on(t.draftId)]);
     publishTargets = sqliteTable("publish_targets", {
       id: text2("id").primaryKey(),
       draftId: text2("draft_id").notNull().references(() => drafts.id, { onDelete: "cascade" }),
@@ -9565,6 +9573,11 @@ function isRateLimitedPath(path3) {
   const trimmed = path3.length > 1 ? path3.replace(/\/+$/, "") : path3;
   return RATE_LIMITED_PATHS.includes(trimmed);
 }
+function rateLimitBucket(path3) {
+  if (isRateLimitedPath(path3)) return "";
+  if (path3.startsWith("/p/")) return path3.includes("/media/") ? "share-media:" : "share:";
+  return null;
+}
 function rateLimitKey(headers2) {
   return headers2.get("cf-connecting-ip")?.trim() || null;
 }
@@ -9589,6 +9602,7 @@ var init_rate_limit = __esm({
       "/api/update/remember"
     ];
     __name(isRateLimitedPath, "isRateLimitedPath");
+    __name(rateLimitBucket, "rateLimitBucket");
     __name(rateLimitKey, "rateLimitKey");
     __name(rateLimitProblem, "rateLimitProblem");
   }
@@ -10068,6 +10082,9 @@ function imageOverCap(platform2, media) {
   }
   return null;
 }
+function jpegCopyExpected(meta3, canMakeJpegCopies) {
+  return Boolean(meta3?.jpeg) || canMakeJpegCopies && !meta3?.animated;
+}
 function instagramMediaProblems(media) {
   if (media.length === 0) return ["Instagram needs a photo or video"];
   const problems = [];
@@ -10180,6 +10197,7 @@ var init_media_limits = __esm({
     };
     __name(imageCap, "imageCap");
     __name(imageOverCap, "imageOverCap");
+    __name(jpegCopyExpected, "jpegCopyExpected");
     INSTAGRAM_MIN_ASPECT = 0.795;
     INSTAGRAM_MAX_ASPECT = 1.91 + 5e-3;
     __name(instagramMediaProblems, "instagramMediaProblems");
@@ -11095,10 +11113,10 @@ function maxThreadSegmentLength(body, countFn) {
   }
   return max;
 }
-function updateSegment(segments, index17, text3) {
-  if (index17 < 0 || index17 >= segments.length) return segments;
+function updateSegment(segments, index18, text3) {
+  if (index18 < 0 || index18 >= segments.length) return segments;
   const next = segments.slice();
-  next[index17] = text3;
+  next[index18] = text3;
   return next;
 }
 var THREAD_DELIMITER;
@@ -11206,7 +11224,7 @@ function validateThreadsText(text3, maxChars = 500) {
 function validateInstagramText(text3, maxChars = INSTAGRAM_MAX_CHARS) {
   const length = countGraphemes(text3);
   if (length > maxChars) return tooLong(length, maxChars, "Instagram max 2200");
-  const hashtags = text3.match(/(?<![\p{L}\p{N}_&/#])#[\p{L}\p{N}_]+/gu)?.length ?? 0;
+  const hashtags = text3.match(/(?:^|[^\p{L}\p{N}_&/#])#[\p{L}\p{N}_]+/gu)?.length ?? 0;
   if (hashtags > 30) return {
     ok: false,
     length,
@@ -11944,25 +11962,25 @@ function strayXPostLinks(text3) {
   }
   return out;
 }
-function keepXQuoteOnX(body, index17) {
+function keepXQuoteOnX(body, index18) {
   const segments = splitThreadSegments(body);
-  const quote = trailingXQuote(segments[index17] ?? "");
+  const quote = trailingXQuote(segments[index18] ?? "");
   if (!quote || !quote.visible.trim()) return null;
   return {
     x: body,
-    global: joinThreadSegments(updateSegment(segments, index17, quote.visible))
+    global: joinThreadSegments(updateSegment(segments, index18, quote.visible))
   };
 }
-function shareXQuote(globalBody, xBody, index17) {
-  const quote = trailingXQuote(splitThreadSegments(xBody)[index17] ?? "");
+function shareXQuote(globalBody, xBody, index18) {
+  const quote = trailingXQuote(splitThreadSegments(xBody)[index18] ?? "");
   const segments = splitThreadSegments(globalBody);
-  if (!quote || index17 >= segments.length) return null;
-  const current = segments[index17];
+  if (!quote || index18 >= segments.length) return null;
+  const current = segments[index18];
   ANY_RE.lastIndex = 0;
   let m;
   while ((m = ANY_RE.exec(current)) !== null) if (m[2] === quote.id) return null;
   const shared = attachXQuote(current, quote.url, current === "" ? "" : quote.sep || "\n");
-  const global = joinThreadSegments(updateSegment(segments, index17, shared));
+  const global = joinThreadSegments(updateSegment(segments, index18, shared));
   return {
     global,
     xFollows: sameSegments(global, xBody)
@@ -13022,6 +13040,15 @@ function instagramUpstreamError(prefix, status, body) {
     detail
   });
 }
+function mayHavePublished$1(err) {
+  if (err.code !== "upstream") return false;
+  const { subcode } = parseMetaError(err.detail ?? "");
+  return subcode === void 0 || !MEDIA_FETCH_SUBCODES.has(subcode);
+}
+function isRetriedPhotoFailure(status) {
+  const code = status.match(/\b2207\d{3}\b/)?.[0];
+  return code !== void 0 && RETRIED_PHOTO_CODES.has(Number(code));
+}
 function isJpeg(m) {
   return (m.mime || "").toLowerCase() === "image/jpeg";
 }
@@ -13037,7 +13064,7 @@ async function permalink(id2, token, fetchImpl) {
 }
 function tokenAwareError(prefix, status, body) {
   const err = instagramUpstreamError(prefix, status, body);
-  if (err.code !== "auth" && status !== 403) return err;
+  if (err.code !== "auth") return err;
   return new ProviderError(`${err.message} \u2014 reconnect`, {
     status: 401,
     code: "auth",
@@ -13047,13 +13074,13 @@ function tokenAwareError(prefix, status, body) {
 function instagramCallbackUrl(appUrl) {
   return `${appUrl.replace(/\/$/, "")}/api/connections/instagram/callback`;
 }
-function instagramAuthorizeUrl(appId, appUrl, state) {
+function instagramAuthorizeUrl(appId, appUrl, state2) {
   return `https://www.instagram.com/oauth/authorize?${new URLSearchParams({
     client_id: appId,
     redirect_uri: instagramCallbackUrl(appUrl),
     scope: SCOPES.join(","),
     response_type: "code",
-    state
+    state: state2
   }).toString()}`;
 }
 async function fetchProfile(token, fetchImpl) {
@@ -13283,7 +13310,7 @@ async function readyVideo$1(video, token, owner, fetchImpl, opts) {
   const reader = requireMediaReader(opts?.mediaReader);
   const callsLeft = opts?.callsLeft ?? (() => Infinity);
   const timeLeft = opts?.timeLeft ?? (() => Infinity);
-  let state = videoUploadState(resumedVideoState(opts?.resume, 0, storageKey));
+  let state2 = videoUploadState(resumedVideoState(opts?.resume, 0, storageKey));
   const park = /* @__PURE__ */ __name((current, retryAfterMs) => {
     throw processingError("LinkedIn", {
       segment: 0,
@@ -13291,42 +13318,42 @@ async function readyVideo$1(video, token, owner, fetchImpl, opts) {
       state: current
     }, retryAfterMs);
   }, "park");
-  if (!state) state = await initializeVideoUpload(token, owner, await storedVideoSize(reader, storageKey), Boolean(video.coverKey), fetchImpl);
-  while (state.etags.length < state.instructions.length) {
-    if (callsLeft() < 10 || timeLeft() < 1e4) park(state, 15e3);
-    const inst = state.instructions[state.etags.length];
+  if (!state2) state2 = await initializeVideoUpload(token, owner, await storedVideoSize(reader, storageKey), Boolean(video.coverKey), fetchImpl);
+  while (state2.etags.length < state2.instructions.length) {
+    if (callsLeft() < 10 || timeLeft() < 1e4) park(state2, 15e3);
+    const inst = state2.instructions[state2.etags.length];
     const etag2 = await uploadVideoPart(await readVideoSlice(reader, storageKey, inst.firstByte, inst.lastByte), inst.url, video.mime, fetchImpl);
-    state = {
-      ...state,
-      etags: [...state.etags, etag2]
+    state2 = {
+      ...state2,
+      etags: [...state2.etags, etag2]
     };
   }
-  if (!state.finalized) {
-    if (state.thumbnailUrl && video.coverKey && !state.thumbnailSent) {
-      if (callsLeft() < 11) park(state, 15e3);
+  if (!state2.finalized) {
+    if (state2.thumbnailUrl && video.coverKey && !state2.thumbnailSent) {
+      if (callsLeft() < 11) park(state2, 15e3);
       try {
         const coverSize = await reader.size(video.coverKey);
         const cover = coverSize ? await reader.getRange(video.coverKey, 0, coverSize - 1) : null;
-        if (cover) await fetchImpl(state.thumbnailUrl, {
+        if (cover) await fetchImpl(state2.thumbnailUrl, {
           method: "PUT",
           headers: { "Content-Type": "image/jpeg" },
           body: cover
         });
       } catch {
       }
-      state = {
-        ...state,
+      state2 = {
+        ...state2,
         thumbnailSent: true
       };
     }
-    if (callsLeft() < 9) park(state, 15e3);
-    await finalizeVideoUpload(token, state.videoUrn, state.uploadToken, state.etags, fetchImpl);
-    state = {
-      ...state,
+    if (callsLeft() < 9) park(state2, 15e3);
+    await finalizeVideoUpload(token, state2.videoUrn, state2.uploadToken, state2.etags, fetchImpl);
+    state2 = {
+      ...state2,
       finalized: true
     };
   }
-  const videoUrn = state.videoUrn;
+  const videoUrn = state2.videoUrn;
   return await pollVideo({
     polls: VIDEO_STATUS_POLLS$1,
     delayMs: VIDEO_STATUS_POLL_MS$1,
@@ -13338,7 +13365,7 @@ async function readyVideo$1(video, token, owner, fetchImpl, opts) {
     if (status === "AVAILABLE") return videoUrn;
     if (status === "PROCESSING_FAILED") throw new ProviderError("LinkedIn could not process the video \u2014 attach it again", { code: "forbidden" });
     return null;
-  }) ?? park(state, 3e4);
+  }) ?? park(state2, 3e4);
 }
 async function putImageBytes(uploadUrl, bytes, mime, fetchImpl) {
   const res = await fetchImpl(uploadUrl, {
@@ -13382,7 +13409,7 @@ async function resolveArticleCard(text3, owner, token, fetchImpl) {
     ...thumbnail ? { thumbnail } : {}
   };
 }
-function linkedinAuthorizeUrl(clientId, appUrl, state, scopes = [
+function linkedinAuthorizeUrl(clientId, appUrl, state2, scopes = [
   "openid",
   "profile",
   "email",
@@ -13394,7 +13421,7 @@ function linkedinAuthorizeUrl(clientId, appUrl, state, scopes = [
     client_id: clientId,
     redirect_uri: redirect2,
     scope: scopes.join(" "),
-    state
+    state: state2
   }).toString()}`;
 }
 async function linkedinExchangeCode(args, fetchImpl = providerFetch) {
@@ -13653,7 +13680,7 @@ async function mastodonVerifyCredentials(instanceUrl, accessToken, fetchImpl = p
   const base = normalizeInstance(instanceUrl, allowLocal);
   return guardRedirects(fetchImpl, allowLocal)(`${base}/api/v1/accounts/verify_credentials`, { headers: { Authorization: `Bearer ${accessToken}` } });
 }
-function mastodonAuthorizeUrl(instanceUrl, clientId, appUrl, state, allowLocal = false) {
+function mastodonAuthorizeUrl(instanceUrl, clientId, appUrl, state2, allowLocal = false) {
   const base = normalizeInstance(instanceUrl, allowLocal);
   const redirect2 = `${appUrl.replace(/\/$/, "")}/api/connections/mastodon/callback`;
   return `${base}/oauth/authorize?${new URLSearchParams({
@@ -13661,7 +13688,7 @@ function mastodonAuthorizeUrl(instanceUrl, clientId, appUrl, state, allowLocal =
     scope: "read write:statuses write:media",
     redirect_uri: redirect2,
     response_type: "code",
-    state
+    state: state2
   }).toString()}`;
 }
 async function mastodonExchangeCode(instanceUrl, clientId, clientSecret, code, appUrl, fetchImpl = providerFetch, allowLocal = false) {
@@ -13783,6 +13810,11 @@ function threadsUpstreamError(prefix, status, body) {
     detail
   });
   return base;
+}
+function mayHavePublished(err) {
+  if (err.code || isThreadsMediaFetchFailure(err.message)) return false;
+  const code = parseThreadsMetaMarker(err.message)?.code;
+  return (err.status ?? 0) >= 500 || code !== void 0 && META_TRANSIENT_CODES.includes(code);
 }
 async function threadsInspectToken(token, fetchImpl) {
   let res;
@@ -13913,14 +13945,14 @@ async function threadsPermalinkForMedia(mediaId, token, creds, meta3, fetchImpl)
   }
   return null;
 }
-function threadsAuthorizeUrl(appId, appUrl, state) {
+function threadsAuthorizeUrl(appId, appUrl, state2) {
   const redirect2 = `${appUrl.replace(/\/$/, "")}/api/connections/threads/callback`;
   return `https://threads.net/oauth/authorize?${new URLSearchParams({
     client_id: appId,
     redirect_uri: redirect2,
     scope: "threads_basic,threads_content_publish,threads_manage_replies",
     response_type: "code",
-    state
+    state: state2
   }).toString()}`;
 }
 async function exchangeForLongLived(shortToken, appSecret, fetchImpl) {
@@ -14099,14 +14131,14 @@ async function codeChallenge(verifier) {
   const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
   return base64Url(new Uint8Array(digest));
 }
-function xAuthorizeUrl(clientId, appUrl, state, challenge) {
+function xAuthorizeUrl(clientId, appUrl, state2, challenge) {
   const redirect2 = `${appUrl.replace(/\/$/, "")}/api/connections/x/callback`;
   return `${X_AUTHORIZE_URL}?${new URLSearchParams({
     response_type: "code",
     client_id: clientId,
     redirect_uri: redirect2,
     scope: X_SCOPES.join(" "),
-    state,
+    state: state2,
     code_challenge: challenge,
     code_challenge_method: "S256"
   }).toString()}`;
@@ -14314,7 +14346,7 @@ async function uploadVideo(token, m, segmentIndex, fetchImpl, opts) {
   const reader = requireMediaReader(opts?.mediaReader);
   const callsLeft = opts?.callsLeft ?? (() => Infinity);
   const timeLeft = opts?.timeLeft ?? (() => Infinity);
-  let state = xVideoState(resumedVideoState(opts?.resume, segmentIndex, storageKey));
+  let state2 = xVideoState(resumedVideoState(opts?.resume, segmentIndex, storageKey));
   const park = /* @__PURE__ */ __name((current, retryAfterMs) => {
     throw processingError("X", {
       segment: segmentIndex,
@@ -14322,7 +14354,7 @@ async function uploadVideo(token, m, segmentIndex, fetchImpl, opts) {
       state: current
     }, retryAfterMs);
   }, "park");
-  if (!state) {
+  if (!state2) {
     const size = await storedVideoSize(reader, storageKey);
     const initRes = await fetchImpl(`${X_API}/2/media/upload/initialize`, {
       method: "POST",
@@ -14340,41 +14372,41 @@ async function uploadVideo(token, m, segmentIndex, fetchImpl, opts) {
     const initData = await initRes.json();
     const mediaId = initData.data?.id ?? initData.id;
     if (!mediaId) throw new Error("X media init returned no media id");
-    state = {
+    state2 = {
       mediaId,
       size,
       next: 0
     };
   }
-  const totalChunks = Math.max(1, Math.ceil(state.size / X_UPLOAD_CHUNK_BYTES));
-  while (state.next < totalChunks) {
-    if (callsLeft() < 10 || timeLeft() < 1e4) park(state, 15e3);
-    const start = state.next * X_UPLOAD_CHUNK_BYTES;
-    const slice = await readVideoSlice(reader, storageKey, start, Math.min(state.size, start + X_UPLOAD_CHUNK_BYTES) - 1);
+  const totalChunks = Math.max(1, Math.ceil(state2.size / X_UPLOAD_CHUNK_BYTES));
+  while (state2.next < totalChunks) {
+    if (callsLeft() < 10 || timeLeft() < 1e4) park(state2, 15e3);
+    const start = state2.next * X_UPLOAD_CHUNK_BYTES;
+    const slice = await readVideoSlice(reader, storageKey, start, Math.min(state2.size, start + X_UPLOAD_CHUNK_BYTES) - 1);
     const form = new FormData();
-    form.append("segment_index", String(state.next));
+    form.append("segment_index", String(state2.next));
     form.append("media", new Blob([slice], { type: "video/mp4" }), "upload");
-    const appRes = await fetchImpl(`${X_API}/2/media/upload/${state.mediaId}/append`, {
+    const appRes = await fetchImpl(`${X_API}/2/media/upload/${state2.mediaId}/append`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: form
     });
     if (!appRes.ok) throw await xFailure("X media upload", appRes);
-    state = {
-      ...state,
-      next: state.next + 1
+    state2 = {
+      ...state2,
+      next: state2.next + 1
     };
   }
   let proc;
-  if (!state.finalized) {
-    const finRes = await fetchImpl(`${X_API}/2/media/upload/${state.mediaId}/finalize`, {
+  if (!state2.finalized) {
+    const finRes = await fetchImpl(`${X_API}/2/media/upload/${state2.mediaId}/finalize`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!finRes.ok) throw await xFailure("X media finalize", finRes);
     proc = processingState(await finRes.json().catch(() => ({})));
-    state = {
-      ...state,
+    state2 = {
+      ...state2,
       finalized: true
     };
   } else proc = {
@@ -14392,13 +14424,13 @@ async function uploadVideo(token, m, segmentIndex, fetchImpl, opts) {
     const wait = Math.min((proc.checkAfterSecs ?? 1) * 1e3, X_MEDIA_POLL_MAX_WAIT_MS);
     if (timeLeft() <= wait) break;
     if (wait > 0) await sleep$1(wait);
-    const stRes = await fetchImpl(`${X_API}/2/media/upload?command=STATUS&media_id=${encodeURIComponent(state.mediaId)}`, { headers: { Authorization: `Bearer ${token}` } });
+    const stRes = await fetchImpl(`${X_API}/2/media/upload?command=STATUS&media_id=${encodeURIComponent(state2.mediaId)}`, { headers: { Authorization: `Bearer ${token}` } });
     if (!stRes.ok) throw await xFailure("X media status", stRes);
     proc = processingState(await stRes.json().catch(() => ({})));
   }
-  if (proc.state && proc.state !== "succeeded") park(state, Math.max(15e3, (proc.checkAfterSecs ?? 30) * 1e3));
-  await setAltText(token, state.mediaId, m.alt, fetchImpl);
-  return state.mediaId;
+  if (proc.state && proc.state !== "succeeded") park(state2, Math.max(15e3, (proc.checkAfterSecs ?? 30) * 1e3));
+  await setAltText(token, state2.mediaId, m.alt, fetchImpl);
+  return state2.mediaId;
 }
 function existingPostIdFrom(err) {
   try {
@@ -14581,7 +14613,7 @@ function providerFor(conn) {
 function estimateKeyFor(conn) {
   return isZernioConnection(conn.metaJson) ? "zernio" : conn.platform;
 }
-var MISSING_VIDEO_MESSAGE, DEFAULT_PDS, ACCESS_JWT_SKEW_MS, VIDEO_SERVICE, VIDEO_SERVICE_DID, VIDEO_JOB_POLLS, VIDEO_JOB_POLL_MS, blueskyProvider, GRAPH, SCOPES, PROFILE_FIELDS, POSTING_ACCOUNT_TYPES, REFRESH_SKEW_MS$3, MAX_ALT_TEXT, PHOTO_POLLS, PHOTO_POLL_MS, REEL_POLLS, REEL_POLL_MS, POLL_RESERVE, DAILY_LIMIT_RETRY_MS, AUTH_CODES, RATE_CODES, TRANSIENT_CODES, MEDIA_FETCH_SUBCODES, DAILY_LIMIT_SUBCODE, instagramProvider, PERSONAL_ACCOUNT_MESSAGE, LINKEDIN_MAX_CHARS2, LINKEDIN_VIDEO_MIMES, LINKEDIN_VERSION, REFRESH_SKEW_MS$2, LINKEDIN_MAX_ALT_TEXT, VIDEO_RESERVE_CALLS, VIDEO_STATUS_POLLS$1, VIDEO_STATUS_POLL_MS$1, linkedinProvider, MAX_INSTANCE_REDIRECTS, MEDIA_PROCESS_POLL_ATTEMPTS, MEDIA_PROCESS_POLL_MS, VIDEO_STATUS_POLLS, VIDEO_STATUS_POLL_MS, mastodonProvider, THREADS_IMAGE_MIMES, THREADS_API_VERSION, REFRESH_SKEW_MS$1, CONTAINER_STATUS_ATTEMPTS, CONTAINER_STATUS_POLL_MS, CAROUSEL_CHILD_ROUNDS, CAROUSEL_CHILD_CALL_BUDGET, CAROUSEL_STATUS_CONCURRENCY, CAROUSEL_PARENT_POLL_ATTEMPTS, MEDIA_FETCH_RETRY_DELAYS_MS, CAROUSEL_FETCH_RETRY_DELAYS_MS, CAROUSEL_NO_RETRY_ABOVE, THREADS_SEGMENT_DELAY_MS, PERMALINK_ATTEMPTS, PERMALINK_RETRY_DELAYS_MS, META_PERMISSION_TEXT, THREADS_PROFILE_FIELDS, threadsProvider, X_IMAGE_MIMES, X_UPLOAD_CHUNK_BYTES, X_MEDIA_POLL_ATTEMPTS, X_MEDIA_POLL_MAX_WAIT_MS, REFRESH_SKEW_MS, X_API, X_AUTHORIZE_URL, X_SCOPES, isVideo, X_VIDEO_RESERVE_CALLS, xProvider, providers$1, providers;
+var MISSING_VIDEO_MESSAGE, DEFAULT_PDS, ACCESS_JWT_SKEW_MS, VIDEO_SERVICE, VIDEO_SERVICE_DID, VIDEO_JOB_POLLS, VIDEO_JOB_POLL_MS, blueskyProvider, GRAPH, SCOPES, PROFILE_FIELDS, POSTING_ACCOUNT_TYPES, REFRESH_SKEW_MS$3, MAX_ALT_TEXT, PHOTO_POLLS, PHOTO_POLL_MS, REEL_POLLS, REEL_POLL_MS, POLL_RESERVE, DAILY_LIMIT_RETRY_MS, AUTH_CODES, RATE_CODES, TRANSIENT_CODES, MEDIA_FETCH_SUBCODES, DAILY_LIMIT_SUBCODE, RETRIED_PHOTO_CODES, instagramProvider, PERSONAL_ACCOUNT_MESSAGE, LINKEDIN_MAX_CHARS2, LINKEDIN_VIDEO_MIMES, LINKEDIN_VERSION, REFRESH_SKEW_MS$2, LINKEDIN_MAX_ALT_TEXT, VIDEO_RESERVE_CALLS, VIDEO_STATUS_POLLS$1, VIDEO_STATUS_POLL_MS$1, linkedinProvider, MAX_INSTANCE_REDIRECTS, MEDIA_PROCESS_POLL_ATTEMPTS, MEDIA_PROCESS_POLL_MS, VIDEO_STATUS_POLLS, VIDEO_STATUS_POLL_MS, mastodonProvider, THREADS_IMAGE_MIMES, THREADS_API_VERSION, REFRESH_SKEW_MS$1, CONTAINER_STATUS_ATTEMPTS, CONTAINER_STATUS_POLL_MS, CAROUSEL_CHILD_ROUNDS, CAROUSEL_CHILD_CALL_BUDGET, CAROUSEL_STATUS_CONCURRENCY, CAROUSEL_PARENT_POLL_ATTEMPTS, MEDIA_FETCH_RETRY_DELAYS_MS, CAROUSEL_FETCH_RETRY_DELAYS_MS, CAROUSEL_NO_RETRY_ABOVE, THREADS_SEGMENT_DELAY_MS, PERMALINK_ATTEMPTS, PERMALINK_RETRY_DELAYS_MS, META_TRANSIENT_CODES, META_PERMISSION_TEXT, THREADS_PROFILE_FIELDS, threadsProvider, X_IMAGE_MIMES, X_UPLOAD_CHUNK_BYTES, X_MEDIA_POLL_ATTEMPTS, X_MEDIA_POLL_MAX_WAIT_MS, REFRESH_SKEW_MS, X_API, X_AUTHORIZE_URL, X_SCOPES, isVideo, X_VIDEO_RESERVE_CALLS, xProvider, providers$1, providers;
 var init_providers = __esm({
   ".svelte-kit/output/server/chunks/providers.js"() {
     "use strict";
@@ -14782,8 +14814,11 @@ var init_providers = __esm({
       2207052
     ]);
     DAILY_LIMIT_SUBCODE = 2207042;
+    RETRIED_PHOTO_CODES = /* @__PURE__ */ new Set([...MEDIA_FETCH_SUBCODES, 2207001]);
     __name(parseMetaError, "parseMetaError");
     __name(instagramUpstreamError, "instagramUpstreamError");
+    __name(mayHavePublished$1, "mayHavePublished$1");
+    __name(isRetriedPhotoFailure, "isRetriedPhotoFailure");
     __name(isJpeg, "isJpeg");
     instagramProvider = {
       id: "instagram",
@@ -14856,7 +14891,11 @@ var init_providers = __esm({
           } catch {
             return null;
           }
-          if (!res.ok) return null;
+          if (!res.ok) {
+            const err = instagramUpstreamError("Instagram status", res.status, await res.text());
+            if (err.code === "auth") throw err;
+            return null;
+          }
           const data = await res.json().catch(() => ({}));
           const code = typeof data.status_code === "string" ? data.status_code : "";
           if (code === "FINISHED" || code === "PUBLISHED") return { state: "ready" };
@@ -14879,12 +14918,12 @@ var init_providers = __esm({
           }, async () => {
             const still = [];
             for (const id2 of waiting) {
-              const state = await containerState(id2);
-              if (state?.state === "failed") throw new ProviderError(`Instagram could not take a photo: ${state.status}`, {
-                code: "forbidden",
-                detail: state.status
+              const state2 = await containerState(id2);
+              if (state2?.state === "failed") throw new ProviderError(`Instagram could not take a photo: ${state2.status}`, {
+                code: isRetriedPhotoFailure(state2.status) ? "upstream" : "forbidden",
+                detail: state2.status
               });
-              if (state?.state !== "ready") still.push(id2);
+              if (state2?.state !== "ready") still.push(id2);
             }
             waiting = still;
             return waiting.length ? null : true;
@@ -14926,16 +14965,16 @@ var init_providers = __esm({
             callsLeft: opts?.callsLeft,
             timeLeft: opts?.timeLeft
           }, async () => {
-            const state = await containerState(containerId2);
-            if (state?.state === "ready") return containerId2;
-            if (state?.state === "failed") {
-              if (state.code === "EXPIRED" && resumed) {
+            const state2 = await containerState(containerId2);
+            if (state2?.state === "ready") return containerId2;
+            if (state2?.state === "failed") {
+              if (state2.code === "EXPIRED" && resumed) {
                 expired = true;
                 return containerId2;
               }
-              throw new ProviderError(`Instagram could not take the video: ${state.status}`, {
+              throw new ProviderError(`Instagram could not take the video: ${state2.status}`, {
                 code: "forbidden",
-                detail: state.status
+                detail: state2.status
               });
             }
             return null;
@@ -14976,14 +15015,11 @@ var init_providers = __esm({
         try {
           postId = await graphPost(`${account}/media_publish`, { creation_id: containerId }, "Instagram publish");
         } catch (err) {
-          if (err instanceof ProviderError) throw err;
+          if (err instanceof ProviderError && !mayHavePublished$1(err)) throw err;
           throw unconfirmedPostError("Instagram", err);
         }
+        await opts?.checkpoint?.({ segmentIds: postId ? [postId] : [] });
         const remoteUrl = postId ? await permalink(postId, token, fetchImpl) : null;
-        await opts?.checkpoint?.({
-          segmentIds: postId ? [postId] : [],
-          remoteUrl
-        });
         return {
           remotePostId: postId || void 0,
           remoteUrl: remoteUrl ?? void 0
@@ -15174,7 +15210,10 @@ var init_providers = __esm({
         } catch (err) {
           throw unconfirmedPostError("LinkedIn", err);
         }
-        if (!res.ok) throw Object.assign(/* @__PURE__ */ new Error(`LinkedIn post failed (${res.status}): ${(await res.text()).slice(0, 300)}`), { status: res.status });
+        if (!res.ok) {
+          const failed = Object.assign(/* @__PURE__ */ new Error(`LinkedIn post failed (${res.status}): ${(await res.text()).slice(0, 300)}`), { status: res.status });
+          throw res.status >= 500 ? unconfirmedPostError("LinkedIn", failed) : failed;
+        }
         const restId = res.headers.get("x-restli-id") || res.headers.get("X-Restli-Id");
         const data = await res.json().catch(() => ({}));
         const candidate = restId || data.id || data.urn;
@@ -15392,6 +15431,7 @@ var init_providers = __esm({
     THREADS_SEGMENT_DELAY_MS = 300;
     PERMALINK_ATTEMPTS = 3;
     PERMALINK_RETRY_DELAYS_MS = [400, 1200];
+    META_TRANSIENT_CODES = [1, 2];
     __name(sleep$2, "sleep$2");
     __name(threadsUserId, "threadsUserId");
     __name(normalizeSegment, "normalizeSegment");
@@ -15400,6 +15440,7 @@ var init_providers = __esm({
     __name(parseMetaCode, "parseMetaCode");
     __name(threadsPermissionDenied, "threadsPermissionDenied");
     __name(threadsUpstreamError, "threadsUpstreamError");
+    __name(mayHavePublished, "mayHavePublished");
     __name(threadsInspectToken, "threadsInspectToken");
     THREADS_PROFILE_FIELDS = "id,username,name,threads_profile_picture_url";
     __name(isResolvedThreadsUsername, "isResolvedThreadsUsername");
@@ -15532,12 +15573,12 @@ var init_providers = __esm({
         __name(readContainerStatus, "readContainerStatus");
         async function waitForContainer(containerId, attempts = CONTAINER_STATUS_ATTEMPTS) {
           for (let attempt = 0; attempt < attempts; attempt++) {
-            const state = await readContainerStatus(containerId);
-            if (!state) return;
-            if (state.state === "ready") return;
-            if (state.state === "failed") throw new ProviderError(`Threads media container ${state.status.toLowerCase()}: ${state.detail}`, {
+            const state2 = await readContainerStatus(containerId);
+            if (!state2) return;
+            if (state2.state === "ready") return;
+            if (state2.state === "failed") throw new ProviderError(`Threads media container ${state2.status.toLowerCase()}: ${state2.detail}`, {
               code: "upstream",
-              detail: state.detail
+              detail: state2.detail
             });
             if (attempt + 1 < attempts) await sleep$2(CONTAINER_STATUS_POLL_MS);
           }
@@ -15553,13 +15594,13 @@ var init_providers = __esm({
             calls += ids.length;
             let retryNextRound = false;
             for (let i = 0; i < ids.length; i++) {
-              const state = states[i];
-              if (state?.state === "ready") continue;
-              if (state?.state === "failed") {
-                const message = `Threads media container ${state.status.toLowerCase()}: ${state.detail}`;
-                if (!(state.status === "EXPIRED" || isThreadsMediaFetchFailure(message))) throw new ProviderError(message, {
+              const state2 = states[i];
+              if (state2?.state === "ready") continue;
+              if (state2?.state === "failed") {
+                const message = `Threads media container ${state2.status.toLowerCase()}: ${state2.detail}`;
+                if (!(state2.status === "EXPIRED" || isThreadsMediaFetchFailure(message))) throw new ProviderError(message, {
                   code: "forbidden",
-                  detail: state.detail
+                  detail: state2.detail
                 });
                 if (round >= CAROUSEL_CHILD_ROUNDS || calls >= CAROUSEL_CHILD_CALL_BUDGET) {
                   retryNextRound = true;
@@ -15600,12 +15641,15 @@ var init_providers = __esm({
           } catch (err) {
             throw unconfirmedPostError("Threads", err);
           }
-          if (!pubRes.ok) throw threadsUpstreamError("Threads publish", pubRes.status, await pubRes.text());
+          if (!pubRes.ok) {
+            const err = threadsUpstreamError("Threads publish", pubRes.status, await pubRes.text());
+            throw mayHavePublished(err) ? unconfirmedPostError("Threads", err) : err;
+          }
           const id2 = (await pubRes.json().catch(() => ({}))).id;
           return typeof id2 === "string" || typeof id2 === "number" ? String(id2) : "";
         }
         __name(publishContainer, "publishContainer");
-        async function createMediaContainer(text3, media, reply) {
+        async function createMediaContainer(text3, media, postParams) {
           if (!opts?.mediaUrlFor) throw new Error("Threads image posts need a media signer");
           const urls = [];
           for (const m of media) {
@@ -15616,7 +15660,7 @@ var init_providers = __esm({
             const params2 = {
               media_type: "IMAGE",
               image_url: urls[0],
-              ...reply
+              ...postParams
             };
             if (text3) params2.text = text3;
             return createContainer(params2);
@@ -15630,13 +15674,13 @@ var init_providers = __esm({
           const params = {
             media_type: "CAROUSEL",
             children: (await ensureCarouselChildren(children2, media)).join(","),
-            ...reply
+            ...postParams
           };
           if (text3) params.text = text3;
           return createContainer(params);
         }
         __name(createMediaContainer, "createMediaContainer");
-        async function readyVideoContainer(segmentIndex, text3, video, reply, fresh = false) {
+        async function readyVideoContainer(segmentIndex, text3, video, postParams, fresh = false) {
           if (!video.storageKey) throw new Error("Threads video is missing its storage key");
           const resumed = fresh ? null : resumedVideoState(opts?.resume, segmentIndex, video.storageKey);
           let containerId = typeof resumed?.containerId === "string" ? resumed.containerId : "";
@@ -15645,7 +15689,7 @@ var init_providers = __esm({
             const params = {
               media_type: "VIDEO",
               video_url: await opts.mediaUrlFor(video.storageKey),
-              ...reply
+              ...postParams
             };
             if (text3) params.text = text3;
             if (video.alt) params.alt_text = video.alt;
@@ -15660,21 +15704,21 @@ var init_providers = __esm({
             callsLeft: opts?.callsLeft,
             timeLeft: opts?.timeLeft
           }, async () => {
-            const state = await readContainerStatus(id2);
-            if (state?.state === "ready") return id2;
-            if (state?.state === "failed") {
-              if (state.status === "EXPIRED" && resumed) {
+            const state2 = await readContainerStatus(id2);
+            if (state2?.state === "ready") return id2;
+            if (state2?.state === "failed") {
+              if (state2.status === "EXPIRED" && resumed) {
                 expired = true;
                 return id2;
               }
-              throw new ProviderError(`Threads media container ${state.status.toLowerCase()}: ${state.detail}`, {
+              throw new ProviderError(`Threads media container ${state2.status.toLowerCase()}: ${state2.detail}`, {
                 code: "forbidden",
-                detail: state.detail
+                detail: state2.detail
               });
             }
             return null;
           });
-          if (expired) return readyVideoContainer(segmentIndex, text3, video, reply, true);
+          if (expired) return readyVideoContainer(segmentIndex, text3, video, postParams, true);
           if (ready) return ready;
           throw processingError("Threads", {
             segment: segmentIndex,
@@ -15684,20 +15728,24 @@ var init_providers = __esm({
         }
         __name(readyVideoContainer, "readyVideoContainer");
         async function publishSegment(segmentIndex, text3, media, replyToId) {
-          const reply = replyToId ? { reply_to_id: replyToId } : {};
+          const topicTag = segmentIndex === 0 ? content.options?.topicTag : void 0;
+          const postParams = {
+            ...replyToId ? { reply_to_id: replyToId } : {},
+            ...topicTag ? { topic_tag: topicTag } : {}
+          };
           const video = segmentVideo(media);
-          if (video) return publishContainer(await readyVideoContainer(segmentIndex, text3, video, reply));
+          if (video) return publishContainer(await readyVideoContainer(segmentIndex, text3, video, postParams));
           let containerId;
           if (media.length === 0) containerId = await createContainer({
             media_type: "TEXT",
             text: text3,
-            ...reply
+            ...postParams
           });
           else {
             let attempts = 0;
             let lastError = null;
             for (; ; ) try {
-              containerId = await createMediaContainer(text3, media, reply);
+              containerId = await createMediaContainer(text3, media, postParams);
               break;
             } catch (err) {
               lastError = err;
@@ -15933,7 +15981,8 @@ var init_providers = __esm({
               const detail = (await res.text()).slice(0, 300);
               if (video && isVideoLengthRefusal(detail)) throw videoTooLong(res.status, detail);
               if (xWeightedLength(text3) > 280 && isLongPostRefusal(res.status, detail)) throw longPostRefused(res.status, detail);
-              throw Object.assign(/* @__PURE__ */ new Error(`X post failed (${res.status}): ${detail}`), { status: res.status });
+              const failed = Object.assign(/* @__PURE__ */ new Error(`X post failed (${res.status}): ${detail}`), { status: res.status });
+              throw res.status >= 500 ? unconfirmedPostError("X", failed) : failed;
             }
             const data = await res.json().catch(() => ({}));
             const id2 = typeof data.data?.id === "string" ? data.data.id : "";
@@ -16068,6 +16117,51 @@ var init_due_jobs = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/threads-topic.js
+function normalizeThreadsTopic(text3) {
+  return text3.trim().replace(/\s+/g, " ").replace(/^#\s*/, "");
+}
+function validateThreadsTopic(input2) {
+  if (input2 === void 0 || input2 === null) return {
+    ok: true,
+    topic: null
+  };
+  if (typeof input2 !== "string") return {
+    ok: false,
+    error: "Topic tag must be text"
+  };
+  const topic = normalizeThreadsTopic(input2);
+  if (!topic) return {
+    ok: true,
+    topic: null
+  };
+  if (/[.&]/.test(topic)) return {
+    ok: false,
+    error: "Topic tags cannot contain . or &"
+  };
+  if (countGraphemes(topic) > 50) return {
+    ok: false,
+    error: `Topic tags allow max 50 characters`
+  };
+  return {
+    ok: true,
+    topic
+  };
+}
+function parseThreadsTopic(input2) {
+  const v = validateThreadsTopic(input2);
+  return v.ok ? v.topic : null;
+}
+var init_threads_topic = __esm({
+  ".svelte-kit/output/server/chunks/threads-topic.js"() {
+    "use strict";
+    init_x_limits();
+    __name(normalizeThreadsTopic, "normalizeThreadsTopic");
+    __name(validateThreadsTopic, "validateThreadsTopic");
+    __name(parseThreadsTopic, "parseThreadsTopic");
+  }
+});
+
 // .svelte-kit/output/server/chunks/public-media.js
 function isPublicMediaVariant(value) {
   return value === "jpeg" || value === "cover";
@@ -16195,7 +16289,8 @@ async function buildNormalizedPost(db, draftId, platform2) {
     visibility: options2.visibility === "unlisted" || options2.visibility === "private" || options2.visibility === "direct" || options2.visibility === "public" ? options2.visibility : "public",
     spoilerText: typeof options2.spoilerText === "string" ? options2.spoilerText : void 0,
     langs: Array.isArray(options2.langs) ? options2.langs : void 0,
-    poll: parsePollConfig(options2.poll) ?? void 0
+    poll: parsePollConfig(options2.poll) ?? void 0,
+    topicTag: parseThreadsTopic(options2.topicTag) ?? void 0
   };
   const segmentsOpt = options2.threadSegments;
   if (segmentsOpt && segmentsOpt.length > 1) {
@@ -16436,14 +16531,14 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
     last: null,
     from: null
   };
-  const checkpoint = /* @__PURE__ */ __name(async (state) => {
-    resumeState.last = state;
+  const checkpoint = /* @__PURE__ */ __name(async (state2) => {
+    resumeState.last = state2;
     await renewLease();
     try {
       await db.update(publishAttempts).set({ responseSummary: JSON.stringify({
-        segmentIds: state.segmentIds,
-        segmentCids: state.segmentCids,
-        remoteUrl: state.remoteUrl ?? null,
+        segmentIds: state2.segmentIds,
+        segmentCids: state2.segmentCids,
+        remoteUrl: state2.remoteUrl ?? null,
         checkpoint: true
       }) }).where(eq(publishAttempts.id, attemptId));
     } catch {
@@ -16736,6 +16831,7 @@ var init_publish = __esm({
     init_timed_fetch();
     init_poll();
     init_due_jobs();
+    init_threads_topic();
     init_public_media();
     init_drizzle_orm();
     __name(fnv1a, "fnv1a");
@@ -18185,8 +18281,8 @@ async function maybeSendFailureDigest(db, env3, opts = {}) {
     reason: "not configured"
   };
   const now = opts.now ?? /* @__PURE__ */ new Date();
-  const state = await first(db.select().from(notificationState).where(eq(notificationState.id, DIGEST_ID)));
-  const last = state?.lastFailureDigestAt ?? null;
+  const state2 = await first(db.select().from(notificationState).where(eq(notificationState.id, DIGEST_ID)));
+  const last = state2?.lastFailureDigestAt ?? null;
   if (last && now.getTime() - last.getTime() < 864e5) return {
     sent: false,
     failedCount: 0,
@@ -18207,7 +18303,7 @@ async function maybeSendFailureDigest(db, env3, opts = {}) {
     failedCount: 0,
     reason: "none"
   };
-  if (!state) await db.insert(notificationState).values({
+  if (!state2) await db.insert(notificationState).values({
     id: DIGEST_ID,
     lastFailureDigestAt: null
   }).onConflictDoNothing();
@@ -20913,11 +21009,11 @@ function capSize(inst, size) {
     return parse5(payload2, ctx);
   };
 }
-function handleArrayResult(result, final, index17) {
+function handleArrayResult(result, final, index18) {
   if (result.issues.length) {
-    final.issues.push(...prefixIssues(index17, result.issues));
+    final.issues.push(...prefixIssues(index18, result.issues));
   }
-  final.value[index17] = result.value;
+  final.value[index18] = result.value;
 }
 function handlePropertyResult(result, final, key, input2, optin, optout) {
   const isPresent = key in input2;
@@ -21130,14 +21226,14 @@ function mergeValues(a, b) {
       return { valid: false, mergeErrorPath: [] };
     }
     const newArray = [];
-    for (let index17 = 0; index17 < a.length; index17++) {
-      const itemA = a[index17];
-      const itemB = b[index17];
+    for (let index18 = 0; index18 < a.length; index18++) {
+      const itemA = a[index18];
+      const itemB = b[index18];
       const sharedValue = mergeValues(itemA, itemB);
       if (!sharedValue.valid) {
         return {
           valid: false,
-          mergeErrorPath: [index17, ...sharedValue.mergeErrorPath]
+          mergeErrorPath: [index18, ...sharedValue.mergeErrorPath]
         };
       }
       newArray.push(sharedValue.data);
@@ -21205,11 +21301,11 @@ function getTupleOptStart(items, key) {
   }
   return 0;
 }
-function handleTupleResult(result, final, index17) {
+function handleTupleResult(result, final, index18) {
   if (result.issues.length) {
-    final.issues.push(...prefixIssues(index17, result.issues));
+    final.issues.push(...prefixIssues(index18, result.issues));
   }
-  final.value[index17] = result.value;
+  final.value[index18] = result.value;
 }
 function handleTupleResults(itemResults, final, items, input2, optoutStart) {
   for (let i = 0; i < items.length; i++) {
@@ -23380,11 +23476,11 @@ function settle(inst, answer) {
 function isRecursiveSchema(inst) {
   return isRecursive(inst, /* @__PURE__ */ new Set(), true) !== NONE;
 }
-function bucketFor(state, inst) {
-  let bucket = state.buckets.get(inst);
+function bucketFor(state2, inst) {
+  let bucket = state2.buckets.get(inst);
   if (!bucket) {
     bucket = /* @__PURE__ */ new WeakMap();
-    state.buckets.set(inst, bucket);
+    state2.buckets.set(inst, bucket);
   }
   return bucket;
 }
@@ -23473,16 +23569,16 @@ var init_memoizer = __esm({
             const input2 = payload2.value;
             if (!isRef(input2))
               return base(payload2, ctx);
-            let state = ctx[STATE];
-            if (!state) {
-              state = { buckets: /* @__PURE__ */ new WeakMap(), backEdges: void 0 };
-              ctx[STATE] = state;
+            let state2 = ctx[STATE];
+            if (!state2) {
+              state2 = { buckets: /* @__PURE__ */ new WeakMap(), backEdges: void 0 };
+              ctx[STATE] = state2;
             }
             let bucket;
             if (lastCtx === ctx) {
               bucket = lastBucket;
             } else {
-              bucket = bucketFor(state, inst);
+              bucket = bucketFor(state2, inst);
               lastCtx = ctx;
               lastBucket = bucket;
             }
@@ -23494,8 +23590,8 @@ var init_memoizer = __esm({
                   payload2.issues.push(...cloneIssues(hit.issues));
               } else {
                 payload2.memo = true;
-                state.backEdges ?? (state.backEdges = /* @__PURE__ */ new WeakSet());
-                state.backEdges.add(hit.value);
+                state2.backEdges ?? (state2.backEdges = /* @__PURE__ */ new WeakSet());
+                state2.backEdges.add(hit.value);
               }
               return payload2;
             }
@@ -38315,7 +38411,7 @@ function detectVersion(schema, defaultTarget) {
   return defaultTarget ?? "draft-2020-12";
 }
 function applyMinItems(items, minItems) {
-  return items.map((item, index17) => index17 < minItems ? item : item.optional());
+  return items.map((item, index18) => index18 < minItems ? item : item.optional());
 }
 function decodeJSONPointerSegment(segment) {
   return segment.replace(/~1/g, "/").replace(/~0/g, "~");
@@ -39786,6 +39882,7 @@ function securityHeadersFor(path3, secure) {
   };
   if (secure) headers2["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
   if (!path3.startsWith("/api/")) headers2["X-Frame-Options"] = "DENY";
+  if (path3.startsWith("/p/")) headers2["X-Robots-Tag"] = "noindex, nofollow";
   return headers2;
 }
 function carriesCredential(headers2) {
@@ -39811,15 +39908,15 @@ function hasAllowedMcpOrigin(request2, url3) {
   }
   return true;
 }
-async function authorizeMcpRequest(request2, url3, db, state) {
+async function authorizeMcpRequest(request2, url3, db, state2) {
   if (!hasAllowedMcpOrigin(request2, url3)) return {
     ok: false,
     status: 403
   };
-  const user = state.user;
+  const user = state2.user;
   const authorization = request2.headers.get("authorization")?.trim() ?? "";
   const token = /^Bearer\s+(\S+)$/i.exec(authorization)?.[1] ?? null;
-  if (state.authMethod !== "bearer" || state.authCredential !== "personal_api_key" || !isFullyVerified(user) || !isApiKeyFormat(token)) return {
+  if (state2.authMethod !== "bearer" || state2.authCredential !== "personal_api_key" || !isFullyVerified(user) || !isApiKeyFormat(token)) return {
     ok: false,
     status: 401
   };
@@ -39831,7 +39928,7 @@ async function authorizeMcpRequest(request2, url3, db, state) {
 }
 function isPublicPath(path3) {
   if (path3 === "/login" || path3 === "/login/setup-2fa" || path3 === "/login/verify") return true;
-  if (path3 === "/api/health" || path3.startsWith("/api/media/public/") || path3.startsWith("/api/connections/mastodon/callback") || path3.startsWith("/api/connections/linkedin/callback") || path3.startsWith("/api/connections/threads/callback") || path3.startsWith("/api/connections/instagram/callback") || path3.startsWith("/api/connections/x/callback") || path3.startsWith("/api/connections/zernio/callback")) return true;
+  if (path3 === "/api/health" || path3.startsWith("/api/media/public/") || path3.startsWith("/p/") || path3.startsWith("/api/connections/mastodon/callback") || path3.startsWith("/api/connections/linkedin/callback") || path3.startsWith("/api/connections/threads/callback") || path3.startsWith("/api/connections/instagram/callback") || path3.startsWith("/api/connections/x/callback") || path3.startsWith("/api/connections/zernio/callback")) return true;
   if (path3 === "/api/auth/login" || path3 === "/api/auth/claim" || path3 === "/api/auth/logout" || path3 === "/api/auth/me") return true;
   if (path3.startsWith("/api/auth/totp/enroll") || path3.startsWith("/api/auth/totp/verify")) return true;
   return false;
@@ -39973,6 +40070,17 @@ CREATE TABLE IF NOT EXISTS \`draft_media\` (
 CREATE INDEX IF NOT EXISTS \`draft_media_draft_idx\` ON \`draft_media\` (\`draft_id\`);
 CREATE INDEX IF NOT EXISTS \`draft_media_draft_segment_idx\` ON \`draft_media\` (\`draft_id\`, \`segment_index\`);
 CREATE INDEX IF NOT EXISTS \`draft_media_storage_key_idx\` ON \`draft_media\` (\`storage_key\`);
+
+CREATE TABLE IF NOT EXISTS \`draft_shares\` (
+	\`id\` text PRIMARY KEY NOT NULL,
+	\`draft_id\` text NOT NULL,
+	\`token_hash\` text NOT NULL,
+	\`expires_at\` integer NOT NULL,
+	\`created_at\` integer NOT NULL,
+	FOREIGN KEY (\`draft_id\`) REFERENCES \`drafts\`(\`id\`) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS \`draft_shares_token_uq\` ON \`draft_shares\` (\`token_hash\`);
+CREATE UNIQUE INDEX IF NOT EXISTS \`draft_shares_draft_uq\` ON \`draft_shares\` (\`draft_id\`);
 
 CREATE TABLE IF NOT EXISTS \`publish_targets\` (
 	\`id\` text PRIMARY KEY NOT NULL,
@@ -40187,6 +40295,16 @@ CREATE TABLE IF NOT EXISTS api_keys (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS api_keys_hash_uq ON api_keys (key_hash);
 CREATE INDEX IF NOT EXISTS api_keys_user_idx ON api_keys (user_id);
+CREATE TABLE IF NOT EXISTS draft_shares (
+	id text PRIMARY KEY NOT NULL,
+	draft_id text NOT NULL,
+	token_hash text NOT NULL,
+	expires_at integer NOT NULL,
+	created_at integer NOT NULL,
+	FOREIGN KEY (draft_id) REFERENCES drafts(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS draft_shares_token_uq ON draft_shares (token_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS draft_shares_draft_uq ON draft_shares (draft_id);
 `;
     SCHEMA_MARKER_KEY = "schema_bootstrap";
     SCHEMA_FINGERPRINT = fnv1a([
@@ -40345,8 +40463,10 @@ CREATE INDEX IF NOT EXISTS api_keys_user_idx ON api_keys (user_id);
         }
       }
       if (appEnv.appUrlSource === "request" && event.locals.authMethod === "session") waitUntil(rememberAppUrl(db, appEnv.APP_URL));
-      if (isRateLimitedPath(path3)) {
-        const problem = await rateLimitProblem(platformEnv.AUTH_RATE_LIMITER, rateLimitKey(event.request.headers));
+      const bucket = rateLimitBucket(path3);
+      if (bucket !== null) {
+        const address = rateLimitKey(event.request.headers);
+        const problem = await rateLimitProblem(platformEnv.AUTH_RATE_LIMITER, address && `${bucket}${address}`);
         if (problem) return deny(path3, 429, { error: problem }, secureRequest);
       }
       if (event.locals.authMethod === "session" && path3.startsWith("/api/") && ![
@@ -40705,10 +40825,18 @@ function coerce_form_value(type, value) {
   if (type === "boolean") return value === "on";
   return value;
 }
+function group_formdata(data) {
+  const grouped = /* @__PURE__ */ new Map();
+  for (const [name, value] of data) {
+    const values = grouped.get(name);
+    if (values) values.push(value);
+    else grouped.set(name, [value]);
+  }
+  return grouped;
+}
 function convert_formdata(form_id, data) {
   const result = {};
-  for (const field_name of data.keys()) {
-    const values = data.getAll(field_name);
+  for (const [field_name, values] of group_formdata(data)) {
     const field = parse_form_key(form_id, field_name);
     const entries = values.filter((entry) => typeof entry === "string" || entry.name !== "" || entry.size > 0);
     if (entries.length === 0 && !field.is_array) continue;
@@ -40732,15 +40860,15 @@ async function deserialize_binary_form(request2, form_id) {
   if (!request2.body) throw deserialize_error("no body");
   const reader = request2.body.getReader();
   const chunks = [];
-  function get_chunk(index17) {
-    if (index17 in chunks) return chunks[index17];
+  function get_chunk(index18) {
+    if (index18 in chunks) return chunks[index18];
     let i = chunks.length;
-    while (i <= index17) {
+    while (i <= index18) {
       const previous = chunks[i - 1] ?? Promise.resolve(void 0);
       chunks[i] = previous.then(() => reader.read()).then((chunk) => chunk.value);
       i++;
     }
-    return chunks[index17];
+    return chunks[index18];
   }
   __name(get_chunk, "get_chunk");
   async function get_buffer(offset, length) {
@@ -40780,11 +40908,11 @@ async function deserialize_binary_form(request2, form_id) {
     files_start_offset = HEADER_BYTES + data_length + file_offsets_length;
   }
   const file_spans = [];
-  const [data, meta3] = parse(text_decoder.decode(data_buffer), { File: /* @__PURE__ */ __name(([name, type, size, last_modified, index17]) => {
-    if (typeof name !== "string" || typeof type !== "string" || !Number.isSafeInteger(size) || size < 0 || !Number.isSafeInteger(last_modified) || !Number.isSafeInteger(index17) || index17 < 0) throw deserialize_error("invalid file metadata");
-    let offset = file_offsets[index17];
+  const [data, meta3] = parse(text_decoder.decode(data_buffer), { File: /* @__PURE__ */ __name(([name, type, size, last_modified, index18]) => {
+    if (typeof name !== "string" || typeof type !== "string" || !Number.isSafeInteger(size) || size < 0 || !Number.isSafeInteger(last_modified) || !Number.isSafeInteger(index18) || index18 < 0) throw deserialize_error("invalid file metadata");
+    let offset = file_offsets[index18];
     if (offset === void 0) throw deserialize_error("duplicate file offset table index");
-    file_offsets[index17] = void 0;
+    file_offsets[index18] = void 0;
     offset += files_start_offset;
     file_spans.push({
       offset,
@@ -40817,8 +40945,8 @@ function deserialize_error(message) {
 }
 async function* read_range(get_chunk, offset, length) {
   let chunk_start = 0;
-  for (let index17 = 0; ; index17++) {
-    const chunk = await get_chunk(index17);
+  for (let index18 = 0; ; index18++) {
+    const chunk = await get_chunk(index18);
     if (!chunk) return;
     const chunk_end = chunk_start + chunk.byteLength;
     if (chunk_end > offset) {
@@ -40986,7 +41114,7 @@ function get_status(error63) {
 function handle_error_async_without_async_svelte(_values) {
   console.warn("https://svelte.dev/e/kit/handle_error_async_without_async_svelte");
 }
-function handle_error_and_jsonify(event, state, error63) {
+function handle_error_and_jsonify(event, state2, error63) {
   if (error63 instanceof HandledHttpError) return error63.body;
   let caught;
   if (error63 instanceof HttpError) caught = {
@@ -41038,7 +41166,7 @@ function handle_error_and_jsonify(event, state, error63) {
     };
     result = with_request_store({
       event,
-      state
+      state: state2
     }, () => hooks.handleError(input2));
   } catch (hook_error) {
     log_handle_error_hook_failure(error63, hook_error);
@@ -41048,7 +41176,7 @@ function handle_error_and_jsonify(event, state, error63) {
     };
   }
   if (result instanceof Promise) {
-    if (state.is_in_render) {
+    if (state2.is_in_render) {
       handle_error_async_without_async_svelte();
       result.catch((hook_error) => log_handle_error_hook_failure(error63, hook_error));
       return {
@@ -41091,7 +41219,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1792660305415");
+  response.headers.set("x-sveltekit-version", "1793573973336");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -41125,13 +41253,13 @@ function get_node_type(node_id) {
 function is_action_json_request(event) {
   return negotiate(event.request.headers.get("accept") ?? "*/*", ["application/json", "text/html"]) === "application/json" && event.request.method === "POST";
 }
-async function handle_action_json_request(event, state, server2) {
-  return action_result_json(event, state, await handle_action_request(event, state, server2));
+async function handle_action_json_request(event, state2, server2) {
+  return action_result_json(event, state2, await handle_action_request(event, state2, server2));
 }
-async function action_result_json(event, state, result) {
+async function action_result_json(event, state2, result) {
   if (result.type === "redirect") return action_json(result);
   if (result.type === "error") {
-    const error63 = await handle_error_and_jsonify(event, state, result.error);
+    const error63 = await handle_error_and_jsonify(event, state2, result.error);
     return action_json({
       ...result,
       error: error63
@@ -41148,7 +41276,7 @@ async function action_result_json(event, state, result) {
       data: try_serialize(result.data, stringify2, event.route.id)
     }, { status: result.status });
   } catch (error63) {
-    return action_result_json(event, state, action_error_result(error63, result.location));
+    return action_result_json(event, state2, action_error_result(error63, result.location));
   }
 }
 function get_action_location(url3) {
@@ -41193,13 +41321,13 @@ function action_json(data, init2) {
 function is_action_request(event) {
   return event.request.method === "POST";
 }
-async function handle_action_request(event, state, server2) {
+async function handle_action_request(event, state2, server2) {
   const actions = server2?.actions;
   const location2 = get_action_location(event.url);
   if (!actions) return method_not_allowed_result(event, location2);
   check_named_default_separate(actions);
   try {
-    const data = await call_action(event, state, actions);
+    const data = await call_action(event, state2, actions);
     if (data instanceof ActionFailure) return {
       type: "failure",
       status: data.status,
@@ -41219,7 +41347,7 @@ async function handle_action_request(event, state, server2) {
 function check_named_default_separate(actions) {
   if (actions.default && Object.keys(actions).length > 1) action_default_with_named();
 }
-async function call_action(event, state, actions) {
+async function call_action(event, state2, actions) {
   const url3 = new URL(event.request.url);
   let name = "default";
   for (const param of url3.searchParams) if (param[0].startsWith("/")) {
@@ -41240,7 +41368,7 @@ async function call_action(event, state, actions) {
       const traced_event = merge_tracing(event, current);
       const result = await with_request_store({
         event: traced_event,
-        state
+        state: state2
       }, () => action(traced_event));
       if (result instanceof ActionFailure) current.setAttributes({
         "sveltekit.form_action.result.type": "failure",
@@ -41271,13 +41399,13 @@ function try_serialize(data, fn, route_id) {
     throw error63;
   }
 }
-function create_live_query_response(event, state, internals, arg) {
+function create_live_query_response(event, state2, internals, arg) {
   const cancellation = new AbortController();
   const live_event = {
     ...event,
     request: new Request(event.request, { signal: AbortSignal.any([event.request.signal, cancellation.signal]) })
   };
-  const generator = internals.run(live_event, state, arg);
+  const generator = internals.run(live_event, state2, arg);
   let open2 = true;
   let pulling = false;
   let stream_controller;
@@ -41341,7 +41469,7 @@ function create_live_query_response(event, state, internals, arg) {
         });
         else send({
           type: "error",
-          error: await handle_error_and_jsonify(event, state, error63)
+          error: await handle_error_and_jsonify(event, state2, error63)
         });
         teardown(false);
       } finally {
@@ -41356,7 +41484,7 @@ function create_live_query_response(event, state, internals, arg) {
     "content-type": "text/event-stream"
   } });
 }
-async function handle_remote_call(event, state, id2) {
+async function handle_remote_call(event, state2, id2) {
   return record_span({
     name: "sveltekit.remote.call",
     attributes: { "sveltekit.remote.call.id": id2 },
@@ -41364,12 +41492,12 @@ async function handle_remote_call(event, state, id2) {
       const traced_event = merge_tracing(event, current);
       return with_version_header(await with_request_store({
         event: traced_event,
-        state
-      }, () => handle_remote_call_internal(traced_event, state, id2)));
+        state: state2
+      }, () => handle_remote_call_internal(traced_event, state2, id2)));
     }, "fn")
   });
 }
-async function handle_remote_call_internal(event, state, id2) {
+async function handle_remote_call_internal(event, state2, id2) {
   const [hash3, name, additional_args] = id2.split("/");
   const remotes = manifest.remotes;
   if (!Object.hasOwn(remotes, hash3)) error(404);
@@ -41381,20 +41509,20 @@ async function handle_remote_call_internal(event, state, id2) {
     "sveltekit.remote.call.type": internals.type,
     "sveltekit.remote.call.name": internals.name
   });
-  const headers2 = state.prerendering ? void 0 : { "cache-control": "private, no-store" };
+  const headers2 = state2.prerendering ? void 0 : { "cache-control": "private, no-store" };
   try {
     const data = {};
     switch (internals.type) {
       case "query_live":
         if (event.request.method !== "GET") throw new SvelteKitError(405, "Method Not Allowed", `\`query.live\` functions must be invoked via GET request, not ${event.request.method}`);
-        return create_live_query_response(event, state, internals, parse_remote_arg(new URL(event.request.url).searchParams.get("payload")));
+        return create_live_query_response(event, state2, internals, parse_remote_arg(new URL(event.request.url).searchParams.get("payload")));
       case "query_batch": {
         if (event.request.method !== "POST") throw new SvelteKitError(405, "Method Not Allowed", `\`query.batch\` functions must be invoked via POST request, not ${event.request.method}`);
         const { payloads } = await event.request.json();
         const args = await Promise.all(payloads.map((payload2) => parse_remote_arg(payload2)));
         data._ = await with_request_store({
           event,
-          state
+          state: state2
         }, () => internals.run(args));
         break;
       }
@@ -41402,13 +41530,13 @@ async function handle_remote_call_internal(event, state, id2) {
         if (event.request.method !== "POST") throw new SvelteKitError(405, "Method Not Allowed", `\`form\` functions must be invoked via POST request, not ${event.request.method}`);
         if (!is_form_content_type(event.request)) throw new SvelteKitError(415, "Unsupported Media Type", `\`form\` functions expect form-encoded data \u2014 received ${event.request.headers.get("content-type")}`);
         const { data: input2, meta: meta3, form_data } = await deserialize_binary_form(event.request, internals.id);
-        state.remote.requested = create_requested_map(meta3.remote_refreshes);
+        state2.remote.requested = create_requested_map(meta3.remote_refreshes);
         if (additional_args && !("id" in input2)) input2.id = JSON.parse(decodeURIComponent(additional_args));
         const fn2 = internals.fn;
         data._ = await with_request_store({
           event,
           state: {
-            ...state,
+            ...state2,
             is_in_remote_form_or_command: true
           }
         }, () => fn2(input2, meta3, form_data));
@@ -41420,12 +41548,12 @@ async function handle_remote_call_internal(event, state, id2) {
       }
       case "command": {
         const { payload: payload2, refreshes } = await event.request.json();
-        state.remote.requested = create_requested_map(refreshes);
+        state2.remote.requested = create_requested_map(refreshes);
         const arg = parse_remote_arg(payload2);
         data._ = await with_request_store({
           event,
           state: {
-            ...state,
+            ...state2,
             is_in_remote_form_or_command: true
           }
         }, () => fn(arg));
@@ -41434,51 +41562,51 @@ async function handle_remote_call_internal(event, state, id2) {
       case "prerender":
         data._ = await with_request_store({
           event,
-          state
+          state: state2
         }, () => fn(parse_remote_arg(additional_args)));
         break;
       case "query": {
         const payload2 = new URL(event.request.url).searchParams.get("payload");
         data._ = await with_request_store({
           event,
-          state
+          state: state2
         }, () => fn(parse_remote_arg(payload2)));
         break;
       }
     }
-    await collect_remote_data(data, event, state);
-    if (state.remote.ignored?.size) data.i = Array.from(state.remote.ignored);
+    await collect_remote_data(data, event, state2);
+    if (state2.remote.ignored?.size) data.i = Array.from(state2.remote.ignored);
     return Response.json({
       type: "result",
       data: stringify2(data)
     }, { headers: headers2 });
   } catch (error63) {
     if (error63 instanceof Redirect) {
-      const data = await collect_remote_data({ redirect: error63.location }, event, state);
+      const data = await collect_remote_data({ redirect: error63.location }, event, state2);
       return Response.json({
         type: "result",
         data: stringify2(data)
       }, { headers: headers2 });
     }
-    const transformed = await handle_error_and_jsonify(event, state, error63);
+    const transformed = await handle_error_and_jsonify(event, state2, error63);
     return Response.json({
       type: "error",
       error: transformed
     }, {
-      status: state.prerendering ? transformed.status : void 0,
+      status: state2.prerendering ? transformed.status : void 0,
       headers: { "cache-control": "private, no-store" }
     });
   }
 }
-async function collect_remote_data(data, event, state) {
+async function collect_remote_data(data, event, state2) {
   function convert_error(error63) {
-    return Promise.resolve(handle_error_and_jsonify(event, state, error63));
+    return Promise.resolve(handle_error_and_jsonify(event, state2, error63));
   }
   __name(convert_error, "convert_error");
   const promises = [];
   const processed = /* @__PURE__ */ new Set();
-  if (state.remote.explicit) {
-    const { explicit } = state.remote;
+  if (state2.remote.explicit) {
+    const { explicit } = state2.remote;
     const inflight = [];
     const drain = /* @__PURE__ */ __name(() => {
       for (const [remote_key, { internals, fn }] of explicit) {
@@ -41499,13 +41627,13 @@ async function collect_remote_data(data, event, state) {
     drain();
     for (const promise2 of inflight) await promise2;
   }
-  if (state.remote.implicit) for (const [internals, record2] of state.remote.implicit) {
+  if (state2.remote.implicit) for (const [internals, record2] of state2.remote.implicit) {
     if (!internals.id) continue;
     for (const key in record2) {
       const remote_key = internals.type === "form" ? key : create_remote_key(internals.id, key);
       if (processed.has(remote_key)) continue;
       const type = internals.type === "query_live" ? "l" : internals.type[0];
-      const promise2 = state.remote.data?.get(internals)?.[key] ?? record2[key]();
+      const promise2 = state2.remote.data?.get(internals)?.[key] ?? record2[key]();
       let resolved = true;
       await Promise.race([Promise.resolve(promise2).then((v) => {
         if (resolved) ((data[type] ??= {})[remote_key] ??= {}).v = v;
@@ -41530,7 +41658,7 @@ function create_requested_map(refreshes) {
   }
   return requested;
 }
-async function handle_remote_form_post(event, state, id2) {
+async function handle_remote_form_post(event, state2, id2) {
   return record_span({
     name: "sveltekit.remote.form.post",
     attributes: { "sveltekit.remote.form.post.id": id2 },
@@ -41538,12 +41666,12 @@ async function handle_remote_form_post(event, state, id2) {
       const traced_event = merge_tracing(event, current);
       return with_request_store({
         event: traced_event,
-        state
-      }, () => handle_remote_form_post_internal(traced_event, state, id2));
+        state: state2
+      }, () => handle_remote_form_post_internal(traced_event, state2, id2));
     }, "fn")
   });
 }
-async function handle_remote_form_post_internal(event, state, id2) {
+async function handle_remote_form_post_internal(event, state2, id2) {
   const location2 = get_action_location(event.url);
   const [hash3, name, ...rest] = id2.split("/");
   const action_id = rest.join("/");
@@ -41553,7 +41681,7 @@ async function handle_remote_form_post_internal(event, state, id2) {
   if (!form) return method_not_allowed_result(event, location2);
   if (action_id) form = with_request_store({
     event,
-    state
+    state: state2
   }, () => form.for(JSON.parse(action_id)));
   try {
     const __ = form.__;
@@ -41562,7 +41690,7 @@ async function handle_remote_form_post_internal(event, state, id2) {
     await with_request_store({
       event,
       state: {
-        ...state,
+        ...state2,
         is_in_remote_form_or_command: true
       }
     }, () => __.fn(data, meta3, form_data));
@@ -41665,7 +41793,7 @@ function set_manifest(value) {
 function set_hooks(value) {
   hooks = value;
 }
-var prerendering, verbose2, assets, app_dir, symbol2, text_encoder2, text_decoder, DATA_SUFFIX, HTML_DATA_SUFFIX, ROUTE_SUFFIX, HTML_ROUTE_SUFFIX, escape_sequence_pattern, internal2, error_template_default, options, DELETE_KEY, BINARY_FORM_CONTENT_TYPE, BINARY_FORM_VERSION, HEADER_BYTES, LazyFile, path_regex, uneval2, stringify2, parse4, encoders, decoders, has_custom_transporters, INVALIDATED_PARAM, TRAILING_SLASH_PARAM, remote_object, remote_map, remote_set, remote_file, remote_arg_marker, ENDPOINT_METHODS, MUTATIVE_METHODS2, BODY_DEPENDENT_METHODS2, PAGE_METHODS, IN_WEBCONTAINER2, REROUTED_URL_HEADER, KEEP_ALIVE_INTERVAL, fs, url2, path2, module, cwd, relative, fix_stack_trace, source_maps, source_regions, styleText, read_implementation, manifest, hooks;
+var prerendering, verbose2, assets, app_dir, symbol2, state, text_encoder2, text_decoder, DATA_SUFFIX, HTML_DATA_SUFFIX, ROUTE_SUFFIX, HTML_ROUTE_SUFFIX, escape_sequence_pattern, internal2, error_template_default, options, DELETE_KEY, BINARY_FORM_CONTENT_TYPE, BINARY_FORM_VERSION, HEADER_BYTES, LazyFile, path_regex, uneval2, stringify2, parse4, encoders, decoders, has_custom_transporters, INVALIDATED_PARAM, TRAILING_SLASH_PARAM, remote_object, remote_map, remote_set, remote_file, remote_arg_marker, ENDPOINT_METHODS, MUTATIVE_METHODS2, BODY_DEPENDENT_METHODS2, PAGE_METHODS, IN_WEBCONTAINER2, REROUTED_URL_HEADER, KEEP_ALIVE_INTERVAL, fs, url2, path2, module, cwd, relative, fix_stack_trace, source_maps, source_regions, styleText, read_implementation, manifest, hooks;
 var init_internal2 = __esm({
   ".svelte-kit/output/server/chunks/internal.js"() {
     "use strict";
@@ -41685,7 +41813,7 @@ var init_internal2 = __esm({
     app_dir = "_app";
     __name(set_assets, "set_assets");
     symbol2 = /* @__PURE__ */ Symbol.for("sveltekit.global_state");
-    globalThis[symbol2] ??= {};
+    state = globalThis[symbol2] ??= {};
     text_encoder2 = new TextEncoder();
     __name(stream_from_iterable, "stream_from_iterable");
     __name(stream_text, "stream_text");
@@ -41846,6 +41974,7 @@ var init_internal2 = __esm({
     __name(parse_form_key, "parse_form_key");
     __name(coerce_form_value, "coerce_form_value");
     DELETE_KEY = {};
+    __name(group_formdata, "group_formdata");
     __name(convert_formdata, "convert_formdata");
     BINARY_FORM_CONTENT_TYPE = "application/x-sveltekit-formdata";
     BINARY_FORM_VERSION = 0;
@@ -42379,9 +42508,9 @@ function element(renderer, tag, attributes_fn = noop2, children_fn = noop2) {
   }
   renderer.push("<!---->");
 }
-function render(component13, options2 = {}) {
+function render(component14, options2 = {}) {
   if (options2.csp?.hash && options2.csp.nonce) invalid_csp();
-  return Renderer.render(component13, options2);
+  return Renderer.render(component14, options2);
 }
 function head(hash3, renderer, fn) {
   renderer.head((renderer2) => {
@@ -43047,8 +43176,8 @@ var init_server3 = __esm({
       * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string; csp?: Csp }} [options]
       * @returns {RenderOutput}
       */
-      static render(component13, options2 = {}) {
-        return new RenderResult(() => Renderer2.#render(component13, options2), () => init_render_context().then(() => with_render_context(() => Renderer2.#render_async(component13, options2))));
+      static render(component14, options2 = {}) {
+        return new RenderResult(() => Renderer2.#render(component14, options2), () => init_render_context().then(() => with_render_context(() => Renderer2.#render_async(component14, options2))));
       }
       /**
       * Collect all of the `onDestroy` callbacks registered during rendering. In an async context, this is only safe to call
@@ -43059,7 +43188,7 @@ var init_server3 = __esm({
       * @returns {Iterable<() => void>}
       */
       *#collect_on_destroy() {
-        for (const component13 of this.#traverse_components()) yield* component13.#collect_ondestroy();
+        for (const component14 of this.#traverse_components()) yield* component14.#collect_ondestroy();
       }
       /**
       * Performs a depth-first search of renderers, yielding the deepest components first, then additional components as we backtrack up the tree.
@@ -43111,7 +43240,7 @@ var init_server3 = __esm({
       * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string }} options
       * @returns {AccumulatedContent}
       */
-      static #render(component13, options2) {
+      static #render(component14, options2) {
         var previous_context = ssr_context;
         const renderer = Renderer2.#create("sync", options2);
         let result;
@@ -43119,7 +43248,7 @@ var init_server3 = __esm({
         let failed = false;
         try {
           try {
-            Renderer2.#open_render(renderer, component13, options2);
+            Renderer2.#open_render(renderer, component14, options2);
             result = Renderer2.#close_render(renderer.#collect_content(), renderer);
           } catch (error63) {
             render_error = error63;
@@ -43141,7 +43270,7 @@ var init_server3 = __esm({
       * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string; csp?: Csp }} options
       * @returns {Promise<AccumulatedContent & { hashes: { script: Sha256Source[] } }>}
       */
-      static async #render_async(component13, options2) {
+      static async #render_async(component14, options2) {
         const previous_context = ssr_context;
         const renderer = Renderer2.#create("async", options2);
         let result;
@@ -43149,7 +43278,7 @@ var init_server3 = __esm({
         let failed = false;
         try {
           try {
-            Renderer2.#open_render(renderer, component13, options2);
+            Renderer2.#open_render(renderer, component14, options2);
             const content = await renderer.#collect_content_async();
             const hydratables = await renderer.#collect_hydratables();
             if (hydratables !== null) content.head = hydratables + content.head;
@@ -43233,7 +43362,7 @@ var init_server3 = __esm({
       * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string; csp?: Csp; transformError?: (error: unknown) => unknown }} options
       * @returns {void}
       */
-      static #open_render(renderer, component13, options2) {
+      static #open_render(renderer, component14, options2) {
         var previous_context = ssr_context;
         try {
           set_ssr_context({
@@ -43243,7 +43372,7 @@ var init_server3 = __esm({
             i: false
           });
           renderer.push(BLOCK_OPEN);
-          component13(renderer, options2.props ?? {});
+          component14(renderer, options2.props ?? {});
           renderer.push(BLOCK_CLOSE);
         } finally {
           set_ssr_context(previous_context);
@@ -43435,22 +43564,22 @@ function parseCookie(str, options2) {
   if (len < 2)
     return obj;
   const dec = options2?.decode || decode3;
-  let index17 = 0;
+  let index18 = 0;
   do {
-    const eqIdx = eqIndex(str, index17, len);
+    const eqIdx = eqIndex(str, index18, len);
     if (eqIdx === len)
       break;
-    const endIdx = endIndex(str, index17, len);
+    const endIdx = endIndex(str, index18, len);
     if (eqIdx > endIdx) {
-      index17 = str.lastIndexOf(";", eqIdx - 1) + 1;
+      index18 = str.lastIndexOf(";", eqIdx - 1) + 1;
       continue;
     }
-    const key = valueSlice(str, index17, eqIdx);
+    const key = valueSlice(str, index18, eqIdx);
     if (obj[key] === void 0) {
       obj[key] = dec(valueSlice(str, eqIdx + 1, endIdx));
     }
-    index17 = endIdx + 1;
-  } while (index17 < len);
+    index18 = endIdx + 1;
+  } while (index18 < len);
   return obj;
 }
 function stringifySetCookie(cookie, options2) {
@@ -43540,12 +43669,12 @@ function parseSetCookie(str, options2) {
     name: valueSlice(str, 0, eqIdx),
     value: dec(valueSlice(str, eqIdx + 1, endIdx))
   } : { name: "", value: dec(valueSlice(str, 0, endIdx)) };
-  let index17 = endIdx + 1;
-  while (index17 < len) {
-    const endIdx2 = endIndex(str, index17, len);
-    if (eqIdx < index17)
-      eqIdx = eqIndex(str, index17, len);
-    const attr2 = eqIdx < endIdx2 ? valueSlice(str, index17, eqIdx) : valueSlice(str, index17, endIdx2);
+  let index18 = endIdx + 1;
+  while (index18 < len) {
+    const endIdx2 = endIndex(str, index18, len);
+    if (eqIdx < index18)
+      eqIdx = eqIndex(str, index18, len);
+    const attr2 = eqIdx < endIdx2 ? valueSlice(str, index18, eqIdx) : valueSlice(str, index18, endIdx2);
     const val = eqIdx < endIdx2 ? valueSlice(str, eqIdx + 1, endIdx2) : void 0;
     switch (attr2.toLowerCase()) {
       case "httponly":
@@ -43591,17 +43720,17 @@ function parseSetCookie(str, options2) {
         }
         break;
     }
-    index17 = endIdx2 + 1;
+    index18 = endIdx2 + 1;
   }
   return setCookie;
 }
 function endIndex(str, min2, len) {
-  const index17 = str.indexOf(";", min2);
-  return index17 === -1 ? len : index17;
+  const index18 = str.indexOf(";", min2);
+  return index18 === -1 ? len : index18;
 }
 function eqIndex(str, min2, len) {
-  const index17 = str.indexOf("=", min2);
-  return index17 === -1 ? len : index17;
+  const index18 = str.indexOf("=", min2);
+  return index18 === -1 ? len : index18;
 }
 function valueSlice(str, min2, max) {
   if (min2 === max)
@@ -43666,18 +43795,18 @@ __export(instance_exports, {
   respond: () => respond,
   set_env: () => set_env
 });
-async function render_endpoint(event, state, mod) {
+async function render_endpoint(event, state2, mod) {
   const method = event.request.method;
   let handler2 = mod[method] || mod.fallback;
   if (method === "HEAD" && !mod.HEAD && mod.GET) handler2 = mod.GET;
   if (!handler2) return method_not_allowed(mod, method);
-  const prerender2 = mod.prerender ?? state.prerender_default;
+  const prerender2 = mod.prerender ?? state2.prerender_default;
   if (prerender2 && (mod.fallback || BODY_DEPENDENT_METHODS2.some((method2) => mod[method2]))) prerender_endpoint_methods({
     methods: BODY_DEPENDENT_METHODS2.join(", "),
     id: event.route.id
   });
-  if (state.prerendering && !state.prerendering.inside_reroute && !prerender2) {
-    if (state.depth > 0) prerender_endpoint_not_prerenderable({ id: event.route.id });
+  if (state2.prerendering && !state2.prerendering.inside_reroute && !prerender2) {
+    if (state2.depth > 0) prerender_endpoint_not_prerenderable({ id: event.route.id });
     else return new Response(void 0, { status: 204 });
   }
   try {
@@ -43691,21 +43820,21 @@ async function render_endpoint(event, state, mod) {
         const traced_event = merge_tracing(event, current);
         return with_request_store({
           event: traced_event,
-          state
+          state: state2
         }, () => handler2(traced_event));
       }, "fn")
     });
     if (!(response instanceof Response)) endpoint_invalid_response({ path: event.url.pathname });
-    if (state.prerendering && (!state.prerendering.inside_reroute || prerender2)) {
+    if (state2.prerendering && (!state2.prerendering.inside_reroute || prerender2)) {
       const cloned = new Response(response.clone().body, {
         status: response.status,
         statusText: response.statusText,
         headers: new Headers(response.headers)
       });
       cloned.headers.set("x-sveltekit-prerender", String(prerender2));
-      if (state.prerendering.inside_reroute && prerender2) {
+      if (state2.prerendering.inside_reroute && prerender2) {
         cloned.headers.set("x-sveltekit-routeid", encodeURI(event.route.id));
-        state.prerendering.dependencies.set(event.url.pathname, {
+        state2.prerendering.dependencies.set(event.url.pathname, {
           response: cloned,
           body: null
         });
@@ -43743,7 +43872,7 @@ function is_route_id_resolution_path(pathname) {
 function extract_route_id(pathname) {
   return pathname.slice(`/_app${ROUTES_PREFIX}`.length) || "/";
 }
-function build_error_chain(branch, errors, load13) {
+function build_error_chain(branch, errors, load14) {
   const chain = [void 0];
   let last_idx = -1;
   for (let i = 1; i < branch.length; i += 1) {
@@ -43752,7 +43881,7 @@ function build_error_chain(branch, errors, load13) {
     while (j > last_idx + 1 && errors[j] == null) j -= 1;
     last_idx = j;
     const error63 = errors[j];
-    chain.push(error63 == null ? void 0 : load13(error63)?.catch(() => void 0));
+    chain.push(error63 == null ? void 0 : load14(error63)?.catch(() => void 0));
   }
   return Promise.all(chain);
 }
@@ -43788,12 +43917,12 @@ function create_async_iterator() {
     }, "add")
   };
 }
-function server_data_serializer(event, state) {
+function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_kshc66";
-  function get_replacer(index17) {
+  const global = "__sveltekit_cucd8z";
+  function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
         const id2 = promise_id++;
@@ -43802,7 +43931,7 @@ function server_data_serializer(event, state) {
           (data) => ({ data })
         ).catch(
           /** @param {any} error */
-          async (error63) => ({ error: await handle_error_and_jsonify(event, state, error63) })
+          async (error63) => ({ error: await handle_error_and_jsonify(event, state2, error63) })
         ).then(
           /**
           * @param {{data: any; error: any}} result
@@ -43812,11 +43941,11 @@ function server_data_serializer(event, state) {
             try {
               str = uneval(error63 ? [, error63] : [data], replacer);
             } catch (serialization_error) {
-              error63 = await handle_error_and_jsonify(event, state, capture_error(() => load_promise_not_serializable({ id: event.route.id }, { cause: serialization_error })));
+              error63 = await handle_error_and_jsonify(event, state2, capture_error(() => load_promise_not_serializable({ id: event.route.id }, { cause: serialization_error })));
               str = uneval([, error63], replacer);
             }
             return {
-              index: index17,
+              index: index18,
               str: `${global}.resolve(${id2}, ${str.includes("app.decode") ? `(app) => ${str}` : `() => ${str}`})`
             };
           }
@@ -43859,15 +43988,15 @@ function server_data_serializer(event, state) {
 `;
       return {
         data: `[${compact(max_nodes > -1 ? strings.slice(0, max_nodes) : strings).join(",")}]`,
-        chunks: promise_id > 1 ? iterator.iterate(({ index: index17, str }) => {
-          if (max_nodes > -1 && index17 >= max_nodes) return "";
+        chunks: promise_id > 1 ? iterator.iterate(({ index: index18, str }) => {
+          if (max_nodes > -1 && index18 >= max_nodes) return "";
           return open2 + str + close;
         }) : null
       };
     }
   };
 }
-function server_data_serializer_json(event, state) {
+function server_data_serializer_json(event, state2) {
   let promise_id = 1;
   const iterator = create_async_iterator();
   const reducers = {
@@ -43881,7 +44010,7 @@ function server_data_serializer_json(event, state) {
         /** @param {any} error */
         async (error63) => {
           key = "error";
-          return handle_error_and_jsonify(event, state, error63);
+          return handle_error_and_jsonify(event, state2, error63);
         }
       ).then(
         /** @param {any} value */
@@ -43890,7 +44019,7 @@ function server_data_serializer_json(event, state) {
           try {
             str = stringify(value, reducers);
           } catch (serialization_error) {
-            const error63 = await handle_error_and_jsonify(event, state, capture_error(() => load_promise_not_serializable({ id: event.route.id }, { cause: serialization_error })));
+            const error63 = await handle_error_and_jsonify(event, state2, capture_error(() => load_promise_not_serializable({ id: event.route.id }, { cause: serialization_error })));
             key = "error";
             str = stringify(error63, reducers);
           }
@@ -43929,7 +44058,7 @@ function server_data_serializer_json(event, state) {
     }
   };
 }
-async function load_server_data({ event, state, node: node2, parent }) {
+async function load_server_data({ event, state: state2, node: node2, parent }) {
   if (!node2?.server) return null;
   let is_tracking = true;
   const uses = {
@@ -43940,9 +44069,9 @@ async function load_server_data({ event, state, node: node2, parent }) {
     url: false,
     search_params: /* @__PURE__ */ new Set()
   };
-  const load13 = node2.server.load;
+  const load14 = node2.server.load;
   const slash = node2.server.trailingSlash;
-  if (!load13) return {
+  if (!load14) return {
     type: "data",
     data: null,
     uses,
@@ -43953,7 +44082,7 @@ async function load_server_data({ event, state, node: node2, parent }) {
   }, (param) => {
     if (is_tracking) uses.search_params.add(param);
   });
-  if (state.prerendering || state.prerender_default === true) disable_search(url3);
+  if (state2.prerendering || state2.prerender_default === true) disable_search(url3);
   return {
     type: "data",
     data: await record_span({
@@ -43968,8 +44097,8 @@ async function load_server_data({ event, state, node: node2, parent }) {
         const traced_event = merge_tracing(event, current);
         return await with_request_store({
           event: traced_event,
-          state
-        }, () => load13.call(null, {
+          state: state2
+        }, () => load14.call(null, {
           ...traced_event,
           fetch: /* @__PURE__ */ __name((info, init2) => {
             new URL(info instanceof Request ? info.url : info, event.url);
@@ -44010,10 +44139,10 @@ async function load_server_data({ event, state, node: node2, parent }) {
     slash
   };
 }
-async function load_data({ event, state, fetched, node: node2, parent, server_data_promise, resolve_opts, csr }) {
+async function load_data({ event, state: state2, fetched, node: node2, parent, server_data_promise, resolve_opts, csr }) {
   const server_data_node = await server_data_promise;
-  const load13 = node2?.universal?.load;
-  if (!load13) return server_data_node?.data ?? null;
+  const load14 = node2?.universal?.load;
+  if (!load14) return server_data_node?.data ?? null;
   return await record_span({
     name: "sveltekit.load",
     attributes: {
@@ -44026,13 +44155,13 @@ async function load_data({ event, state, fetched, node: node2, parent, server_da
       const traced_event = merge_tracing(event, current);
       return await with_request_store({
         event: traced_event,
-        state
-      }, () => load13.call(null, {
+        state: state2
+      }, () => load14.call(null, {
         url: event.url,
         params: event.params,
         data: server_data_node?.data ?? null,
         route: event.route,
-        fetch: create_universal_fetch(event, state.prerendering, fetched, csr, resolve_opts),
+        fetch: create_universal_fetch(event, state2.prerendering, fetched, csr, resolve_opts),
         setHeaders: event.setHeaders,
         depends: noop,
         parent,
@@ -44398,23 +44527,23 @@ function Root($$renderer, $$props) {
     $$renderer2.push(`<!--]-->`);
   });
 }
-async function render_response({ branch, fetched, page_config, status, error: error63 = null, event, state, resolve_opts, action_result, data_serializer, error_components }) {
-  if (state.prerendering || state.prerender_default === true) {
+async function render_response({ branch, fetched, page_config, status, error: error63 = null, event, state: state2, resolve_opts, action_result, data_serializer, error_components }) {
+  if (state2.prerendering || state2.prerender_default === true) {
     if (options.csp.mode === "nonce") prerender_nonce();
     if (options.app_template_contains_nonce) prerender_template_nonce({ tag: "%sveltekit.nonce%" });
   }
   const client = manifest.client;
   const modulepreloads = new Set(client?.imports);
-  const stylesheets16 = new Set(client?.stylesheets);
-  const fonts16 = new Map(client?.fonts.map((font) => [font.file, font]));
+  const stylesheets17 = new Set(client?.stylesheets);
+  const fonts17 = new Map(client?.fonts.map((font) => [font.file, font]));
   const inline_styles = /* @__PURE__ */ new Map();
   let rendered;
   const form_value = action_result?.type === "success" || action_result?.type === "failure" ? action_result.data ?? null : null;
   let base = "";
   let assets$1 = assets;
   let base_expression = s("");
-  const csp = new Csp(options.csp, { prerender: !!(state.prerendering || state.prerender_default === true) });
-  if (!state.prerendering?.fallback) {
+  const csp = new Csp(options.csp, { prerender: !!(state2.prerendering || state2.prerender_default === true) });
+  if (!state2.prerendering?.fallback) {
     const pathname = event.isDataRequest ? add_data_suffix2(event.url.pathname) : event.url.pathname;
     ({ base, assets: assets$1 } = resolve_paths(pathname));
     base_expression = `new URL(${s(base)}, location).pathname.slice(0, -1)`;
@@ -44449,7 +44578,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
     }
     props.page.data = data2;
     const render_state = {
-      ...state,
+      ...state2,
       is_in_render: true
     };
     const render_opts = {
@@ -44491,8 +44620,8 @@ async function render_response({ branch, fetched, page_config, status, error: er
   };
   for (const { node: node2 } of branch) {
     for (const url3 of node2.imports) modulepreloads.add(url3);
-    for (const url3 of node2.stylesheets) stylesheets16.add(url3);
-    for (const font of node2.fonts) fonts16.set(font.file, font);
+    for (const url3 of node2.stylesheets) stylesheets17.add(url3);
+    for (const font of node2.fonts) fonts17.set(font.file, font);
     if (node2.inline_styles && !client?.inline) Object.entries(await node2.inline_styles()).forEach(([filename, css]) => {
       if (typeof css === "string") {
         inline_styles.set(filename, css);
@@ -44517,13 +44646,13 @@ async function render_response({ branch, fetched, page_config, status, error: er
   const add_preload = /* @__PURE__ */ __name((path3, attributes2) => {
     head2.add_link_tag(path3, attributes2);
   }, "add_preload");
-  for (const dep of stylesheets16) {
+  for (const dep of stylesheets17) {
     const path3 = prefixed(dep);
     const attributes2 = ['rel="stylesheet"'];
     if (inline_styles.has(dep)) attributes2.push("disabled", 'media="(max-width: 0)"');
     head2.add_stylesheet(path3, attributes2);
   }
-  for (const { file: file2, filename } of fonts16.values()) {
+  for (const { file: file2, filename } of fonts17.values()) {
     const path3 = prefixed(file2);
     if (resolve_opts.preload({
       type: "font",
@@ -44536,13 +44665,13 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_kshc66";
+  const global = "__sveltekit_cucd8z";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
-			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state.prerendering || state.prerender_default === true))).join("\n			")}`;
+			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
   if (page_config.csr && client) {
     const route = client.routes?.find((r2) => r2.id === event.route.id) ?? null;
-    const load_env_eagerly = client.uses_env_dynamic_public && (state.prerendering || state.prerender_default === true);
+    const load_env_eagerly = client.uses_env_dynamic_public && (state2.prerendering || state2.prerender_default === true);
     if (load_env_eagerly) modulepreloads.add(`${app_dir}/env.js`);
     if (!client.inline) for (const dep of modulepreloads) {
       const path3 = prefixed(dep);
@@ -44551,17 +44680,17 @@ async function render_response({ branch, fetched, page_config, status, error: er
         path: path3
       })) add_preload(path3, ['rel="modulepreload"']);
     }
-    if (client.routes && state.prerendering && !state.prerendering.fallback) {
+    if (client.routes && state2.prerendering && !state2.prerendering.fallback) {
       const pathname = add_resolution_suffix2(event.url.pathname);
-      state.prerendering.dependencies.set(pathname, create_server_routing_response(route, event.params, new URL(pathname, event.url), client));
-      if (route && !state.prerendering.resolved_route_ids.has(route.id)) {
-        state.prerendering.resolved_route_ids.add(route.id);
+      state2.prerendering.dependencies.set(pathname, create_server_routing_response(route, event.params, new URL(pathname, event.url), client));
+      if (route && !state2.prerendering.resolved_route_ids.has(route.id)) {
+        state2.prerendering.resolved_route_ids.add(route.id);
         const id_pathname = "" + route_id_resolution_pathname(route.id);
-        state.prerendering.dependencies.set(id_pathname, create_server_routing_response(route, null, new URL(id_pathname, event.url), client));
+        state2.prerendering.dependencies.set(id_pathname, create_server_routing_response(route, null, new URL(id_pathname, event.url), client));
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1792660305415")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1793573973336")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -44626,7 +44755,7 @@ ${indent}	${hydrate.join(`,
 ${indent}	`)}
 ${indent}}`);
     }
-    const remote_data = await collect_remote_data({}, event, state);
+    const remote_data = await collect_remote_data({}, event, state2);
     const serialized_data = Object.keys(remote_data).length > 0 ? `${global}.data = ${uneval2(remote_data)};
 
 						` : "";
@@ -44659,10 +44788,10 @@ ${indent}}`);
     "x-sveltekit-page": "true",
     "content-type": "text/html"
   });
-  if (state.prerendering || state.prerender_default === true) {
+  if (state2.prerendering || state2.prerender_default === true) {
     const csp_headers = csp.csp_provider.get_meta();
     if (csp_headers) head2.add_http_equiv(csp_headers);
-    if (state.prerendering?.cache) head2.add_http_equiv(`<meta http-equiv="cache-control" content="${escape_html2(state.prerendering.cache, true)}">`);
+    if (state2.prerendering?.cache) head2.add_http_equiv(`<meta http-equiv="cache-control" content="${escape_html2(state2.prerendering.cache, true)}">`);
   } else {
     const csp_header = csp.csp_provider.get_header();
     if (csp_header) headers2.set("content-security-policy", csp_header);
@@ -44722,9 +44851,9 @@ function valid_locations(key, ext = ".js") {
   if (valid_server_exports.has(key)) locations.push(`+server${ext}`);
   return locations;
 }
-async function respond_with_error({ event, state, error: error63, resolve_opts }) {
+async function respond_with_error({ event, state: state2, error: error63, resolve_opts }) {
   if (event.request.headers.get("x-sveltekit-error")) {
-    const transformed = await handle_error_and_jsonify(event, state, error63);
+    const transformed = await handle_error_and_jsonify(event, state2, error63);
     return static_error_page(transformed.status, transformed.message);
   }
   const fetched = [];
@@ -44734,13 +44863,13 @@ async function respond_with_error({ event, state, error: error63, resolve_opts }
     const nodes = new PageNodes([default_layout]);
     const ssr2 = nodes.ssr();
     const csr = nodes.csr();
-    const data_serializer = server_data_serializer(event, state);
-    const transformed = await handle_error_and_jsonify(event, state, error63);
+    const data_serializer = server_data_serializer(event, state2);
+    const transformed = await handle_error_and_jsonify(event, state2, error63);
     if (ssr2) {
-      state.error = true;
+      state2.error = true;
       const server_data_promise = load_server_data({
         event,
-        state,
+        state: state2,
         node: default_layout,
         parent: /* @__PURE__ */ __name(async () => ({}), "parent")
       });
@@ -44748,7 +44877,7 @@ async function respond_with_error({ event, state, error: error63, resolve_opts }
       data_serializer.add_node(0, server_data);
       const data = await load_data({
         event,
-        state,
+        state: state2,
         fetched,
         node: default_layout,
         parent: /* @__PURE__ */ __name(async () => ({}), "parent"),
@@ -44777,13 +44906,13 @@ async function respond_with_error({ event, state, error: error63, resolve_opts }
       error_components: [],
       fetched,
       event,
-      state,
+      state: state2,
       resolve_opts,
       data_serializer
     });
   } catch (e) {
     if (e instanceof Redirect) return redirect_response(e.status, e.location);
-    const transformed = await handle_error_and_jsonify(event, state, e);
+    const transformed = await handle_error_and_jsonify(event, state2, e);
     return static_error_page(transformed.status, transformed.message);
   }
 }
@@ -44797,18 +44926,18 @@ function static_error_page(status, message) {
     status
   });
 }
-async function handle_fatal_error(event, state, error63) {
-  const body = await handle_error_and_jsonify(event, state, error63);
+async function handle_fatal_error(event, state2, error63) {
+  const body = await handle_error_and_jsonify(event, state2, error63);
   const status = body.status;
   const type = negotiate(event.request.headers.get("accept") || "text/html", ["application/json", "text/html"]);
   if (event.isDataRequest || type === "application/json") return Response.json(body, { status });
   return static_error_page(status, body.message);
 }
-async function render_page(event, state, page2, nodes, resolve_opts) {
-  if (state.depth > MAX_DEPTH) return text(`Not found: ${event.url.pathname}`, { status: 404 });
+async function render_page(event, state2, page2, nodes, resolve_opts) {
+  if (state2.depth > MAX_DEPTH) return text(`Not found: ${event.url.pathname}`, { status: 404 });
   if (is_action_json_request(event)) {
     const node2 = await manifest.nodes[page2.leaf]();
-    return handle_action_json_request(event, state, node2?.server);
+    return handle_action_json_request(event, state2, node2?.server);
   }
   try {
     const leaf_node = nodes.page();
@@ -44816,8 +44945,8 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
     let action_result = void 0;
     if (is_action_request(event)) {
       const remote_id = get_remote_action(event.url);
-      if (remote_id) action_result = await handle_remote_form_post(event, state, remote_id);
-      else action_result = await handle_action_request(event, state, leaf_node.server);
+      if (remote_id) action_result = await handle_remote_form_post(event, state2, remote_id);
+      else action_result = await handle_action_request(event, state2, leaf_node.server);
       if (action_result?.type === "redirect") return redirect_response(action_result.status, action_result.location);
       if (action_result?.type === "error") status = get_status(action_result.error);
       if (action_result?.type === "failure") status = action_result.status;
@@ -44825,14 +44954,14 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
     const should_prerender = nodes.prerender();
     if (should_prerender) {
       if (leaf_node.server?.actions) prerender_actions();
-    } else if (state.prerendering) return new Response(void 0, { status: 204 });
-    state.prerender_default = should_prerender;
+    } else if (state2.prerendering) return new Response(void 0, { status: 204 });
+    state2.prerender_default = should_prerender;
     const should_prerender_data = nodes.should_prerender_data();
     const data_pathname = add_data_suffix2(event.url.pathname);
     const fetched = [];
     const ssr2 = nodes.ssr();
     const csr = nodes.csr();
-    if (ssr2 === false && !((state.prerendering || state.prerender_default === true) && should_prerender_data)) return await render_response({
+    if (ssr2 === false && !((state2.prerendering || state2.prerender_default === true) && should_prerender_data)) return await render_response({
       branch: compact(nodes.data).map((node2) => {
         return {
           node: node2,
@@ -44848,14 +44977,14 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
       status,
       error: null,
       event,
-      state,
+      state: state2,
       resolve_opts,
-      data_serializer: server_data_serializer(event, state)
+      data_serializer: server_data_serializer(event, state2)
     });
     const branch = [];
     let load_error = null;
-    const data_serializer = server_data_serializer(event, state);
-    const data_serializer_json = (state.prerendering || state.prerender_default === true) && should_prerender_data ? server_data_serializer_json(event, state) : null;
+    const data_serializer = server_data_serializer(event, state2);
+    const data_serializer_json = (state2.prerendering || state2.prerender_default === true) && should_prerender_data ? server_data_serializer_json(event, state2) : null;
     const server_promises = nodes.data.map((node2, i) => {
       if (load_error) throw load_error;
       return Promise.resolve().then(async () => {
@@ -44863,7 +44992,7 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
           if (node2 === leaf_node && action_result?.type === "error") throw action_result.error;
           const server_data = await load_server_data({
             event,
-            state,
+            state: state2,
             node: node2,
             parent: /* @__PURE__ */ __name(async () => {
               const data = {};
@@ -44889,7 +45018,7 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
         try {
           return await load_data({
             event,
-            state,
+            state: state2,
             fetched,
             node: node2,
             parent: /* @__PURE__ */ __name(async () => {
@@ -44922,23 +45051,23 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
       } catch (e) {
         const err = normalize_error(e);
         if (err instanceof Redirect) {
-          if (state.prerendering && should_prerender_data) {
+          if (state2.prerendering && should_prerender_data) {
             const body = JSON.stringify({
               type: "redirect",
               status: err.status,
               location: err.location
             });
-            state.prerendering.dependencies.set(data_pathname, {
+            state2.prerendering.dependencies.set(data_pathname, {
               response: text(body),
               body
             });
           }
           return redirect_response(err.status, err.location);
         }
-        const error63 = await handle_error_and_jsonify(event, state, err);
+        const error63 = await handle_error_and_jsonify(event, state2, err);
         const status2 = error63.status;
-        for (const { error: index17, idx } of nearest_error_pages(i, branch, page2.errors)) {
-          const node3 = await manifest.nodes[index17]();
+        for (const { error: index18, idx } of nearest_error_pages(i, branch, page2.errors)) {
+          const node3 = await manifest.nodes[index18]();
           data_serializer.set_max_nodes(idx);
           const layouts = compact(branch.slice(0, idx));
           const nodes2 = new PageNodes(layouts.map((layout) => layout.node));
@@ -44949,7 +45078,7 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
           });
           return await render_response({
             event,
-            state,
+            state: state2,
             resolve_opts,
             page_config: {
               ssr: nodes2.ssr(),
@@ -44967,17 +45096,17 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
       }
       else branch.push(null);
     }
-    if (state.prerendering && data_serializer_json) {
+    if (state2.prerendering && data_serializer_json) {
       let { data, chunks } = data_serializer_json.get_data();
       if (chunks) for await (const chunk of chunks) data += chunk;
-      state.prerendering.dependencies.set(data_pathname, {
+      state2.prerendering.dependencies.set(data_pathname, {
         response: text(data),
         body: data
       });
     }
     return await render_response({
       event,
-      state,
+      state: state2,
       resolve_opts,
       page_config: {
         csr,
@@ -44988,14 +45117,14 @@ async function render_page(event, state, page2, nodes, resolve_opts) {
       branch: compact(branch),
       action_result,
       fetched,
-      data_serializer: !ssr2 ? server_data_serializer(event, state) : data_serializer,
+      data_serializer: !ssr2 ? server_data_serializer(event, state2) : data_serializer,
       error_components: await load_error_components(ssr2, branch, page2)
     });
   } catch (e) {
     if (e instanceof Redirect) return redirect_response(e.status, e.location);
     return await respond_with_error({
       event,
-      state,
+      state: state2,
       error: e,
       resolve_opts
     });
@@ -45011,7 +45140,7 @@ function get_self_origin(paths_origin, url_origin) {
 function is_remote_forbidden({ request: request2, request_origin, self_origin }) {
   return request2.method !== "GET" && request_origin !== self_origin;
 }
-async function render_data(event, state, route, invalidated_data_nodes, trailing_slash) {
+async function render_data(event, state2, route, invalidated_data_nodes, trailing_slash) {
   if (!route.page) return with_version_header(new Response(void 0, { status: 404 }));
   try {
     const node_ids = [...route.page.layouts, route.page.leaf];
@@ -45030,7 +45159,7 @@ async function render_data(event, state, route, invalidated_data_nodes, trailing
           const node2 = n == void 0 ? n : await manifest.nodes[n]();
           return load_server_data({
             event: new_event,
-            state,
+            state: state2,
             node: node2,
             parent: /* @__PURE__ */ __name(async () => {
               const data2 = {};
@@ -45051,13 +45180,13 @@ async function render_data(event, state, route, invalidated_data_nodes, trailing
       if (!invalidated[i]) return { type: "skip" };
       return fn();
     });
-    const data_serializer = server_data_serializer_json(event, state);
+    const data_serializer = server_data_serializer_json(event, state2);
     await Promise.all(promises.map(async (p, i) => {
       const node2 = await p.catch(async (error63) => {
         if (error63 instanceof Redirect) throw error63;
         return {
           type: "error",
-          error: await handle_error_and_jsonify(event, state, error63)
+          error: await handle_error_and_jsonify(event, state2, error63)
         };
       });
       data_serializer.add_node(i, node2);
@@ -45072,7 +45201,7 @@ async function render_data(event, state, route, invalidated_data_nodes, trailing
     const error63 = normalize_error(e);
     if (error63 instanceof Redirect) return redirect_json_response(error63);
     else {
-      const transformed = await handle_error_and_jsonify(event, state, error63);
+      const transformed = await handle_error_and_jsonify(event, state2, error63);
       return json_response(transformed, transformed.status);
     }
   }
@@ -45278,14 +45407,14 @@ function create_request_state(options2) {
     ...transient_fields()
   };
 }
-function fork_state_for_subrequest(state) {
+function fork_state_for_subrequest(state2) {
   return {
-    ...state,
+    ...state2,
     ...transient_fields(),
-    depth: state.depth + 1
+    depth: state2.depth + 1
   };
 }
-function create_fetch({ event, state, get_cookie_header, set_internal }) {
+function create_fetch({ event, state: state2, get_cookie_header, set_internal }) {
   const server_fetch = /* @__PURE__ */ __name(async (info, init2) => {
     const original_request = normalize_fetch_input(info, init2, event.url);
     let mode = (info instanceof Request ? info.mode : init2?.mode) ?? "cors";
@@ -45316,9 +45445,9 @@ function create_fetch({ event, state, get_cookie_header, set_internal }) {
         const is_asset_html = manifest.assets.has(filename_html) || filename_html in manifest.server_assets;
         if (is_asset || is_asset_html) {
           const file2 = is_asset ? filename : filename_html;
-          if (state.read) {
+          if (state2.read) {
             const type = is_asset ? manifest.mime_types[filename.slice(filename.lastIndexOf("."))] : "text/html";
-            return new Response(state.read(file2), { headers: type ? { "content-type": type } : {} });
+            return new Response(state2.read(file2), { headers: type ? { "content-type": type } : {} });
           } else if (read_implementation && file2 in manifest.server_assets) {
             const length = manifest.server_assets[file2];
             const type = manifest.mime_types[file2.slice(file2.lastIndexOf("."))];
@@ -45339,7 +45468,7 @@ function create_fetch({ event, state, get_cookie_header, set_internal }) {
         if (!request2.headers.has("accept")) request2.headers.set("accept", "*/*");
         const accept_language = event.request.headers.get("accept-language");
         if (accept_language && !request2.headers.has("accept-language")) request2.headers.set("accept-language", accept_language);
-        const response = await internal_fetch(request2, state);
+        const response = await internal_fetch(request2, state2);
         for (const str of response.headers.getSetCookie()) {
           const { name, value, ...cookie_options } = parseSetCookie(str, { decode: /* @__PURE__ */ __name((v) => v, "decode") });
           set_internal(name, value, {
@@ -45362,9 +45491,9 @@ function normalize_fetch_input(info, init2, url3) {
   if (info instanceof Request) return info;
   return new Request(typeof info === "string" ? new URL(info, url3) : info, init2);
 }
-async function internal_fetch(request2, state) {
+async function internal_fetch(request2, state2) {
   if (request2.signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");
-  const subrequest_state = fork_state_for_subrequest(state);
+  const subrequest_state = fork_state_for_subrequest(state2);
   if (!request2.signal) return await respond$1(request2, subrequest_state);
   let remove_abort_listener = noop;
   const abort_promise = new Promise((_, reject) => {
@@ -45390,7 +45519,7 @@ function get_public_env(request2) {
   });
   return new Response(`export const env=${payload}`, { headers });
 }
-async function internal_respond(request2, state) {
+async function internal_respond(request2, state2) {
   const url3 = new URL(request2.url);
   const is_route_resolution_request = has_resolution_suffix2(url3.pathname);
   const is_data_request = has_data_suffix2(url3.pathname);
@@ -45431,15 +45560,15 @@ async function internal_respond(request2, state) {
   const event = {
     cookies,
     fetch: null,
-    getClientAddress: state.getClientAddress || (() => {
+    getClientAddress: state2.getClientAddress || (() => {
       client_address_unsupported({ adapter: "@sveltejs/adapter-cloudflare" });
     }),
     locals: {},
     params: {},
-    platform: state.emulator?.platform ? await state.emulator.platform({
+    platform: state2.emulator?.platform ? await state2.emulator.platform({
       config: {},
-      prerender: !!state.prerendering?.fallback
-    }) : state.platform,
+      prerender: !!state2.prerendering?.fallback
+    }) : state2.platform,
     request: request2,
     route: { id: null },
     setHeaders: /* @__PURE__ */ __name((new_headers) => {
@@ -45452,31 +45581,31 @@ async function internal_respond(request2, state) {
           else header_already_set({ name: key });
         } else {
           headers2[lower] = value;
-          if (state.prerendering && lower === "cache-control") state.prerendering.cache = value;
+          if (state2.prerendering && lower === "cache-control") state2.prerendering.cache = value;
         }
       }
     }, "setHeaders"),
     url: url3,
     isDataRequest: is_data_request,
-    isSubRequest: state.depth > 0,
+    isSubRequest: state2.depth > 0,
     isRemoteRequest: !!remote_id
   };
   event.fetch = create_fetch({
     event,
-    state,
+    state: state2,
     get_cookie_header,
     set_internal
   });
   let resolved_path = url3.pathname;
   if (!remote_id && !is_route_id_resolution_request) {
-    const prerendering_reroute_state = state.prerendering?.inside_reroute;
+    const prerendering_reroute_state = state2.prerendering?.inside_reroute;
     try {
-      if (state.prerendering) state.prerendering.inside_reroute = true;
+      if (state2.prerendering) state2.prerendering.inside_reroute = true;
       resolved_path = await hooks.reroute({
         url: new URL(url3),
         fetch: event.fetch
       }) ?? url3.pathname;
-      if (!manifest.routes.length && resolved_path !== url3.pathname) state.rerouted_url = denormalise_url({
+      if (!manifest.routes.length && resolved_path !== url3.pathname) state2.rerouted_url = denormalise_url({
         request_url: request2.url,
         resolved_path,
         is_data_request,
@@ -45485,7 +45614,7 @@ async function internal_respond(request2, state) {
     } catch {
       return text("Internal Server Error", { status: 500 });
     } finally {
-      if (state.prerendering) state.prerendering.inside_reroute = prerendering_reroute_state;
+      if (state2.prerendering) state2.prerendering.inside_reroute = prerendering_reroute_state;
     }
   }
   let resolve_opts = {
@@ -45495,13 +45624,15 @@ async function internal_respond(request2, state) {
   };
   let trailing_slash = "never";
   let page_nodes;
+  let decoded_pathname;
   try {
     resolved_path = decode_pathname(resolved_path);
+    decoded_pathname = decode_pathname(url3.pathname);
   } catch {
     resolved_path = null;
     return await handle2();
   }
-  if (resolved_path !== decode_pathname(url3.pathname) && !state.prerendering?.fallback && has_prerendered_path(resolved_path)) {
+  if (resolved_path !== decoded_pathname && !state2.prerendering?.fallback && has_prerendered_path(resolved_path)) {
     const url4 = denormalise_url({
       request_url: request2.url,
       resolved_path,
@@ -45521,7 +45652,7 @@ async function internal_respond(request2, state) {
         statusText: response.statusText
       });
     } catch (error63) {
-      return await handle_fatal_error(event, state, error63);
+      return await handle_fatal_error(event, state2, error63);
     }
   }
   let route = null;
@@ -45538,7 +45669,7 @@ async function internal_respond(request2, state) {
       headers: headers3
     });
   }
-  if (!state.prerendering?.fallback && !skip_route_resolution) try {
+  if (!state2.prerendering?.fallback && !skip_route_resolution) try {
     const matchers = await manifest.matchers();
     const result = find_route(resolved_path, manifest.routes, matchers);
     if (result) {
@@ -45547,7 +45678,7 @@ async function internal_respond(request2, state) {
       event.params = result.params;
     }
   } catch (e) {
-    return await handle_fatal_error(event, state, e);
+    return await handle_fatal_error(event, state2, e);
   }
   try {
     page_nodes = route?.page ? new PageNodes(await load_page_nodes(route.page)) : void 0;
@@ -45557,7 +45688,7 @@ async function internal_respond(request2, state) {
       else if (route.endpoint) trailing_slash = (await route.endpoint()).trailingSlash ?? "never";
       if (!is_data_request) {
         const normalized = normalize_path(url3.pathname, trailing_slash);
-        if (normalized !== url3.pathname && !state.prerendering?.fallback) return new Response(void 0, {
+        if (normalized !== url3.pathname && !state2.prerendering?.fallback) return new Response(void 0, {
           status: 308,
           headers: {
             "x-sveltekit-normalize": "1",
@@ -45565,7 +45696,7 @@ async function internal_respond(request2, state) {
           }
         });
       }
-      if (state.before_handle || state.emulator?.platform) {
+      if (state2.before_handle || state2.emulator?.platform) {
         let config2 = {};
         let prerender2 = false;
         if (route.endpoint) {
@@ -45574,13 +45705,13 @@ async function internal_respond(request2, state) {
           prerender2 = node2.prerender ?? prerender2;
         } else if (page_nodes) {
           config2 = page_nodes.get_config() ?? config2;
-          prerender2 = state.prerender_default = page_nodes.prerender();
+          prerender2 = state2.prerender_default = page_nodes.prerender();
         }
-        if (state.emulator?.platform) event.platform = await state.emulator.platform({
+        if (state2.emulator?.platform) event.platform = await state2.emulator.platform({
           config: config2,
           prerender: prerender2
         });
-        if (state.before_handle) return await state.before_handle(event, config2, prerender2, handle2);
+        if (state2.before_handle) return await state2.before_handle(event, config2, prerender2, handle2);
       }
     }
     return await handle2();
@@ -45590,13 +45721,13 @@ async function internal_respond(request2, state) {
       add_cookies_to_headers(response.headers, new_cookies.values());
       return response;
     } catch (err) {
-      return await handle_fatal_error(event, state, err);
+      return await handle_fatal_error(event, state2, err);
     }
-    return await handle_fatal_error(event, state, e);
+    return await handle_fatal_error(event, state2, e);
   }
   async function handle2() {
     set_trailing_slash(trailing_slash);
-    if (state.prerendering && !state.prerendering.fallback && !state.prerendering.inside_reroute) disable_search(url3);
+    if (state2.prerendering && !state2.prerendering.fallback && !state2.prerendering.inside_reroute) disable_search(url3);
     const response = await record_span({
       name: "sveltekit.handle.root",
       attributes: {
@@ -45617,7 +45748,7 @@ async function internal_respond(request2, state) {
         };
         return await with_request_store({
           event: traced_event,
-          state
+          state: state2
         }, () => hooks.handle({
           event: traced_event,
           resolve: /* @__PURE__ */ __name((event2, opts) => {
@@ -45631,7 +45762,7 @@ async function internal_respond(request2, state) {
                     response2.headers.set(key, value);
                   }
                   add_cookies_to_headers(response2.headers, new_cookies.values());
-                  if (state.prerendering && event2.route.id !== null) response2.headers.set("x-sveltekit-routeid", encodeURI(event2.route.id));
+                  if (state2.prerendering && event2.route.id !== null) response2.headers.set("x-sveltekit-routeid", encodeURI(event2.route.id));
                   resolve_span.setAttributes({
                     "http.response.status_code": response2.status,
                     "http.response.body.size": response2.headers.get("content-length") || "unknown"
@@ -45683,13 +45814,13 @@ async function internal_respond(request2, state) {
       };
       if (resolved_path === null) return await respond_with_error({
         event: event2,
-        state,
+        state: state2,
         error: new SvelteKitError(400, "Malformed URI", `Failed to decode URI: ${event2.url.pathname}`),
         resolve_opts
       });
-      if (state.prerendering?.fallback) return await render_response({
+      if (state2.prerendering?.fallback) return await render_response({
         event: event2,
-        state,
+        state: state2,
         page_config: {
           ssr: false,
           csr: true
@@ -45703,25 +45834,25 @@ async function internal_respond(request2, state) {
         }],
         fetched: [],
         resolve_opts,
-        data_serializer: server_data_serializer(event2, state)
+        data_serializer: server_data_serializer(event2, state2)
       });
-      if (remote_id) return await handle_remote_call(event2, state, remote_id);
+      if (remote_id) return await handle_remote_call(event2, state2, remote_id);
       if (route) {
         const method = event2.request.method;
         let response2;
-        if (is_data_request) response2 = await render_data(event2, state, route, invalidated_data_nodes, trailing_slash);
+        if (is_data_request) response2 = await render_data(event2, state2, route, invalidated_data_nodes, trailing_slash);
         else {
           let endpoint;
-          if (route.endpoint && (!route.page || !state.prerendering && is_endpoint_request(event2))) {
+          if (route.endpoint && (!route.page || !state2.prerendering && is_endpoint_request(event2))) {
             endpoint = await route.endpoint();
             if (route.page && (method === "GET" || method === "HEAD" || method === "POST")) {
               if (!(method === "POST" ? !!(endpoint.POST || endpoint.fallback) : !!(endpoint.GET || endpoint.fallback || method === "HEAD" && endpoint.HEAD))) endpoint = void 0;
             }
           }
-          if (endpoint) response2 = await render_endpoint(event2, state, endpoint);
+          if (endpoint) response2 = await render_endpoint(event2, state2, endpoint);
           else if (route.page) {
             if (!page_nodes2) throw new Error("page_nodes not found. This should never happen");
-            else if (page_methods.has(method)) response2 = await render_page(event2, state, route.page, page_nodes2, resolve_opts);
+            else if (page_methods.has(method)) response2 = await render_page(event2, state2, route.page, page_nodes2, resolve_opts);
             else {
               const allowed_methods2 = new Set(allowed_page_methods);
               if ((await manifest.nodes[route.page.leaf]())?.server?.actions) allowed_methods2.add("POST");
@@ -45752,7 +45883,7 @@ async function internal_respond(request2, state) {
         }
         return response2;
       }
-      if (state.error && event2.isSubRequest) {
+      if (state2.error && event2.isSubRequest) {
         const headers3 = new Headers(request2.headers);
         headers3.set("x-sveltekit-error", "true");
         return await fetch(request2, {
@@ -45760,9 +45891,9 @@ async function internal_respond(request2, state) {
           redirect: "manual"
         });
       }
-      if (state.error) return text("Internal Server Error", { status: 500 });
-      if (state.depth === 0) {
-        if (!state.prerendering && is_data_request && invalidated_data_nodes?.length === 1 && invalidated_data_nodes[0]) return await render_data(event2, state, { page: {
+      if (state2.error) return text("Internal Server Error", { status: 500 });
+      if (state2.depth === 0) {
+        if (!state2.prerendering && is_data_request && invalidated_data_nodes?.length === 1 && invalidated_data_nodes[0]) return await render_data(event2, state2, { page: {
           layouts: [],
           leaf: 0
         } }, invalidated_data_nodes, "ignore");
@@ -45772,16 +45903,16 @@ async function internal_respond(request2, state) {
         });
         return await respond_with_error({
           event: event2,
-          state,
+          state: state2,
           error: new SvelteKitError(404, "Not Found", `Not found: ${event2.url.pathname}`),
           resolve_opts
         });
       }
-      if (state.prerendering) return text("not found", { status: 404 });
+      if (state2.prerendering) return text("not found", { status: 404 });
       const response = await fetch(request2, { redirect: "manual" });
       return new Response(response.body, response);
     } catch (e) {
-      return await handle_fatal_error(event2, state, e);
+      return await handle_fatal_error(event2, state2, e);
     } finally {
       event2.cookies.set = () => {
         cookies_set_after_response();
@@ -46191,8 +46322,8 @@ var init_instance = __esm({
       * @param {Component} component
       * @param {Component | undefined} error
       */
-      constructor(component13, error63) {
-        this.component = component13;
+      constructor(component14, error63) {
+        this.component = component14;
         this.error = error63;
       }
     };
@@ -46639,8 +46770,8 @@ var init_Icon = __esm({
       "stroke-linecap": "round",
       "stroke-linejoin": "round"
     };
-    mergeClasses = /* @__PURE__ */ __name((...classes) => classes.filter((className, index17, array3) => {
-      return Boolean(className) && className.trim() !== "" && array3.indexOf(className) === index17;
+    mergeClasses = /* @__PURE__ */ __name((...classes) => classes.filter((className, index18, array3) => {
+      return Boolean(className) && className.trim() !== "" && array3.indexOf(className) === index18;
     }).join(" ").trim(), "mergeClasses");
     __name(isDefined, "isDefined");
     __name(buildLucideIconNode, "buildLucideIconNode");
@@ -46792,7 +46923,7 @@ function summarizePost(targets, now = /* @__PURE__ */ new Date()) {
     if (rows) rows.push(t);
     else byConnection.set(t.connectionId, [t]);
   }
-  const state = {
+  const state2 = {
     published: [],
     sending: [],
     processing: [],
@@ -46802,22 +46933,22 @@ function summarizePost(targets, now = /* @__PURE__ */ new Date()) {
   };
   for (const [connectionId, rows] of byConnection) {
     if (rows.some(isPublished)) {
-      state.published.push(connectionId);
+      state2.published.push(connectionId);
       continue;
     }
     if (rows.some((t) => isTargetSending(t, now))) {
-      state.sending.push(connectionId);
+      state2.sending.push(connectionId);
       continue;
     }
     const waiting = rows.find((t) => t.status === "scheduled" || t.status === "pending" || t.status === "publishing");
     if (waiting?.status === "scheduled" && (waiting.errorMessage ?? "").includes("is processing the video")) {
-      state.processing.push(connectionId);
+      state2.processing.push(connectionId);
       continue;
     }
     if (waiting) {
       const queued = waiting.status !== "scheduled";
       const at = queued ? null : toDate(waiting.scheduledFor);
-      state.waiting.push({
+      state2.waiting.push({
         targetId: waiting.id ?? null,
         connectionId,
         at,
@@ -46826,25 +46957,25 @@ function summarizePost(targets, now = /* @__PURE__ */ new Date()) {
         error: waiting.errorMessage ?? null
       });
       const due = queued ? now : at;
-      if (due && (!state.nextAt || due.getTime() < state.nextAt.getTime())) state.nextAt = due;
+      if (due && (!state2.nextAt || due.getTime() < state2.nextAt.getTime())) state2.nextAt = due;
       continue;
     }
     const failed = rows.find((t) => t.status === "failed");
-    if (failed) state.failed.push({
+    if (failed) state2.failed.push({
       connectionId,
       error: failed.errorMessage ?? null
     });
   }
-  return state;
+  return state2;
 }
-function selectionDrift(state, selected) {
-  if (!state.waiting.length) return {
+function selectionDrift(state2, selected) {
+  if (!state2.waiting.length) return {
     added: [],
     removed: []
   };
   const ticked = new Set(selected);
-  const waiting = new Set(state.waiting.map((w) => w.connectionId));
-  const settled = /* @__PURE__ */ new Set([...state.published, ...state.sending]);
+  const waiting = new Set(state2.waiting.map((w) => w.connectionId));
+  const settled = /* @__PURE__ */ new Set([...state2.published, ...state2.sending]);
   return {
     added: [...ticked].filter((id2) => !waiting.has(id2) && !settled.has(id2)),
     removed: [...waiting].filter((id2) => !ticked.has(id2))
@@ -47013,16 +47144,17 @@ function _layout($$renderer, $$props) {
     const avatarSrc = derived2(() => profilePictureUrl() || null);
     let failedAvatarSrc = null;
     const isLoginRoute = derived2(() => page.url.pathname.startsWith("/login"));
+    const isShareRoute = derived2(() => page.url.pathname.startsWith("/p/"));
     const showWrite = derived2(() => page.url.pathname !== "/compose" || (composeSession.active ? composeSession.hasContent : page.url.searchParams.has("id")));
     const showUpdateDot = derived2(() => !!updateNotice.tag && updateNotice.seen !== updateNotice.tag);
     head("12qhfyh", $$renderer2, ($$renderer3) => {
       $$renderer3.title(($$renderer4) => {
         $$renderer4.push(`<title>${escape_html(data.appName)} \u2014 write &amp; schedule</title>`);
       });
-      $$renderer3.push(`<meta name="description" content="Minimal social scheduler for Mastodon, Bluesky, LinkedIn, Threads, and X"/> <link rel="icon"${attr("href", favicon_default)} type="image/svg+xml"/> <link rel="icon"${attr("href", favicon_dark_default)} type="image/svg+xml" media="(prefers-color-scheme: dark)"/> <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>`);
+      $$renderer3.push(`<meta name="description" content="Minimal social scheduler for Mastodon, Bluesky, LinkedIn, Threads, Instagram, and X"/> <link rel="icon"${attr("href", favicon_default)} type="image/svg+xml"/> <link rel="icon"${attr("href", favicon_dark_default)} type="image/svg+xml" media="(prefers-color-scheme: dark)"/> <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>`);
     });
     $$renderer2.push(`<a href="#main-content" class="sr-only z-50 rounded-full bg-stone-900 px-4 py-2 text-sm font-bold text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4">Skip to content</a> `);
-    if (isLoginRoute() || !userEmail()) {
+    if (isLoginRoute() || isShareRoute() || !userEmail()) {
       $$renderer2.push("<!--[0-->");
       children2($$renderer2);
       $$renderer2.push(`<!---->`);
@@ -47112,8 +47244,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.iPsjf5QI.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/tUr8yDSR.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CtwZ6nWe.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/CvP7luaA.js"];
-    stylesheets = ["_app/immutable/assets/0.tKRh2_sd.css"];
+    imports = ["_app/immutable/nodes/0.BdionRpL.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    stylesheets = ["_app/immutable/assets/0.BalJVO__.css"];
     fonts = [];
   }
 });
@@ -47152,9 +47284,55 @@ var init__2 = __esm({
     "use strict";
     index3 = 1;
     component2 = /* @__PURE__ */ __name(async () => component_cache2 ??= (await Promise.resolve().then(() => (init_error_svelte(), error_svelte_exports))).default, "component");
-    imports2 = ["_app/immutable/nodes/1.B5Oxzg04.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CghTi6yz.js"];
+    imports2 = ["_app/immutable/nodes/1.CFXWDPtM.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js"];
     stylesheets2 = [];
     fonts2 = [];
+  }
+});
+
+// .svelte-kit/output/server/entries/pages/p/_token_/_error.svelte.js
+var error_svelte_exports2 = {};
+__export(error_svelte_exports2, {
+  default: () => _error
+});
+function _error($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    head("5wkuyg", $$renderer2, ($$renderer3) => {
+      $$renderer3.title(($$renderer4) => {
+        $$renderer4.push(`<title>Preview unavailable</title>`);
+      });
+      $$renderer3.push(`<meta name="robots" content="noindex, nofollow"/>`);
+    });
+    $$renderer2.push(`<main id="main-content" class="flex min-h-dvh items-center justify-center bg-stone-50 px-4 font-sans"><div class="w-full max-w-sm text-center" data-testid="share-unavailable"><h1 class="text-lg font-extrabold text-stone-900">Preview unavailable</h1> <p class="mt-2 text-[14px] font-medium text-stone-500">${escape_html(page.status === 404 ? "This link has expired, was turned off, or the post has already gone out." : page.error?.message || "Something went wrong. Try again in a moment.")}</p></div></main>`);
+  });
+}
+var init_error_svelte2 = __esm({
+  ".svelte-kit/output/server/entries/pages/p/_token_/_error.svelte.js"() {
+    "use strict";
+    init_server3();
+    init_state();
+    __name(_error, "_error");
+  }
+});
+
+// .svelte-kit/output/server/nodes/2.js
+var __exports3 = {};
+__export(__exports3, {
+  component: () => component3,
+  fonts: () => fonts3,
+  imports: () => imports3,
+  index: () => index4,
+  stylesheets: () => stylesheets3
+});
+var index4, component_cache3, component3, imports3, stylesheets3, fonts3;
+var init__3 = __esm({
+  ".svelte-kit/output/server/nodes/2.js"() {
+    "use strict";
+    index4 = 2;
+    component3 = /* @__PURE__ */ __name(async () => component_cache3 ??= (await Promise.resolve().then(() => (init_error_svelte2(), error_svelte_exports2))).default, "component");
+    imports3 = ["_app/immutable/nodes/2.BtLvuhcP.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js"];
+    stylesheets3 = [];
+    fonts3 = [];
   }
 });
 
@@ -47394,28 +47572,28 @@ var init_page_svelte = __esm({
   }
 });
 
-// .svelte-kit/output/server/nodes/2.js
-var __exports3 = {};
-__export(__exports3, {
-  component: () => component3,
-  fonts: () => fonts3,
-  imports: () => imports3,
-  index: () => index4,
+// .svelte-kit/output/server/nodes/3.js
+var __exports4 = {};
+__export(__exports4, {
+  component: () => component4,
+  fonts: () => fonts4,
+  imports: () => imports4,
+  index: () => index5,
   server: () => page_server_ts_exports,
   server_id: () => server_id2,
-  stylesheets: () => stylesheets3
+  stylesheets: () => stylesheets4
 });
-var index4, component_cache3, component3, server_id2, imports3, stylesheets3, fonts3;
-var init__3 = __esm({
-  ".svelte-kit/output/server/nodes/2.js"() {
+var index5, component_cache4, component4, server_id2, imports4, stylesheets4, fonts4;
+var init__4 = __esm({
+  ".svelte-kit/output/server/nodes/3.js"() {
     "use strict";
     init_page_server_ts();
-    index4 = 2;
-    component3 = /* @__PURE__ */ __name(async () => component_cache3 ??= (await Promise.resolve().then(() => (init_page_svelte(), page_svelte_exports))).default, "component");
+    index5 = 3;
+    component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte(), page_svelte_exports))).default, "component");
     server_id2 = "src/routes/+page.server.ts";
-    imports3 = ["_app/immutable/nodes/2.CfhnMO-4.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/J0Pux1Z4.js"];
-    stylesheets3 = [];
-    fonts3 = [];
+    imports4 = ["_app/immutable/nodes/3.Da7z2Vma.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/W8_OUZDm.js"];
+    stylesheets4 = [];
+    fonts4 = [];
   }
 });
 
@@ -47430,8 +47608,8 @@ function platformSecretNames(id2) {
   const { secrets, optionalSecrets = [] } = PLATFORM_SETUP[id2];
   return [...secrets, ...optionalSecrets];
 }
-function platformConfigured(id2, present) {
-  return PLATFORM_SETUP[id2].secrets.every((name) => present[name] === true);
+function platformConfigured(id2, present2) {
+  return PLATFORM_SETUP[id2].secrets.every((name) => present2[name] === true);
 }
 function joinPlatformNames(names) {
   if (names.length <= 1) return names[0] ?? "";
@@ -47475,8 +47653,8 @@ var init_platform_setup = __esm({
         callbackPath: "/api/connections/instagram/callback",
         consoleUrl: "https://developers.facebook.com/apps/",
         consoleName: "Meta for Developers",
-        consoleRequirement: "Create a Business app, add the Instagram product, and open API setup with Instagram business login. Its Instagram app ID and secret are the ones to use, not the Meta app\u2019s own.",
-        redirectField: "API setup with Instagram business login \u2192 Set up Instagram business login \u2192 OAuth redirect URIs",
+        consoleRequirement: "Create the app with the Manage messaging & content on Instagram use case (or add it to an existing app), add the instagram_business_basic and instagram_business_content_publish permissions, and while it is still in development add the account you connect as an Instagram tester and accept the invite. The Instagram app ID and secret under API setup with Instagram login are the ones to use, not the Meta app\u2019s own.",
+        redirectField: "the Instagram use case \u2192 API setup with Instagram login \u2192 Set up Instagram business login \u2192 Redirect URL",
         docsAnchor: "instagram",
         note: "Only Business and Creator accounts can post through the API."
       },
@@ -48058,7 +48236,7 @@ function _page2($$renderer, $$props) {
     let disconnectBusy = false;
     data.appUrl;
     connections2.some(viaZernio);
-    async function load13() {
+    async function load14() {
       if (connections2.length === 0) initialLoading = true;
       loadFailed = false;
       err = null;
@@ -48093,7 +48271,7 @@ function _page2($$renderer, $$props) {
         initialLoading = false;
       }
     }
-    __name(load13, "load");
+    __name(load14, "load");
     async function confirmDisconnect() {
       if (!pendingDisconnect) return;
       disconnectBusy = true;
@@ -48106,7 +48284,7 @@ function _page2($$renderer, $$props) {
         const archived = Number(payload2.archived ?? 0);
         const details = [removed ? `${removed} scheduled post${removed === 1 ? "" : "s"} removed` : "", archived ? `${archived} published post${archived === 1 ? "" : "s"} kept` : ""].filter(Boolean);
         msg = `Disconnected ${pendingDisconnect.label}${details.length ? ` \u2014 ${details.join(" \xB7 ")}` : ""}`;
-        await load13();
+        await load14();
       } catch (e) {
         err = humanizeError(e instanceof Error ? e.message : "Could not disconnect");
       } finally {
@@ -48139,10 +48317,10 @@ function _page2($$renderer, $$props) {
     else {
       $$renderer2.push(`<!--[-1--><!--[-->`);
       const each_array_1 = ensure_array_like(connections2);
-      for (let index17 = 0, $$length = each_array_1.length; index17 < $$length; index17++) {
-        let account = each_array_1[index17];
+      for (let index18 = 0, $$length = each_array_1.length; index18 < $$length; index18++) {
+        let account = each_array_1[index18];
         const needsReconnect2 = account.status !== "active";
-        $$renderer2.push(`<div${attr_class(`group flex flex-col justify-between gap-4 p-4 transition-colors hover:bg-stone-50/50 sm:flex-row sm:items-center sm:px-6 sm:py-4 ${index17 !== connections2.length - 1 ? "border-b border-stone-100" : ""}`)}><div class="flex items-center gap-4">`);
+        $$renderer2.push(`<div${attr_class(`group flex flex-col justify-between gap-4 p-4 transition-colors hover:bg-stone-50/50 sm:flex-row sm:items-center sm:px-6 sm:py-4 ${index18 !== connections2.length - 1 ? "border-b border-stone-100" : ""}`)}><div class="flex items-center gap-4">`);
         AccountAvatar($$renderer2, {
           platform: account.platform,
           handle: account.handle,
@@ -48214,136 +48392,6 @@ var init_page_svelte2 = __esm({
   }
 });
 
-// .svelte-kit/output/server/nodes/3.js
-var __exports4 = {};
-__export(__exports4, {
-  component: () => component4,
-  fonts: () => fonts4,
-  imports: () => imports4,
-  index: () => index5,
-  server: () => page_server_ts_exports2,
-  server_id: () => server_id3,
-  stylesheets: () => stylesheets4
-});
-var index5, component_cache4, component4, server_id3, imports4, stylesheets4, fonts4;
-var init__4 = __esm({
-  ".svelte-kit/output/server/nodes/3.js"() {
-    "use strict";
-    init_page_server_ts2();
-    index5 = 3;
-    component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
-    server_id3 = "src/routes/accounts/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.C6VyfLDr.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/DHMiDdm1.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/D3iaGwoa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/DyWvIGLt.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DtXDGwOl.js", "_app/immutable/chunks/QXGyRFL3.js", "_app/immutable/chunks/vp87PCn2.js"];
-    stylesheets4 = [];
-    fonts4 = [];
-  }
-});
-
-// .svelte-kit/output/server/entries/pages/api/_page.svelte.js
-var page_svelte_exports3 = {};
-__export(page_svelte_exports3, {
-  default: () => _page3
-});
-function _page3($$renderer) {
-  const origin2 = typeof window !== "undefined" ? window.location.origin : "";
-  const snippets = [
-    {
-      title: "List drafts",
-      code: `curl ${origin2}/api/drafts \\
-  -H "Authorization: Bearer $COGSEND_API_KEY"`
-    },
-    {
-      title: "Create a draft and publish it now",
-      code: `DRAFT=$(curl -s ${origin2}/api/drafts \\
-  -H "Authorization: Bearer $COGSEND_API_KEY" \\
-  -H 'Content-Type: application/json' \\
-  -d '{"baseBody":"Hello from the API"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["draft"]["id"])')
-CONNS=$(curl -s ${origin2}/api/connections \\
-  -H "Authorization: Bearer $COGSEND_API_KEY" | python3 -c 'import json,sys; print(json.load(sys.stdin)["connections"][0]["id"])')
-curl ${origin2}/api/drafts/$DRAFT/publish \\
-  -H "Authorization: Bearer $COGSEND_API_KEY" \\
-  -H 'Content-Type: application/json' \\
-  -d "{\\"connectionIds\\":[\\"$CONNS\\"]}"`
-    },
-    {
-      title: "Schedule for later",
-      code: `curl ${origin2}/api/drafts/$DRAFT/schedule \\
-  -H "Authorization: Bearer $COGSEND_API_KEY" \\
-  -H 'Content-Type: application/json' \\
-  -d '{"connectionIds":["<connection-id>"],"runAt":"2030-01-01T09:00:00Z"}'`
-    },
-    {
-      title: "Check the queue",
-      code: `curl ${origin2}/api/queue \\
-  -H "Authorization: Bearer $COGSEND_API_KEY"`
-    },
-    {
-      title: "MCP Inspector CLI (list tools)",
-      code: `: "\${COGSEND_API_KEY:?Load it from a secret manager}"
-npx @modelcontextprotocol/inspector --cli \\
-  "${origin2}/api/mcp" \\
-  --transport http \\
-  --protocol-era modern \\
-  --method tools/list \\
-  --header "Authorization: Bearer $COGSEND_API_KEY"`
-    },
-    {
-      title: "Generic MCP client configuration template",
-      code: `{
-  "mcpServers": {
-    "cogsend": {
-      "type": "http",
-      "url": "${origin2}/api/mcp",
-      "headers": {
-        "Authorization": "Bearer $COGSEND_API_KEY"
-      }
-    }
-  }
-}`
-    }
-  ];
-  $$renderer.push(`<div class="mx-auto flex w-full max-w-2xl flex-1 flex-col py-8 pb-20"><div class="mb-12"><h1 class="text-3xl font-bold tracking-tight text-stone-900">API Documentation</h1> <p class="mt-4 text-[15px] leading-relaxed text-stone-600">Use your personal API key for REST API requests or connect an MCP client to the stateless
-			Streamable HTTP endpoint at <code>/api/mcp</code>. Generate or revoke your key in <a href="/settings" class="font-medium text-stone-900 underline underline-offset-4 hover:text-stone-600">Settings \u2192 API access</a>.</p></div> <div class="flex flex-col gap-12"><section><h2 class="mb-4 text-xl font-bold tracking-tight text-stone-900">Authentication</h2> <p class="mb-4 text-[15px] leading-relaxed text-stone-600">Provide your API key in the headers of every request. You can use the standard <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px] font-medium text-stone-900">Authorization: Bearer &lt;key></code> header or the custom <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px] font-medium text-stone-900">X-API-Key: &lt;key></code> header.</p> <div class="group relative mb-6"><pre class="overflow-x-auto rounded-xl border border-stone-200/60 bg-stone-50 p-4 font-mono text-[13px] text-stone-900">Authorization: Bearer cog_\u2026</pre> <button type="button" aria-label="Copy authorization header" aria-live="polite" class="absolute top-3 right-3 rounded-md border border-stone-200/80 bg-white px-2 py-1 text-xs font-medium text-stone-600 opacity-100 transition-opacity group-hover:opacity-100 hover:bg-stone-100 hover:text-stone-900 focus:opacity-100 focus-visible:opacity-100 sm:opacity-0">Copy</button></div> <ul class="list-disc space-y-2 pl-5 text-[15px] text-stone-600 marker:text-stone-500"><li><strong class="font-medium text-stone-900">Capabilities:</strong> The API key can be used to
-					manage drafts, upload media, publish posts, schedule deliveries, and read queue status.</li> <li><strong class="font-medium text-stone-900">Restrictions:</strong> The key cannot be used to
-					connect or disconnect social accounts, rotate credentials, or revoke itself. These actions require
-					a secure browser session.</li> <li><strong class="font-medium text-stone-900">Scopes:</strong> Choose <strong>Read-only</strong> or <strong>Read + write</strong> when generating or replacing a key;
-					Read + write is the default and includes read access. A read-only key can use MCP's connection,
-					draft, validation, and queue tools; write tools require Read + write. The detailed MCP tool
-					map is below.</li> <li><strong class="font-medium text-stone-900">Key lifecycle:</strong> Only one personal key is
-					active at a time. The raw key is shown once and only its hash is stored. Generating a replacement
-					immediately revokes the previous key.</li> <li><strong class="font-medium text-stone-900">Errors:</strong> Failed requests return a JSON
-					object with an <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">error</code> property.</li> <li><strong class="font-medium text-stone-900">Publishing:</strong> Direct publishes return
-					per-connection results inline. Reusing a connection within the same draft returns <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">skipped</code>.
-					Scheduling a duplicate target returns a 409 Conflict.</li></ul> <p class="mt-6 text-[14px] font-medium text-stone-500">If a key ever touches a log or screenshot, rotate it in Settings \u2014 the old one stops working
-				immediately.</p></section> <section><h2 class="mb-6 text-xl font-bold tracking-tight text-stone-900">Endpoints</h2> <dl class="space-y-3 font-mono text-[13px] text-stone-600"><div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/mcp</dt> <dd>stateless Streamable HTTP MCP endpoint; personal bearer key required</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">GET /api/drafts</dt> <dd>list drafts with variants, media, targets</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts</dt> <dd>{"title?", "baseBody?", "selectedConnectionIds?"} \u2192 201 {draft}</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">PATCH /api/drafts/:id</dt> <dd>edit title/body/selectedConnectionIds (409 while publishing)</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">PUT /api/drafts/:id/variants</dt> <dd>{"platform", "body?", "options?"} \u2192 the per-platform copy</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts/:id/media</dt> <dd>multipart: file(s), segmentIndex, altText? \u2192 201 {media}</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts/:id/duplicate</dt> <dd>clone a draft (media included) into a new draft</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts/:id/publish</dt> <dd>{"connectionIds":[]} \u2192 {results[], draft}</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/drafts/:id/schedule</dt> <dd>{"connectionIds":[],"runAt":ISO} \u2192 {targets}</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">GET /api/queue</dt> <dd>upcoming + recent delivery targets</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/targets/:id/cancel|retry</dt> <dd>cancel or retry one delivery</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">POST /api/targets/bulk</dt> <dd>cancel, retry, or reschedule several deliveries at once</dd></div> <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4"><dt class="shrink-0 font-semibold text-stone-900 sm:w-[280px]">GET /api/connections</dt> <dd>account ids, platforms, statuses, and which platforms this deployment can connect</dd></div></dl></section> <section aria-labelledby="mcp-server-heading"><h2 id="mcp-server-heading" class="mb-4 text-xl font-bold tracking-tight text-stone-900">MCP server</h2> <p class="mb-4 text-[15px] leading-relaxed text-stone-600">Connect to <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">${escape_html(origin2)}/api/mcp</code> using Streamable HTTP. Send an active personal key in <code class="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">Authorization: Bearer \u2026</code> on every request. MCP does not accept cookies, <code>X-API-Key</code>, the legacy <code>API_TOKEN</code>, scheduler credentials, or query-string credentials. Requests are
-				stateless JSON. Tool results include text summaries and structured data; GET and DELETE
-				return 405. If Cloudflare Access protects the instance with Service Auth, also send <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> using locally stored environment values. The Access guide
-				covers the policy choice for clients that cannot send these headers.</p> <p class="mb-3 text-[15px] leading-relaxed text-stone-600"><strong class="font-medium text-stone-900">Read scope:</strong> <code>list_connections</code>, <code>list_drafts</code>, <code>get_draft</code>, <code>validate_post</code>, <code>list_queue</code>.</p> <p class="mb-4 text-[15px] leading-relaxed text-stone-600"><strong class="font-medium text-stone-900">Write scope:</strong> <code>create_draft</code>, <code>update_draft</code>, <code>duplicate_draft</code>, <code>delete_draft</code>, <code>set_draft_variant</code>, <code>delete_draft_variant</code>, <code>publish_draft</code>, <code>schedule_draft</code>, <code>cancel_delivery</code>, <code>retry_delivery</code>, <code>reschedule_delivery</code>. Write includes read.</p> <p class="mb-4 text-[14px] leading-relaxed text-stone-600">The tools annotated as destructive are <code>update_draft</code>, <code>set_draft_variant</code>, <code>delete_draft</code>, <code>delete_draft_variant</code>, <code>publish_draft</code>, <code>schedule_draft</code>, <code>cancel_delivery</code>, <code>retry_delivery</code>, and <code>reschedule_delivery</code>. <code>publish_draft</code> and <code>retry_delivery</code> are also open-world operations. Verify content, destination, and timing
-				before approving publish, retry, schedule, or reschedule.</p> <div class="mb-6 rounded-xl border border-amber-200/70 bg-amber-50/60 p-4"><p class="text-[14px] leading-relaxed text-amber-950">Use an MCP client that asks you to approve destructive and open-world actions. Review
-					content and destination before <code>publish_draft</code> or <code>retry_delivery</code>,
-					which can post to external services. Tool annotations are hints, not authorization or
-					enforced consent; CogSend has no server-side preview/commit step in v1.</p> <p class="mt-2 text-[14px] leading-relaxed text-amber-950">MCP v1 does not expose media operations, settings, insights, account/provider management,
-					key management, scheduler administration, the internal publish endpoint, arbitrary HTTP
-					requests, prompts, resources, or sampling. The current SDK revision does not implement MCP <code>ping</code>; a ping can return JSON-RPC <code>-32601</code> / HTTP 404.</p></div> <h3 class="mb-2 text-[15px] font-semibold text-stone-900">Try it with MCP Inspector</h3> <ol class="mb-4 list-decimal space-y-2 pl-5 text-[14px] leading-relaxed text-stone-600"><li>Generate a Read-only or Read + write key in Settings and copy it while it is shown once.</li> <li>Run <code>npx @modelcontextprotocol/inspector</code> to open the official Inspector.</li> <li>Choose Streamable HTTP, enter the endpoint above, and configure the Authorization header
-					with your key. Connect and try <code>list_connections</code>.</li> <li>Review the arguments before invoking destructive or open-world tools; configure agent
-					clients to require your approval.</li></ol> <p class="text-[13px] leading-relaxed text-stone-500">The copyable CLI example below uses shell expansion for <code>$COGSEND_API_KEY</code>. The
-				generic configuration is a template: client-specific variable interpolation is not
-				guaranteed. Never commit a real key.</p></section> <section><h2 class="mb-6 text-xl font-bold tracking-tight text-stone-900">Examples</h2> <div class="flex flex-col gap-8"><!--[-->`);
-  const each_array = ensure_array_like(snippets);
-  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-    let s2 = each_array[$$index];
-    $$renderer.push(`<div><h3 class="mb-3 text-[15px] font-semibold text-stone-900">${escape_html(s2.title)}</h3> <div class="group relative"><pre class="overflow-x-auto rounded-xl border border-stone-200/60 bg-stone-50 p-4 font-mono text-[13px] text-stone-900">${escape_html(s2.code)}</pre> <button type="button"${attr("aria-label", `Copy ${s2.title} snippet`)} aria-live="polite" class="absolute top-3 right-3 rounded-md border border-stone-200/80 bg-white px-2 py-1 text-xs font-medium text-stone-600 opacity-100 transition-opacity group-hover:opacity-100 hover:bg-stone-100 hover:text-stone-900 focus:opacity-100 focus-visible:opacity-100 sm:opacity-0">Copy</button></div></div>`);
-  }
-  $$renderer.push(`<!--]--></div></section></div></div>`);
-}
-var init_page_svelte3 = __esm({
-  ".svelte-kit/output/server/entries/pages/api/_page.svelte.js"() {
-    "use strict";
-    init_server3();
-    __name(_page3, "_page");
-  }
-});
-
 // .svelte-kit/output/server/nodes/4.js
 var __exports5 = {};
 __export(__exports5, {
@@ -48351,15 +48399,19 @@ __export(__exports5, {
   fonts: () => fonts5,
   imports: () => imports5,
   index: () => index6,
+  server: () => page_server_ts_exports2,
+  server_id: () => server_id3,
   stylesheets: () => stylesheets5
 });
-var index6, component_cache5, component5, imports5, stylesheets5, fonts5;
+var index6, component_cache5, component5, server_id3, imports5, stylesheets5, fonts5;
 var init__5 = __esm({
   ".svelte-kit/output/server/nodes/4.js"() {
     "use strict";
+    init_page_server_ts2();
     index6 = 4;
-    component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
-    imports5 = ["_app/immutable/nodes/4.DdmGLj0H.js", "_app/immutable/chunks/Bsdzxjyx.js"];
+    component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
+    server_id3 = "src/routes/accounts/+page.server.ts";
+    imports5 = ["_app/immutable/nodes/4.CrecwuUU.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BJp7Yl8a.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -48467,6 +48519,127 @@ var init_published_lock = __esm({
     PUBLISHED_EDIT_ERROR = "Already published \u2014 duplicate it to post again";
     PUBLISH_IN_PROGRESS_ERROR = "Publishing in progress \u2014 try again shortly";
     __name(isFullyPublished, "isFullyPublished");
+  }
+});
+
+// .svelte-kit/output/server/chunks/platform-sync.js
+function isShareTokenFormat(value) {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+}
+function sharePath(token) {
+  return `/p/${token}`;
+}
+function shareLifetimeMs(days = 14) {
+  if (typeof days !== "number" || !Number.isInteger(days)) return null;
+  if (days < 1 || days > 30) return null;
+  return days * DAY_MS;
+}
+function hasGoneOut(targets) {
+  return targets.some((t) => t.status !== "cancelled" && (t.status === "published" || Boolean(t.remotePostId)));
+}
+function threadCards(body, media) {
+  return resolvePublishSegments(body, (i) => media.some((m) => m.segmentIndex === i)).map(({ text: text3, segmentIndex }) => ({
+    text: text3,
+    media: media.filter((m) => m.segmentIndex === segmentIndex)
+  }));
+}
+function shareVersions(input2) {
+  const versions = [{
+    key: "post",
+    label: "Post",
+    cards: threadCards(input2.baseBody, input2.media)
+  }];
+  for (const platform2 of PLATFORM_ORDER) {
+    if (!input2.platforms.includes(platform2)) continue;
+    const variant = input2.variants.find((v) => v.platform === platform2);
+    if (!variant || variant.body === null) continue;
+    const cards = supportsThreads(platform2) ? threadCards(variant.body, input2.media) : [{
+      text: joinThreadTexts(splitThreadSegments(variant.body)),
+      media: input2.media
+    }];
+    versions.push({
+      key: platform2,
+      label: platformName(platform2),
+      cards
+    });
+  }
+  return versions;
+}
+function isPlatformCustomized(overrides, platform2) {
+  const o = overrides[platform2];
+  return o != null && o.body !== null && o.body !== void 0;
+}
+function effectivePlatformBody(mainBody, overrides, platform2) {
+  if (isPlatformCustomized(overrides, platform2)) return overrides[platform2].body ?? "";
+  return mainBody;
+}
+function customizePlatformBody(overrides, platform2, body) {
+  return {
+    ...overrides,
+    [platform2]: { body }
+  };
+}
+function resetPlatformToFollow(overrides, platform2) {
+  const next = { ...overrides };
+  if (next[platform2]) next[platform2] = { body: null };
+  return next;
+}
+function customizedBodiesForSave(_mainBody, overrides, platforms) {
+  const out = {};
+  for (const p of platforms) if (isPlatformCustomized(overrides, p)) out[p] = overrides[p].body ?? "";
+  return out;
+}
+function overridesFromVariants(variants, mainBody) {
+  const map2 = {};
+  for (const v of variants) {
+    if (!isPlatformId(v.platform)) continue;
+    if (v.body === null || v.body === void 0 || v.body === mainBody) map2[v.platform] = { body: null };
+    else map2[v.platform] = { body: v.body };
+  }
+  return map2;
+}
+function platformsFromConnections(connections2) {
+  const set2 = /* @__PURE__ */ new Set();
+  for (const c of connections2) if (isPlatformId(c.platform)) set2.add(c.platform);
+  return Array.from(set2);
+}
+function restorableTargetIds(targets) {
+  return (targets ?? []).filter((t) => t.status !== "cancelled").map((t) => t.connectionId).filter((id2) => Boolean(id2));
+}
+function resolveRestoredSelection(targetIds, connections2) {
+  const wanted = targetIds.filter((id2) => Boolean(id2));
+  if (!wanted.length) return null;
+  const ids = new Set(connections2.map((c) => c.id));
+  return wanted.filter((id2) => ids.has(id2));
+}
+function resolveSavedSelection(ids, connections2) {
+  if (!Array.isArray(ids)) return null;
+  const known = new Set(connections2.map((c) => c.id));
+  return ids.filter((id2) => typeof id2 === "string" && known.has(id2));
+}
+var DAY_MS;
+var init_platform_sync = __esm({
+  ".svelte-kit/output/server/chunks/platform-sync.js"() {
+    "use strict";
+    init_platforms();
+    init_thread_segments();
+    DAY_MS = 864e5;
+    __name(isShareTokenFormat, "isShareTokenFormat");
+    __name(sharePath, "sharePath");
+    __name(shareLifetimeMs, "shareLifetimeMs");
+    __name(hasGoneOut, "hasGoneOut");
+    __name(threadCards, "threadCards");
+    __name(shareVersions, "shareVersions");
+    __name(isPlatformCustomized, "isPlatformCustomized");
+    __name(effectivePlatformBody, "effectivePlatformBody");
+    __name(customizePlatformBody, "customizePlatformBody");
+    __name(resetPlatformToFollow, "resetPlatformToFollow");
+    __name(customizedBodiesForSave, "customizedBodiesForSave");
+    __name(overridesFromVariants, "overridesFromVariants");
+    __name(platformsFromConnections, "platformsFromConnections");
+    __name(restorableTargetIds, "restorableTargetIds");
+    __name(resolveRestoredSelection, "resolveRestoredSelection");
+    __name(resolveSavedSelection, "resolveSavedSelection");
   }
 });
 
@@ -48643,10 +48816,6 @@ var init_relative_time = __esm({
 // .svelte-kit/output/server/chunks/schedule-helpers.js
 function Loader_circle($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$2 }]));
-}
-function Play($$renderer, $$props) {
-  let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData$1 }]));
 }
 function Send($$renderer, $$props) {
@@ -48655,159 +48824,6 @@ function Send($$renderer, $$props) {
 }
 function platformColorClass(platform2) {
   return PLATFORM_COLOR[platform2] ?? "text-stone-500";
-}
-function isVideoMedia2(m) {
-  return (m.mime || "").toLowerCase().startsWith("video/");
-}
-function aspectOf(m) {
-  return m.width && m.height && m.width > 0 && m.height > 0 ? m.width / m.height : null;
-}
-function frameFor(aspect, maxHeight) {
-  const a = Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, aspect ?? 1.7777777777777777));
-  return {
-    aspect: a,
-    maxWidth: Math.round(maxHeight * a)
-  };
-}
-function gridFor(count2) {
-  if (count2 <= 1) return {
-    rows: 1,
-    cells: [{
-      column: "1 / 3",
-      row: "1 / 2"
-    }]
-  };
-  if (count2 === 2) return {
-    rows: 1,
-    cells: [{
-      column: "1 / 2",
-      row: "1 / 2"
-    }, {
-      column: "2 / 3",
-      row: "1 / 2"
-    }]
-  };
-  if (count2 === 3) return {
-    rows: 2,
-    cells: [
-      {
-        column: "1 / 2",
-        row: "1 / 3"
-      },
-      {
-        column: "2 / 3",
-        row: "1 / 2"
-      },
-      {
-        column: "2 / 3",
-        row: "2 / 3"
-      }
-    ]
-  };
-  return {
-    rows: 2,
-    cells: [
-      {
-        column: "1 / 2",
-        row: "1 / 2"
-      },
-      {
-        column: "2 / 3",
-        row: "1 / 2"
-      },
-      {
-        column: "1 / 2",
-        row: "2 / 3"
-      },
-      {
-        column: "2 / 3",
-        row: "2 / 3"
-      }
-    ]
-  };
-}
-function mediaUrl(m) {
-  return `/api/media/${encodeURIComponent(m.storageKey)}`;
-}
-function imageUrl(m) {
-  const v = m.meta?.preview?.v;
-  return v ? `${mediaUrl(m)}?preview=${v}` : mediaUrl(m);
-}
-function coverUrl(m) {
-  const v = m.meta?.cover?.v;
-  return v ? `${mediaUrl(m)}?cover=${v}` : null;
-}
-function MediaPreview($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { items, maxHeight, progress = null, extra = 0, toolbar, testId } = $$props;
-    let natural = {};
-    let playing = null;
-    const shown = derived2(() => items.slice(0, 4));
-    const grid = derived2(() => gridFor(shown().length));
-    const single = derived2(() => shown().length === 1 ? shown()[0] : null);
-    const frame = derived2(() => single() ? frameFor(aspectOf(single()) ?? natural[single().id] ?? null, maxHeight) : frameFor(progress ? null : 16 / 9, maxHeight));
-    function srcOf(m) {
-      return m.previewUrl || mediaUrl(m);
-    }
-    __name(srcOf, "srcOf");
-    function label(m, i) {
-      const kind = isVideoMedia2(m) ? "video" : "image";
-      return m.altText || `Attached ${kind} ${i + 1}`;
-    }
-    __name(label, "label");
-    function tile($$renderer3, m, i, fit) {
-      if (isVideoMedia2(m)) {
-        $$renderer3.push("<!--[0-->");
-        if (playing === m.id) $$renderer3.push(`<!--[0--><video${attr("src", srcOf(m))}${attr("poster", coverUrl(m) ?? void 0)} controls="" autoplay="" playsinline="" preload="metadata"${attr("aria-label", label(m, i))} class="h-full w-full bg-black object-contain"></video>`);
-        else {
-          $$renderer3.push("<!--[-1-->");
-          const cover = coverUrl(m);
-          $$renderer3.push(`<button type="button" class="group/play relative block h-full w-full bg-stone-900"${attr("aria-label", `Play ${label(m, i)}`)}${attr("data-testid", `media-play-${stringify3(m.id)}`)}>`);
-          if (cover) $$renderer3.push(`<!--[0--><img${attr("src", cover)} alt="" loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/>`);
-          else $$renderer3.push("<!--[-1-->");
-          $$renderer3.push(`<!--]--> <span class="absolute top-1/2 left-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur-sm transition-transform group-hover/play:scale-105" aria-hidden="true">`);
-          Play($$renderer3, {
-            class: "ml-0.5 h-5 w-5",
-            fill: "currentColor"
-          });
-          $$renderer3.push(`<!----></span> `);
-          if (m.meta?.durationMs) $$renderer3.push(`<!--[0--><span class="absolute bottom-2 left-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-bold text-white tabular-nums" aria-hidden="true">${escape_html(formatDuration(m.meta.durationMs))}</span>`);
-          else $$renderer3.push("<!--[-1-->");
-          $$renderer3.push(`<!--]--></button>`);
-        }
-        $$renderer3.push(`<!--]-->`);
-      } else $$renderer3.push(`<!--[-1--><img${attr("src", m.previewUrl || imageUrl(m))}${attr("alt", label(m, i))} loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/>`);
-      $$renderer3.push(`<!--]--> `);
-      if (toolbar) {
-        $$renderer3.push(`<!--[0--><div class="absolute top-2 right-2 z-10 flex items-center gap-1.5">`);
-        toolbar($$renderer3, m);
-        $$renderer3.push(`<!----></div>`);
-      } else $$renderer3.push("<!--[-1-->");
-      $$renderer3.push(`<!--]--> `);
-      if (i === shown().length - 1 && extra > 0) $$renderer3.push(`<!--[0--><div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-stone-900/60 text-lg font-extrabold text-white" role="img"${attr("aria-label", `${extra} more attachment${extra === 1 ? "" : "s"}`)}>+${escape_html(extra)}</div>`);
-      else $$renderer3.push("<!--[-1-->");
-      $$renderer3.push(`<!--]-->`);
-    }
-    __name(tile, "tile");
-    $$renderer2.push(`<div class="relative overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-100"${attr_style(`aspect-ratio: ${stringify3(frame().aspect)}; width: min(100%, ${stringify3(frame().maxWidth)}px);`)}${attr("data-testid", testId)}>`);
-    if (progress && !single()) $$renderer2.push(`<!--[0--><div class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-stone-900 text-white"${attr("data-testid", progress.testId)} role="status" aria-live="polite"><span class="text-[13px] font-bold">${escape_html(progress.label)}</span> <button type="button"${attr("data-testid", progress.cancelTestId)} class="rounded-full bg-white/15 px-3 py-1 text-[12px] font-bold text-white transition-colors hover:bg-white/25"${attr("aria-label", progress.cancelLabel)}>Cancel</button> <div class="absolute inset-x-0 bottom-0 h-1 bg-white/15"><div class="h-full bg-white transition-[width] duration-300"${attr_style(`width: ${stringify3(Math.round(progress.fraction * 100))}%`)}></div></div></div>`);
-    else if (single()) {
-      $$renderer2.push(`<!--[1--><div class="relative h-full w-full">`);
-      tile($$renderer2, single(), 0, "contain");
-      $$renderer2.push(`<!----></div>`);
-    } else {
-      $$renderer2.push(`<!--[-1--><div class="grid h-full w-full gap-0.5"${attr_style(`grid-template-columns: 1fr 1fr; grid-template-rows: repeat(${stringify3(grid().rows)}, minmax(0, 1fr));`)}><!--[-->`);
-      const each_array = ensure_array_like(shown());
-      for (let i = 0, $$length = each_array.length; i < $$length; i++) {
-        let m = each_array[i];
-        $$renderer2.push(`<div class="relative min-h-0 min-w-0 overflow-hidden"${attr_style(`grid-column: ${stringify3(grid().cells[i].column)}; grid-row: ${stringify3(grid().cells[i].row)};`)}>`);
-        tile($$renderer2, m, i, "cover");
-        $$renderer2.push(`<!----></div>`);
-      }
-      $$renderer2.push(`<!--]--></div>`);
-    }
-    $$renderer2.push(`<!--]--></div>`);
-  });
 }
 function toDatetimeLocalValue(date6) {
   const pad = /* @__PURE__ */ __name((n) => String(n).padStart(2, "0"), "pad");
@@ -48879,29 +48895,21 @@ function earliestFutureScheduleValue(targets, now = /* @__PURE__ */ new Date()) 
   }
   return best?.value ?? null;
 }
-var __iconData$2, __iconData$1, __iconData10, PLATFORM_COLOR, MIN_ASPECT, MAX_ASPECT, DEFAULT_SCHEDULE_OFFSET;
+var __iconData$1, __iconData10, PLATFORM_COLOR, DEFAULT_SCHEDULE_OFFSET;
 var init_schedule_helpers = __esm({
   ".svelte-kit/output/server/chunks/schedule-helpers.js"() {
     "use strict";
-    init_video_rules();
     init_server3();
     init_Icon();
     init_relative_time();
-    __iconData$2 = {
+    __iconData$1 = {
       "name": "loader-circle",
       "size": 24,
       "node": [["path", { "d": "M21 12a9 9 0 1 1-6.219-8.56" }]],
       "aliases": ["loader-2"]
     };
-    __iconData$2.node;
-    __name(Loader_circle, "Loader_circle");
-    __iconData$1 = {
-      "name": "play",
-      "size": 24,
-      "node": [["path", { "d": "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" }]]
-    };
     __iconData$1.node;
-    __name(Play, "Play");
+    __name(Loader_circle, "Loader_circle");
     __iconData10 = {
       "name": "send",
       "size": 24,
@@ -48918,16 +48926,6 @@ var init_schedule_helpers = __esm({
       x: "text-stone-900"
     };
     __name(platformColorClass, "platformColorClass");
-    MIN_ASPECT = 1 / 2;
-    MAX_ASPECT = 3;
-    __name(isVideoMedia2, "isVideoMedia");
-    __name(aspectOf, "aspectOf");
-    __name(frameFor, "frameFor");
-    __name(gridFor, "gridFor");
-    __name(mediaUrl, "mediaUrl");
-    __name(imageUrl, "imageUrl");
-    __name(coverUrl, "coverUrl");
-    __name(MediaPreview, "MediaPreview");
     __name(toDatetimeLocalValue, "toDatetimeLocalValue");
     __name(parseDatetimeLocal, "parseDatetimeLocal");
     __name(minScheduleDatetime, "minScheduleDatetime");
@@ -48946,18 +48944,204 @@ var init_schedule_helpers = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/user.js
-function User($$renderer, $$props) {
+// .svelte-kit/output/server/chunks/MediaPreview.js
+function Play($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData11 }]));
 }
-var __iconData11;
+function isVideoMedia2(m) {
+  return (m.mime || "").toLowerCase().startsWith("video/");
+}
+function aspectOf(m) {
+  return m.width && m.height && m.width > 0 && m.height > 0 ? m.width / m.height : null;
+}
+function frameFor(aspect, maxHeight) {
+  const a = Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, aspect ?? 1.7777777777777777));
+  return {
+    aspect: a,
+    maxWidth: Math.round(maxHeight * a)
+  };
+}
+function gridFor(count2) {
+  if (count2 <= 1) return {
+    rows: 1,
+    cells: [{
+      column: "1 / 3",
+      row: "1 / 2"
+    }]
+  };
+  if (count2 === 2) return {
+    rows: 1,
+    cells: [{
+      column: "1 / 2",
+      row: "1 / 2"
+    }, {
+      column: "2 / 3",
+      row: "1 / 2"
+    }]
+  };
+  if (count2 === 3) return {
+    rows: 2,
+    cells: [
+      {
+        column: "1 / 2",
+        row: "1 / 3"
+      },
+      {
+        column: "2 / 3",
+        row: "1 / 2"
+      },
+      {
+        column: "2 / 3",
+        row: "2 / 3"
+      }
+    ]
+  };
+  return {
+    rows: 2,
+    cells: [
+      {
+        column: "1 / 2",
+        row: "1 / 2"
+      },
+      {
+        column: "2 / 3",
+        row: "1 / 2"
+      },
+      {
+        column: "1 / 2",
+        row: "2 / 3"
+      },
+      {
+        column: "2 / 3",
+        row: "2 / 3"
+      }
+    ]
+  };
+}
+function mediaUrl(m, base = MEDIA_BASE) {
+  return `${base}/${encodeURIComponent(m.storageKey)}`;
+}
+function imageUrl(m, base = MEDIA_BASE) {
+  const v = m.meta?.preview?.v;
+  return v ? `${mediaUrl(m, base)}?preview=${v}` : mediaUrl(m, base);
+}
+function coverUrl(m, base = MEDIA_BASE) {
+  const v = m.meta?.cover?.v;
+  return v ? `${mediaUrl(m, base)}?cover=${v}` : null;
+}
+function MediaPreview($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { items, maxHeight, progress = null, extra = 0, toolbar, testId, mediaBase = MEDIA_BASE } = $$props;
+    let natural = {};
+    let playing = null;
+    const shown = derived2(() => items.slice(0, 4));
+    const grid = derived2(() => gridFor(shown().length));
+    const single = derived2(() => shown().length === 1 ? shown()[0] : null);
+    const frame = derived2(() => single() ? frameFor(aspectOf(single()) ?? natural[single().id] ?? null, maxHeight) : frameFor(progress ? null : 16 / 9, maxHeight));
+    function srcOf(m) {
+      return m.previewUrl || mediaUrl(m, mediaBase);
+    }
+    __name(srcOf, "srcOf");
+    function label(m, i) {
+      const kind = isVideoMedia2(m) ? "video" : "image";
+      return m.altText || `Attached ${kind} ${i + 1}`;
+    }
+    __name(label, "label");
+    function tile($$renderer3, m, i, fit) {
+      if (isVideoMedia2(m)) {
+        $$renderer3.push("<!--[0-->");
+        if (playing === m.id) $$renderer3.push(`<!--[0--><video${attr("src", srcOf(m))}${attr("poster", coverUrl(m, mediaBase) ?? void 0)} controls="" autoplay="" playsinline="" preload="metadata"${attr("aria-label", label(m, i))} class="h-full w-full bg-black object-contain"></video>`);
+        else {
+          $$renderer3.push("<!--[-1-->");
+          const cover = coverUrl(m, mediaBase);
+          $$renderer3.push(`<button type="button" class="group/play relative block h-full w-full bg-stone-900"${attr("aria-label", `Play ${label(m, i)}`)}${attr("data-testid", `media-play-${stringify3(m.id)}`)}>`);
+          if (cover) $$renderer3.push(`<!--[0--><img${attr("src", cover)} alt="" loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/>`);
+          else $$renderer3.push("<!--[-1-->");
+          $$renderer3.push(`<!--]--> <span class="absolute top-1/2 left-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur-sm transition-transform group-hover/play:scale-105" aria-hidden="true">`);
+          Play($$renderer3, {
+            class: "ml-0.5 h-5 w-5",
+            fill: "currentColor"
+          });
+          $$renderer3.push(`<!----></span> `);
+          if (m.meta?.durationMs) $$renderer3.push(`<!--[0--><span class="absolute bottom-2 left-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-bold text-white tabular-nums" aria-hidden="true">${escape_html(formatDuration(m.meta.durationMs))}</span>`);
+          else $$renderer3.push("<!--[-1-->");
+          $$renderer3.push(`<!--]--></button>`);
+        }
+        $$renderer3.push(`<!--]-->`);
+      } else $$renderer3.push(`<!--[-1--><img${attr("src", m.previewUrl || imageUrl(m, mediaBase))}${attr("alt", label(m, i))} loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/>`);
+      $$renderer3.push(`<!--]--> `);
+      if (toolbar) {
+        $$renderer3.push(`<!--[0--><div class="absolute top-2 right-2 z-10 flex items-center gap-1.5">`);
+        toolbar($$renderer3, m);
+        $$renderer3.push(`<!----></div>`);
+      } else $$renderer3.push("<!--[-1-->");
+      $$renderer3.push(`<!--]--> `);
+      if (i === shown().length - 1 && extra > 0) $$renderer3.push(`<!--[0--><div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-stone-900/60 text-lg font-extrabold text-white" role="img"${attr("aria-label", `${extra} more attachment${extra === 1 ? "" : "s"}`)}>+${escape_html(extra)}</div>`);
+      else $$renderer3.push("<!--[-1-->");
+      $$renderer3.push(`<!--]-->`);
+    }
+    __name(tile, "tile");
+    $$renderer2.push(`<div class="relative overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-100"${attr_style(`aspect-ratio: ${stringify3(frame().aspect)}; width: min(100%, ${stringify3(frame().maxWidth)}px);`)}${attr("data-testid", testId)}>`);
+    if (progress && !single()) $$renderer2.push(`<!--[0--><div class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-stone-900 text-white"${attr("data-testid", progress.testId)} role="status" aria-live="polite"><span class="text-[13px] font-bold">${escape_html(progress.label)}</span> <button type="button"${attr("data-testid", progress.cancelTestId)} class="rounded-full bg-white/15 px-3 py-1 text-[12px] font-bold text-white transition-colors hover:bg-white/25"${attr("aria-label", progress.cancelLabel)}>Cancel</button> <div class="absolute inset-x-0 bottom-0 h-1 bg-white/15"><div class="h-full bg-white transition-[width] duration-300"${attr_style(`width: ${stringify3(Math.round(progress.fraction * 100))}%`)}></div></div></div>`);
+    else if (single()) {
+      $$renderer2.push(`<!--[1--><div class="relative h-full w-full">`);
+      tile($$renderer2, single(), 0, "contain");
+      $$renderer2.push(`<!----></div>`);
+    } else {
+      $$renderer2.push(`<!--[-1--><div class="grid h-full w-full gap-0.5"${attr_style(`grid-template-columns: 1fr 1fr; grid-template-rows: repeat(${stringify3(grid().rows)}, minmax(0, 1fr));`)}><!--[-->`);
+      const each_array = ensure_array_like(shown());
+      for (let i = 0, $$length = each_array.length; i < $$length; i++) {
+        let m = each_array[i];
+        $$renderer2.push(`<div class="relative min-h-0 min-w-0 overflow-hidden"${attr_style(`grid-column: ${stringify3(grid().cells[i].column)}; grid-row: ${stringify3(grid().cells[i].row)};`)}>`);
+        tile($$renderer2, m, i, "cover");
+        $$renderer2.push(`<!----></div>`);
+      }
+      $$renderer2.push(`<!--]--></div>`);
+    }
+    $$renderer2.push(`<!--]--></div>`);
+  });
+}
+var __iconData11, MIN_ASPECT, MAX_ASPECT, MEDIA_BASE;
+var init_MediaPreview = __esm({
+  ".svelte-kit/output/server/chunks/MediaPreview.js"() {
+    "use strict";
+    init_video_rules();
+    init_server3();
+    init_Icon();
+    __iconData11 = {
+      "name": "play",
+      "size": 24,
+      "node": [["path", { "d": "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" }]]
+    };
+    __iconData11.node;
+    __name(Play, "Play");
+    MIN_ASPECT = 1 / 2;
+    MAX_ASPECT = 3;
+    __name(isVideoMedia2, "isVideoMedia");
+    __name(aspectOf, "aspectOf");
+    __name(frameFor, "frameFor");
+    __name(gridFor, "gridFor");
+    MEDIA_BASE = "/api/media";
+    __name(mediaUrl, "mediaUrl");
+    __name(imageUrl, "imageUrl");
+    __name(coverUrl, "coverUrl");
+    __name(MediaPreview, "MediaPreview");
+  }
+});
+
+// .svelte-kit/output/server/chunks/user.js
+function User($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData12 }]));
+}
+var __iconData12;
 var init_user = __esm({
   ".svelte-kit/output/server/chunks/user.js"() {
     "use strict";
     init_server3();
     init_Icon();
-    __iconData11 = {
+    __iconData12 = {
       "name": "user",
       "size": 24,
       "node": [["path", { "d": "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" }], ["circle", {
@@ -48966,39 +49150,43 @@ var init_user = __esm({
         "r": "4"
       }]]
     };
-    __iconData11.node;
+    __iconData12.node;
     __name(User, "User");
   }
 });
 
 // .svelte-kit/output/server/entries/pages/compose/_page.svelte.js
-var page_svelte_exports4 = {};
-__export(page_svelte_exports4, {
-  default: () => _page4
+var page_svelte_exports3 = {};
+__export(page_svelte_exports3, {
+  default: () => _page3
 });
 function Calendar($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$7 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$8 }]));
 }
 function Chevron_up($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$6 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$7 }]));
 }
 function Circle_alert($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$5 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$6 }]));
 }
 function Image($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$4 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$5 }]));
 }
 function Link_2_off($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData$4 }]));
+}
+function Link_2($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData$3 }]));
 }
 function Quote($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$22 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$2 }]));
 }
 function Settings($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
@@ -49006,7 +49194,7 @@ function Settings($$renderer, $$props) {
 }
 function Trash($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData12 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData13 }]));
 }
 function platformLimit(platform2, accounts) {
   const fallback2 = PLATFORM_LIMITS[platform2] ?? PLATFORM_LIMITS.mastodon;
@@ -49057,6 +49245,16 @@ function MediaFit($$renderer, $$props) {
     $$renderer2.push(`<!--]-->`);
   });
 }
+function SharePreview($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { draftId, ensureSaved } = $$props;
+    $$renderer2.push(`<div class="share-preview-container relative"><button type="button" data-testid="share-toggle"${attr("aria-expanded", false)} aria-haspopup="dialog" class="flex items-center gap-1.5 rounded-full border border-stone-200 px-3 py-1.5 text-[12px] font-bold whitespace-nowrap text-stone-500 transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900">`);
+    Link_2($$renderer2, { class: "h-3 w-3" });
+    $$renderer2.push(`<!----> Share</button> `);
+    $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--></div>`);
+  });
+}
 function VideoCover($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { open: open2, src, atMs = null, hasCover, busy = false, onSave, onRemove, onClose } = $$props;
@@ -49072,47 +49270,6 @@ function VideoCover($$renderer, $$props) {
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]-->`);
   });
-}
-function isPlatformCustomized(overrides, platform2) {
-  const o = overrides[platform2];
-  return o != null && o.body !== null && o.body !== void 0;
-}
-function effectivePlatformBody(mainBody, overrides, platform2) {
-  if (isPlatformCustomized(overrides, platform2)) return overrides[platform2].body ?? "";
-  return mainBody;
-}
-function customizePlatformBody(overrides, platform2, body) {
-  return {
-    ...overrides,
-    [platform2]: { body }
-  };
-}
-function resetPlatformToFollow(overrides, platform2) {
-  const next = { ...overrides };
-  if (next[platform2]) next[platform2] = { body: null };
-  return next;
-}
-function customizedBodiesForSave(_mainBody, overrides, platforms) {
-  const out = {};
-  for (const p of platforms) if (isPlatformCustomized(overrides, p)) out[p] = overrides[p].body ?? "";
-  return out;
-}
-function overridesFromVariants(variants, mainBody) {
-  const map2 = {};
-  for (const v of variants) {
-    if (!isPlatformId(v.platform)) continue;
-    if (v.body === null || v.body === void 0 || v.body === mainBody) map2[v.platform] = { body: null };
-    else map2[v.platform] = { body: v.body };
-  }
-  return map2;
-}
-function platformsFromConnections(connections2) {
-  const set2 = /* @__PURE__ */ new Set();
-  for (const c of connections2) if (isPlatformId(c.platform)) set2.add(c.platform);
-  return Array.from(set2);
-}
-function restorableTargetIds(targets) {
-  return (targets ?? []).filter((t) => t.status !== "cancelled").map((t) => t.connectionId).filter((id2) => Boolean(id2));
 }
 function LinkPreview($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
@@ -49279,6 +49436,12 @@ function Editor($$renderer, $$props) {
       if (variant.optionsJson.spoilerText) seededCw = variant.optionsJson.spoilerText;
       if (variant.optionsJson.poll) seededPoll = parsePollConfig(variant.optionsJson.poll);
     }
+    function storedThreadsTopic(variants) {
+      const stored = variants?.find((v) => v.platform === "threads")?.optionsJson?.topicTag;
+      return parseThreadsTopic(stored) ?? "";
+    }
+    __name(storedThreadsTopic, "storedThreadsTopic");
+    const seededThreadsTopic = storedThreadsTopic(seededDraft?.variants);
     (() => {
       const saved = seededDraft?.selectedConnectionIds;
       if (Array.isArray(saved)) return saved;
@@ -49313,19 +49476,21 @@ function Editor($$renderer, $$props) {
     let mastoVisibility = seededVisibility;
     let mastoCW = seededCw;
     let mastoPoll = seededPoll;
+    let threadsTopic = seededThreadsTopic;
     let uploadingSegment = null;
     let videoJobs = [];
     let coverFor = null;
     let coverBusy = false;
     let dirty = false;
     let loadFailedId = null;
-    Promise.resolve();
+    let mediaSync = Promise.resolve();
     let saveFailed = false;
     let storedVariants = new Set((seededDraft?.variants || []).map((v) => v.platform));
     let savedSnapshot = null;
     let skipAsk = false;
     let isAccountsPopoverOpen = false;
     let isPostConfirmOpen = false;
+    let isThreadsOptionsOpen = false;
     let textareaRefs = [];
     let altOpen = {};
     let mounted = false;
@@ -49468,7 +49633,7 @@ function Editor($$renderer, $$props) {
         mime: m.mime,
         width: m.width,
         height: m.height,
-        hasJpegCopy: canMakeJpegCopies || Boolean(m.meta?.jpeg)
+        hasJpegCopy: jpegCopyExpected(m.meta, canMakeJpegCopies)
       })))[0] ?? null;
     });
     derived2(() => isOverSelectedPlatformLimit({
@@ -49498,9 +49663,9 @@ function Editor($$renderer, $$props) {
     }
     __name(getPlatformStatus, "getPlatformStatus");
     const mediaBySegment = derived2(() => groupMediaBySegment(media));
-    function cardMedia(index17) {
+    function cardMedia(index18) {
       if (activeTab !== "global" && !supportsThreads(activeTab)) return media;
-      return mediaBySegment().get(index17) ?? [];
+      return mediaBySegment().get(index18) ?? [];
     }
     __name(cardMedia, "cardMedia");
     derived2(() => {
@@ -49509,6 +49674,15 @@ function Editor($$renderer, $$props) {
       return v.ok ? null : v.error;
     });
     const showMastoOptions = derived2(() => selectedPlatforms().has("mastodon") || isPlatformCustomized(overrides, "mastodon"));
+    const threadsTopicError = derived2(() => {
+      const v = validateThreadsTopic(threadsTopic);
+      return v.ok ? null : v.error;
+    });
+    const selectedThreadsAccounts = derived2(() => selectedAccounts().filter((account) => account.platform === "threads"));
+    derived2(() => selectedThreadsAccounts().some((account) => isZernioConnection(account.metaJson)));
+    const showThreadsOptions = derived2(() => selectedThreadsAccounts().some((account) => !isZernioConnection(account.metaJson)) || selectedThreadsAccounts().length > 0 && threadsTopic.trim() !== "");
+    derived2(() => countGraphemes(normalizeThreadsTopic(threadsTopic)));
+    derived2(() => splitThreadSegments(effectivePlatformBody(baseBody, overrides, "threads")).length);
     function takeSnapshot() {
       const sorted = {};
       for (const k of Object.keys(overrides).sort()) sorted[k] = overrides[k];
@@ -49518,6 +49692,7 @@ function Editor($$renderer, $$props) {
         v: mastoVisibility,
         c: mastoCW,
         p: mastoPoll,
+        t: threadsTopic,
         s: [...selected].sort(),
         m: media.map((m) => ({
           i: m.id,
@@ -49562,6 +49737,7 @@ function Editor($$renderer, $$props) {
       mastoVisibility = initialSettings?.mastoVisibility ?? "public";
       mastoCW = "";
       mastoPoll = null;
+      threadsTopic = "";
       activeTab = "global";
       scheduleOpen = false;
       loadedSchedule = null;
@@ -49593,6 +49769,7 @@ function Editor($$renderer, $$props) {
       mastoVisibility,
       mastoCW,
       mastoPoll,
+      threadsTopic,
       selectedConnectionIds: [...selected]
     }, navigate = true) {
       const generation = editorGeneration;
@@ -49633,18 +49810,20 @@ function Editor($$renderer, $$props) {
       mastoVisibility,
       mastoCW,
       mastoPoll,
+      threadsTopic,
       selectedConnectionIds: [...selected]
     }, stored = storedVariants) {
       const toSave = customizedBodiesForSave(snap.baseBody, snap.overrides, PLATFORM_ORDER);
       const pending2 = PLATFORM_ORDER.map((platform2) => {
         const customized = isPlatformCustomized(snap.overrides, platform2);
+        const topicTag = platform2 === "threads" ? parseThreadsTopic(snap.threadsTopic) : null;
         const options2 = platform2 === "mastodon" ? {
           visibility: snap.mastoVisibility,
           spoilerText: snap.mastoCW || void 0,
           poll: snap.mastoPoll ?? void 0
-        } : {};
+        } : topicTag ? { topicTag } : {};
         const mastodonOptions = platform2 === "mastodon" && Boolean(snap.mastoCW || snap.mastoVisibility !== "public" || snap.mastoPoll);
-        if (customized || mastodonOptions) {
+        if (customized || mastodonOptions || topicTag) {
           stored.add(platform2);
           return {
             platform: platform2,
@@ -49708,6 +49887,7 @@ function Editor($$renderer, $$props) {
         mastoVisibility,
         mastoCW,
         mastoPoll,
+        threadsTopic,
         selectedConnectionIds: [...selected]
       };
       try {
@@ -49745,6 +49925,22 @@ function Editor($$renderer, $$props) {
       }
     }
     __name(doPersist, "doPersist");
+    async function persistClean(rounds = 3) {
+      let id2 = null;
+      for (let i = 0; i < rounds; i++) {
+        id2 = await persistAll();
+        if (!id2 || !dirty) return id2;
+      }
+      return id2;
+    }
+    __name(persistClean, "persistClean");
+    async function persistForAction() {
+      await mediaSync;
+      if (draftId && !dirty && !saving && Object.keys(altPending).length === 0) return draftId;
+      await flushAltPending();
+      return persistClean();
+    }
+    __name(persistForAction, "persistForAction");
     let pendingPublish = null;
     let publishRequestSeq = 0;
     function platformOf(connectionId) {
@@ -49984,8 +50180,8 @@ function Editor($$renderer, $$props) {
     }
     __name(fitProblems, "fitProblems");
     const firstMediaCard = derived2(() => media.length ? Math.min(...mediaBySegment().keys()) : 0);
-    function cardFit(index17) {
-      return fitProblems(cardMedia(index17), activeTab !== "global" && !supportsThreads(activeTab) || index17 === firstMediaCard());
+    function cardFit(index18) {
+      return fitProblems(cardMedia(index18), activeTab !== "global" && !supportsThreads(activeTab) || index18 === firstMediaCard());
     }
     __name(cardFit, "cardFit");
     const fitErrorPlatforms = derived2(() => new Set(fitProblems(media, true).filter((r2) => r2.level === "error").map((r2) => r2.platform)));
@@ -50168,6 +50364,7 @@ function Editor($$renderer, $$props) {
     const publishReplacesSchedule = derived2(() => postState().waiting.some((w) => (pendingPublish?.connectionIds ?? []).includes(w.connectionId)));
     const unscheduledByPublish = derived2(() => postState().waiting.map((w) => w.connectionId).filter((id2) => !(pendingPublish?.connectionIds ?? []).includes(id2)));
     const publishButtonLabel = derived2(() => publishIdleLabel());
+    const canShare = derived2(() => !editLocked() && !loadFailedId && (draftId !== null || baseBody.trim() !== ""));
     const saveIndicator = derived2(() => {
       if (loadFailedId || editLocked()) return null;
       if (saveFailed) return "failed";
@@ -50245,8 +50442,31 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--></div>`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> `);
+    if (showThreadsOptions() && !editLocked()) {
+      $$renderer2.push("<!--[0-->");
+      if (!showMastoOptions()) $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div>`);
+      else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--> <div class="threads-options-container sm:relative" data-testid="threads-options"><button type="button" data-testid="threads-settings-toggle"${attr("aria-expanded", isThreadsOptionsOpen)}${attr_class(`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-bold whitespace-nowrap transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900 ${threadsTopicError() ? "border-red-300 text-red-600" : "border-stone-200 text-stone-500"}`)}>`);
+      Settings($$renderer2, { class: "h-3 w-3" });
+      $$renderer2.push(`<!----> Threads `);
+      if (parseThreadsTopic(threadsTopic)) $$renderer2.push(`<!--[0--><span class="max-w-[9rem] truncate font-medium" data-testid="threads-topic-chip">\xB7 ${escape_html(parseThreadsTopic(threadsTopic))}</span>`);
+      else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--></button> `);
+      $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--></div>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
+    if (canShare()) {
+      $$renderer2.push(`<!--[0--><div class="ml-auto">`);
+      SharePreview($$renderer2, {
+        draftId,
+        ensureSaved: persistForAction
+      });
+      $$renderer2.push(`<!----></div>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
     if (saveIndicator()) {
-      $$renderer2.push(`<!--[0--><p data-testid="save-status"${attr_class(`ml-auto flex items-center gap-1 text-[12px] font-bold whitespace-nowrap ${saveIndicator() === "failed" ? "text-red-600" : "text-stone-500"}`)}>`);
+      $$renderer2.push(`<!--[0--><p data-testid="save-status"${attr_class(`${canShare() ? "" : "ml-auto"} flex items-center gap-1 text-[12px] font-bold whitespace-nowrap ${saveIndicator() === "failed" ? "text-red-600" : "text-stone-500"}`)}>`);
       if (saveIndicator() === "failed") $$renderer2.push(`<!--[0-->Not saved \xB7 <button type="button"${attr("disabled", saving, true)} class="-my-3 inline-flex min-h-11 items-center underline-offset-2 hover:underline disabled:opacity-50">Retry</button>`);
       else if (saveIndicator() === "saving") $$renderer2.push(`<!--[1-->Saving\u2026`);
       else {
@@ -50258,12 +50478,12 @@ function Editor($$renderer, $$props) {
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--></div> <div class="relative flex-1"><div class="flex flex-col gap-6"><!--[-->`);
     const each_array_2 = ensure_array_like(segments());
-    for (let index17 = 0, $$length = each_array_2.length; index17 < $$length; index17++) {
-      let segment = each_array_2[index17];
+    for (let index18 = 0, $$length = each_array_2.length; index18 < $$length; index18++) {
+      let segment = each_array_2[index18];
       const segLen = countForCard(segment);
       const isOver = segLen > maxChars();
-      const segMedia = cardMedia(index17);
-      const quote = cardQuote(index17);
+      const segMedia = cardMedia(index18);
+      const quote = cardQuote(index18);
       const strayLinks = xQuoteActive() ? strayXPostLinks(segment) : [];
       $$renderer2.push(`<div class="group relative flex gap-4 sm:gap-6"><div class="relative z-10 hidden flex-shrink-0 flex-col items-center sm:flex">`);
       if (avatarSrc() && failedAvatarSrc !== avatarSrc()) $$renderer2.push(`<!--[0--><img${attr("src", avatarSrc())} alt="Avatar" referrerpolicy="no-referrer" class="relative z-10 h-10 w-10 rounded-full border-[3px] border-stone-50 bg-white object-cover shadow-sm" onerror="this.__e=event"/>`);
@@ -50277,26 +50497,26 @@ function Editor($$renderer, $$props) {
         $$renderer2.push(`<!--]--></span>`);
       }
       $$renderer2.push(`<!--]--> `);
-      if (index17 < segments().length - 1) $$renderer2.push(`<!--[0--><div class="absolute top-10 bottom-[-24px] left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-stone-200/80"></div>`);
+      if (index18 < segments().length - 1) $$renderer2.push(`<!--[0--><div class="absolute top-10 bottom-[-24px] left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-stone-200/80"></div>`);
       else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index17)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index17)}${attr("data-testid", `segment-input-${stringify3(index17)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", index17 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index17 === 0 ? "Post text" : `Post ${index17 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
-      const $$body = escape_html(hiddenQuote(index17)?.visible ?? segment);
+      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index18)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index18)}${attr("data-testid", `segment-input-${stringify3(index18)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", index18 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index18 === 0 ? "Post text" : `Post ${index18 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
+      const $$body = escape_html(hiddenQuote(index18)?.visible ?? segment);
       if ($$body) $$renderer2.push(`${$$body}`);
       $$renderer2.push(`</textarea> `);
-      if (segMedia.length > 0 || jobsFor(index17).length > 0) {
+      if (segMedia.length > 0 || jobsFor(index18).length > 0) {
         $$renderer2.push("<!--[0-->");
-        const job = jobsFor(index17)[0];
-        $$renderer2.push(`<div class="mt-3"${attr("data-testid", `segment-media-${stringify3(index17)}`)}>`);
+        const job = jobsFor(index18)[0];
+        $$renderer2.push(`<div class="mt-3"${attr("data-testid", `segment-media-${stringify3(index18)}`)}>`);
         {
           let toolbar2 = function($$renderer3, m) {
             const hasAlt = Boolean((m.altText || "").trim());
             const kind = isVideoItem(m) ? "video" : "image";
-            $$renderer3.push(`<button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`min-h-7 rounded-full px-2.5 text-[11px] font-bold tracking-wide shadow-sm backdrop-blur-sm ${hasAlt ? "bg-black/60 text-white hover:bg-black/75" : "bg-amber-400 text-black hover:bg-amber-300"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", `${hasAlt ? "Edit" : "Add"} alt text for ${kind} ${index17 + 1}`)}>ALT</button> `);
-            if (!editLocked() && isVideoItem(m)) $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `video-cover-${stringify3(m.id)}`)} class="min-h-7 rounded-full bg-black/60 px-2.5 text-[11px] font-bold tracking-wide text-white shadow-sm backdrop-blur-sm hover:bg-black/75" title="Choose the cover"${attr("aria-label", `Choose the cover for video ${index17 + 1}`)}>COVER</button>`);
+            $$renderer3.push(`<button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`min-h-7 rounded-full px-2.5 text-[11px] font-bold tracking-wide shadow-sm backdrop-blur-sm ${hasAlt ? "bg-black/60 text-white hover:bg-black/75" : "bg-amber-400 text-black hover:bg-amber-300"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", `${hasAlt ? "Edit" : "Add"} alt text for ${kind} ${index18 + 1}`)}>ALT</button> `);
+            if (!editLocked() && isVideoItem(m)) $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `video-cover-${stringify3(m.id)}`)} class="min-h-7 rounded-full bg-black/60 px-2.5 text-[11px] font-bold tracking-wide text-white shadow-sm backdrop-blur-sm hover:bg-black/75" title="Choose the cover"${attr("aria-label", `Choose the cover for video ${index18 + 1}`)}>COVER</button>`);
             else $$renderer3.push("<!--[-1-->");
             $$renderer3.push(`<!--]--> `);
             if (!editLocked()) {
-              $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm backdrop-blur-sm hover:bg-black/75"${attr("title", `Remove ${kind} ${index17 + 1}`)}${attr("aria-label", `Remove ${kind} ${index17 + 1}`)}>`);
+              $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm backdrop-blur-sm hover:bg-black/75"${attr("title", `Remove ${kind} ${index18 + 1}`)}${attr("aria-label", `Remove ${kind} ${index18 + 1}`)}>`);
               X($$renderer3, { class: "h-3.5 w-3.5" });
               $$renderer3.push(`<!----></button>`);
             } else $$renderer3.push("<!--[-1-->");
@@ -50312,9 +50532,9 @@ function Editor($$renderer, $$props) {
               label: `${job.phase === "uploading" ? "Uploading" : job.phase === "converting" ? "Converting" : "Reading"} ${Math.round(job.progress * 100)}%`,
               fraction: job.progress,
               onCancel: /* @__PURE__ */ __name(() => job.controller.abort(), "onCancel"),
-              cancelLabel: `Cancel the video for post ${index17 + 1}`,
-              testId: `video-progress-${index17}`,
-              cancelTestId: `video-cancel-${index17}`
+              cancelLabel: `Cancel the video for post ${index18 + 1}`,
+              testId: `video-progress-${index18}`,
+              cancelTestId: `video-cancel-${index18}`
             } : null,
             toolbar: toolbar2,
             $$slots: { toolbar: true }
@@ -50326,26 +50546,26 @@ function Editor($$renderer, $$props) {
       const each_array_3 = ensure_array_like(segMedia);
       for (let $$index_2 = 0, $$length2 = each_array_3.length; $$index_2 < $$length2; $$index_2++) {
         let m = each_array_3[$$index_2];
-        if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", isVideoItem(m) ? "Describe this video\u2026" : "Describe this image\u2026")}${attr("aria-label", `Alt text for ${isVideoItem(m) ? "video" : "image"} ${index17 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
+        if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", isVideoItem(m) ? "Describe this video\u2026" : "Describe this image\u2026")}${attr("aria-label", `Alt text for ${isVideoItem(m) ? "video" : "image"} ${index18 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
         else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
       }
       $$renderer2.push(`<!--]--> `);
       MediaFit($$renderer2, {
-        problems: cardFit(index17),
+        problems: cardFit(index18),
         onUncheck: editLocked() ? void 0 : uncheckPlatform,
-        testId: `media-fit-${stringify3(index17)}`
+        testId: `media-fit-${stringify3(index18)}`
       });
       $$renderer2.push(`<!----> `);
       if (quote) {
         $$renderer2.push("<!--[0-->");
         XQuoteCard($$renderer2, {
           url: quote.url,
-          onRemove: editLocked() ? void 0 : () => removeQuote(index17),
+          onRemove: editLocked() ? void 0 : () => removeQuote(index18),
           otherPlatforms: quoteLinkPlatforms(),
-          onOnlyOnX: !editLocked() && canQuoteOnlyOnX(index17) ? () => quoteOnlyOnX(index17) : void 0,
+          onOnlyOnX: !editLocked() && canQuoteOnlyOnX(index18) ? () => quoteOnlyOnX(index18) : void 0,
           withheldFrom: xWithheldFrom(),
-          onShareWithAll: !editLocked() && sharedQuote(index17) ? () => shareQuoteWithAll(index17) : void 0
+          onShareWithAll: !editLocked() && sharedQuote(index18) ? () => shareQuoteWithAll(index18) : void 0
         });
       } else {
         $$renderer2.push("<!--[-1-->");
@@ -50355,7 +50575,7 @@ function Editor($$renderer, $$props) {
         });
       }
       $$renderer2.push(`<!--]--> `);
-      if (xQuoteActive() && counters().x.max > X_FOLD && xWeightedLength(segment) > X_FOLD) $$renderer2.push(`<!--[0--><p class="mt-3 text-[12px] font-medium text-stone-500"${attr("data-testid", `x-fold-${stringify3(index17)}`)}>X shows about the first ${escape_html(X_FOLD)} characters, then Show more.</p>`);
+      if (xQuoteActive() && counters().x.max > X_FOLD && xWeightedLength(segment) > X_FOLD) $$renderer2.push(`<!--[0--><p class="mt-3 text-[12px] font-medium text-stone-500"${attr("data-testid", `x-fold-${stringify3(index18)}`)}>X shows about the first ${escape_html(X_FOLD)} characters, then Show more.</p>`);
       else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> `);
       if (strayLinks.length > 0 && !editLocked()) {
@@ -50379,7 +50599,7 @@ function Editor($$renderer, $$props) {
         $$renderer2.push("<!--[0-->");
         if (tabSupportsThreads()) {
           $$renderer2.push("<!--[0-->");
-          if (index17 === segments().length - 1) {
+          if (index18 === segments().length - 1) {
             $$renderer2.push(`<!--[0--><button type="button" data-testid="add-thread-post" class="flex items-center gap-1.5 rounded-full border border-stone-100 bg-stone-50 px-3 py-1.5 text-[12px] font-bold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900">`);
             Plus($$renderer2, { class: "h-3.5 w-3.5" });
             $$renderer2.push(`<!----> Thread</button>`);
@@ -50388,10 +50608,10 @@ function Editor($$renderer, $$props) {
         } else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]--> `);
         if (segments().length > 1) {
-          $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-segment-${stringify3(index17)}`)} class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Remove post from thread" aria-label="Remove post from thread">`);
+          $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `remove-segment-${stringify3(index18)}`)} class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700" title="Remove post from thread" aria-label="Remove post from thread">`);
           Trash($$renderer2, { class: "h-3.5 w-3.5" });
           $$renderer2.push(`<!----></button>`);
-        } else if (index17 === 0 && canDiscard()) {
+        } else if (index18 === 0 && canDiscard()) {
           $$renderer2.push(`<!--[1--><button type="button" data-testid="discard-draft" class="flex items-center justify-center rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"${attr("title", discardCopy().label)}${attr("aria-label", discardCopy().label)}>`);
           Trash($$renderer2, { class: "h-3.5 w-3.5" });
           $$renderer2.push(`<!----></button>`);
@@ -50400,10 +50620,10 @@ function Editor($$renderer, $$props) {
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--></div> <div class="quote-picker-container relative flex items-center gap-3">`);
       if (xQuoteActive() && !quote && !editLocked()) {
-        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `quote-post-${stringify3(index17)}`)}${attr_class(`flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 pointer-coarse:opacity-100 ${quotePickerFor === index17 ? "opacity-100" : ""}`)}${attr("aria-label", `Quote one of your X posts in post ${index17 + 1}`)}${attr("aria-expanded", quotePickerFor === index17)} title="Quote one of your X posts">`);
+        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `quote-post-${stringify3(index18)}`)}${attr_class(`flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 pointer-coarse:opacity-100 ${quotePickerFor === index18 ? "opacity-100" : ""}`)}${attr("aria-label", `Quote one of your X posts in post ${index18 + 1}`)}${attr("aria-expanded", quotePickerFor === index18)} title="Quote one of your X posts">`);
         Quote($$renderer2, { class: "h-4 w-4" });
         $$renderer2.push(`<!----></button> `);
-        if (quotePickerFor === index17) {
+        if (quotePickerFor === index18) {
           $$renderer2.push(`<!--[0--><div class="absolute top-full right-0 z-40 mt-2 w-72 max-w-[calc(100vw-3rem)] scroll-mb-32 rounded-[1rem] border border-stone-200/80 bg-white p-2 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] after:pointer-events-none after:absolute after:top-full after:left-0 after:h-32 after:w-px after:content-['']" role="dialog" aria-label="Quote one of your X posts" data-testid="quote-picker"><div class="mb-1 px-2 py-1"><span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">Your X posts</span></div> `);
           $$renderer2.push(`<!--[1--><p class="px-2 py-2 text-[12px] font-medium text-stone-500">Loading\u2026</p>`);
           $$renderer2.push(`<!--]--></div>`);
@@ -50412,11 +50632,11 @@ function Editor($$renderer, $$props) {
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> `);
       if (!editLocked()) {
-        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index17)}`)}${attr("disabled", uploadingSegment === index17, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index17 ? `Uploading to post ${index17 + 1}` : `Add image to post ${index17 + 1}`)}${attr("title", uploadingSegment === index17 ? "Uploading\u2026" : "Add Image")}>`);
+        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index18)}`)}${attr("disabled", uploadingSegment === index18, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index18 ? `Uploading to post ${index18 + 1}` : `Add image to post ${index18 + 1}`)}${attr("title", uploadingSegment === index18 ? "Uploading\u2026" : "Add Image")}>`);
         Image($$renderer2, { class: "h-4 w-4" });
-        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA)} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index17)}`)}/>`);
+        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA)} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index18)}`)}/>`);
       } else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--> <div${attr("data-testid", `segment-count-${stringify3(index17)}`)}${attr_class(`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider transition-colors ${isOver ? "border border-red-100 bg-red-50 text-red-600" : "border border-stone-100 bg-stone-50 text-stone-500"}`)}>${escape_html(segLen)}/${escape_html(maxChars())}</div></div></div></div></div>`);
+      $$renderer2.push(`<!--]--> <div${attr("data-testid", `segment-count-${stringify3(index18)}`)}${attr_class(`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider transition-colors ${isOver ? "border border-red-100 bg-red-50 text-red-600" : "border border-stone-100 bg-stone-50 text-stone-500"}`)}>${escape_html(segLen)}/${escape_html(maxChars())}</div></div></div></div></div>`);
     }
     $$renderer2.push(`<!--]--></div></div> `);
     if (!editLocked()) {
@@ -50547,7 +50767,7 @@ function Editor($$renderer, $$props) {
     $$renderer2.push(`<!--]-->`);
   });
 }
-function _page4($$renderer, $$props) {
+function _page3($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;
     Editor($$renderer2, {
@@ -50559,29 +50779,34 @@ function _page4($$renderer, $$props) {
     });
   });
 }
-var __iconData$7, __iconData$6, __iconData$5, __iconData$4, __iconData$3, __iconData$22, __iconData$12, __iconData12, PLATFORM_LIMITS;
-var init_page_svelte4 = __esm({
+var __iconData$8, __iconData$7, __iconData$6, __iconData$5, __iconData$4, __iconData$3, __iconData$2, __iconData$12, __iconData13, PLATFORM_LIMITS;
+var init_page_svelte3 = __esm({
   ".svelte-kit/output/server/entries/pages/compose/_page.svelte.js"() {
     "use strict";
     init_bytes();
     init_human_error();
     init_media_limits();
     init_platforms();
+    init_zernio();
     init_links();
     init_thread_segments();
     init_x_quote();
     init_x_limits();
     init_video_rules();
     init_poll();
+    init_threads_topic();
     init_post_state();
     init_published_lock();
+    init_platform_sync();
     init_server3();
     init_navigation();
     init_index_server();
     init_state();
     init_Icon();
     init_check();
+    init_CopyButton();
     init_schedule_helpers();
+    init_MediaPreview();
     init_plus();
     init_initials();
     init_user();
@@ -50591,7 +50816,7 @@ var init_page_svelte4 = __esm({
     init_AccountAvatar();
     init_SocialIcon();
     init_relative_time();
-    __iconData$7 = {
+    __iconData$8 = {
       "name": "calendar",
       "size": 24,
       "node": [
@@ -50607,16 +50832,16 @@ var init_page_svelte4 = __esm({
         ["path", { "d": "M3 9h18" }]
       ]
     };
-    __iconData$7.node;
+    __iconData$8.node;
     __name(Calendar, "Calendar");
-    __iconData$6 = {
+    __iconData$7 = {
       "name": "chevron-up",
       "size": 24,
       "node": [["path", { "d": "m18 15-6-6-6 6" }]]
     };
-    __iconData$6.node;
+    __iconData$7.node;
     __name(Chevron_up, "Chevron_up");
-    __iconData$5 = {
+    __iconData$6 = {
       "name": "circle-alert",
       "size": 24,
       "node": [
@@ -50640,9 +50865,9 @@ var init_page_svelte4 = __esm({
       ],
       "aliases": ["alert-circle"]
     };
-    __iconData$5.node;
+    __iconData$6.node;
     __name(Circle_alert, "Circle_alert");
-    __iconData$4 = {
+    __iconData$5 = {
       "name": "image",
       "size": 24,
       "node": [
@@ -50662,9 +50887,9 @@ var init_page_svelte4 = __esm({
         ["path", { "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" }]
       ]
     };
-    __iconData$4.node;
+    __iconData$5.node;
     __name(Image, "Image");
-    __iconData$3 = {
+    __iconData$4 = {
       "name": "link-2-off",
       "size": 24,
       "node": [
@@ -50684,14 +50909,30 @@ var init_page_svelte4 = __esm({
         }]
       ]
     };
-    __iconData$3.node;
+    __iconData$4.node;
     __name(Link_2_off, "Link_2_off");
-    __iconData$22 = {
+    __iconData$3 = {
+      "name": "link-2",
+      "size": 24,
+      "node": [
+        ["path", { "d": "M9 17H7A5 5 0 0 1 7 7h2" }],
+        ["path", { "d": "M15 7h2a5 5 0 1 1 0 10h-2" }],
+        ["line", {
+          "x1": "8",
+          "x2": "16",
+          "y1": "12",
+          "y2": "12"
+        }]
+      ]
+    };
+    __iconData$3.node;
+    __name(Link_2, "Link_2");
+    __iconData$2 = {
       "name": "quote",
       "size": 24,
       "node": [["path", { "d": "M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z" }], ["path", { "d": "M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z" }]]
     };
-    __iconData$22.node;
+    __iconData$2.node;
     __name(Quote, "Quote");
     __iconData$12 = {
       "name": "settings",
@@ -50704,7 +50945,7 @@ var init_page_svelte4 = __esm({
     };
     __iconData$12.node;
     __name(Settings, "Settings");
-    __iconData12 = {
+    __iconData13 = {
       "name": "trash",
       "size": 24,
       "node": [
@@ -50716,7 +50957,7 @@ var init_page_svelte4 = __esm({
       ],
       "aliases": ["trash-2"]
     };
-    __iconData12.node;
+    __iconData13.node;
     __name(Trash, "Trash");
     PLATFORM_LIMITS = {
       bluesky: 300,
@@ -50729,20 +50970,13 @@ var init_page_svelte4 = __esm({
     __name(platformLimit, "platformLimit");
     __name(isOverSelectedPlatformLimit, "isOverSelectedPlatformLimit");
     __name(MediaFit, "MediaFit");
+    __name(SharePreview, "SharePreview");
     __name(VideoCover, "VideoCover");
-    __name(isPlatformCustomized, "isPlatformCustomized");
-    __name(effectivePlatformBody, "effectivePlatformBody");
-    __name(customizePlatformBody, "customizePlatformBody");
-    __name(resetPlatformToFollow, "resetPlatformToFollow");
-    __name(customizedBodiesForSave, "customizedBodiesForSave");
-    __name(overridesFromVariants, "overridesFromVariants");
-    __name(platformsFromConnections, "platformsFromConnections");
-    __name(restorableTargetIds, "restorableTargetIds");
     __name(LinkPreview, "LinkPreview");
     __name(XQuoteCard, "XQuoteCard");
     __name(PostStatusBanner, "PostStatusBanner");
     __name(Editor, "Editor");
-    __name(_page4, "_page");
+    __name(_page3, "_page");
   }
 });
 
@@ -50763,9 +50997,9 @@ var init__6 = __esm({
     "use strict";
     init_page_server_ts3();
     index7 = 5;
-    component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
+    component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.DJrft7kA.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DL1ELqSf.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/Dl4abIec.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/CtwZ6nWe.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/D3iaGwoa.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/D2bEJjqg.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/DyWvIGLt.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DtXDGwOl.js"];
+    imports6 = ["_app/immutable/nodes/5.CaMoQG0N.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/BJp7Yl8a.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -50895,7 +51129,7 @@ function keyToUtcMs(key) {
   return Date.UTC(year, (month ?? 1) - 1, day ?? 1);
 }
 function addDays(key, n) {
-  const d = new Date(keyToUtcMs(key) + n * DAY_MS);
+  const d = new Date(keyToUtcMs(key) + n * DAY_MS2);
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 function labelFor(key) {
@@ -50969,7 +51203,7 @@ function windowKeys(nowMs, days, timeZone) {
 }
 function boundsFor(keys, timeZone, weekly, winStart, winEnd) {
   const bucketCount = weekly ? keys.length / 7 : keys.length;
-  const startOf = /* @__PURE__ */ __name((index17) => localDayStartMs(keys[index17] ?? keys[0], timeZone), "startOf");
+  const startOf = /* @__PURE__ */ __name((index18) => localDayStartMs(keys[index18] ?? keys[0], timeZone), "startOf");
   const bounds = [];
   for (let i = 0; i < bucketCount; i++) {
     const first2 = weekly ? i * 7 : i;
@@ -50996,8 +51230,8 @@ function boundsFor(keys, timeZone, weekly, winStart, winEnd) {
 function insightFrames(nowMs, days, timeZone) {
   const weekly = bucketKind(days) === "week";
   const { span: span2, currentKeys, previousKeys } = windowKeys(nowMs, days, timeZone);
-  const sinceMs = nowMs - span2 * DAY_MS;
-  const previousSinceMs = sinceMs - span2 * DAY_MS;
+  const sinceMs = nowMs - span2 * DAY_MS2;
+  const previousSinceMs = sinceMs - span2 * DAY_MS2;
   const labelsOf = /* @__PURE__ */ __name((keys) => Array.from({ length: weekly ? keys.length / 7 : keys.length }, (_, i) => labelFor(keys[weekly ? i * 7 : i] ?? keys[0])), "labelsOf");
   return {
     sinceMs,
@@ -51186,7 +51420,7 @@ async function loadInsights(db, userId, daysRaw, timeZone) {
     accounts
   };
 }
-var DAY_MS, INSIGHT_RANGES, dayKeyFormatters, labelFormatter, zonedFormatters;
+var DAY_MS2, INSIGHT_RANGES, dayKeyFormatters, labelFormatter, zonedFormatters;
 var init_insights_report = __esm({
   ".svelte-kit/output/server/chunks/insights-report.js"() {
     "use strict";
@@ -51195,7 +51429,7 @@ var init_insights_report = __esm({
     init_platforms();
     init_time_zone();
     init_drizzle_orm();
-    DAY_MS = 864e5;
+    DAY_MS2 = 864e5;
     INSIGHT_RANGES = [
       7,
       30,
@@ -51256,15 +51490,15 @@ var init_page_server_ts6 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/insights/_page.svelte.js
-var page_svelte_exports5 = {};
-__export(page_svelte_exports5, {
-  default: () => _page5
+var page_svelte_exports4 = {};
+__export(page_svelte_exports4, {
+  default: () => _page4
 });
 function Chart_column($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData13 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData14 }]));
 }
-function _page5($$renderer, $$props) {
+function _page4($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data: pageData } = $$props;
     let range = pageData.insights?.range.days ?? 30;
@@ -51297,11 +51531,11 @@ function _page5($$renderer, $$props) {
     const buckets = derived2(() => stats?.series.current ?? []);
     const previousBuckets = derived2(() => stats?.series.previous ?? []);
     derived2(() => Math.max(1, ...buckets().map((b) => b.published), ...previousBuckets().map((b) => b.published)));
-    function showBarLabel(index17) {
+    function showBarLabel(index18) {
       const n = buckets().length;
-      if (n <= 7 || index17 === n - 1) return true;
+      if (n <= 7 || index18 === n - 1) return true;
       const step = n <= 31 ? 5 : 3;
-      return index17 % step === 0 && n - 1 - index17 >= step / 2;
+      return index18 % step === 0 && n - 1 - index18 >= step / 2;
     }
     __name(showBarLabel, "showBarLabel");
     const hasFailures = derived2(() => buckets().some((b) => b.failed > 0));
@@ -51318,8 +51552,8 @@ function _page5($$renderer, $$props) {
     const cumulativeMax = derived2(() => Math.max(1, ...cumulative().current, ...cumulative().previous));
     const CHART_W = 600;
     const CHART_H = 150;
-    function pointX(index17, count2) {
-      return (index17 + 0.5) / count2 * CHART_W;
+    function pointX(index18, count2) {
+      return (index18 + 0.5) / count2 * CHART_W;
     }
     __name(pointX, "pointX");
     function pointY(value) {
@@ -51338,8 +51572,8 @@ function _page5($$renderer, $$props) {
       return `${currentLine()} L${pointX(n - 1, n).toFixed(1)},146 L${pointX(0, n).toFixed(1)},146 Z`;
     });
     const active = derived2(() => null);
-    function pct(index17, count2) {
-      return (index17 + 0.5) / count2 * 100;
+    function pct(index18, count2) {
+      return (index18 + 0.5) / count2 * 100;
     }
     __name(pct, "pct");
     const reading = derived2(() => {
@@ -51477,9 +51711,9 @@ function _page5($$renderer, $$props) {
       $$renderer2.push(`<!--]--></p> <div class="mt-7 mb-2.5 flex items-center justify-between gap-3"><h2 class="text-[15px] font-extrabold tracking-tight text-stone-900">Accounts</h2> <p class="text-[12px] font-semibold text-stone-500">${escape_html(stats.range.days === 90 ? "13 weeks" : `${stats.range.days} days`)} \xB7 ${escape_html(accounts().length)}
 				${escape_html(accounts().length === 1 ? "account" : "accounts")}</p></div> <div class="overflow-hidden rounded-[2rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)]" data-testid="insights-accounts"><!--[-->`);
       const each_array_5 = ensure_array_like(accounts());
-      for (let index17 = 0, $$length = each_array_5.length; index17 < $$length; index17++) {
-        let account = each_array_5[index17];
-        $$renderer2.push(`<div${attr_class(`flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:flex-nowrap sm:gap-4 ${index17 !== accounts().length - 1 ? "border-b border-stone-100" : ""}`)} data-testid="insight-account"><div class="flex min-w-0 items-center gap-3">`);
+      for (let index18 = 0, $$length = each_array_5.length; index18 < $$length; index18++) {
+        let account = each_array_5[index18];
+        $$renderer2.push(`<div${attr_class(`flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:flex-nowrap sm:gap-4 ${index18 !== accounts().length - 1 ? "border-b border-stone-100" : ""}`)} data-testid="insight-account"><div class="flex min-w-0 items-center gap-3">`);
         AccountAvatar($$renderer2, {
           platform: account.platform,
           handle: account.handle,
@@ -51504,8 +51738,8 @@ function _page5($$renderer, $$props) {
     $$renderer2.push(`<!--]--></div>`);
   });
 }
-var __iconData13;
-var init_page_svelte5 = __esm({
+var __iconData14;
+var init_page_svelte4 = __esm({
   ".svelte-kit/output/server/entries/pages/insights/_page.svelte.js"() {
     "use strict";
     init_human_error();
@@ -51518,7 +51752,7 @@ var init_page_svelte5 = __esm({
     init_AccountAvatar();
     init_session_expired();
     init_relative_time();
-    __iconData13 = {
+    __iconData14 = {
       "name": "chart-column",
       "size": 24,
       "node": [
@@ -51529,9 +51763,9 @@ var init_page_svelte5 = __esm({
       ],
       "aliases": ["bar-chart-3"]
     };
-    __iconData13.node;
+    __iconData14.node;
     __name(Chart_column, "Chart_column");
-    __name(_page5, "_page");
+    __name(_page4, "_page");
   }
 });
 
@@ -51552,9 +51786,9 @@ var init__9 = __esm({
     "use strict";
     init_page_server_ts6();
     index10 = 8;
-    component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
+    component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports9 = ["_app/immutable/nodes/8.Dg4b2x62.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/tUr8yDSR.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/DyWvIGLt.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/QXGyRFL3.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports9 = ["_app/immutable/nodes/8.BwOCiXgU.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets9 = [];
     fonts9 = [];
   }
@@ -51581,11 +51815,11 @@ var init_page_server_ts7 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/login/_page.svelte.js
-var page_svelte_exports6 = {};
-__export(page_svelte_exports6, {
-  default: () => _page6
+var page_svelte_exports5 = {};
+__export(page_svelte_exports5, {
+  default: () => _page5
 });
-function _page6($$renderer, $$props) {
+function _page5($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;
     let email3 = "";
@@ -51610,13 +51844,13 @@ function _page6($$renderer, $$props) {
     $$renderer2.push(`<!--]--></div></div>`);
   });
 }
-var init_page_svelte6 = __esm({
+var init_page_svelte5 = __esm({
   ".svelte-kit/output/server/entries/pages/login/_page.svelte.js"() {
     "use strict";
     init_server3();
     init_navigation();
     init_favicon();
-    __name(_page6, "_page");
+    __name(_page5, "_page");
   }
 });
 
@@ -51637,9 +51871,9 @@ var init__10 = __esm({
     "use strict";
     init_page_server_ts7();
     index11 = 9;
-    component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
+    component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id8 = "src/routes/login/+page.server.ts";
-    imports10 = ["_app/immutable/nodes/9.K6AoXkU9.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CL0Rsr0s.js"];
+    imports10 = ["_app/immutable/nodes/9.C4aBPiOF.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CL0Rsr0s.js"];
     stylesheets10 = [];
     fonts10 = [];
   }
@@ -51664,24 +51898,24 @@ var init_page_server_ts8 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/login/setup-2fa/_page.svelte.js
-var page_svelte_exports7 = {};
-__export(page_svelte_exports7, {
-  default: () => _page7
+var page_svelte_exports6 = {};
+__export(page_svelte_exports6, {
+  default: () => _page6
 });
-function _page7($$renderer, $$props) {
+function _page6($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     $$renderer2.push(`<div class="flex min-h-dvh items-center justify-center px-4 py-10"><div class="w-full max-w-md"><div class="mb-6 text-center"><h1 class="text-2xl font-semibold tracking-tight">Set up authenticator</h1> <p class="mt-1 text-sm text-stone-500">Required. Works with Google Authenticator, 1Password, Authy, and any standard app.</p></div> `);
     $$renderer2.push(`<!--[0--><p class="text-center text-sm text-stone-500">Preparing your codes\u2026</p>`);
     $$renderer2.push(`<!--]--></div></div>`);
   });
 }
-var init_page_svelte7 = __esm({
+var init_page_svelte6 = __esm({
   ".svelte-kit/output/server/entries/pages/login/setup-2fa/_page.svelte.js"() {
     "use strict";
     init_server3();
     init_navigation();
     init_index_server();
-    __name(_page7, "_page");
+    __name(_page6, "_page");
   }
 });
 
@@ -51702,9 +51936,9 @@ var init__11 = __esm({
     "use strict";
     init_page_server_ts8();
     index12 = 10;
-    component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
+    component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
     server_id9 = "src/routes/login/setup-2fa/+page.server.ts";
-    imports11 = ["_app/immutable/nodes/10.Bd6HO4XG.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js"];
+    imports11 = ["_app/immutable/nodes/10.dJHHSTFl.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js"];
     stylesheets11 = [];
     fonts11 = [];
   }
@@ -51730,11 +51964,11 @@ var init_page_server_ts9 = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/login/verify/_page.svelte.js
-var page_svelte_exports8 = {};
-__export(page_svelte_exports8, {
-  default: () => _page8
+var page_svelte_exports7 = {};
+__export(page_svelte_exports7, {
+  default: () => _page7
 });
-function _page8($$renderer, $$props) {
+function _page7($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let code = "";
     let loading = false;
@@ -51743,12 +51977,12 @@ function _page8($$renderer, $$props) {
     $$renderer2.push(`<!--]--> <button type="submit"${attr("disabled", loading, true)} class="w-full rounded-full bg-stone-900 py-2.5 text-sm font-medium text-white disabled:opacity-50">${escape_html("Continue")}</button> <button type="button" class="w-full text-xs text-stone-500 underline">${escape_html("Use a backup code")}</button></form> <p class="mt-4 text-center text-xs text-stone-500"><a href="/login" class="underline">Back to sign in</a></p></div></div>`);
   });
 }
-var init_page_svelte8 = __esm({
+var init_page_svelte7 = __esm({
   ".svelte-kit/output/server/entries/pages/login/verify/_page.svelte.js"() {
     "use strict";
     init_server3();
     init_navigation();
-    __name(_page8, "_page");
+    __name(_page7, "_page");
   }
 });
 
@@ -51769,9 +52003,9 @@ var init__12 = __esm({
     "use strict";
     init_page_server_ts9();
     index13 = 11;
-    component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
+    component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
     server_id10 = "src/routes/login/verify/+page.server.ts";
-    imports12 = ["_app/immutable/nodes/11.PMn_QO84.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js"];
+    imports12 = ["_app/immutable/nodes/11._Nj2-b-A.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js"];
     stylesheets12 = [];
     fonts12 = [];
   }
@@ -51813,6 +52047,252 @@ var init__13 = __esm({
     imports13 = [];
     stylesheets13 = [];
     fonts13 = [];
+  }
+});
+
+// .svelte-kit/output/server/chunks/draft-shares.js
+async function shareToken(secret, shareId) {
+  return hmacHex(await hmacHex(secret, "subkey:draft-share:v1"), `draft-share:${shareId}`);
+}
+async function hashShareToken(token) {
+  const digest = await crypto.subtle.digest("SHA-256", utf8Bytes(`draftshare:${token}`));
+  return bytesToHex(new Uint8Array(digest));
+}
+async function currentShare(db, secret, draftId, now = /* @__PURE__ */ new Date()) {
+  const row = await first(db.select().from(draftShares).where(and(eq(draftShares.draftId, draftId), gt(draftShares.expiresAt, now))));
+  if (!row) return null;
+  const token = await shareToken(secret, row.id);
+  if (await hashShareToken(token) !== row.tokenHash) return null;
+  return {
+    token,
+    expiresAt: row.expiresAt
+  };
+}
+async function createShare(db, secret, draftId, lifetimeMs, now = /* @__PURE__ */ new Date()) {
+  const id2 = newId();
+  const token = await shareToken(secret, id2);
+  const expiresAt = new Date(now.getTime() + lifetimeMs);
+  await batchQueries(db, [db.delete(draftShares).where(eq(draftShares.draftId, draftId)), db.insert(draftShares).values({
+    id: id2,
+    draftId,
+    tokenHash: await hashShareToken(token),
+    expiresAt,
+    createdAt: now
+  })]);
+  return {
+    token,
+    expiresAt
+  };
+}
+async function revokeShare(db, draftId) {
+  await db.delete(draftShares).where(eq(draftShares.draftId, draftId));
+}
+async function liveShare(db, secret, token, now) {
+  if (!isShareTokenFormat(token)) return null;
+  const share = await first(db.select({
+    id: draftShares.id,
+    draftId: draftShares.draftId,
+    expiresAt: draftShares.expiresAt
+  }).from(draftShares).where(and(eq(draftShares.tokenHash, await hashShareToken(token)), gt(draftShares.expiresAt, now))));
+  if (!share || await shareToken(secret, share.id) !== token) return null;
+  return share;
+}
+function targetStates(db, draftId) {
+  return db.select({
+    connectionId: publishTargets.connectionId,
+    status: publishTargets.status,
+    remotePostId: publishTargets.remotePostId
+  }).from(publishTargets).where(eq(publishTargets.draftId, draftId));
+}
+async function resolveShare(db, secret, token, now = /* @__PURE__ */ new Date()) {
+  const share = await liveShare(db, secret, token, now);
+  if (!share) return null;
+  const [draftRows, targets, variants, media, accounts] = await batchQueries(db, [
+    db.select().from(drafts).where(eq(drafts.id, share.draftId)),
+    targetStates(db, share.draftId),
+    db.select().from(draftVariants).where(eq(draftVariants.draftId, share.draftId)),
+    db.select().from(draftMedia).where(eq(draftMedia.draftId, share.draftId)),
+    db.select({
+      id: connections.id,
+      platform: connections.platform
+    }).from(connections).where(and(inArray(connections.userId, db.select({ id: drafts.userId }).from(drafts).where(eq(drafts.id, share.draftId))), ne(connections.status, "disconnected")))
+  ]);
+  const draft = draftRows[0];
+  if (!draft || hasGoneOut(targets)) return null;
+  media.sort((a, b) => a.sortOrder - b.sortOrder);
+  const selected = resolveSavedSelection(parseJson(draft.selectedConnectionIds, null), accounts) ?? resolveRestoredSelection(restorableTargetIds(targets), accounts) ?? [];
+  return {
+    draft,
+    variants,
+    media,
+    platforms: [...new Set(accounts.filter((a) => selected.includes(a.id)).map((a) => a.platform))],
+    expiresAt: share.expiresAt
+  };
+}
+async function resolveSharedMedia(db, secret, token, storageKey, now = /* @__PURE__ */ new Date()) {
+  const share = await liveShare(db, secret, token, now);
+  if (!share) return null;
+  const [targets, media] = await batchQueries(db, [targetStates(db, share.draftId), db.select().from(draftMedia).where(and(eq(draftMedia.draftId, share.draftId), eq(draftMedia.storageKey, storageKey)))]);
+  if (hasGoneOut(targets)) return null;
+  return media[0] ?? null;
+}
+var init_draft_shares = __esm({
+  ".svelte-kit/output/server/chunks/draft-shares.js"() {
+    "use strict";
+    init_client();
+    init_bytes();
+    init_crypto();
+    init_platform_sync();
+    init_drizzle_orm();
+    __name(shareToken, "shareToken");
+    __name(hashShareToken, "hashShareToken");
+    __name(currentShare, "currentShare");
+    __name(createShare, "createShare");
+    __name(revokeShare, "revokeShare");
+    __name(liveShare, "liveShare");
+    __name(targetStates, "targetStates");
+    __name(resolveShare, "resolveShare");
+    __name(resolveSharedMedia, "resolveSharedMedia");
+  }
+});
+
+// .svelte-kit/output/server/entries/pages/p/_token_/_page.server.ts.js
+var page_server_ts_exports11 = {};
+__export(page_server_ts_exports11, {
+  load: () => load12
+});
+var load12;
+var init_page_server_ts11 = __esm({
+  ".svelte-kit/output/server/entries/pages/p/_token_/_page.server.ts.js"() {
+    "use strict";
+    init_serialize();
+    init_platform_sync();
+    init_draft_shares();
+    init_exports();
+    load12 = /* @__PURE__ */ __name(async ({ params, locals, setHeaders }) => {
+      setHeaders({ "cache-control": "private, no-store" });
+      const shared = await resolveShare(locals.db, locals.env.APP_ENCRYPTION_KEY, params.token);
+      if (!shared) error(404, "This preview link has expired or was turned off.");
+      const media = shared.media.map((m) => {
+        const { id: id2, storageKey, mime, width, height, altText, segmentIndex, meta: meta3 } = serializeMedia(m);
+        return {
+          id: id2,
+          storageKey,
+          mime,
+          width,
+          height,
+          altText,
+          segmentIndex,
+          meta: meta3
+        };
+      });
+      return {
+        title: shared.draft.title,
+        updatedAt: shared.draft.updatedAt,
+        expiresAt: shared.expiresAt,
+        mediaBase: `/p/${params.token}/media`,
+        versions: shareVersions({
+          baseBody: shared.draft.baseBody,
+          variants: shared.variants,
+          media,
+          platforms: shared.platforms
+        })
+      };
+    }, "load");
+  }
+});
+
+// .svelte-kit/output/server/entries/pages/p/_token_/_page.svelte.js
+var page_svelte_exports8 = {};
+__export(page_svelte_exports8, {
+  default: () => _page8
+});
+function _page8($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { data } = $$props;
+    let selected = null;
+    const active = derived2(() => data.versions.find((v) => v.key === selected) ?? data.versions[0] ?? null);
+    head("1n544vx", $$renderer2, ($$renderer3) => {
+      $$renderer3.title(($$renderer4) => {
+        $$renderer4.push(`<title>${escape_html(data.title?.trim() || "Draft preview")} \u2014 ${escape_html(data.appName)}</title>`);
+      });
+      $$renderer3.push(`<meta name="robots" content="noindex, nofollow"/>`);
+    });
+    $$renderer2.push(`<main id="main-content" class="min-h-dvh bg-stone-50 px-4 py-10 font-sans text-stone-900 sm:py-16"><div class="mx-auto w-full max-w-xl"><header class="mb-8"><p class="text-[11px] font-bold tracking-widest text-stone-500 uppercase">Draft preview</p> `);
+    if (data.title?.trim()) $$renderer2.push(`<!--[0--><h1 class="mt-1 text-xl font-extrabold">${escape_html(data.title)}</h1>`);
+    else $$renderer2.push(`<!--[-1--><h1 class="sr-only">Draft preview</h1>`);
+    $$renderer2.push(`<!--]--> <p class="mt-2 text-[13px] font-medium text-stone-500" data-testid="share-meta">Not posted yet, and may still change. Last saved ${escape_html(formatRelativeTime(data.updatedAt))};
+				refresh to see newer edits.</p></header> `);
+    if (data.versions.length > 1) {
+      $$renderer2.push(`<!--[0--><div class="mb-6 flex flex-wrap gap-2" role="group" aria-label="Version"><!--[-->`);
+      const each_array = ensure_array_like(data.versions);
+      for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+        let version4 = each_array[$$index];
+        $$renderer2.push(`<button type="button"${attr("data-testid", `share-version-${stringify3(version4.key)}`)}${attr("aria-pressed", active()?.key === version4.key)}${attr_class(`rounded-full px-3 py-1.5 text-[12px] font-bold whitespace-nowrap transition-all ${active()?.key === version4.key ? "bg-stone-900 text-white shadow-md" : "border border-stone-200/80 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-900"}`)}>${escape_html(version4.label)}</button>`);
+      }
+      $$renderer2.push(`<!--]--></div>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
+    if (active()) {
+      $$renderer2.push(`<!--[0--><ol class="flex flex-col gap-4" data-testid="share-cards"><!--[-->`);
+      const each_array_1 = ensure_array_like(active().cards);
+      for (let index18 = 0, $$length = each_array_1.length; index18 < $$length; index18++) {
+        let card = each_array_1[index18];
+        $$renderer2.push(`<li${attr("data-testid", `share-card-${stringify3(index18)}`)} class="flex min-w-0 flex-col gap-3 rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)]">`);
+        if (card.text) $$renderer2.push(`<!--[0--><p class="text-[15px] leading-relaxed font-medium break-words whitespace-pre-wrap">${escape_html(card.text)}</p>`);
+        else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> `);
+        if (card.media.length) {
+          $$renderer2.push("<!--[0-->");
+          MediaPreview($$renderer2, {
+            items: card.media,
+            maxHeight: 420,
+            extra: Math.max(0, card.media.length - 4),
+            mediaBase: data.mediaBase
+          });
+        } else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> `);
+        if (!card.text && !card.media.length) $$renderer2.push(`<!--[0--><p class="text-[14px] font-medium text-stone-400 italic">Nothing written yet.</p>`);
+        else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--></li>`);
+      }
+      $$renderer2.push(`<!--]--></ol>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> <footer class="mt-10 text-center text-[12px] font-medium text-stone-500">This link stops working ${escape_html(formatRelativeTime(data.expiresAt))}, or once the post goes out.</footer></div></main>`);
+  });
+}
+var init_page_svelte8 = __esm({
+  ".svelte-kit/output/server/entries/pages/p/_token_/_page.svelte.js"() {
+    "use strict";
+    init_server3();
+    init_MediaPreview();
+    init_relative_time();
+    __name(_page8, "_page");
+  }
+});
+
+// .svelte-kit/output/server/nodes/13.js
+var __exports14 = {};
+__export(__exports14, {
+  component: () => component11,
+  fonts: () => fonts14,
+  imports: () => imports14,
+  index: () => index15,
+  server: () => page_server_ts_exports11,
+  server_id: () => server_id12,
+  stylesheets: () => stylesheets14
+});
+var index15, component_cache11, component11, server_id12, imports14, stylesheets14, fonts14;
+var init__14 = __esm({
+  ".svelte-kit/output/server/nodes/13.js"() {
+    "use strict";
+    init_page_server_ts11();
+    index15 = 13;
+    component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
+    server_id12 = "src/routes/p/[token]/+page.server.ts";
+    imports14 = ["_app/immutable/nodes/13.a7yyJhsw.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
+    stylesheets14 = [];
+    fonts14 = [];
   }
 });
 
@@ -51982,17 +52462,17 @@ var init_post_list = __esm({
 });
 
 // .svelte-kit/output/server/entries/pages/posts/_page.server.ts.js
-var page_server_ts_exports11 = {};
-__export(page_server_ts_exports11, {
-  load: () => load12
+var page_server_ts_exports12 = {};
+__export(page_server_ts_exports12, {
+  load: () => load13
 });
-var load12;
-var init_page_server_ts11 = __esm({
+var load13;
+var init_page_server_ts12 = __esm({
   ".svelte-kit/output/server/entries/pages/posts/_page.server.ts.js"() {
     "use strict";
     init_require();
     init_post_list();
-    load12 = /* @__PURE__ */ __name(async ({ locals }) => {
+    load13 = /* @__PURE__ */ __name(async ({ locals }) => {
       const user = requireUser(locals.user);
       try {
         const [drafts2, queue] = await Promise.all([loadDraftSummaries(locals.db, user.id), loadQueueList(locals.db, user.id)]);
@@ -52020,20 +52500,20 @@ var init_page_server_ts11 = __esm({
 // .svelte-kit/output/server/chunks/pencil.js
 function Pencil($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData14 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData15 }]));
 }
-var __iconData14;
+var __iconData15;
 var init_pencil = __esm({
   ".svelte-kit/output/server/chunks/pencil.js"() {
     "use strict";
     init_server3();
     init_Icon();
-    __iconData14 = {
+    __iconData15 = {
       "name": "pencil",
       "size": 24,
       "node": [["path", { "d": "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" }], ["path", { "d": "m15 5 4 4" }]]
     };
-    __iconData14.node;
+    __iconData15.node;
     __name(Pencil, "Pencil");
   }
 });
@@ -52049,7 +52529,7 @@ function Calendar_clock($$renderer, $$props) {
 }
 function Refresh_cw($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$23 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$22 }]));
 }
 function Search($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
@@ -52057,7 +52537,7 @@ function Search($$renderer, $$props) {
 }
 function Users($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData15 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData16 }]));
 }
 function takePostsNotice() {
   const notice = pending;
@@ -52144,7 +52624,7 @@ function _page9($$renderer, $$props) {
       rescheduleAt = scheduleFromDHM(days, hours, minutes, /* @__PURE__ */ new Date());
     }
     __name(applyRelativeReschedule, "applyRelativeReschedule");
-    async function load13(opts = {}) {
+    async function load14(opts = {}) {
       if (drafts2.length === 0 && targets.length === 0) loading = true;
       if (!opts.keepError) error63 = null;
       try {
@@ -52176,7 +52656,7 @@ function _page9($$renderer, $$props) {
         loading = false;
       }
     }
-    __name(load13, "load");
+    __name(load14, "load");
     const snapshot = {
       capture: /* @__PURE__ */ __name(() => ({
         query,
@@ -52496,7 +52976,7 @@ function _page9($$renderer, $$props) {
       error63 = null;
       if (await bulkTargets("cancel", ids, "Could not cancel").finally(() => {
         busy = null;
-      })) await load13({ keepError: true });
+      })) await load14({ keepError: true });
     }
     __name(confirmCancel, "confirmCancel");
     let busyTarget = null;
@@ -52810,7 +53290,7 @@ function _page9($$renderer, $$props) {
     bind_props($$props, { snapshot });
   });
 }
-var __iconData$32, __iconData$23, __iconData$13, __iconData15, pending, AUTH_ERROR_PATTERN;
+var __iconData$32, __iconData$22, __iconData$13, __iconData16, pending, AUTH_ERROR_PATTERN;
 var init_page_svelte9 = __esm({
   ".svelte-kit/output/server/entries/pages/posts/_page.svelte.js"() {
     "use strict";
@@ -52832,6 +53312,7 @@ var init_page_svelte9 = __esm({
     init_circle_x();
     init_schedule_helpers();
     init_pencil();
+    init_MediaPreview();
     init_x();
     init_publish_tracker_svelte();
     init_ConfirmDialog();
@@ -52856,7 +53337,7 @@ var init_page_svelte9 = __esm({
     };
     __iconData$32.node;
     __name(Calendar_clock, "Calendar_clock");
-    __iconData$23 = {
+    __iconData$22 = {
       "name": "refresh-cw",
       "size": 24,
       "node": [
@@ -52866,7 +53347,7 @@ var init_page_svelte9 = __esm({
         ["path", { "d": "M8 16H3v5" }]
       ]
     };
-    __iconData$23.node;
+    __iconData$22.node;
     __name(Refresh_cw, "Refresh_cw");
     __iconData$13 = {
       "name": "search",
@@ -52879,7 +53360,7 @@ var init_page_svelte9 = __esm({
     };
     __iconData$13.node;
     __name(Search, "Search");
-    __iconData15 = {
+    __iconData16 = {
       "name": "users",
       "size": 24,
       "node": [
@@ -52893,7 +53374,7 @@ var init_page_svelte9 = __esm({
         }]
       ]
     };
-    __iconData15.node;
+    __iconData16.node;
     __name(Users, "Users");
     pending = null;
     __name(takePostsNotice, "takePostsNotice");
@@ -52908,28 +53389,42 @@ var init_page_svelte9 = __esm({
   }
 });
 
-// .svelte-kit/output/server/nodes/13.js
-var __exports14 = {};
-__export(__exports14, {
-  component: () => component11,
-  fonts: () => fonts14,
-  imports: () => imports14,
-  index: () => index15,
-  server: () => page_server_ts_exports11,
-  server_id: () => server_id12,
-  stylesheets: () => stylesheets14
+// .svelte-kit/output/server/nodes/14.js
+var __exports15 = {};
+__export(__exports15, {
+  component: () => component12,
+  fonts: () => fonts15,
+  imports: () => imports15,
+  index: () => index16,
+  server: () => page_server_ts_exports12,
+  server_id: () => server_id13,
+  stylesheets: () => stylesheets15
 });
-var index15, component_cache11, component11, server_id12, imports14, stylesheets14, fonts14;
-var init__14 = __esm({
-  ".svelte-kit/output/server/nodes/13.js"() {
+var index16, component_cache12, component12, server_id13, imports15, stylesheets15, fonts15;
+var init__15 = __esm({
+  ".svelte-kit/output/server/nodes/14.js"() {
     "use strict";
-    init_page_server_ts11();
-    index15 = 13;
-    component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
-    server_id12 = "src/routes/posts/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.DVE4sj6x.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/CghTi6yz.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/BMIxtTLX.js", "_app/immutable/chunks/J0Pux1Z4.js", "_app/immutable/chunks/Dl4abIec.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/CtwZ6nWe.js", "_app/immutable/chunks/C8unVM8S.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/BEaO_6xa.js", "_app/immutable/chunks/D5C8YmuT.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/DtXDGwOl.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/QXGyRFL3.js"];
-    stylesheets14 = [];
-    fonts14 = [];
+    init_page_server_ts12();
+    index16 = 14;
+    component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
+    server_id13 = "src/routes/posts/+page.server.ts";
+    imports15 = ["_app/immutable/nodes/14.DcJZX1Aq.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/W8_OUZDm.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    stylesheets15 = [];
+    fonts15 = [];
+  }
+});
+
+// .svelte-kit/output/server/chunks/docs-links.js
+var DOCS_URL, docsLinks;
+var init_docs_links = __esm({
+  ".svelte-kit/output/server/chunks/docs-links.js"() {
+    "use strict";
+    DOCS_URL = "https://cogsend.com/docs/";
+    docsLinks = {
+      home: DOCS_URL,
+      api: `${DOCS_URL}api/`,
+      mcp: `${DOCS_URL}mcp/`
+    };
   }
 });
 
@@ -53179,18 +53674,18 @@ function parseManifest(manifestBytes) {
     return null;
   }
 }
-function updateBlockers(manifest3, current, present) {
+function updateBlockers(manifest3, current, present2) {
   const blockers = [];
   const order = compareVersions(manifest3.version, current);
   if (order === null) blockers.push(`This build reports no release version (${current || "none"})`);
   else if (order <= 0) blockers.push(`${manifest3.tag} is not newer than the running ${current}`);
   else if ((compareVersions(manifest3.minFromVersion, current) ?? 0) > 0) blockers.push(`${manifest3.tag} has to be installed from ${manifest3.minFromVersion} or later; this instance runs ${current}`);
   if (manifest3.manualOnly) blockers.push(`${manifest3.tag} needs a deploy from a checkout${manifest3.notes ? `: ${manifest3.notes}` : ""}`);
-  for (const required2 of manifest3.requiredBindings) if (!present.some((b) => b.name === required2.name && b.type === required2.type)) blockers.push(`The Worker has no ${required2.type} binding named ${required2.name}`);
+  for (const required2 of manifest3.requiredBindings) if (!present2.some((b) => b.name === required2.name && b.type === required2.type)) blockers.push(`The Worker has no ${required2.type} binding named ${required2.name}`);
   return blockers;
 }
-function bindingsToSend(present) {
-  return present.filter((b) => !KEPT_BINDING_TYPES.includes(b.type));
+function bindingsToSend(present2) {
+  return present2.filter((b) => !KEPT_BINDING_TYPES.includes(b.type));
 }
 function bindingSignature(bindings) {
   return bindings.map((b) => `${b.name}:${b.type}`).sort();
@@ -54164,8 +54659,8 @@ function buildLocalizeFn(args) {
       const width = options2?.width ? String(options2.width) : args.defaultWidth;
       valuesArray = args.values[width] || args.values[defaultWidth];
     }
-    const index17 = args.argumentCallback ? args.argumentCallback(value) : value;
-    return valuesArray[index17];
+    const index18 = args.argumentCallback ? args.argumentCallback(value) : value;
+    return valuesArray[index18];
   };
 }
 var init_buildLocalizeFn = __esm({
@@ -54513,7 +55008,7 @@ var init_match = __esm({
         defaultMatchWidth: "wide",
         parsePatterns: parseQuarterPatterns,
         defaultParseWidth: "any",
-        valueCallback: /* @__PURE__ */ __name((index17) => index17 + 1, "valueCallback")
+        valueCallback: /* @__PURE__ */ __name((index18) => index18 + 1, "valueCallback")
       }),
       month: buildMatchFn({
         matchPatterns: matchMonthPatterns,
@@ -56010,7 +56505,7 @@ function _page10($$renderer, $$props) {
     let prefsLoaded = false;
     let askPublish = true;
     let loadGen = 0;
-    async function load13() {
+    async function load14() {
       const gen = ++loadGen;
       if (!prefsLoaded) prefsLoading = true;
       if (!keyLoaded) keyLoading = true;
@@ -56129,7 +56624,7 @@ function _page10($$renderer, $$props) {
         release = await res.json();
       });
     }
-    __name(load13, "load");
+    __name(load14, "load");
     function pictureUrlError(value) {
       const trimmed = value.trim();
       if (!trimmed) return null;
@@ -56200,7 +56695,7 @@ function _page10($$renderer, $$props) {
         keyCopied = false;
         keyJustRotated = Boolean(keyActive);
         keyConfirm = null;
-        await load13();
+        await load14();
       } catch (e) {
         err = humanizeError(e instanceof Error ? e.message : "Could not create key");
       } finally {
@@ -56218,7 +56713,7 @@ function _page10($$renderer, $$props) {
         keyConfirm = null;
         keyRevealed = null;
         msg = "API key revoked";
-        await load13();
+        await load14();
       } catch (e) {
         err = humanizeError(e instanceof Error ? e.message : "Could not revoke key");
       } finally {
@@ -56248,7 +56743,7 @@ function _page10($$renderer, $$props) {
         tickTokenRevealed = payload2.token;
         tickTokenCopied = false;
         tickConfirm = null;
-        await load13();
+        await load14();
       } catch (e) {
         err = humanizeError(e instanceof Error ? e.message : "Could not create a tick token");
       } finally {
@@ -56266,7 +56761,7 @@ function _page10($$renderer, $$props) {
         tickConfirm = null;
         tickTokenRevealed = null;
         msg = "Tick token revoked";
-        await load13();
+        await load14();
       } catch (e) {
         err = humanizeError(e instanceof Error ? e.message : "Could not revoke the tick token");
       } finally {
@@ -56331,7 +56826,7 @@ function _page10($$renderer, $$props) {
     $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--></div></form></div> <div class="min-w-0 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8" aria-label="API access" data-testid="api-key-section"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">API access</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Use this personal API key for scripts, Shortcuts, and cron jobs. Choose whether it can only
 				read or also change and publish drafts. For security, it cannot manage social accounts,
-				change credentials, or generate new API keys. See the <a href="/api" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">API reference</a> for full details.</p> <fieldset class="mb-5 space-y-2" data-testid="api-key-scopes"><legend class="mb-2 text-[12px] font-bold text-stone-700">New key permissions</legend> <label class="flex cursor-pointer items-start gap-2 text-[13px] text-stone-700"><input type="radio" name="api-key-scopes" value="read"${attr("checked", false, true)}/> <span><strong>Read-only</strong> \u2014 view connections, drafts, and queue.</span></label> <label class="flex cursor-pointer items-start gap-2 text-[13px] text-stone-700"><input type="radio" name="api-key-scopes" value="read-write"${attr("checked", true, true)}/> <span><strong>Read + write</strong> \u2014 manage drafts and publish; includes read. (Default)</span></label></fieldset> `);
+				change credentials, or generate new API keys. See the <a${attr("href", docsLinks.api)} target="_blank" rel="noopener" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">API reference</a> for full details.</p> <fieldset class="mb-5 space-y-2" data-testid="api-key-scopes"><legend class="mb-2 text-[12px] font-bold text-stone-700">New key permissions</legend> <label class="flex cursor-pointer items-start gap-2 text-[13px] text-stone-700"><input type="radio" name="api-key-scopes" value="read"${attr("checked", false, true)}/> <span><strong>Read-only</strong> \u2014 view connections, drafts, and queue.</span></label> <label class="flex cursor-pointer items-start gap-2 text-[13px] text-stone-700"><input type="radio" name="api-key-scopes" value="read-write"${attr("checked", true, true)}/> <span><strong>Read + write</strong> \u2014 manage drafts and publish; includes read. (Default)</span></label></fieldset> `);
     if (keyLoading) $$renderer2.push(`<!--[0--><p class="text-sm font-medium text-stone-500">Loading\u2026</p>`);
     else if (keyRevealed) {
       $$renderer2.push(`<!--[1--><div class="space-y-4" data-testid="api-key-reveal"><div class="rounded-xl border border-amber-200/50 bg-amber-50/50 p-4"><p class="text-[13px] font-bold text-amber-900">`);
@@ -56379,7 +56874,7 @@ function _page10($$renderer, $$props) {
       $$renderer2.push(`<!--]--></p></div>`);
     }
     $$renderer2.push(`<!--]--></div> <p class="mt-5 max-w-prose text-[12px] leading-relaxed text-stone-500">Give an agent a Read-only key unless it needs to change drafts or publish, and have your
-					client ask before it publishes. Tools, scopes and Cloudflare Access headers are in the <a href="/api#mcp-server-heading" class="font-bold text-stone-900 underline">API reference</a>.</p></section></div> <div class="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Two-factor authentication</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Authenticator app (Google Authenticator, 1Password, Authy, \u2026) plus one-time backup codes.
+					client ask before it publishes. Tools, scopes and Cloudflare Access headers are in the <a${attr("href", docsLinks.mcp)} target="_blank" rel="noopener" class="font-bold text-stone-900 underline">MCP docs</a>.</p></section></div> <div class="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Two-factor authentication</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Authenticator app (Google Authenticator, 1Password, Authy, \u2026) plus one-time backup codes.
 				This cannot be turned off.</p> `);
     if (totpOn) $$renderer2.push(`<!--[0--><div class="mb-5 flex items-center gap-3 rounded-xl border border-emerald-200/50 bg-emerald-50/50 p-3"><div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div> <div><p class="text-[13px] font-bold text-emerald-900">Active</p> <p class="text-[11px] font-medium text-emerald-700">${escape_html(backupRemaining)} backup code${escape_html(backupRemaining === 1 ? "" : "s")} remaining</p></div></div>`);
     else $$renderer2.push("<!--[-1-->");
@@ -56411,7 +56906,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.21.0-beta.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.24.0-beta.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -56496,6 +56991,7 @@ function _page10($$renderer, $$props) {
 var init_page_svelte10 = __esm({
   ".svelte-kit/output/server/entries/pages/settings/_page.svelte.js"() {
     "use strict";
+    init_docs_links();
     init_human_error();
     init_profile_settings();
     init_platforms();
@@ -56519,24 +57015,39 @@ var init_page_svelte10 = __esm({
   }
 });
 
-// .svelte-kit/output/server/nodes/14.js
-var __exports15 = {};
-__export(__exports15, {
-  component: () => component12,
-  fonts: () => fonts15,
-  imports: () => imports15,
-  index: () => index16,
-  stylesheets: () => stylesheets15
+// .svelte-kit/output/server/nodes/15.js
+var __exports16 = {};
+__export(__exports16, {
+  component: () => component13,
+  fonts: () => fonts16,
+  imports: () => imports16,
+  index: () => index17,
+  stylesheets: () => stylesheets16
 });
-var index16, component_cache12, component12, imports15, stylesheets15, fonts15;
-var init__15 = __esm({
-  ".svelte-kit/output/server/nodes/14.js"() {
+var index17, component_cache13, component13, imports16, stylesheets16, fonts16;
+var init__16 = __esm({
+  ".svelte-kit/output/server/nodes/15.js"() {
     "use strict";
-    index16 = 14;
-    component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports15 = ["_app/immutable/nodes/14.RiCLMWiP.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/chunks/Cc_E1XNy.js", "_app/immutable/chunks/CyPcduMV.js", "_app/immutable/chunks/DHMiDdm1.js", "_app/immutable/chunks/xjr9y_oz.js", "_app/immutable/chunks/Cq-jWD82.js", "_app/immutable/chunks/KvQDyfBb.js", "_app/immutable/chunks/CvP7luaA.js", "_app/immutable/chunks/h97WUSDW.js", "_app/immutable/chunks/DyWvIGLt.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/QXGyRFL3.js"];
-    stylesheets15 = [];
-    fonts15 = [];
+    index17 = 15;
+    component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
+    imports16 = ["_app/immutable/nodes/15.CUqKw4u1.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    stylesheets16 = [];
+    fonts16 = [];
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/_server.ts.js
+var server_ts_exports = {};
+__export(server_ts_exports, {
+  GET: () => GET
+});
+var GET;
+var init_server_ts = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/_server.ts.js"() {
+    "use strict";
+    init_docs_links();
+    init_exports();
+    GET = /* @__PURE__ */ __name(() => redirect(302, docsLinks.api, { external: true }), "GET");
   }
 });
 
@@ -56702,13 +57213,13 @@ var init_credentials = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/account/_server.ts.js
-var server_ts_exports = {};
-__export(server_ts_exports, {
-  GET: () => GET,
+var server_ts_exports2 = {};
+__export(server_ts_exports2, {
+  GET: () => GET2,
   PATCH: () => PATCH
 });
-var GET, PATCH;
-var init_server_ts = __esm({
+var GET2, PATCH;
+var init_server_ts2 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/account/_server.ts.js"() {
     "use strict";
     init_client();
@@ -56721,7 +57232,7 @@ var init_server_ts = __esm({
     init_saved_token();
     init_credentials();
     init_drizzle_orm();
-    GET = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET2 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         return ok({ email: locals.user?.email ?? null });
@@ -56827,12 +57338,12 @@ var init_cookies = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/claim/_server.ts.js
-var server_ts_exports2 = {};
-__export(server_ts_exports2, {
+var server_ts_exports3 = {};
+__export(server_ts_exports3, {
   POST: () => POST
 });
 var CLAIM_LABEL, POST;
-var init_server_ts2 = __esm({
+var init_server_ts3 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/claim/_server.ts.js"() {
     "use strict";
     init_bytes();
@@ -56886,12 +57397,12 @@ var init_server_ts2 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/login/_server.ts.js
-var server_ts_exports3 = {};
-__export(server_ts_exports3, {
+var server_ts_exports4 = {};
+__export(server_ts_exports4, {
   POST: () => POST2
 });
 var POST2;
-var init_server_ts3 = __esm({
+var init_server_ts4 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/login/_server.ts.js"() {
     "use strict";
     init_crypto();
@@ -56944,12 +57455,12 @@ var init_server_ts3 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/logout/_server.ts.js
-var server_ts_exports4 = {};
-__export(server_ts_exports4, {
+var server_ts_exports5 = {};
+__export(server_ts_exports5, {
   POST: () => POST3
 });
 var POST3;
-var init_server_ts4 = __esm({
+var init_server_ts5 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/logout/_server.ts.js"() {
     "use strict";
     init_client();
@@ -56970,10 +57481,10 @@ var init_server_ts4 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/me/_server.ts.js
-var server_ts_exports5 = {};
-__export(server_ts_exports5, {
+var server_ts_exports6 = {};
+__export(server_ts_exports6, {
   DELETE: () => DELETE,
-  GET: () => GET2
+  GET: () => GET3
 });
 async function deleteMedia(locals, userId) {
   let deleted = 0;
@@ -56999,8 +57510,8 @@ async function deleteMedia(locals, userId) {
     done: false
   };
 }
-var GET2, MEDIA_DELETE_BATCH, MAX_MEDIA_BATCHES, DELETE;
-var init_server_ts5 = __esm({
+var GET3, MEDIA_DELETE_BATCH, MAX_MEDIA_BATCHES, DELETE;
+var init_server_ts6 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/me/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57014,7 +57525,7 @@ var init_server_ts5 = __esm({
     init_cookies();
     init_media();
     init_drizzle_orm();
-    GET2 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET3 = /* @__PURE__ */ __name(async ({ locals }) => {
       const user = locals.user;
       return ok({
         user: isFullyVerified(user) ? {
@@ -57071,12 +57582,12 @@ var init_server_ts5 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/confirm/_server.ts.js
-var server_ts_exports6 = {};
-__export(server_ts_exports6, {
+var server_ts_exports7 = {};
+__export(server_ts_exports7, {
   POST: () => POST4
 });
 var POST4;
-var init_server_ts6 = __esm({
+var init_server_ts7 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/confirm/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57101,12 +57612,12 @@ var init_server_ts6 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/start/_server.ts.js
-var server_ts_exports7 = {};
-__export(server_ts_exports7, {
+var server_ts_exports8 = {};
+__export(server_ts_exports8, {
   POST: () => POST5
 });
 var POST5;
-var init_server_ts7 = __esm({
+var init_server_ts8 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/start/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57131,12 +57642,12 @@ var init_server_ts7 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/rotate/start/_server.ts.js
-var server_ts_exports8 = {};
-__export(server_ts_exports8, {
+var server_ts_exports9 = {};
+__export(server_ts_exports9, {
   POST: () => POST6
 });
 var POST6;
-var init_server_ts8 = __esm({
+var init_server_ts9 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/rotate/start/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57165,18 +57676,18 @@ var init_server_ts8 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/status/_server.ts.js
-var server_ts_exports9 = {};
-__export(server_ts_exports9, {
-  GET: () => GET3
+var server_ts_exports10 = {};
+__export(server_ts_exports10, {
+  GET: () => GET4
 });
-var GET3;
-var init_server_ts9 = __esm({
+var GET4;
+var init_server_ts10 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/status/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_totp();
-    GET3 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET4 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         return ok(await totpStatus(locals.db, user.id));
@@ -57188,12 +57699,12 @@ var init_server_ts9 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/auth/totp/verify/_server.ts.js
-var server_ts_exports10 = {};
-__export(server_ts_exports10, {
+var server_ts_exports11 = {};
+__export(server_ts_exports11, {
   POST: () => POST7
 });
 var POST7;
-var init_server_ts10 = __esm({
+var init_server_ts11 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/verify/_server.ts.js"() {
     "use strict";
     init_http();
@@ -57221,18 +57732,18 @@ var init_server_ts10 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/_server.ts.js
-var server_ts_exports11 = {};
-__export(server_ts_exports11, {
-  GET: () => GET4
+var server_ts_exports12 = {};
+__export(server_ts_exports12, {
+  GET: () => GET5
 });
-var GET4;
-var init_server_ts11 = __esm({
+var GET5;
+var init_server_ts12 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_connection_list();
-    GET4 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET5 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -57249,11 +57760,11 @@ async function bindOAuthState(opts) {
   const sig = await hmacHex(opts.secret, `oauth-state:${opts.pendingId}:${opts.sessionId}`);
   return `${opts.pendingId}.${sig}`;
 }
-function splitOAuthState(state) {
-  if (!state) return null;
-  const dot = state.indexOf(".");
+function splitOAuthState(state2) {
+  if (!state2) return null;
+  const dot = state2.indexOf(".");
   if (dot <= 0) return null;
-  return state.slice(0, dot) || null;
+  return state2.slice(0, dot) || null;
 }
 async function verifyOAuthState(opts) {
   if (!opts.state || !opts.sessionId) return null;
@@ -57291,16 +57802,16 @@ function createOAuthCallback(opts) {
   return async ({ url: url3, locals, cookies }) => {
     const appUrl = locals.env.APP_URL.replace(/\/$/, "");
     const code = url3.searchParams.get("code");
-    const state = url3.searchParams.get("state");
+    const state2 = url3.searchParams.get("state");
     const error63 = url3.searchParams.get("error");
     if (error63) redirect(302, `${appUrl}/accounts?error=${encodeURIComponent(error63)}`, toAppOrigin(appUrl));
-    if (!code || !state) redirect(302, `${appUrl}/accounts?error=missing_code`, toAppOrigin(appUrl));
-    const candidate = splitOAuthState(state);
+    if (!code || !state2) redirect(302, `${appUrl}/accounts?error=missing_code`, toAppOrigin(appUrl));
+    const candidate = splitOAuthState(state2);
     const pending2 = candidate ? await first(locals.db.select().from(oauthPending).where(eq(oauthPending.id, candidate))) : null;
     const sessionId = cookies.get("cog_session") ?? (pending2 ? `machine:${pending2.userId}` : null);
     const pendingId = await verifyOAuthState({
       secret: locals.env.AUTH_SECRET,
-      state,
+      state: state2,
       sessionId
     });
     const wrongProvider = opts.pendingMarker !== void 0 && pending2?.instanceUrl !== opts.pendingMarker;
@@ -57367,12 +57878,12 @@ var init_oauth_callback = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/bluesky/_server.ts.js
-var server_ts_exports12 = {};
-__export(server_ts_exports12, {
+var server_ts_exports13 = {};
+__export(server_ts_exports13, {
   POST: () => POST8
 });
 var POST8;
-var init_server_ts12 = __esm({
+var init_server_ts13 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/bluesky/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57454,12 +57965,12 @@ var init_platform_setup2 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/instagram/_server.ts.js
-var server_ts_exports13 = {};
-__export(server_ts_exports13, {
+var server_ts_exports14 = {};
+__export(server_ts_exports14, {
   POST: () => POST9
 });
 var POST9;
-var init_server_ts13 = __esm({
+var init_server_ts14 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/instagram/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57480,15 +57991,15 @@ var init_server_ts13 = __esm({
         const appId = credentials?.values.INSTAGRAM_APP_ID;
         const appSecret = credentials?.values.INSTAGRAM_APP_SECRET;
         if (!appId || !appSecret) return platformNotConfigured("instagram");
-        const state = randomHex(16);
+        const state2 = randomHex(16);
         const sessionId = cookies.get("cog_session") ?? `machine:${user.id}`;
         const bound = await bindOAuthState({
           secret: locals.env.AUTH_SECRET,
-          pendingId: state,
+          pendingId: state2,
           sessionId
         });
         await locals.db.insert(oauthPending).values({
-          id: state,
+          id: state2,
           userId: user.id,
           instanceUrl: "instagram",
           clientId: appId,
@@ -57505,18 +58016,18 @@ var init_server_ts13 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/instagram/callback/_server.ts.js
-var server_ts_exports14 = {};
-__export(server_ts_exports14, {
-  GET: () => GET5
+var server_ts_exports15 = {};
+__export(server_ts_exports15, {
+  GET: () => GET6
 });
-var GET5;
-var init_server_ts14 = __esm({
+var GET6;
+var init_server_ts15 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/instagram/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_providers();
-    GET5 = createOAuthCallback({
+    GET6 = createOAuthCallback({
       platform: "instagram",
       pendingMarker: "instagram",
       accountIdKey: "igUserId",
@@ -57553,12 +58064,12 @@ var init_server_ts14 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js
-var server_ts_exports15 = {};
-__export(server_ts_exports15, {
+var server_ts_exports16 = {};
+__export(server_ts_exports16, {
   POST: () => POST10
 });
 var POST10;
-var init_server_ts15 = __esm({
+var init_server_ts16 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57579,15 +58090,15 @@ var init_server_ts15 = __esm({
         const clientId = credentials?.values.LINKEDIN_CLIENT_ID;
         const clientSecret = credentials?.values.LINKEDIN_CLIENT_SECRET;
         if (!clientId || !clientSecret) return platformNotConfigured("linkedin");
-        const state = randomHex(16);
+        const state2 = randomHex(16);
         const sessionId = cookies.get("cog_session") ?? `machine:${user.id}`;
         const bound = await bindOAuthState({
           secret: locals.env.AUTH_SECRET,
-          pendingId: state,
+          pendingId: state2,
           sessionId
         });
         await locals.db.insert(oauthPending).values({
-          id: state,
+          id: state2,
           userId: user.id,
           instanceUrl: "linkedin",
           clientId,
@@ -57604,18 +58115,18 @@ var init_server_ts15 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/linkedin/callback/_server.ts.js
-var server_ts_exports16 = {};
-__export(server_ts_exports16, {
-  GET: () => GET6
+var server_ts_exports17 = {};
+__export(server_ts_exports17, {
+  GET: () => GET7
 });
-var GET6;
-var init_server_ts16 = __esm({
+var GET7;
+var init_server_ts17 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_providers();
-    GET6 = createOAuthCallback({
+    GET7 = createOAuthCallback({
       platform: "linkedin",
       pendingMarker: "linkedin",
       accountIdKey: "personUrn",
@@ -57653,12 +58164,12 @@ var init_server_ts16 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/mastodon/_server.ts.js
-var server_ts_exports17 = {};
-__export(server_ts_exports17, {
+var server_ts_exports18 = {};
+__export(server_ts_exports18, {
   POST: () => POST11
 });
 var POST11;
-var init_server_ts17 = __esm({
+var init_server_ts18 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/mastodon/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57686,15 +58197,15 @@ var init_server_ts17 = __esm({
           return fail(e instanceof Error ? e.message : "Invalid instance URL");
         }
         const app = await mastodonRegisterApp(normalized, locals.env.APP_URL, providerFetch, allowLocal);
-        const state = randomHex(16);
+        const state2 = randomHex(16);
         const sessionId = cookies.get("cog_session") ?? `machine:${user.id}`;
         const bound = await bindOAuthState({
           secret: locals.env.AUTH_SECRET,
-          pendingId: state,
+          pendingId: state2,
           sessionId
         });
         await locals.db.insert(oauthPending).values({
-          id: state,
+          id: state2,
           userId: user.id,
           instanceUrl: app.instanceUrl,
           clientId: app.clientId,
@@ -57712,12 +58223,12 @@ var init_server_ts17 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/mastodon/callback/_server.ts.js
-var server_ts_exports18 = {};
-__export(server_ts_exports18, {
-  GET: () => GET7
+var server_ts_exports19 = {};
+__export(server_ts_exports19, {
+  GET: () => GET8
 });
-var GET7;
-var init_server_ts18 = __esm({
+var GET8;
+var init_server_ts19 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/mastodon/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
@@ -57725,7 +58236,7 @@ var init_server_ts18 = __esm({
     init_oauth_callback();
     init_providers();
     init_timed_fetch();
-    GET7 = createOAuthCallback({
+    GET8 = createOAuthCallback({
       platform: "mastodon",
       matchInstanceUrl: true,
       async complete({ pending: pending2, code, env: env3 }) {
@@ -57756,12 +58267,12 @@ var init_server_ts18 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/threads/_server.ts.js
-var server_ts_exports19 = {};
-__export(server_ts_exports19, {
+var server_ts_exports20 = {};
+__export(server_ts_exports20, {
   POST: () => POST12
 });
 var POST12;
-var init_server_ts19 = __esm({
+var init_server_ts20 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/threads/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57782,15 +58293,15 @@ var init_server_ts19 = __esm({
         const appId = credentials?.values.THREADS_APP_ID;
         const appSecret = credentials?.values.THREADS_APP_SECRET;
         if (!appId || !appSecret) return platformNotConfigured("threads");
-        const state = randomHex(16);
+        const state2 = randomHex(16);
         const sessionId = cookies.get("cog_session") ?? `machine:${user.id}`;
         const bound = await bindOAuthState({
           secret: locals.env.AUTH_SECRET,
-          pendingId: state,
+          pendingId: state2,
           sessionId
         });
         await locals.db.insert(oauthPending).values({
-          id: state,
+          id: state2,
           userId: user.id,
           instanceUrl: "threads",
           clientId: appId,
@@ -57807,18 +58318,18 @@ var init_server_ts19 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/threads/callback/_server.ts.js
-var server_ts_exports20 = {};
-__export(server_ts_exports20, {
-  GET: () => GET8
+var server_ts_exports21 = {};
+__export(server_ts_exports21, {
+  GET: () => GET9
 });
-var GET8;
-var init_server_ts20 = __esm({
+var GET9;
+var init_server_ts21 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/threads/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_providers();
-    GET8 = createOAuthCallback({
+    GET9 = createOAuthCallback({
       platform: "threads",
       pendingMarker: "threads",
       accountIdKey: "threadsUserId",
@@ -57854,12 +58365,12 @@ var init_server_ts20 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/x/_server.ts.js
-var server_ts_exports21 = {};
-__export(server_ts_exports21, {
+var server_ts_exports22 = {};
+__export(server_ts_exports22, {
   POST: () => POST13
 });
 var POST13;
-var init_server_ts21 = __esm({
+var init_server_ts22 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/x/_server.ts.js"() {
     "use strict";
     init_client();
@@ -57880,17 +58391,17 @@ var init_server_ts21 = __esm({
         const clientId = credentials?.values.X_CLIENT_ID;
         const clientSecret = credentials?.values.X_CLIENT_SECRET;
         if (!clientId) return platformNotConfigured("x");
-        const state = randomHex(16);
+        const state2 = randomHex(16);
         const sessionId = cookies.get("cog_session") ?? `machine:${user.id}`;
         const bound = await bindOAuthState({
           secret: locals.env.AUTH_SECRET,
-          pendingId: state,
+          pendingId: state2,
           sessionId
         });
         const verifier = generateCodeVerifier();
         const challenge = await codeChallenge(verifier);
         await locals.db.insert(oauthPending).values({
-          id: state,
+          id: state2,
           userId: user.id,
           instanceUrl: "x",
           clientId,
@@ -57907,19 +58418,19 @@ var init_server_ts21 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/x/callback/_server.ts.js
-var server_ts_exports22 = {};
-__export(server_ts_exports22, {
-  GET: () => GET9
+var server_ts_exports23 = {};
+__export(server_ts_exports23, {
+  GET: () => GET10
 });
-var GET9;
-var init_server_ts22 = __esm({
+var GET10;
+var init_server_ts23 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/x/callback/_server.ts.js"() {
     "use strict";
     init_crypto();
     init_oauth_callback();
     init_x_limits();
     init_providers();
-    GET9 = createOAuthCallback({
+    GET10 = createOAuthCallback({
       platform: "x",
       pendingMarker: "x",
       accountIdKey: "xUserId",
@@ -58077,12 +58588,12 @@ var init_zernio_import = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/accounts/_server.ts.js
-var server_ts_exports23 = {};
-__export(server_ts_exports23, {
+var server_ts_exports24 = {};
+__export(server_ts_exports24, {
   POST: () => POST14
 });
 var POST14;
-var init_server_ts23 = __esm({
+var init_server_ts24 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/accounts/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58131,12 +58642,12 @@ var init_server_ts23 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/callback/_server.ts.js
-var server_ts_exports24 = {};
-__export(server_ts_exports24, {
-  GET: () => GET10
+var server_ts_exports25 = {};
+__export(server_ts_exports25, {
+  GET: () => GET11
 });
-var GET10;
-var init_server_ts24 = __esm({
+var GET11;
+var init_server_ts25 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/callback/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58149,15 +58660,15 @@ var init_server_ts24 = __esm({
     init_zernio_import();
     init_exports();
     init_drizzle_orm();
-    GET10 = /* @__PURE__ */ __name(async ({ url: url3, locals, cookies }) => {
+    GET11 = /* @__PURE__ */ __name(async ({ url: url3, locals, cookies }) => {
       const appUrl = locals.env.APP_URL.replace(/\/$/, "");
-      const state = url3.searchParams.get("pending");
-      const candidate = splitOAuthState(state);
+      const state2 = url3.searchParams.get("pending");
+      const candidate = splitOAuthState(state2);
       const pending2 = candidate ? await first(locals.db.select().from(oauthPending).where(eq(oauthPending.id, candidate))) : null;
       const sessionId = cookies.get("cog_session") ?? (pending2 ? `machine:${pending2.userId}` : null);
       const pendingId = await verifyOAuthState({
         secret: locals.env.AUTH_SECRET,
-        state,
+        state: state2,
         sessionId
       });
       if (!pending2 || !pendingId || pending2.id !== pendingId || pending2.expiresAt < /* @__PURE__ */ new Date() || pending2.instanceUrl !== "zernio") {
@@ -58197,12 +58708,12 @@ var init_server_ts24 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/connect/_server.ts.js
-var server_ts_exports25 = {};
-__export(server_ts_exports25, {
+var server_ts_exports26 = {};
+__export(server_ts_exports26, {
   POST: () => POST15
 });
 var POST15;
-var init_server_ts25 = __esm({
+var init_server_ts26 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/connect/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58264,12 +58775,12 @@ var init_server_ts25 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/zernio/import/_server.ts.js
-var server_ts_exports26 = {};
-__export(server_ts_exports26, {
+var server_ts_exports27 = {};
+__export(server_ts_exports27, {
   POST: () => POST16
 });
 var POST16;
-var init_server_ts26 = __esm({
+var init_server_ts27 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/import/_server.ts.js"() {
     "use strict";
     init_http();
@@ -58521,13 +59032,13 @@ var init_publish_plan = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js
-var server_ts_exports27 = {};
-__export(server_ts_exports27, {
+var server_ts_exports28 = {};
+__export(server_ts_exports28, {
   DELETE: () => DELETE2,
   PATCH: () => PATCH2
 });
 var DELETE2, PATCH2;
-var init_server_ts27 = __esm({
+var init_server_ts28 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58611,12 +59122,12 @@ var init_server_ts27 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/connections/_id_/verify/_server.ts.js
-var server_ts_exports28 = {};
-__export(server_ts_exports28, {
+var server_ts_exports29 = {};
+__export(server_ts_exports29, {
   POST: () => POST17
 });
 var POST17;
-var init_server_ts28 = __esm({
+var init_server_ts29 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/verify/_server.ts.js"() {
     "use strict";
     init_client();
@@ -58852,13 +59363,14 @@ var init_server_ts28 = __esm({
           const res = await mastodonVerifyCredentials(creds.instanceUrl, creds.accessToken, void 0, isLocalAppUrl(locals.env.APP_URL));
           await res.body?.cancel().catch(() => {
           });
-          if (res.status === 401 || res.status === 403) {
+          if (res.status === 401) {
             await locals.db.update(connections).set({
               status: "expired",
               updatedAt: /* @__PURE__ */ new Date()
             }).where(owned);
             return fail("Mastodon token expired \u2014 reconnect", 401);
           }
+          if (res.status === 403) return fail("Mastodon refused this account", 403);
           if (!res.ok) return fail("Mastodon verify temporarily unavailable", 502);
           const limits = await mastodonInstanceLimits(creds.instanceUrl, void 0, isLocalAppUrl(locals.env.APP_URL)).catch(() => null);
           await locals.db.update(connections).set({
@@ -58875,8 +59387,7 @@ var init_server_ts28 = __esm({
           status: "active"
         });
       } catch (err) {
-        const status = err?.status;
-        if (status === 401 || status === 403) await locals.db.update(connections).set({
+        if (err?.status === 401) await locals.db.update(connections).set({
           status: "expired",
           updatedAt: /* @__PURE__ */ new Date()
         }).where(owned);
@@ -59285,7 +59796,7 @@ async function copyVideo(store, item, storageKey) {
 }
 async function copyImageVariants(store, item, storageKey) {
   const stored = parseJson(item.metaJson, {});
-  const copied = {};
+  const copied = stored.animated ? { animated: true } : {};
   const variants = [["preview", previewKey], ["jpeg", jpegKey]];
   for (const [name, keyOf] of variants) {
     const variant = stored[name];
@@ -59452,7 +59963,7 @@ async function duplicateDraft(ctx, userId, draftId) {
       });
     }
     const newMedia = [];
-    for (let index17 = 0; index17 < mediaValues.length; index17 += MEDIA_INSERT_CHUNK) newMedia.push(...await ctx.db.insert(draftMedia).values(mediaValues.slice(index17, index17 + MEDIA_INSERT_CHUNK)).returning());
+    for (let index18 = 0; index18 < mediaValues.length; index18 += MEDIA_INSERT_CHUNK) newMedia.push(...await ctx.db.insert(draftMedia).values(mediaValues.slice(index18, index18 + MEDIA_INSERT_CHUNK)).returning());
     return { draft: serializeDraft(draft, {
       variants: newVariants,
       media: newMedia,
@@ -59476,6 +59987,8 @@ function validateVariantOptions(options2) {
     if (!poll.ok) return poll.error;
   }
   if (value.threadSegments !== void 0 && (!Array.isArray(value.threadSegments) || value.threadSegments.some((segment) => typeof segment !== "string"))) return "threadSegments must be an array of strings";
+  const topic = validateThreadsTopic(value.topicTag);
+  if (!topic.ok) return topic.error;
   return null;
 }
 async function ensureDraftEditable(ctx, draftId) {
@@ -59490,7 +60003,8 @@ async function setDraftVariant(ctx, userId, draftId, input2) {
   const fields = input2;
   const optionsError = validateVariantOptions(fields.options);
   if (optionsError) invalid(optionsError);
-  const segments = parseThreadSegments((fields.options && typeof fields.options === "object" ? fields.options : {}).threadSegments ?? []);
+  const options2 = fields.options && typeof fields.options === "object" ? fields.options : {};
+  const segments = parseThreadSegments(options2.threadSegments ?? []);
   if (!segments.ok) invalid(segments.error);
   if (fields.body !== void 0) {
     const body = parseSegmentBody(fields.body);
@@ -59498,6 +60012,7 @@ async function setDraftVariant(ctx, userId, draftId, input2) {
   }
   const platform2 = String(fields.platform || "");
   if (!VARIANT_PLATFORMS.has(platform2)) invalid("platform must be mastodon, bluesky, linkedin, threads, instagram, or x");
+  if (platform2 !== "threads" && options2.topicTag !== void 0 && options2.topicTag !== null) invalid("Topic tags are only for Threads");
   const existing = await first(ctx.db.select().from(draftVariants).where(and(eq(draftVariants.draftId, draftId), eq(draftVariants.platform, platform2))));
   const now = /* @__PURE__ */ new Date();
   const optionsJson = fields.options !== void 0 ? JSON.stringify(fields.options ?? {}) : existing?.optionsJson ?? "{}";
@@ -59685,6 +60200,7 @@ var init_operations3 = __esm({
     init_providers();
     init_poll();
     init_due_jobs();
+    init_threads_topic();
     init_publish();
     init_publish_plan();
     init_request_limits();
@@ -59748,20 +60264,20 @@ var init_operations3 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_server.ts.js
-var server_ts_exports29 = {};
-__export(server_ts_exports29, {
-  GET: () => GET11,
+var server_ts_exports30 = {};
+__export(server_ts_exports30, {
+  GET: () => GET12,
   POST: () => POST18
 });
-var GET11, POST18;
-var init_server_ts29 = __esm({
+var GET12, POST18;
+var init_server_ts30 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
     init_post_list();
-    GET11 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET12 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -59794,20 +60310,20 @@ var init_server_ts29 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/_server.ts.js
-var server_ts_exports30 = {};
-__export(server_ts_exports30, {
+var server_ts_exports31 = {};
+__export(server_ts_exports31, {
   DELETE: () => DELETE3,
-  GET: () => GET12,
+  GET: () => GET13,
   PATCH: () => PATCH3
 });
-var GET12, PATCH3, DELETE3;
-var init_server_ts30 = __esm({
+var GET13, PATCH3, DELETE3;
+var init_server_ts31 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    GET12 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    GET13 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -59839,12 +60355,12 @@ var init_server_ts30 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/duplicate/_server.ts.js
-var server_ts_exports31 = {};
-__export(server_ts_exports31, {
+var server_ts_exports32 = {};
+__export(server_ts_exports32, {
   POST: () => POST19
 });
 var POST19;
-var init_server_ts31 = __esm({
+var init_server_ts32 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/duplicate/_server.ts.js"() {
     "use strict";
     init_http();
@@ -59936,8 +60452,8 @@ var init_draft_media = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js
-var server_ts_exports32 = {};
-__export(server_ts_exports32, {
+var server_ts_exports33 = {};
+__export(server_ts_exports33, {
   DELETE: () => DELETE4,
   PATCH: () => PATCH4,
   POST: () => POST20
@@ -59960,7 +60476,7 @@ async function saveJpegVariant(locals, key, file2, maxBytes) {
   }
 }
 var MAX_UPLOAD_BYTES, MAX_FORM_VIDEO_BYTES, POST20, PATCH4, DELETE4;
-var init_server_ts32 = __esm({
+var init_server_ts33 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js"() {
     "use strict";
     init_client();
@@ -60036,6 +60552,7 @@ var init_server_ts32 = __esm({
           if (!saved.video) {
             const v = Date.now();
             const key = saved.storageKey;
+            if (saved.mime === "image/webp" && isAnimatedWebpBytes(bytes)) imageMeta.animated = true;
             if (await saveJpegVariant(locals, previewKey(key), previews[i], 1e6)) imageMeta.preview = { v };
             if (saved.mime !== "image/jpeg" && await saveJpegVariant(locals, jpegKey(key), jpegs[i], 8e6)) imageMeta.jpeg = { v };
           }
@@ -60130,8 +60647,8 @@ var init_server_ts32 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/cover/_server.ts.js
-var server_ts_exports33 = {};
-__export(server_ts_exports33, {
+var server_ts_exports34 = {};
+__export(server_ts_exports34, {
   DELETE: () => DELETE5,
   PUT: () => PUT
 });
@@ -60147,7 +60664,7 @@ async function guard(locals, draftId) {
   return rejectIfNotEditable(locals.db, draftId);
 }
 var MAX_COVER_BYTES, PUT, DELETE5;
-var init_server_ts33 = __esm({
+var init_server_ts34 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/cover/_server.ts.js"() {
     "use strict";
     init_client();
@@ -60278,8 +60795,8 @@ var init_media_uploads = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js
-var server_ts_exports34 = {};
-__export(server_ts_exports34, {
+var server_ts_exports35 = {};
+__export(server_ts_exports35, {
   DELETE: () => DELETE6,
   POST: () => POST21
 });
@@ -60292,7 +60809,7 @@ async function readJson(request2) {
   }
 }
 var POST21, DELETE6;
-var init_server_ts34 = __esm({
+var init_server_ts35 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60359,8 +60876,8 @@ var init_server_ts34 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js
-var server_ts_exports35 = {};
-__export(server_ts_exports35, {
+var server_ts_exports36 = {};
+__export(server_ts_exports36, {
   POST: () => POST22
 });
 function readParts(value, count2) {
@@ -60380,7 +60897,7 @@ async function keyInUse(db, key) {
   return (await db.select({ id: draftMedia.id }).from(draftMedia).where(eq(draftMedia.storageKey, key)).limit(1)).length > 0;
 }
 var POST22;
-var init_server_ts35 = __esm({
+var init_server_ts36 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js"() {
     "use strict";
     init_client();
@@ -60449,12 +60966,12 @@ var init_server_ts35 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js
-var server_ts_exports36 = {};
-__export(server_ts_exports36, {
+var server_ts_exports37 = {};
+__export(server_ts_exports37, {
   PUT: () => PUT2
 });
 var PUT2;
-var init_server_ts36 = __esm({
+var init_server_ts37 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60486,12 +61003,12 @@ var init_server_ts36 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js
-var server_ts_exports37 = {};
-__export(server_ts_exports37, {
+var server_ts_exports38 = {};
+__export(server_ts_exports38, {
   POST: () => POST23
 });
 var POST23;
-var init_server_ts37 = __esm({
+var init_server_ts38 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60511,12 +61028,12 @@ var init_server_ts37 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/schedule/_server.ts.js
-var server_ts_exports38 = {};
-__export(server_ts_exports38, {
+var server_ts_exports39 = {};
+__export(server_ts_exports39, {
   POST: () => POST24
 });
 var POST24;
-var init_server_ts38 = __esm({
+var init_server_ts39 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/schedule/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60535,14 +61052,88 @@ var init_server_ts38 = __esm({
   }
 });
 
-// .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js
-var server_ts_exports39 = {};
-__export(server_ts_exports39, {
+// .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/share/_server.ts.js
+var server_ts_exports40 = {};
+__export(server_ts_exports40, {
   DELETE: () => DELETE7,
+  GET: () => GET14,
+  POST: () => POST25
+});
+async function ownsDraft(db, draftId, userId) {
+  const row = await first(db.select({ id: drafts.id }).from(drafts).where(and(eq(drafts.id, draftId), eq(drafts.userId, userId))));
+  return Boolean(row);
+}
+function present(appUrl, link) {
+  if (!link) return { share: null };
+  return { share: {
+    url: `${appUrl.replace(/\/$/, "")}${sharePath(link.token)}`,
+    expiresAt: link.expiresAt
+  } };
+}
+var GET14, POST25, DELETE7;
+var init_server_ts40 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/share/_server.ts.js"() {
+    "use strict";
+    init_client();
+    init_http();
+    init_require();
+    init_platform_sync();
+    init_draft_shares();
+    init_drizzle_orm();
+    __name(ownsDraft, "ownsDraft");
+    __name(present, "present");
+    GET14 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+      try {
+        const user = requireUser(locals.user);
+        requireScope(locals, "read");
+        if (!await ownsDraft(locals.db, params.id, user.id)) return fail("Not found", 404);
+        const link = await currentShare(locals.db, locals.env.APP_ENCRYPTION_KEY, params.id);
+        return ok(present(locals.env.APP_URL, link));
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "GET");
+    POST25 = /* @__PURE__ */ __name(async ({ params, locals, request: request2 }) => {
+      try {
+        const user = requireUser(locals.user);
+        requireScope(locals, "write");
+        const body = await request2.json().catch(() => null);
+        const lifetime = shareLifetimeMs(body?.expiresInDays ?? void 0);
+        if (lifetime === null) return fail(`expiresInDays must be a whole number from 1 to 30`);
+        if (!await ownsDraft(locals.db, params.id, user.id)) return fail("Not found", 404);
+        const targets = await locals.db.select({
+          status: publishTargets.status,
+          remotePostId: publishTargets.remotePostId
+        }).from(publishTargets).where(eq(publishTargets.draftId, params.id));
+        if (hasGoneOut(targets)) return fail("Already published \u2014 nothing left to preview", 409);
+        const link = await createShare(locals.db, locals.env.APP_ENCRYPTION_KEY, params.id, lifetime);
+        return ok(present(locals.env.APP_URL, link), 201);
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "POST");
+    DELETE7 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+      try {
+        const user = requireUser(locals.user);
+        requireScope(locals, "write");
+        if (!await ownsDraft(locals.db, params.id, user.id)) return fail("Not found", 404);
+        await revokeShare(locals.db, params.id);
+        return ok({ share: null });
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "DELETE");
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js
+var server_ts_exports41 = {};
+__export(server_ts_exports41, {
+  DELETE: () => DELETE8,
   PUT: () => PUT3
 });
-var PUT3, DELETE7;
-var init_server_ts39 = __esm({
+var PUT3, DELETE8;
+var init_server_ts41 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60558,7 +61149,7 @@ var init_server_ts39 = __esm({
         return handleError(error63);
       }
     }, "PUT");
-    DELETE7 = /* @__PURE__ */ __name(async ({ params, url: url3, locals }) => {
+    DELETE8 = /* @__PURE__ */ __name(async ({ params, url: url3, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -60571,25 +61162,25 @@ var init_server_ts39 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/health/_server.ts.js
-var server_ts_exports40 = {};
-__export(server_ts_exports40, {
-  GET: () => GET13
+var server_ts_exports42 = {};
+__export(server_ts_exports42, {
+  GET: () => GET15
 });
-var GET13;
-var init_server_ts40 = __esm({
+var GET15;
+var init_server_ts42 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/health/_server.ts.js"() {
     "use strict";
     init_client();
     init_exports();
     init_drizzle_orm();
-    GET13 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET15 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         await locals.db.run(sql`SELECT 1`);
         const account = await first(locals.db.select({ id: users.id }).from(users).limit(1));
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.21.0-beta.1",
+          version: "1.24.0-beta.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -60605,19 +61196,19 @@ var init_server_ts40 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js
-var server_ts_exports41 = {};
-__export(server_ts_exports41, {
-  GET: () => GET14
+var server_ts_exports43 = {};
+__export(server_ts_exports43, {
+  GET: () => GET16
 });
-var GET14;
-var init_server_ts41 = __esm({
+var GET16;
+var init_server_ts43 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_time_zone();
     init_insights_report();
-    GET14 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET16 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -60631,18 +61222,18 @@ var init_server_ts41 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/internal/publish/_server.ts.js
-var server_ts_exports42 = {};
-__export(server_ts_exports42, {
-  POST: () => POST25
+var server_ts_exports44 = {};
+__export(server_ts_exports44, {
+  POST: () => POST26
 });
-var POST25;
-var init_server_ts42 = __esm({
+var POST26;
+var init_server_ts44 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/internal/publish/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST25 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST26 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         assertScheduler(request2, locals.env);
         const body = await request2.json().catch(() => null);
@@ -60659,18 +61250,18 @@ var init_server_ts42 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/internal/tick/_server.ts.js
-var server_ts_exports43 = {};
-__export(server_ts_exports43, {
-  POST: () => POST26
+var server_ts_exports45 = {};
+__export(server_ts_exports45, {
+  POST: () => POST27
 });
-var POST26;
-var init_server_ts43 = __esm({
+var POST27;
+var init_server_ts45 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/internal/tick/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST26 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST27 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         await assertSchedulerOrTickToken(request2, locals.env, locals.db);
         const task = runSchedulerTick(locals.db, locals.env, {
@@ -60689,11 +61280,11 @@ var init_server_ts43 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js
-var server_ts_exports44 = {};
-__export(server_ts_exports44, {
-  DELETE: () => DELETE8,
-  GET: () => GET15,
-  POST: () => POST27
+var server_ts_exports46 = {};
+__export(server_ts_exports46, {
+  DELETE: () => DELETE9,
+  GET: () => GET17,
+  POST: () => POST28
 });
 function metadataOf(active) {
   if (!active) return null;
@@ -60704,8 +61295,8 @@ function metadataOf(active) {
     scopes: parseApiScopes(Array.isArray(active.scopes) ? JSON.stringify(active.scopes) : active.scopes)
   };
 }
-var GET15, POST27, DELETE8;
-var init_server_ts44 = __esm({
+var GET17, POST28, DELETE9;
+var init_server_ts46 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60713,7 +61304,7 @@ var init_server_ts44 = __esm({
     init_require();
     init_api_keys();
     __name(metadataOf, "metadataOf");
-    GET15 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET17 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const active = await getActiveApiKey(locals.db, user.id);
@@ -60722,7 +61313,7 @@ var init_server_ts44 = __esm({
         return handleError(err);
       }
     }, "GET");
-    POST27 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST28 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const text3 = await request2?.text().catch(() => "") ?? "";
@@ -60747,7 +61338,7 @@ var init_server_ts44 = __esm({
         return handleError(err);
       }
     }, "POST");
-    DELETE8 = /* @__PURE__ */ __name(async ({ locals }) => {
+    DELETE9 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const revoked = await revokeApiKeys(locals.db, user.id);
@@ -60764,12 +61355,12 @@ var init_server_ts44 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js
-var server_ts_exports45 = {};
-__export(server_ts_exports45, {
-  GET: () => GET16
+var server_ts_exports47 = {};
+__export(server_ts_exports47, {
+  GET: () => GET18
 });
-var GET16;
-var init_server_ts45 = __esm({
+var GET18;
+var init_server_ts47 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js"() {
     "use strict";
     init_http();
@@ -60778,7 +61369,7 @@ var init_server_ts45 = __esm({
     init_x_post_preview();
     init_x_quote();
     init_timed_fetch();
-    GET16 = /* @__PURE__ */ __name(async ({ url: url3, locals }) => {
+    GET18 = /* @__PURE__ */ __name(async ({ url: url3, locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "write");
@@ -64583,7 +65174,7 @@ function describeUnsupportedProperties(pruned, fallback2) {
   return offenders.length > 0 ? offenders.join(", ") : fallback2;
 }
 function findDroppedConstraintPaths(original, parsed, path3 = "") {
-  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index17) => findDroppedConstraintPaths(item, parsed[index17], `${path3}[${index17}]`));
+  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index18) => findDroppedConstraintPaths(item, parsed[index18], `${path3}[${index18}]`));
   if (!isJsonObject(original) || !isJsonObject(parsed)) return [];
   return Object.entries(original).flatMap(([key, value]) => {
     const childPath = path3 ? `${path3}.${key}` : key;
@@ -64811,7 +65402,7 @@ function validateToolName(name) {
   if (name.startsWith("-") || name.endsWith("-")) warnings.push("Tool name starts or ends with a dash, which may cause parsing issues in some contexts");
   if (name.startsWith(".") || name.endsWith(".")) warnings.push("Tool name starts or ends with a dot, which may cause parsing issues in some contexts");
   if (!TOOL_NAME_REGEX.test(name)) {
-    const invalidChars = [...name].filter((char) => !/[A-Za-z0-9._-]/.test(char)).filter((char, index17, arr) => arr.indexOf(char) === index17);
+    const invalidChars = [...name].filter((char) => !/[A-Za-z0-9._-]/.test(char)).filter((char, index18, arr) => arr.indexOf(char) === index18);
     warnings.push(`Tool name contains invalid characters: ${invalidChars.map((c) => `"${c}"`).join(", ")}`, "Allowed characters are: A-Z, a-z, 0-9, underscore (_), dash (-), and dot (.)");
     return {
       isValid: false,
@@ -66902,18 +67493,18 @@ var init_src_Cqbh3MYc = __esm({
         if (!string4) throw new TypeError("argument string is required");
         var header = typeof string4 === "object" ? getcontenttype(string4) : string4;
         if (typeof header !== "string") throw new TypeError("argument string is required to be a string");
-        var index17 = header.indexOf(";");
-        var type = index17 !== -1 ? header.slice(0, index17).trim() : header.trim();
+        var index18 = header.indexOf(";");
+        var type = index18 !== -1 ? header.slice(0, index18).trim() : header.trim();
         if (!TYPE_REGEXP.test(type)) throw new TypeError("invalid media type");
         var obj = new ContentType(type.toLowerCase());
-        if (index17 !== -1) {
+        if (index18 !== -1) {
           var key;
           var match2;
           var value;
-          PARAM_REGEXP.lastIndex = index17;
+          PARAM_REGEXP.lastIndex = index18;
           while (match2 = PARAM_REGEXP.exec(header)) {
-            if (match2.index !== index17) throw new TypeError("invalid parameter format");
-            index17 += match2[0].length;
+            if (match2.index !== index18) throw new TypeError("invalid parameter format");
+            index18 += match2[0].length;
             key = match2[1].toLowerCase();
             value = match2[2];
             if (value.charCodeAt(0) === 34) {
@@ -66922,7 +67513,7 @@ var init_src_Cqbh3MYc = __esm({
             }
             obj.parameters[key] = value;
           }
-          if (index17 !== header.length) throw new TypeError("invalid parameter format");
+          if (index18 !== header.length) throw new TypeError("invalid parameter format");
         }
         return obj;
       }
@@ -67081,14 +67672,14 @@ function regex(str) {
 function ucs2length(s2) {
   let result = 0;
   let length = s2.length;
-  let index17 = 0;
+  let index18 = 0;
   let charCode;
-  while (index17 < length) {
+  while (index18 < length) {
     result++;
-    charCode = s2.charCodeAt(index17++);
-    if (charCode >= 55296 && charCode <= 56319 && index17 < length) {
-      charCode = s2.charCodeAt(index17);
-      if ((charCode & 64512) == 56320) index17++;
+    charCode = s2.charCodeAt(index18++);
+    if (charCode >= 55296 && charCode <= 56319 && index18 < length) {
+      charCode = s2.charCodeAt(index18);
+      if ((charCode & 64512) == 56320) index18++;
     }
   }
   return result;
@@ -68172,7 +68763,7 @@ function assertScope(scope, location2) {
 }
 function validateScopeChallenge(challenge) {
   if (challenge === null || typeof challenge !== "object" || !Array.isArray(challenge.scopes) || challenge.scopes.length === 0) throw new TypeError("scope challenge must contain at least one scope");
-  for (const [index17, scope] of challenge.scopes.entries()) assertScope(scope, `scope challenge scopes[${index17}]`);
+  for (const [index18, scope] of challenge.scopes.entries()) assertScope(scope, `scope challenge scopes[${index18}]`);
   if (challenge.errorDescription !== void 0 && typeof challenge.errorDescription !== "string") throw new TypeError("scope challenge errorDescription must be a string");
   if (challenge.errorDescription !== void 0 && !/^[\u0020-\u0021\u0023-\u005B\u005D-\u007E]+$/.test(challenge.errorDescription)) throw new TypeError("scope challenge errorDescription must satisfy the RFC 6750 error-description grammar");
   return challenge;
@@ -68527,7 +69118,7 @@ var init_mcp_DIH4cS6P = __esm({
           maxRounds: this._inputRequiredServing.maxRounds,
           roundTimeoutMs: this._inputRequiredServing.roundTimeoutMs,
           resolvedClientCapabilities: /* @__PURE__ */ __name((ctx) => this._inputRequestCapabilityView(ctx), "resolvedClientCapabilities"),
-          verifyRequestState: /* @__PURE__ */ __name((state, ctx, method) => this._verifyRequestState(state, ctx, method), "verifyRequestState"),
+          verifyRequestState: /* @__PURE__ */ __name((state2, ctx, method) => this._verifyRequestState(state2, ctx, method), "verifyRequestState"),
           sendElicitation: /* @__PURE__ */ __name((params, options2) => this._sendElicitationLeg(params, options2, { validateAcceptedContent: false }), "sendElicitation"),
           sendSampling: /* @__PURE__ */ __name((params, options2) => this.createMessage(params, options2), "sendSampling"),
           listRoots: /* @__PURE__ */ __name((params, options2) => this.listRoots(params, options2), "listRoots")
@@ -68613,7 +69204,7 @@ var init_mcp_DIH4cS6P = __esm({
         };
       }
       _loggingLevels = /* @__PURE__ */ new Map();
-      LOG_LEVEL_SEVERITY = new Map(LoggingLevelSchema.options.map((level, index17) => [level, index17]));
+      LOG_LEVEL_SEVERITY = new Map(LoggingLevelSchema.options.map((level, index18) => [level, index18]));
       isMessageIgnored = /* @__PURE__ */ __name((level, sessionId) => {
         const currentLevel = this._loggingLevels.get(sessionId);
         return currentLevel ? this.LOG_LEVEL_SEVERITY.get(level) < this.LOG_LEVEL_SEVERITY.get(currentLevel) : false;
@@ -68746,10 +69337,10 @@ var init_mcp_DIH4cS6P = __esm({
       * nothing). Deny-on-error: any hook failure answers the frozen `-32602`;
       * the reason goes to `onerror` only.
       */
-      async _verifyRequestState(state, ctx, method) {
+      async _verifyRequestState(state2, ctx, method) {
         if (this._requestStateVerify === void 0) return;
         try {
-          return await this._requestStateVerify(state, ctx);
+          return await this._requestStateVerify(state2, ctx);
         } catch (error63) {
           this.onerror?.(/* @__PURE__ */ new Error(`requestState verification rejected ${method}: ${error63 instanceof Error ? error63.message : String(error63)}`));
           throw new ProtocolError(ProtocolErrorCode.InvalidParams, "Invalid or expired requestState", { reason: "invalid_request_state" });
@@ -70991,11 +71582,11 @@ data:
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js
-var server_ts_exports46 = {};
-__export(server_ts_exports46, {
-  DELETE: () => DELETE9,
-  GET: () => GET17,
-  POST: () => POST28
+var server_ts_exports48 = {};
+__export(server_ts_exports48, {
+  DELETE: () => DELETE10,
+  GET: () => GET19,
+  POST: () => POST29
 });
 function concise(name, result) {
   const draft = result.draft;
@@ -71211,8 +71802,8 @@ function createServer(event) {
   }).strict(), (input2, ctx, uid) => rescheduleDelivery(ctx, uid, input2.targetId, { runAt: input2.runAt }));
   return server2;
 }
-var id, boundedLimit, platform, runAt, connectionIds, draftFields, variantOptions, annotations, dateTime, validationCheck, validationIssue, connectionSchema, connectionSummarySchema, variantSchema, mediaSchema, targetSchema, draftSchema, queueDraftSchema, queueTargetSchema, mcpOutputSchemas, eventByRequest, handler, POST28, GET17, DELETE9;
-var init_server_ts46 = __esm({
+var id, boundedLimit, platform, runAt, connectionIds, draftFields, variantOptions, annotations, dateTime, validationCheck, validationIssue, connectionSchema, connectionSummarySchema, variantSchema, mediaSchema, targetSchema, draftSchema, queueDraftSchema, queueTargetSchema, mcpOutputSchemas, eventByRequest, handler, POST29, GET19, DELETE10;
+var init_server_ts48 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js"() {
     "use strict";
     init_human_error();
@@ -71253,7 +71844,8 @@ var init_server_ts46 = __esm({
         multiple: external_exports.boolean().optional(),
         hideTotals: external_exports.boolean().optional()
       }).nullable().optional(),
-      threadSegments: external_exports.array(external_exports.string().max(1e5)).max(100).optional()
+      threadSegments: external_exports.array(external_exports.string().max(1e5)).max(100).optional(),
+      topicTag: external_exports.string().max(1e3).nullable().optional()
     }).strict().optional();
     annotations = {
       read: {
@@ -71476,7 +72068,7 @@ var init_server_ts46 = __esm({
       legacy: "reject",
       responseMode: "json"
     });
-    POST28 = /* @__PURE__ */ __name(async (event) => {
+    POST29 = /* @__PURE__ */ __name(async (event) => {
       const parsedBody = isJsonContentType(event.request.headers.get("content-type")) ? await event.request.json().catch(() => void 0) : void 0;
       if (parsedBody && typeof parsedBody === "object" && "method" in parsedBody && parsedBody.method === "subscriptions/listen") {
         const requestId = "id" in parsedBody ? parsedBody.id : void 0;
@@ -71498,11 +72090,11 @@ var init_server_ts46 = __esm({
         eventByRequest.delete(event.request);
       }
     }, "POST");
-    GET17 = /* @__PURE__ */ __name(async () => new Response("Method not allowed", {
+    GET19 = /* @__PURE__ */ __name(async () => new Response("Method not allowed", {
       status: 405,
       headers: { Allow: "POST" }
     }), "GET");
-    DELETE9 = /* @__PURE__ */ __name(async () => new Response("Method not allowed", {
+    DELETE10 = /* @__PURE__ */ __name(async () => new Response("Method not allowed", {
       status: 405,
       headers: { Allow: "POST" }
     }), "DELETE");
@@ -71510,12 +72102,12 @@ var init_server_ts46 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js
-var server_ts_exports47 = {};
-__export(server_ts_exports47, {
-  GET: () => GET18
+var server_ts_exports49 = {};
+__export(server_ts_exports49, {
+  GET: () => GET20
 });
-var GET18;
-var init_server_ts47 = __esm({
+var GET20;
+var init_server_ts49 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -71523,7 +72115,7 @@ var init_server_ts47 = __esm({
     init_media();
     init_public_media();
     init_drizzle_orm();
-    GET18 = /* @__PURE__ */ __name(async ({ params, url: url3, locals, request: request2 }) => {
+    GET20 = /* @__PURE__ */ __name(async ({ params, url: url3, locals, request: request2 }) => {
       try {
         const key = assertSafeStorageKey(params.key);
         const exp = Number(url3.searchParams.get("exp"));
@@ -71554,12 +72146,12 @@ var init_server_ts47 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/media/_key_/_server.ts.js
-var server_ts_exports48 = {};
-__export(server_ts_exports48, {
-  GET: () => GET19
+var server_ts_exports50 = {};
+__export(server_ts_exports50, {
+  GET: () => GET21
 });
-var GET19;
-var init_server_ts48 = __esm({
+var GET21;
+var init_server_ts50 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/media/_key_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -71567,7 +72159,7 @@ var init_server_ts48 = __esm({
     init_require();
     init_media();
     init_drizzle_orm();
-    GET19 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
+    GET21 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -71601,18 +72193,18 @@ var init_server_ts48 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js
-var server_ts_exports49 = {};
-__export(server_ts_exports49, {
-  GET: () => GET20
+var server_ts_exports51 = {};
+__export(server_ts_exports51, {
+  GET: () => GET22
 });
-var GET20;
-var init_server_ts49 = __esm({
+var GET22;
+var init_server_ts51 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_post_list();
-    GET20 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET22 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -71648,7 +72240,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.21.0-beta.1";
+  const current = options2.current ?? "1.24.0-beta.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -71746,18 +72338,18 @@ var init_release = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js
-var server_ts_exports50 = {};
-__export(server_ts_exports50, {
-  GET: () => GET21
+var server_ts_exports52 = {};
+__export(server_ts_exports52, {
+  GET: () => GET23
 });
-var GET21;
-var init_server_ts50 = __esm({
+var GET23;
+var init_server_ts52 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_release();
-    GET21 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET23 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -71771,12 +72363,12 @@ var init_server_ts50 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js
-var server_ts_exports51 = {};
-__export(server_ts_exports51, {
-  GET: () => GET22
+var server_ts_exports53 = {};
+__export(server_ts_exports53, {
+  GET: () => GET24
 });
-var GET22;
-var init_server_ts51 = __esm({
+var GET24;
+var init_server_ts53 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js"() {
     "use strict";
     init_http();
@@ -71784,7 +72376,7 @@ var init_server_ts51 = __esm({
     init_require();
     init_scheduler();
     init_scheduler_status();
-    GET22 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET24 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -71808,18 +72400,18 @@ var init_server_ts51 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/test/_server.ts.js
-var server_ts_exports52 = {};
-__export(server_ts_exports52, {
-  POST: () => POST29
+var server_ts_exports54 = {};
+__export(server_ts_exports54, {
+  POST: () => POST30
 });
-var POST29;
-var init_server_ts52 = __esm({
+var POST30;
+var init_server_ts54 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/test/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST29 = /* @__PURE__ */ __name(async ({ locals }) => {
+    POST30 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "write");
@@ -71841,20 +72433,20 @@ var init_server_ts52 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js
-var server_ts_exports53 = {};
-__export(server_ts_exports53, {
-  DELETE: () => DELETE10,
-  GET: () => GET23,
-  POST: () => POST30
+var server_ts_exports55 = {};
+__export(server_ts_exports55, {
+  DELETE: () => DELETE11,
+  GET: () => GET25,
+  POST: () => POST31
 });
-var GET23, POST30, DELETE10;
-var init_server_ts53 = __esm({
+var GET25, POST31, DELETE11;
+var init_server_ts55 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js"() {
     "use strict";
     init_http();
     init_tick_token();
     init_require();
-    GET23 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET25 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const status = await readTickToken(locals.db);
@@ -71863,7 +72455,7 @@ var init_server_ts53 = __esm({
         return handleError(err);
       }
     }, "GET");
-    POST30 = /* @__PURE__ */ __name(async ({ locals }) => {
+    POST31 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const { token, prefix, createdAt } = await rotateTickToken(locals.db);
@@ -71877,7 +72469,7 @@ var init_server_ts53 = __esm({
         return handleError(err);
       }
     }, "POST");
-    DELETE10 = /* @__PURE__ */ __name(async ({ locals }) => {
+    DELETE11 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         if (!await revokeTickToken(locals.db)) return fail("No tick token to revoke", 404);
@@ -71918,9 +72510,9 @@ var init_instance_name = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js
-var server_ts_exports54 = {};
-__export(server_ts_exports54, {
-  GET: () => GET24,
+var server_ts_exports56 = {};
+__export(server_ts_exports56, {
+  GET: () => GET26,
   PATCH: () => PATCH5
 });
 function normalizeDisplayName(input2) {
@@ -71940,8 +72532,8 @@ function normalizeDisplayName(input2) {
     name
   };
 }
-var GET24, SETTINGS_KEYS, PATCH5;
-var init_server_ts54 = __esm({
+var GET26, SETTINGS_KEYS, PATCH5;
+var init_server_ts56 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js"() {
     "use strict";
     init_client();
@@ -71953,7 +72545,7 @@ var init_server_ts54 = __esm({
     init_release();
     init_instance_name();
     init_drizzle_orm();
-    GET24 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET26 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -72022,9 +72614,9 @@ var init_server_ts54 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js
-var server_ts_exports55 = {};
-__export(server_ts_exports55, {
-  DELETE: () => DELETE11,
+var server_ts_exports57 = {};
+__export(server_ts_exports57, {
+  DELETE: () => DELETE12,
   PUT: () => PUT4
 });
 async function statusFor(locals, id2) {
@@ -72040,8 +72632,8 @@ async function statusFor(locals, id2) {
 function platformFrom(param) {
   return param && isOAuthPlatform(param) ? param : null;
 }
-var PUT4, DELETE11;
-var init_server_ts55 = __esm({
+var PUT4, DELETE12;
+var init_server_ts57 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js"() {
     "use strict";
     init_http();
@@ -72070,7 +72662,7 @@ var init_server_ts55 = __esm({
         return handleError(err);
       }
     }, "PUT");
-    DELETE11 = /* @__PURE__ */ __name(async ({ locals, params }) => {
+    DELETE12 = /* @__PURE__ */ __name(async ({ locals, params }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const id2 = platformFrom(params.platform);
@@ -72085,12 +72677,12 @@ var init_server_ts55 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js
-var server_ts_exports56 = {};
-__export(server_ts_exports56, {
-  POST: () => POST31
+var server_ts_exports58 = {};
+__export(server_ts_exports58, {
+  POST: () => POST32
 });
-var POST31;
-var init_server_ts56 = __esm({
+var POST32;
+var init_server_ts58 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js"() {
     "use strict";
     init_client();
@@ -72101,7 +72693,7 @@ var init_server_ts56 = __esm({
     init_publish_plan();
     init_request_limits();
     init_drizzle_orm();
-    POST31 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST32 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -72405,18 +72997,18 @@ var init_server_ts56 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/cancel/_server.ts.js
-var server_ts_exports57 = {};
-__export(server_ts_exports57, {
-  POST: () => POST32
+var server_ts_exports59 = {};
+__export(server_ts_exports59, {
+  POST: () => POST33
 });
-var POST32;
-var init_server_ts57 = __esm({
+var POST33;
+var init_server_ts59 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/cancel/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST32 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    POST33 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -72429,18 +73021,18 @@ var init_server_ts57 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/reschedule/_server.ts.js
-var server_ts_exports58 = {};
-__export(server_ts_exports58, {
-  POST: () => POST33
+var server_ts_exports60 = {};
+__export(server_ts_exports60, {
+  POST: () => POST34
 });
-var POST33;
-var init_server_ts58 = __esm({
+var POST34;
+var init_server_ts60 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/reschedule/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST33 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST34 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -72454,18 +73046,18 @@ var init_server_ts58 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/retry/_server.ts.js
-var server_ts_exports59 = {};
-__export(server_ts_exports59, {
-  POST: () => POST34
+var server_ts_exports61 = {};
+__export(server_ts_exports61, {
+  POST: () => POST35
 });
-var POST34;
-var init_server_ts59 = __esm({
+var POST35;
+var init_server_ts61 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/retry/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST34 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    POST35 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -72478,19 +73070,19 @@ var init_server_ts59 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js
-var server_ts_exports60 = {};
-__export(server_ts_exports60, {
-  GET: () => GET25
+var server_ts_exports62 = {};
+__export(server_ts_exports62, {
+  GET: () => GET27
 });
-var GET25;
-var init_server_ts60 = __esm({
+var GET27;
+var init_server_ts62 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_saved_token();
     init_github_update();
-    GET25 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET27 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const [job, previous, target, savedToken] = await Promise.all([
@@ -72504,7 +73096,7 @@ var init_server_ts60 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.21.0-beta.1",
+          version: "1.24.0-beta.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -72529,13 +73121,13 @@ var init_server_ts60 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js
-var server_ts_exports61 = {};
-__export(server_ts_exports61, {
-  DELETE: () => DELETE12,
-  POST: () => POST35
+var server_ts_exports63 = {};
+__export(server_ts_exports63, {
+  DELETE: () => DELETE13,
+  POST: () => POST36
 });
-var POST35, DELETE12;
-var init_server_ts61 = __esm({
+var POST36, DELETE13;
+var init_server_ts63 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js"() {
     "use strict";
     init_http();
@@ -72544,7 +73136,7 @@ var init_server_ts61 = __esm({
     init_rate_limit();
     init_require();
     init_saved_token();
-    POST35 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST36 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => null);
@@ -72561,7 +73153,7 @@ var init_server_ts61 = __esm({
         return handleError(err);
       }
     }, "POST");
-    DELETE12 = /* @__PURE__ */ __name(async ({ locals }) => {
+    DELETE13 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         await clearSavedToken(locals.db);
@@ -72574,12 +73166,12 @@ var init_server_ts61 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js
-var server_ts_exports62 = {};
-__export(server_ts_exports62, {
-  POST: () => POST36
+var server_ts_exports64 = {};
+__export(server_ts_exports64, {
+  POST: () => POST37
 });
-var POST36;
-var init_server_ts62 = __esm({
+var POST37;
+var init_server_ts64 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js"() {
     "use strict";
     init_http();
@@ -72588,7 +73180,7 @@ var init_server_ts62 = __esm({
     init_rate_limit();
     init_require();
     init_saved_token();
-    POST36 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST37 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => null);
@@ -72608,9 +73200,9 @@ var init_server_ts62 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js
-var server_ts_exports63 = {};
-__export(server_ts_exports63, {
-  POST: () => POST37
+var server_ts_exports65 = {};
+__export(server_ts_exports65, {
+  POST: () => POST38
 });
 function cloudflareApi(token, { fetchImpl = fetch, budget } = {}) {
   const scrub = /* @__PURE__ */ __name((text3) => token ? text3.split(token).join("[token]") : text3, "scrub");
@@ -72713,7 +73305,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.21.0-beta.1"
+    currentVersion: "1.24.0-beta.1"
   };
 }
 async function download(ctx, url3) {
@@ -73056,8 +73648,8 @@ async function dropJob(ctx, job) {
   await ctx.store.delete(stagedKeys(job.version)).catch(() => void 0);
   await clearJob(ctx.db);
 }
-var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST37;
-var init_server_ts63 = __esm({
+var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST38;
+var init_server_ts65 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js"() {
     "use strict";
     init_bytes();
@@ -73131,7 +73723,7 @@ var init_server_ts63 = __esm({
       rollback: /* @__PURE__ */ __name((ctx) => stepRollback(ctx), "rollback"),
       abort: /* @__PURE__ */ __name((ctx) => stepAbort(ctx), "abort")
     };
-    POST37 = /* @__PURE__ */ __name(async (event) => {
+    POST38 = /* @__PURE__ */ __name(async (event) => {
       try {
         requireSession(event.locals.user, event.locals.authMethod);
         const run2 = Object.hasOwn(STEPS, event.params.step) ? STEPS[event.params.step] : null;
@@ -73155,18 +73747,18 @@ var init_server_ts63 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js
-var server_ts_exports64 = {};
-__export(server_ts_exports64, {
-  POST: () => POST38
+var server_ts_exports66 = {};
+__export(server_ts_exports66, {
+  POST: () => POST39
 });
-var POST38;
-var init_server_ts64 = __esm({
+var POST39;
+var init_server_ts66 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST38 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST39 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -73177,6 +73769,44 @@ var init_server_ts64 = __esm({
         return handleError(err);
       }
     }, "POST");
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/p/_token_/media/_key_/_server.ts.js
+var server_ts_exports67 = {};
+__export(server_ts_exports67, {
+  GET: () => GET28
+});
+var SHARED_MEDIA_CACHE, GET28;
+var init_server_ts67 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/p/_token_/media/_key_/_server.ts.js"() {
+    "use strict";
+    init_http();
+    init_media();
+    init_draft_shares();
+    SHARED_MEDIA_CACHE = "private, max-age=300";
+    GET28 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
+      try {
+        const key = assertSafeStorageKey(params.key);
+        const media = await resolveSharedMedia(locals.db, locals.env.APP_ENCRYPTION_KEY, params.token, key);
+        if (!media) return fail("Not found", 404);
+        if (url3.searchParams.has("cover")) {
+          const cover = await locals.media.get(coverKey(key));
+          if (!cover) return fail("Not found", 404);
+          return jpegResponse(cover, SHARED_MEDIA_CACHE);
+        }
+        if (url3.searchParams.has("preview") && !(media.mime || "").startsWith("video/")) {
+          const preview = await locals.media.get(previewKey(key));
+          if (preview) return jpegResponse(preview, SHARED_MEDIA_CACHE);
+        }
+        return await serveMediaBytes(locals.media, key, request2, {
+          mime: media.mime,
+          cacheControl: SHARED_MEDIA_CACHE
+        });
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "GET");
   }
 });
 
@@ -73226,7 +73856,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.DmR4AzBi.js", app: "_app/immutable/entry/app.B-FmelW5.js", imports: ["_app/immutable/entry/start.DmR4AzBi.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Tc5QHpbG.js", "_app/immutable/chunks/vp87PCn2.js", "_app/immutable/chunks/Bsdzxjyx.js", "_app/immutable/chunks/JARV64bD.js", "_app/immutable/entry/app.B-FmelW5.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.CvWQvgWm.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.CvWQvgWm.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -73242,7 +73872,8 @@ var manifest2 = (() => {
       __memo(() => Promise.resolve().then(() => (init__12(), __exports12))),
       __memo(() => Promise.resolve().then(() => (init__13(), __exports13))),
       __memo(() => Promise.resolve().then(() => (init__14(), __exports14))),
-      __memo(() => Promise.resolve().then(() => (init__15(), __exports15)))
+      __memo(() => Promise.resolve().then(() => (init__15(), __exports15))),
+      __memo(() => Promise.resolve().then(() => (init__16(), __exports16)))
     ],
     remotes: {},
     routes: [
@@ -73250,470 +73881,477 @@ var manifest2 = (() => {
         id: "/",
         pattern: /^\/$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 2 },
+        page: { layouts: [0], errors: [1], leaf: 3 },
         endpoint: null
       },
       {
         id: "/accounts",
         pattern: /^\/accounts\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 3 },
+        page: { layouts: [0], errors: [1], leaf: 4 },
         endpoint: null
       },
       {
         id: "/api",
         pattern: /^\/api\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 4 },
-        endpoint: null
+        page: null,
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts(), server_ts_exports)))
       },
       {
         id: "/api/account",
         pattern: /^\/api\/account\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts(), server_ts_exports)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts2(), server_ts_exports2)))
       },
       {
         id: "/api/auth/claim",
         pattern: /^\/api\/auth\/claim\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts2(), server_ts_exports2)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts3(), server_ts_exports3)))
       },
       {
         id: "/api/auth/login",
         pattern: /^\/api\/auth\/login\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts3(), server_ts_exports3)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts4(), server_ts_exports4)))
       },
       {
         id: "/api/auth/logout",
         pattern: /^\/api\/auth\/logout\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts4(), server_ts_exports4)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts5(), server_ts_exports5)))
       },
       {
         id: "/api/auth/me",
         pattern: /^\/api\/auth\/me\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts5(), server_ts_exports5)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts6(), server_ts_exports6)))
       },
       {
         id: "/api/auth/totp/enroll/confirm",
         pattern: /^\/api\/auth\/totp\/enroll\/confirm\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts6(), server_ts_exports6)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts7(), server_ts_exports7)))
       },
       {
         id: "/api/auth/totp/enroll/start",
         pattern: /^\/api\/auth\/totp\/enroll\/start\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts7(), server_ts_exports7)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts8(), server_ts_exports8)))
       },
       {
         id: "/api/auth/totp/rotate/start",
         pattern: /^\/api\/auth\/totp\/rotate\/start\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts8(), server_ts_exports8)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts9(), server_ts_exports9)))
       },
       {
         id: "/api/auth/totp/status",
         pattern: /^\/api\/auth\/totp\/status\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts9(), server_ts_exports9)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts10(), server_ts_exports10)))
       },
       {
         id: "/api/auth/totp/verify",
         pattern: /^\/api\/auth\/totp\/verify\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts10(), server_ts_exports10)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts11(), server_ts_exports11)))
       },
       {
         id: "/api/connections",
         pattern: /^\/api\/connections\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts11(), server_ts_exports11)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts12(), server_ts_exports12)))
       },
       {
         id: "/api/connections/bluesky",
         pattern: /^\/api\/connections\/bluesky\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts12(), server_ts_exports12)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts13(), server_ts_exports13)))
       },
       {
         id: "/api/connections/instagram",
         pattern: /^\/api\/connections\/instagram\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts13(), server_ts_exports13)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts14(), server_ts_exports14)))
       },
       {
         id: "/api/connections/instagram/callback",
         pattern: /^\/api\/connections\/instagram\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts14(), server_ts_exports14)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts15(), server_ts_exports15)))
       },
       {
         id: "/api/connections/linkedin",
         pattern: /^\/api\/connections\/linkedin\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts15(), server_ts_exports15)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts16(), server_ts_exports16)))
       },
       {
         id: "/api/connections/linkedin/callback",
         pattern: /^\/api\/connections\/linkedin\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts16(), server_ts_exports16)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts17(), server_ts_exports17)))
       },
       {
         id: "/api/connections/mastodon",
         pattern: /^\/api\/connections\/mastodon\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts17(), server_ts_exports17)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts18(), server_ts_exports18)))
       },
       {
         id: "/api/connections/mastodon/callback",
         pattern: /^\/api\/connections\/mastodon\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts18(), server_ts_exports18)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts19(), server_ts_exports19)))
       },
       {
         id: "/api/connections/threads",
         pattern: /^\/api\/connections\/threads\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts19(), server_ts_exports19)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts20(), server_ts_exports20)))
       },
       {
         id: "/api/connections/threads/callback",
         pattern: /^\/api\/connections\/threads\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts20(), server_ts_exports20)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts21(), server_ts_exports21)))
       },
       {
         id: "/api/connections/x",
         pattern: /^\/api\/connections\/x\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts21(), server_ts_exports21)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts22(), server_ts_exports22)))
       },
       {
         id: "/api/connections/x/callback",
         pattern: /^\/api\/connections\/x\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts22(), server_ts_exports22)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts23(), server_ts_exports23)))
       },
       {
         id: "/api/connections/zernio/accounts",
         pattern: /^\/api\/connections\/zernio\/accounts\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts23(), server_ts_exports23)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts24(), server_ts_exports24)))
       },
       {
         id: "/api/connections/zernio/callback",
         pattern: /^\/api\/connections\/zernio\/callback\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts24(), server_ts_exports24)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts25(), server_ts_exports25)))
       },
       {
         id: "/api/connections/zernio/connect",
         pattern: /^\/api\/connections\/zernio\/connect\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts25(), server_ts_exports25)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts26(), server_ts_exports26)))
       },
       {
         id: "/api/connections/zernio/import",
         pattern: /^\/api\/connections\/zernio\/import\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts26(), server_ts_exports26)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts27(), server_ts_exports27)))
       },
       {
         id: "/api/connections/[id]",
         pattern: /^\/api\/connections\/([^/]+?)\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts27(), server_ts_exports27)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts28(), server_ts_exports28)))
       },
       {
         id: "/api/connections/[id]/verify",
         pattern: /^\/api\/connections\/([^/]+?)\/verify\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts28(), server_ts_exports28)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts29(), server_ts_exports29)))
       },
       {
         id: "/api/drafts",
         pattern: /^\/api\/drafts\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts29(), server_ts_exports29)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts30(), server_ts_exports30)))
       },
       {
         id: "/api/drafts/[id]",
         pattern: /^\/api\/drafts\/([^/]+?)\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts30(), server_ts_exports30)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts31(), server_ts_exports31)))
       },
       {
         id: "/api/drafts/[id]/duplicate",
         pattern: /^\/api\/drafts\/([^/]+?)\/duplicate\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts31(), server_ts_exports31)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts32(), server_ts_exports32)))
       },
       {
         id: "/api/drafts/[id]/media",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts32(), server_ts_exports32)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts33(), server_ts_exports33)))
       },
       {
         id: "/api/drafts/[id]/media/cover",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/cover\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts33(), server_ts_exports33)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts34(), server_ts_exports34)))
       },
       {
         id: "/api/drafts/[id]/media/uploads",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts34(), server_ts_exports34)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts35(), server_ts_exports35)))
       },
       {
         id: "/api/drafts/[id]/media/uploads/complete",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/complete\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts35(), server_ts_exports35)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts36(), server_ts_exports36)))
       },
       {
         id: "/api/drafts/[id]/media/uploads/part",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/part\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts36(), server_ts_exports36)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts37(), server_ts_exports37)))
       },
       {
         id: "/api/drafts/[id]/publish",
         pattern: /^\/api\/drafts\/([^/]+?)\/publish\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts37(), server_ts_exports37)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts38(), server_ts_exports38)))
       },
       {
         id: "/api/drafts/[id]/schedule",
         pattern: /^\/api\/drafts\/([^/]+?)\/schedule\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts38(), server_ts_exports38)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts39(), server_ts_exports39)))
+      },
+      {
+        id: "/api/drafts/[id]/share",
+        pattern: /^\/api\/drafts\/([^/]+?)\/share\/?$/,
+        params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
+        page: null,
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts40(), server_ts_exports40)))
       },
       {
         id: "/api/drafts/[id]/variants",
         pattern: /^\/api\/drafts\/([^/]+?)\/variants\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts39(), server_ts_exports39)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts41(), server_ts_exports41)))
       },
       {
         id: "/api/health",
         pattern: /^\/api\/health\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts40(), server_ts_exports40)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts42(), server_ts_exports42)))
       },
       {
         id: "/api/insights",
         pattern: /^\/api\/insights\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts41(), server_ts_exports41)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts43(), server_ts_exports43)))
       },
       {
         id: "/api/internal/publish",
         pattern: /^\/api\/internal\/publish\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts42(), server_ts_exports42)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts44(), server_ts_exports44)))
       },
       {
         id: "/api/internal/tick",
         pattern: /^\/api\/internal\/tick\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts43(), server_ts_exports43)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts45(), server_ts_exports45)))
       },
       {
         id: "/api/key",
         pattern: /^\/api\/key\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts44(), server_ts_exports44)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts46(), server_ts_exports46)))
       },
       {
         id: "/api/link-preview",
         pattern: /^\/api\/link-preview\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts45(), server_ts_exports45)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts47(), server_ts_exports47)))
       },
       {
         id: "/api/mcp",
         pattern: /^\/api\/mcp\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts46(), server_ts_exports46)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts48(), server_ts_exports48)))
       },
       {
         id: "/api/media/public/[key]",
         pattern: /^\/api\/media\/public\/([^/]+?)\/?$/,
         params: [{ "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts47(), server_ts_exports47)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts49(), server_ts_exports49)))
       },
       {
         id: "/api/media/[key]",
         pattern: /^\/api\/media\/([^/]+?)\/?$/,
         params: [{ "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts48(), server_ts_exports48)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts50(), server_ts_exports50)))
       },
       {
         id: "/api/queue",
         pattern: /^\/api\/queue\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts49(), server_ts_exports49)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts51(), server_ts_exports51)))
       },
       {
         id: "/api/release",
         pattern: /^\/api\/release\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts50(), server_ts_exports50)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts52(), server_ts_exports52)))
       },
       {
         id: "/api/scheduler/health",
         pattern: /^\/api\/scheduler\/health\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts51(), server_ts_exports51)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts53(), server_ts_exports53)))
       },
       {
         id: "/api/scheduler/test",
         pattern: /^\/api\/scheduler\/test\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts52(), server_ts_exports52)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
       },
       {
         id: "/api/scheduler/tick-token",
         pattern: /^\/api\/scheduler\/tick-token\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts53(), server_ts_exports53)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
       },
       {
         id: "/api/settings",
         pattern: /^\/api\/settings\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
       },
       {
         id: "/api/settings/platform-apps/[platform]",
         pattern: /^\/api\/settings\/platform-apps\/([^/]+?)\/?$/,
         params: [{ "name": "platform", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
       },
       {
         id: "/api/targets/bulk",
         pattern: /^\/api\/targets\/bulk\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
       },
       {
         id: "/api/targets/[id]/cancel",
         pattern: /^\/api\/targets\/([^/]+?)\/cancel\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts59(), server_ts_exports59)))
       },
       {
         id: "/api/targets/[id]/reschedule",
         pattern: /^\/api\/targets\/([^/]+?)\/reschedule\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts60(), server_ts_exports60)))
       },
       {
         id: "/api/targets/[id]/retry",
         pattern: /^\/api\/targets\/([^/]+?)\/retry\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts59(), server_ts_exports59)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts61(), server_ts_exports61)))
       },
       {
         id: "/api/update",
         pattern: /^\/api\/update\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts60(), server_ts_exports60)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts62(), server_ts_exports62)))
       },
       {
         id: "/api/update/remember",
         pattern: /^\/api\/update\/remember\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts61(), server_ts_exports61)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts63(), server_ts_exports63)))
       },
       {
         id: "/api/update/unlock",
         pattern: /^\/api\/update\/unlock\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts62(), server_ts_exports62)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts64(), server_ts_exports64)))
       },
       {
         id: "/api/update/[step]",
         pattern: /^\/api\/update\/([^/]+?)\/?$/,
         params: [{ "name": "step", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts63(), server_ts_exports63)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts65(), server_ts_exports65)))
       },
       {
         id: "/api/validate",
         pattern: /^\/api\/validate\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts64(), server_ts_exports64)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts66(), server_ts_exports66)))
       },
       {
         id: "/compose",
@@ -73775,14 +74413,28 @@ var manifest2 = (() => {
         id: "/posts",
         pattern: /^\/posts\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 13 },
+        page: { layouts: [0], errors: [1], leaf: 14 },
         endpoint: null
+      },
+      {
+        id: "/p/[token]",
+        pattern: /^\/p\/([^/]+?)\/?$/,
+        params: [{ "name": "token", "optional": false, "rest": false, "chained": false }],
+        page: { layouts: [0, ,], errors: [1, 2], leaf: 13 },
+        endpoint: null
+      },
+      {
+        id: "/p/[token]/media/[key]",
+        pattern: /^\/p\/([^/]+?)\/media\/([^/]+?)\/?$/,
+        params: [{ "name": "token", "optional": false, "rest": false, "chained": false }, { "name": "key", "optional": false, "rest": false, "chained": false }],
+        page: null,
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts67(), server_ts_exports67)))
       },
       {
         id: "/settings",
         pattern: /^\/settings\/?$/,
         params: [],
-        page: { layouts: [0], errors: [1], leaf: 14 },
+        page: { layouts: [0], errors: [1], leaf: 15 },
         endpoint: null
       }
     ],
