@@ -9211,7 +9211,7 @@ function normalizeProfileSettings(input2) {
     settings: parseProfileSettings(input2)
   };
 }
-var MASTO_VISIBILITIES, DEFAULT_PROFILE_SETTINGS, PROFILE_PICTURE_URL_MAX;
+var MASTO_VISIBILITIES, MASTO_VISIBILITY_LABELS, DEFAULT_PROFILE_SETTINGS, PROFILE_PICTURE_URL_MAX;
 var init_profile_settings = __esm({
   ".svelte-kit/output/server/chunks/profile-settings.js"() {
     "use strict";
@@ -9221,6 +9221,12 @@ var init_profile_settings = __esm({
       "private",
       "direct"
     ];
+    MASTO_VISIBILITY_LABELS = {
+      public: "Public",
+      unlisted: "Unlisted",
+      private: "Followers",
+      direct: "Direct"
+    };
     DEFAULT_PROFILE_SETTINGS = {
       mastoVisibility: "public",
       defaultAccountIds: [],
@@ -41226,7 +41232,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1793640424565");
+  response.headers.set("x-sveltekit-version", "1793642994890");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43928,7 +43934,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_9bw0wv";
+  const global = "__sveltekit_dok9o";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44672,7 +44678,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_9bw0wv";
+  const global = "__sveltekit_dok9o";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44697,7 +44703,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1793640424565")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1793642994890")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47251,8 +47257,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.BdionRpL.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js"];
-    stylesheets = ["_app/immutable/assets/0.BalJVO__.css"];
+    imports = ["_app/immutable/nodes/0.CCXciEa4.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    stylesheets = ["_app/immutable/assets/0.CIFeZrgT.css"];
     fonts = [];
   }
 });
@@ -49497,7 +49503,7 @@ function Editor($$renderer, $$props) {
     let skipAsk = false;
     let isAccountsPopoverOpen = false;
     let isPostConfirmOpen = false;
-    let isThreadsOptionsOpen = false;
+    let isPostOptionsOpen = false;
     let textareaRefs = [];
     let altOpen = {};
     let mounted = false;
@@ -49687,6 +49693,18 @@ function Editor($$renderer, $$props) {
     });
     const selectedThreadsAccounts = derived2(() => selectedAccounts().filter((account) => account.platform === "threads"));
     const showThreadsOptions = derived2(() => selectedThreadsAccounts().length > 0);
+    const showPostOptions = derived2(() => showMastoOptions() || showThreadsOptions());
+    const postOptionsError = derived2(() => showThreadsOptions() && threadsTopicError() !== null);
+    const postOptionsSummary = derived2(() => {
+      const parts = [];
+      if (showMastoOptions()) {
+        if (mastoVisibility !== "public") parts.push(MASTO_VISIBILITY_LABELS[mastoVisibility]);
+        if (mastoCW.trim()) parts.push("CW");
+      }
+      const topic = showThreadsOptions() ? parseThreadsTopic(threadsTopic) : null;
+      if (topic) parts.push(topic);
+      return parts.join(" \xB7 ");
+    });
     derived2(() => countGraphemes(normalizeThreadsTopic(threadsTopic)));
     derived2(() => splitThreadSegments(effectivePlatformBody(baseBody, overrides, "threads")).length);
     function takeSnapshot() {
@@ -50440,22 +50458,11 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--></div>`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> `);
-    if (showMastoOptions() && !editLocked()) {
-      $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div> <div class="masto-options-container relative" data-testid="masto-options"><button type="button" data-testid="masto-settings-toggle" class="flex items-center gap-1.5 rounded-full border border-stone-200 px-3 py-1.5 text-[12px] font-bold whitespace-nowrap text-stone-500 transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900">`);
-      Settings($$renderer2, { class: "h-3 w-3" });
-      $$renderer2.push(`<!----> Mastodon</button> `);
-      $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--></div>`);
-    } else $$renderer2.push("<!--[-1-->");
-    $$renderer2.push(`<!--]--> `);
-    if (showThreadsOptions() && !editLocked()) {
-      $$renderer2.push("<!--[0-->");
-      if (!showMastoOptions()) $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div>`);
-      else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--> <div class="threads-options-container sm:relative" data-testid="threads-options"><button type="button" data-testid="threads-settings-toggle"${attr("aria-expanded", isThreadsOptionsOpen)}${attr_class(`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-bold whitespace-nowrap transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900 ${threadsTopicError() ? "border-red-300 text-red-600" : "border-stone-200 text-stone-500"}`)}>`);
-      Settings($$renderer2, { class: "h-3 w-3" });
-      $$renderer2.push(`<!----> Threads `);
-      if (parseThreadsTopic(threadsTopic)) $$renderer2.push(`<!--[0--><span class="max-w-[9rem] truncate font-medium" data-testid="threads-topic-chip">\xB7 ${escape_html(parseThreadsTopic(threadsTopic))}</span>`);
+    if (showPostOptions() && !editLocked()) {
+      $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div> <div class="post-options-container min-w-0 sm:relative" data-testid="post-options"><button type="button" data-testid="post-options-toggle"${attr("aria-expanded", isPostOptionsOpen)}${attr_class(`flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-bold whitespace-nowrap transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900 ${postOptionsError() ? "border-red-300 text-red-600" : "border-stone-200 text-stone-500"}`)}>`);
+      Settings($$renderer2, { class: "h-3 w-3 shrink-0" });
+      $$renderer2.push(`<!----> Options `);
+      if (postOptionsSummary()) $$renderer2.push(`<!--[0--><span class="max-w-[12rem] truncate font-medium" data-testid="post-options-summary">\xB7 ${escape_html(postOptionsSummary())}</span>`);
       else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--></button> `);
       $$renderer2.push("<!--[-1-->");
@@ -50483,9 +50490,9 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--></p>`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--></div> <div class="relative flex-1"><div class="flex flex-col gap-6"><!--[-->`);
-    const each_array_2 = ensure_array_like(segments());
-    for (let index18 = 0, $$length = each_array_2.length; index18 < $$length; index18++) {
-      let segment = each_array_2[index18];
+    const each_array_3 = ensure_array_like(segments());
+    for (let index18 = 0, $$length = each_array_3.length; index18 < $$length; index18++) {
+      let segment = each_array_3[index18];
       const segLen = countForCard(segment);
       const isOver = segLen > maxChars();
       const segMedia = cardMedia(index18);
@@ -50549,9 +50556,9 @@ function Editor($$renderer, $$props) {
         $$renderer2.push(`<!----></div>`);
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> <!--[-->`);
-      const each_array_3 = ensure_array_like(segMedia);
-      for (let $$index_2 = 0, $$length2 = each_array_3.length; $$index_2 < $$length2; $$index_2++) {
-        let m = each_array_3[$$index_2];
+      const each_array_4 = ensure_array_like(segMedia);
+      for (let $$index_3 = 0, $$length2 = each_array_4.length; $$index_3 < $$length2; $$index_3++) {
+        let m = each_array_4[$$index_3];
         if (altOpen[m.id]) $$renderer2.push(`<!--[0--><div class="mt-2 rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm"><input type="text"${attr("value", m.altText || "")}${attr("data-testid", `media-alt-${stringify3(m.id)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", isVideoItem(m) ? "Describe this video\u2026" : "Describe this image\u2026")}${attr("aria-label", `Alt text for ${isVideoItem(m) ? "video" : "image"} ${index18 + 1}`)} class="w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-medium text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <div class="mt-1 flex justify-end"><button type="button"${attr("data-testid", `alt-done-${stringify3(m.id)}`)} class="text-[11px] font-bold text-stone-900 hover:underline">Done</button></div></div>`);
         else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
@@ -50589,9 +50596,9 @@ function Editor($$renderer, $$props) {
         if (quote) $$renderer2.push(`<!--[0-->X quotes one post, so ${escape_html(strayLinks.length === 1 ? "this other X link shows" : "these other X links show")} as a plain link.${escape_html(tabSupportsThreads() ? " To quote both, give each its own post with + Thread." : "")}`);
         else $$renderer2.push(`<!--[-1-->X only quotes a link at the very end, so ${escape_html(strayLinks.length === 1 ? "this X link shows" : "these X links show")} as a plain link.`);
         $$renderer2.push(`<!--]--></p> <div class="flex flex-wrap gap-2"><!--[-->`);
-        const each_array_4 = ensure_array_like(strayLinks);
-        for (let $$index_3 = 0, $$length2 = each_array_4.length; $$index_3 < $$length2; $$index_3++) {
-          let link = each_array_4[$$index_3];
+        const each_array_5 = ensure_array_like(strayLinks);
+        for (let $$index_4 = 0, $$length2 = each_array_5.length; $$index_4 < $$length2; $$index_4++) {
+          let link = each_array_5[$$index_4];
           const author = parseXPostUrl(link.url)?.handle;
           $$renderer2.push(`<button type="button" data-testid="x-quote-make" class="max-w-full truncate rounded-full border border-amber-300 bg-white px-3 py-1 text-[11px] font-bold text-amber-900 transition-colors hover:bg-amber-100">`);
           if (author) $$renderer2.push(`<!--[0-->Quote @${escape_html(author)}'s post${escape_html(quote ? " instead" : "")}`);
@@ -50647,9 +50654,9 @@ function Editor($$renderer, $$props) {
     $$renderer2.push(`<!--]--></div></div> `);
     if (!editLocked()) {
       $$renderer2.push(`<!--[0--><div class="pointer-events-none fixed bottom-[max(2rem,env(safe-area-inset-bottom))] left-1/2 z-30 w-full max-w-2xl -translate-x-1/2 px-4 sm:px-6"><div class="flex items-center justify-center gap-4"><div class="accounts-popover-container pointer-events-auto relative flex items-center"><button type="button" data-testid="destinations-toggle"${attr_class(`flex items-center gap-2 rounded-full border border-stone-200/80 bg-white/95 px-4 py-2.5 text-[13px] font-bold text-stone-700 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl transition-all hover:border-stone-300 hover:bg-white `)} aria-haspopup="dialog"${attr("aria-expanded", isAccountsPopoverOpen)}><div class="mr-0.5 flex -space-x-1.5"><!--[-->`);
-      const each_array_6 = ensure_array_like(selectedAccounts().slice(0, 3));
-      for (let $$index_6 = 0, $$length = each_array_6.length; $$index_6 < $$length; $$index_6++) {
-        let account = each_array_6[$$index_6];
+      const each_array_7 = ensure_array_like(selectedAccounts().slice(0, 3));
+      for (let $$index_7 = 0, $$length = each_array_7.length; $$index_7 < $$length; $$index_7++) {
+        let account = each_array_7[$$index_7];
         $$renderer2.push(`<div class="z-10 flex h-[20px] w-[20px] items-center justify-center rounded-full border-2 border-white bg-stone-100">`);
         SocialIcon($$renderer2, {
           platform: account.platform,
@@ -50683,9 +50690,9 @@ function Editor($$renderer, $$props) {
 										${escape_html(unscheduledByPublish().length === 1 ? "it" : "they")} will be unscheduled.</p>`);
         else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]--></div> <div class="mb-4 flex justify-center -space-x-2" data-testid="publish-confirm-destinations"><!--[-->`);
-        const each_array_8 = ensure_array_like(pendingAccounts());
-        for (let $$index_8 = 0, $$length = each_array_8.length; $$index_8 < $$length; $$index_8++) {
-          let account = each_array_8[$$index_8];
+        const each_array_9 = ensure_array_like(pendingAccounts());
+        for (let $$index_9 = 0, $$length = each_array_9.length; $$index_9 < $$length; $$index_9++) {
+          let account = each_array_9[$$index_9];
           $$renderer2.push(`<div class="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-stone-50 shadow-sm"${attr("title", `${stringify3(platformName(account.platform))}: ${stringify3(account.displayName || account.handle)}`)}>`);
           SocialIcon($$renderer2, {
             platform: account.platform,
@@ -50791,6 +50798,7 @@ var init_page_svelte3 = __esm({
     "use strict";
     init_bytes();
     init_human_error();
+    init_profile_settings();
     init_media_limits();
     init_platforms();
     init_links();
@@ -51004,7 +51012,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.BJTvwTjh.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
+    imports6 = ["_app/immutable/nodes/5.vbCt7X1u.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/D6yi91ex.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -56911,7 +56919,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.25.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.26.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57035,7 +57043,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.CwjWsMTI.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    imports16 = ["_app/immutable/nodes/15.BiwU8c5Q.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/D6yi91ex.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -61185,7 +61193,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.25.0",
+          version: "1.26.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -72245,7 +72253,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.25.0";
+  const current = options2.current ?? "1.26.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73101,7 +73109,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.25.0",
+          version: "1.26.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73310,7 +73318,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.25.0"
+    currentVersion: "1.26.0"
   };
 }
 async function download(ctx, url3) {
@@ -73861,7 +73869,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.c497dAPL.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.c497dAPL.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.C4hXEAi_.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.C4hXEAi_.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
