@@ -15649,7 +15649,7 @@ var init_providers = __esm({
           return typeof id2 === "string" || typeof id2 === "number" ? String(id2) : "";
         }
         __name(publishContainer, "publishContainer");
-        async function createMediaContainer(text3, media, reply) {
+        async function createMediaContainer(text3, media, postParams) {
           if (!opts?.mediaUrlFor) throw new Error("Threads image posts need a media signer");
           const urls = [];
           for (const m of media) {
@@ -15660,7 +15660,7 @@ var init_providers = __esm({
             const params2 = {
               media_type: "IMAGE",
               image_url: urls[0],
-              ...reply
+              ...postParams
             };
             if (text3) params2.text = text3;
             return createContainer(params2);
@@ -15674,13 +15674,13 @@ var init_providers = __esm({
           const params = {
             media_type: "CAROUSEL",
             children: (await ensureCarouselChildren(children2, media)).join(","),
-            ...reply
+            ...postParams
           };
           if (text3) params.text = text3;
           return createContainer(params);
         }
         __name(createMediaContainer, "createMediaContainer");
-        async function readyVideoContainer(segmentIndex, text3, video, reply, fresh = false) {
+        async function readyVideoContainer(segmentIndex, text3, video, postParams, fresh = false) {
           if (!video.storageKey) throw new Error("Threads video is missing its storage key");
           const resumed = fresh ? null : resumedVideoState(opts?.resume, segmentIndex, video.storageKey);
           let containerId = typeof resumed?.containerId === "string" ? resumed.containerId : "";
@@ -15689,7 +15689,7 @@ var init_providers = __esm({
             const params = {
               media_type: "VIDEO",
               video_url: await opts.mediaUrlFor(video.storageKey),
-              ...reply
+              ...postParams
             };
             if (text3) params.text = text3;
             if (video.alt) params.alt_text = video.alt;
@@ -15718,7 +15718,7 @@ var init_providers = __esm({
             }
             return null;
           });
-          if (expired) return readyVideoContainer(segmentIndex, text3, video, reply, true);
+          if (expired) return readyVideoContainer(segmentIndex, text3, video, postParams, true);
           if (ready) return ready;
           throw processingError("Threads", {
             segment: segmentIndex,
@@ -15728,20 +15728,24 @@ var init_providers = __esm({
         }
         __name(readyVideoContainer, "readyVideoContainer");
         async function publishSegment(segmentIndex, text3, media, replyToId) {
-          const reply = replyToId ? { reply_to_id: replyToId } : {};
+          const topicTag = segmentIndex === 0 ? content.options?.topicTag : void 0;
+          const postParams = {
+            ...replyToId ? { reply_to_id: replyToId } : {},
+            ...topicTag ? { topic_tag: topicTag } : {}
+          };
           const video = segmentVideo(media);
-          if (video) return publishContainer(await readyVideoContainer(segmentIndex, text3, video, reply));
+          if (video) return publishContainer(await readyVideoContainer(segmentIndex, text3, video, postParams));
           let containerId;
           if (media.length === 0) containerId = await createContainer({
             media_type: "TEXT",
             text: text3,
-            ...reply
+            ...postParams
           });
           else {
             let attempts = 0;
             let lastError = null;
             for (; ; ) try {
-              containerId = await createMediaContainer(text3, media, reply);
+              containerId = await createMediaContainer(text3, media, postParams);
               break;
             } catch (err) {
               lastError = err;
@@ -16113,6 +16117,51 @@ var init_due_jobs = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/threads-topic.js
+function normalizeThreadsTopic(text3) {
+  return text3.trim().replace(/\s+/g, " ").replace(/^#\s*/, "");
+}
+function validateThreadsTopic(input2) {
+  if (input2 === void 0 || input2 === null) return {
+    ok: true,
+    topic: null
+  };
+  if (typeof input2 !== "string") return {
+    ok: false,
+    error: "Topic tag must be text"
+  };
+  const topic = normalizeThreadsTopic(input2);
+  if (!topic) return {
+    ok: true,
+    topic: null
+  };
+  if (/[.&]/.test(topic)) return {
+    ok: false,
+    error: "Topic tags cannot contain . or &"
+  };
+  if (countGraphemes(topic) > 50) return {
+    ok: false,
+    error: `Topic tags allow max 50 characters`
+  };
+  return {
+    ok: true,
+    topic
+  };
+}
+function parseThreadsTopic(input2) {
+  const v = validateThreadsTopic(input2);
+  return v.ok ? v.topic : null;
+}
+var init_threads_topic = __esm({
+  ".svelte-kit/output/server/chunks/threads-topic.js"() {
+    "use strict";
+    init_x_limits();
+    __name(normalizeThreadsTopic, "normalizeThreadsTopic");
+    __name(validateThreadsTopic, "validateThreadsTopic");
+    __name(parseThreadsTopic, "parseThreadsTopic");
+  }
+});
+
 // .svelte-kit/output/server/chunks/public-media.js
 function isPublicMediaVariant(value) {
   return value === "jpeg" || value === "cover";
@@ -16240,7 +16289,8 @@ async function buildNormalizedPost(db, draftId, platform2) {
     visibility: options2.visibility === "unlisted" || options2.visibility === "private" || options2.visibility === "direct" || options2.visibility === "public" ? options2.visibility : "public",
     spoilerText: typeof options2.spoilerText === "string" ? options2.spoilerText : void 0,
     langs: Array.isArray(options2.langs) ? options2.langs : void 0,
-    poll: parsePollConfig(options2.poll) ?? void 0
+    poll: parsePollConfig(options2.poll) ?? void 0,
+    topicTag: parseThreadsTopic(options2.topicTag) ?? void 0
   };
   const segmentsOpt = options2.threadSegments;
   if (segmentsOpt && segmentsOpt.length > 1) {
@@ -16781,6 +16831,7 @@ var init_publish = __esm({
     init_timed_fetch();
     init_poll();
     init_due_jobs();
+    init_threads_topic();
     init_public_media();
     init_drizzle_orm();
     __name(fnv1a, "fnv1a");
@@ -41168,7 +41219,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1793439367530");
+  response.headers.set("x-sveltekit-version", "1793630422356");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43870,7 +43921,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1wm9f4j";
+  const global = "__sveltekit_16jv7dk";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44614,7 +44665,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1wm9f4j";
+  const global = "__sveltekit_16jv7dk";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44639,7 +44690,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1793439367530")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1793630422356")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47193,8 +47244,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.BbUmQ2ok.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js"];
-    stylesheets = ["_app/immutable/assets/0.ls2gGq-i.css"];
+    imports = ["_app/immutable/nodes/0.BdionRpL.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    stylesheets = ["_app/immutable/assets/0.BalJVO__.css"];
     fonts = [];
   }
 });
@@ -48360,7 +48411,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.Bu6g3PL1.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js"];
+    imports5 = ["_app/immutable/nodes/4.CrecwuUU.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BJp7Yl8a.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -49385,6 +49436,12 @@ function Editor($$renderer, $$props) {
       if (variant.optionsJson.spoilerText) seededCw = variant.optionsJson.spoilerText;
       if (variant.optionsJson.poll) seededPoll = parsePollConfig(variant.optionsJson.poll);
     }
+    function storedThreadsTopic(variants) {
+      const stored = variants?.find((v) => v.platform === "threads")?.optionsJson?.topicTag;
+      return parseThreadsTopic(stored) ?? "";
+    }
+    __name(storedThreadsTopic, "storedThreadsTopic");
+    const seededThreadsTopic = storedThreadsTopic(seededDraft?.variants);
     (() => {
       const saved = seededDraft?.selectedConnectionIds;
       if (Array.isArray(saved)) return saved;
@@ -49419,6 +49476,7 @@ function Editor($$renderer, $$props) {
     let mastoVisibility = seededVisibility;
     let mastoCW = seededCw;
     let mastoPoll = seededPoll;
+    let threadsTopic = seededThreadsTopic;
     let uploadingSegment = null;
     let videoJobs = [];
     let coverFor = null;
@@ -49432,6 +49490,7 @@ function Editor($$renderer, $$props) {
     let skipAsk = false;
     let isAccountsPopoverOpen = false;
     let isPostConfirmOpen = false;
+    let isThreadsOptionsOpen = false;
     let textareaRefs = [];
     let altOpen = {};
     let mounted = false;
@@ -49615,6 +49674,15 @@ function Editor($$renderer, $$props) {
       return v.ok ? null : v.error;
     });
     const showMastoOptions = derived2(() => selectedPlatforms().has("mastodon") || isPlatformCustomized(overrides, "mastodon"));
+    const threadsTopicError = derived2(() => {
+      const v = validateThreadsTopic(threadsTopic);
+      return v.ok ? null : v.error;
+    });
+    const selectedThreadsAccounts = derived2(() => selectedAccounts().filter((account) => account.platform === "threads"));
+    derived2(() => selectedThreadsAccounts().some((account) => isZernioConnection(account.metaJson)));
+    const showThreadsOptions = derived2(() => selectedThreadsAccounts().some((account) => !isZernioConnection(account.metaJson)) || selectedThreadsAccounts().length > 0 && threadsTopic.trim() !== "");
+    derived2(() => countGraphemes(normalizeThreadsTopic(threadsTopic)));
+    derived2(() => splitThreadSegments(effectivePlatformBody(baseBody, overrides, "threads")).length);
     function takeSnapshot() {
       const sorted = {};
       for (const k of Object.keys(overrides).sort()) sorted[k] = overrides[k];
@@ -49624,6 +49692,7 @@ function Editor($$renderer, $$props) {
         v: mastoVisibility,
         c: mastoCW,
         p: mastoPoll,
+        t: threadsTopic,
         s: [...selected].sort(),
         m: media.map((m) => ({
           i: m.id,
@@ -49668,6 +49737,7 @@ function Editor($$renderer, $$props) {
       mastoVisibility = initialSettings?.mastoVisibility ?? "public";
       mastoCW = "";
       mastoPoll = null;
+      threadsTopic = "";
       activeTab = "global";
       scheduleOpen = false;
       loadedSchedule = null;
@@ -49699,6 +49769,7 @@ function Editor($$renderer, $$props) {
       mastoVisibility,
       mastoCW,
       mastoPoll,
+      threadsTopic,
       selectedConnectionIds: [...selected]
     }, navigate = true) {
       const generation = editorGeneration;
@@ -49739,18 +49810,20 @@ function Editor($$renderer, $$props) {
       mastoVisibility,
       mastoCW,
       mastoPoll,
+      threadsTopic,
       selectedConnectionIds: [...selected]
     }, stored = storedVariants) {
       const toSave = customizedBodiesForSave(snap.baseBody, snap.overrides, PLATFORM_ORDER);
       const pending2 = PLATFORM_ORDER.map((platform2) => {
         const customized = isPlatformCustomized(snap.overrides, platform2);
+        const topicTag = platform2 === "threads" ? parseThreadsTopic(snap.threadsTopic) : null;
         const options2 = platform2 === "mastodon" ? {
           visibility: snap.mastoVisibility,
           spoilerText: snap.mastoCW || void 0,
           poll: snap.mastoPoll ?? void 0
-        } : {};
+        } : topicTag ? { topicTag } : {};
         const mastodonOptions = platform2 === "mastodon" && Boolean(snap.mastoCW || snap.mastoVisibility !== "public" || snap.mastoPoll);
-        if (customized || mastodonOptions) {
+        if (customized || mastodonOptions || topicTag) {
           stored.add(platform2);
           return {
             platform: platform2,
@@ -49814,6 +49887,7 @@ function Editor($$renderer, $$props) {
         mastoVisibility,
         mastoCW,
         mastoPoll,
+        threadsTopic,
         selectedConnectionIds: [...selected]
       };
       try {
@@ -50368,6 +50442,20 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--></div>`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> `);
+    if (showThreadsOptions() && !editLocked()) {
+      $$renderer2.push("<!--[0-->");
+      if (!showMastoOptions()) $$renderer2.push(`<!--[0--><div class="mx-1 hidden h-4 w-px bg-stone-200 sm:block"></div>`);
+      else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--> <div class="threads-options-container sm:relative" data-testid="threads-options"><button type="button" data-testid="threads-settings-toggle"${attr("aria-expanded", isThreadsOptionsOpen)}${attr_class(`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-bold whitespace-nowrap transition-colors hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900 ${threadsTopicError() ? "border-red-300 text-red-600" : "border-stone-200 text-stone-500"}`)}>`);
+      Settings($$renderer2, { class: "h-3 w-3" });
+      $$renderer2.push(`<!----> Threads `);
+      if (parseThreadsTopic(threadsTopic)) $$renderer2.push(`<!--[0--><span class="max-w-[9rem] truncate font-medium" data-testid="threads-topic-chip">\xB7 ${escape_html(parseThreadsTopic(threadsTopic))}</span>`);
+      else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--></button> `);
+      $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--></div>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
     if (canShare()) {
       $$renderer2.push(`<!--[0--><div class="ml-auto">`);
       SharePreview($$renderer2, {
@@ -50699,12 +50787,14 @@ var init_page_svelte3 = __esm({
     init_human_error();
     init_media_limits();
     init_platforms();
+    init_zernio();
     init_links();
     init_thread_segments();
     init_x_quote();
     init_x_limits();
     init_video_rules();
     init_poll();
+    init_threads_topic();
     init_post_state();
     init_published_lock();
     init_platform_sync();
@@ -50909,7 +50999,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.fyv8vYVm.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
+    imports6 = ["_app/immutable/nodes/5.CaMoQG0N.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/BJp7Yl8a.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -56816,7 +56906,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.23.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.24.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -56940,7 +57030,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.ClLaJSEe.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    imports16 = ["_app/immutable/nodes/15.3G9yp8Ez.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Dm7Cw3s1.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -59897,6 +59987,8 @@ function validateVariantOptions(options2) {
     if (!poll.ok) return poll.error;
   }
   if (value.threadSegments !== void 0 && (!Array.isArray(value.threadSegments) || value.threadSegments.some((segment) => typeof segment !== "string"))) return "threadSegments must be an array of strings";
+  const topic = validateThreadsTopic(value.topicTag);
+  if (!topic.ok) return topic.error;
   return null;
 }
 async function ensureDraftEditable(ctx, draftId) {
@@ -59911,7 +60003,8 @@ async function setDraftVariant(ctx, userId, draftId, input2) {
   const fields = input2;
   const optionsError = validateVariantOptions(fields.options);
   if (optionsError) invalid(optionsError);
-  const segments = parseThreadSegments((fields.options && typeof fields.options === "object" ? fields.options : {}).threadSegments ?? []);
+  const options2 = fields.options && typeof fields.options === "object" ? fields.options : {};
+  const segments = parseThreadSegments(options2.threadSegments ?? []);
   if (!segments.ok) invalid(segments.error);
   if (fields.body !== void 0) {
     const body = parseSegmentBody(fields.body);
@@ -59919,6 +60012,7 @@ async function setDraftVariant(ctx, userId, draftId, input2) {
   }
   const platform2 = String(fields.platform || "");
   if (!VARIANT_PLATFORMS.has(platform2)) invalid("platform must be mastodon, bluesky, linkedin, threads, instagram, or x");
+  if (platform2 !== "threads" && options2.topicTag !== void 0 && options2.topicTag !== null) invalid("Topic tags are only for Threads");
   const existing = await first(ctx.db.select().from(draftVariants).where(and(eq(draftVariants.draftId, draftId), eq(draftVariants.platform, platform2))));
   const now = /* @__PURE__ */ new Date();
   const optionsJson = fields.options !== void 0 ? JSON.stringify(fields.options ?? {}) : existing?.optionsJson ?? "{}";
@@ -60106,6 +60200,7 @@ var init_operations3 = __esm({
     init_providers();
     init_poll();
     init_due_jobs();
+    init_threads_topic();
     init_publish();
     init_publish_plan();
     init_request_limits();
@@ -61085,7 +61180,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.23.0",
+          version: "1.24.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -71749,7 +71844,8 @@ var init_server_ts48 = __esm({
         multiple: external_exports.boolean().optional(),
         hideTotals: external_exports.boolean().optional()
       }).nullable().optional(),
-      threadSegments: external_exports.array(external_exports.string().max(1e5)).max(100).optional()
+      threadSegments: external_exports.array(external_exports.string().max(1e5)).max(100).optional(),
+      topicTag: external_exports.string().max(1e3).nullable().optional()
     }).strict().optional();
     annotations = {
       read: {
@@ -72144,7 +72240,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.23.0";
+  const current = options2.current ?? "1.24.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73000,7 +73096,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.23.0",
+          version: "1.24.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73209,7 +73305,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.23.0"
+    currentVersion: "1.24.0"
   };
 }
 async function download(ctx, url3) {
@@ -73760,7 +73856,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.Dl2dbh5F.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.Dl2dbh5F.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.3tG6uySK.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.3tG6uySK.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
