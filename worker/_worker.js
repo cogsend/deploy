@@ -41262,7 +41262,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1793646346200");
+  response.headers.set("x-sveltekit-version", "1793655384290");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43964,7 +43964,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_12rznge";
+  const global = "__sveltekit_3z5czf";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44708,7 +44708,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_12rznge";
+  const global = "__sveltekit_3z5czf";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44733,7 +44733,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1793646346200")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1793655384290")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47287,7 +47287,7 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.BrRTfvo3.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/DciI2oh6.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    imports = ["_app/immutable/nodes/0.CNktbrjS.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/By9RmFPS.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/FWvekpb6.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js"];
     stylesheets = ["_app/immutable/assets/0.CIFeZrgT.css"];
     fonts = [];
   }
@@ -47327,7 +47327,7 @@ var init__2 = __esm({
     "use strict";
     index3 = 1;
     component2 = /* @__PURE__ */ __name(async () => component_cache2 ??= (await Promise.resolve().then(() => (init_error_svelte(), error_svelte_exports))).default, "component");
-    imports2 = ["_app/immutable/nodes/1.CFXWDPtM.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js"];
+    imports2 = ["_app/immutable/nodes/1.6yG3ZcyC.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js"];
     stylesheets2 = [];
     fonts2 = [];
   }
@@ -47373,7 +47373,7 @@ var init__3 = __esm({
     "use strict";
     index4 = 2;
     component3 = /* @__PURE__ */ __name(async () => component_cache3 ??= (await Promise.resolve().then(() => (init_error_svelte2(), error_svelte_exports2))).default, "component");
-    imports3 = ["_app/immutable/nodes/2.BtLvuhcP.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js"];
+    imports3 = ["_app/immutable/nodes/2.CDgollbw.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js"];
     stylesheets3 = [];
     fonts3 = [];
   }
@@ -47634,7 +47634,7 @@ var init__4 = __esm({
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte(), page_svelte_exports))).default, "component");
     server_id2 = "src/routes/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.Da7z2Vma.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/W8_OUZDm.js"];
+    imports4 = ["_app/immutable/nodes/3.DWnLfmmh.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/B87q3Imq.js"];
     stylesheets4 = [];
     fonts4 = [];
   }
@@ -48454,7 +48454,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.P5Ta_u10.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BJp7Yl8a.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js"];
+    imports5 = ["_app/immutable/nodes/4.D3VZHMXt.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DlPuqcoy.js", "_app/immutable/chunks/B8Qk5jBb.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -51048,7 +51048,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.DvAE5uRV.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/Ba5-HeR1.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/BJp7Yl8a.js", "_app/immutable/chunks/D6yi91ex.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/DciI2oh6.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
+    imports6 = ["_app/immutable/nodes/5.ChipPWCZ.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/DwjJXDhP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/Dk8Yd-2s.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/FWvekpb6.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -51837,7 +51837,7 @@ var init__9 = __esm({
     index10 = 8;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports9 = ["_app/immutable/nodes/8.BwOCiXgU.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports9 = ["_app/immutable/nodes/8.CZZrqM-x.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/By9RmFPS.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets9 = [];
     fonts9 = [];
   }
@@ -51922,7 +51922,7 @@ var init__10 = __esm({
     index11 = 9;
     component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id8 = "src/routes/login/+page.server.ts";
-    imports10 = ["_app/immutable/nodes/9.C4aBPiOF.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CL0Rsr0s.js"];
+    imports10 = ["_app/immutable/nodes/9.C_JN8H6U.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/CL0Rsr0s.js"];
     stylesheets10 = [];
     fonts10 = [];
   }
@@ -51987,7 +51987,7 @@ var init__11 = __esm({
     index12 = 10;
     component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
     server_id9 = "src/routes/login/setup-2fa/+page.server.ts";
-    imports11 = ["_app/immutable/nodes/10.dJHHSTFl.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js"];
+    imports11 = ["_app/immutable/nodes/10.DMrvVJ7r.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js"];
     stylesheets11 = [];
     fonts11 = [];
   }
@@ -52054,7 +52054,7 @@ var init__12 = __esm({
     index13 = 11;
     component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
     server_id10 = "src/routes/login/verify/+page.server.ts";
-    imports12 = ["_app/immutable/nodes/11._Nj2-b-A.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js"];
+    imports12 = ["_app/immutable/nodes/11.0HWxZERk.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js"];
     stylesheets12 = [];
     fonts12 = [];
   }
@@ -52339,7 +52339,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id12 = "src/routes/p/[token]/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.Cl0dO8nr.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/Ba5-HeR1.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports14 = ["_app/immutable/nodes/13.BGsEn_TQ.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Dk8Yd-2s.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -53457,7 +53457,7 @@ var init__15 = __esm({
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id13 = "src/routes/posts/+page.server.ts";
-    imports15 = ["_app/immutable/nodes/14.CWHj8kO1.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/W8_OUZDm.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Ba5-HeR1.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/DciI2oh6.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    imports15 = ["_app/immutable/nodes/14.axH7H_ZT.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/B87q3Imq.js", "_app/immutable/chunks/DwjJXDhP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/Dk8Yd-2s.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/FWvekpb6.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -56955,7 +56955,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.27.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.27.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57079,7 +57079,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.B_ScvCAo.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/D6yi91ex.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    imports16 = ["_app/immutable/nodes/15.BDOepTu5.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -61229,7 +61229,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.27.0",
+          version: "1.27.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -61449,10 +61449,10 @@ var init_server_ts47 = __esm({
   }
 });
 
-// node_modules/@modelcontextprotocol/server/dist/chunk-Br0eD_fh.mjs
+// node_modules/@modelcontextprotocol/server/dist/chunk-vYduTEsO.mjs
 var __create, __defProp3, __getOwnPropDesc, __getOwnPropNames2, __getProtoOf, __hasOwnProp, __commonJSMin, __exportAll2, __copyProps, __toESM;
-var init_chunk_Br0eD_fh = __esm({
-  "node_modules/@modelcontextprotocol/server/dist/chunk-Br0eD_fh.mjs"() {
+var init_chunk_vYduTEsO = __esm({
+  "node_modules/@modelcontextprotocol/server/dist/chunk-vYduTEsO.mjs"() {
     __create = Object.create;
     __defProp3 = Object.defineProperty;
     __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -61494,7 +61494,7 @@ var init_chunk_Br0eD_fh = __esm({
   }
 });
 
-// node_modules/@modelcontextprotocol/server/dist/dialects-DoSzNhcb.mjs
+// node_modules/@modelcontextprotocol/server/dist/dialects-CDpMbily.mjs
 function declares2019Dialect($schema) {
   return typeof $schema === "string" && DRAFT_2019_09_URIS.has($schema.replace(/#$/, ""));
 }
@@ -61507,8 +61507,8 @@ function declaredDialect(schema, remedy) {
   throw new Error(`JSON Schema declares an unsupported dialect ("$schema": "${schema.$schema.slice(0, 200)}"). The default validator supports JSON Schema 2020-12, 2019-09, draft-07, and draft-06; ${remedy}`);
 }
 var DRAFT_2020_12_URIS, DRAFT_2019_09_URIS, DRAFT_07_URIS, DRAFT_06_URIS;
-var init_dialects_DoSzNhcb = __esm({
-  "node_modules/@modelcontextprotocol/server/dist/dialects-DoSzNhcb.mjs"() {
+var init_dialects_CDpMbily = __esm({
+  "node_modules/@modelcontextprotocol/server/dist/dialects-CDpMbily.mjs"() {
     DRAFT_2020_12_URIS = /* @__PURE__ */ new Set(["https://json-schema.org/draft/2020-12/schema", "http://json-schema.org/draft/2020-12/schema"]);
     DRAFT_2019_09_URIS = /* @__PURE__ */ new Set(["https://json-schema.org/draft/2019-09/schema", "http://json-schema.org/draft/2019-09/schema"]);
     DRAFT_07_URIS = /* @__PURE__ */ new Set(["https://json-schema.org/draft-07/schema", "http://json-schema.org/draft-07/schema"]);
@@ -61532,10 +61532,10 @@ var init_v4 = __esm({
   }
 });
 
-// node_modules/@modelcontextprotocol/core/dist/auth-BNDyLTqp.mjs
-var LATEST_PROTOCOL_VERSION, DEFAULT_NEGOTIATED_PROTOCOL_VERSION, SUPPORTED_PROTOCOL_VERSIONS, RELATED_TASK_META_KEY, PROTOCOL_VERSION_META_KEY, CLIENT_INFO_META_KEY, SERVER_INFO_META_KEY, CLIENT_CAPABILITIES_META_KEY, SUBSCRIPTION_ID_META_KEY, LOG_LEVEL_META_KEY, JSONRPC_VERSION, JSONValueSchema, JSONObjectSchema, JSONArraySchema, ProgressTokenSchema, CursorSchema, TaskMetadataSchema, RelatedTaskMetadataSchema, RequestMetaSchema, BaseRequestParamsSchema, TaskAugmentedRequestParamsSchema, RequestSchema, NotificationsParamsSchema, NotificationSchema, ResultMetaObjectSchema, ResultSchema, RequestIdSchema, JSONRPCRequestSchema, JSONRPCNotificationSchema, JSONRPCResultResponseSchema, JSONRPCErrorResponseSchema, JSONRPCMessageSchema, JSONRPCResponseSchema, EmptyResultSchema, CancelledNotificationParamsSchema, CancelledNotificationSchema, IconSchema, IconsSchema, BaseMetadataSchema, ImplementationSchema, FormElicitationCapabilitySchema, ElicitationCapabilitySchema, ClientTasksCapabilitySchema, ServerTasksCapabilitySchema, ClientCapabilitiesSchema, InitializeRequestParamsSchema, InitializeRequestSchema, ServerCapabilitiesSchema, InitializeResultSchema, InitializedNotificationSchema, DiscoverRequestSchema, DiscoverResultSchema, PingRequestSchema, ProgressSchema, ProgressNotificationParamsSchema, ProgressNotificationSchema, PaginatedRequestParamsSchema, PaginatedRequestSchema, PaginatedResultSchema, ResourceContentsSchema, TextResourceContentsSchema, Base64Schema, BlobResourceContentsSchema, RoleSchema, AnnotationsSchema, ResourceSchema, ResourceTemplateSchema, ListResourcesRequestSchema, ListResourcesResultSchema, ListResourceTemplatesRequestSchema, ListResourceTemplatesResultSchema, ResourceRequestParamsSchema, ReadResourceRequestParamsSchema, ReadResourceRequestSchema, ReadResourceResultSchema, ResourceListChangedNotificationSchema, SubscribeRequestParamsSchema, SubscribeRequestSchema, UnsubscribeRequestParamsSchema, UnsubscribeRequestSchema, SubscriptionFilterSchema, SubscriptionsListenRequestParamsSchema, SubscriptionsListenRequestSchema, SubscriptionsAcknowledgedNotificationParamsSchema, SubscriptionsAcknowledgedNotificationSchema, SubscriptionsListenResultMetaSchema, SubscriptionsListenResultSchema, ResourceUpdatedNotificationParamsSchema, ResourceUpdatedNotificationSchema, PromptArgumentSchema, PromptSchema, ListPromptsRequestSchema, ListPromptsResultSchema, GetPromptRequestParamsSchema, GetPromptRequestSchema, TextContentSchema, ImageContentSchema, AudioContentSchema, ToolUseContentSchema, EmbeddedResourceSchema, ResourceLinkSchema, ContentBlockSchema, PromptMessageSchema, GetPromptResultSchema, PromptListChangedNotificationSchema, ToolAnnotationsSchema, ToolExecutionSchema, ToolSchema, ListToolsRequestSchema, ListToolsResultSchema, CallToolResultSchema, CompatibilityCallToolResultSchema, CallToolRequestParamsSchema, CallToolRequestSchema, ToolListChangedNotificationSchema, ListChangedOptionsBaseSchema, LoggingLevelSchema, SetLevelRequestParamsSchema, SetLevelRequestSchema, LoggingMessageNotificationParamsSchema, LoggingMessageNotificationSchema, ModelHintSchema, ModelPreferencesSchema, ToolChoiceSchema, ToolResultContentSchema, SamplingContentSchema, SamplingMessageContentBlockSchema, SamplingMessageSchema, CreateMessageRequestParamsSchema, CreateMessageRequestSchema, CreateMessageResultSchema, CreateMessageResultWithToolsSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema, LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema, EnumSchemaSchema, PrimitiveSchemaDefinitionSchema, ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema, ElicitRequestParamsSchema, ElicitRequestSchema, ElicitationCompleteNotificationParamsSchema, ElicitationCompleteNotificationSchema, ElicitResultSchema, ResourceTemplateReferenceSchema, PromptReferenceSchema, CompleteRequestParamsSchema, CompleteRequestSchema, CompleteResultSchema, RootSchema, ListRootsRequestSchema, ListRootsResultSchema, RootsListChangedNotificationSchema, TaskCreationParamsSchema, TaskStatusSchema, TaskSchema, CreateTaskResultSchema, TaskStatusNotificationParamsSchema, TaskStatusNotificationSchema, GetTaskRequestSchema, GetTaskResultSchema, GetTaskPayloadRequestSchema, GetTaskPayloadResultSchema, ListTasksRequestSchema, ListTasksResultSchema, CancelTaskRequestSchema, CancelTaskResultSchema, ClientRequestSchema, ClientNotificationSchema, ClientResultSchema, ServerRequestSchema, ServerNotificationSchema, ServerResultSchema, SafeUrlSchema, OAuthProtectedResourceMetadataSchema, OAuthMetadataSchema, OpenIdProviderMetadataSchema, OpenIdProviderDiscoveryMetadataSchema, OAuthTokensSchema, IdJagTokenExchangeResponseSchema, OAuthErrorResponseSchema, OptionalSafeUrlSchema, OAuthClientMetadataSchema, OAuthClientInformationSchema, OAuthClientInformationFullSchema, OAuthClientRegistrationErrorSchema, OAuthTokenRevocationRequestSchema;
-var init_auth_BNDyLTqp = __esm({
-  "node_modules/@modelcontextprotocol/core/dist/auth-BNDyLTqp.mjs"() {
+// node_modules/@modelcontextprotocol/core/dist/schemas-DscsoNZN.mjs
+var LATEST_PROTOCOL_VERSION, DEFAULT_NEGOTIATED_PROTOCOL_VERSION, SUPPORTED_PROTOCOL_VERSIONS, RELATED_TASK_META_KEY, PROTOCOL_VERSION_META_KEY, CLIENT_INFO_META_KEY, SERVER_INFO_META_KEY, CLIENT_CAPABILITIES_META_KEY, SUBSCRIPTION_ID_META_KEY, LOG_LEVEL_META_KEY, JSONRPC_VERSION, JSONValueSchema, JSONObjectSchema, JSONArraySchema, ProgressTokenSchema, CursorSchema, TaskMetadataSchema, RelatedTaskMetadataSchema, RequestMetaSchema, BaseRequestParamsSchema, TaskAugmentedRequestParamsSchema, RequestSchema, NotificationsParamsSchema, NotificationSchema, ResultMetaObjectSchema, ResultSchema, RequestIdSchema, JSONRPCRequestSchema, JSONRPCNotificationSchema, JSONRPCResultResponseSchema, JSONRPCErrorResponseSchema, JSONRPCMessageSchema, JSONRPCResponseSchema, EmptyResultSchema, CancelledNotificationParamsSchema, CancelledNotificationSchema, IconSchema, IconsSchema, BaseMetadataSchema, ImplementationSchema, FormElicitationCapabilitySchema, ElicitationCapabilitySchema, ClientTasksCapabilitySchema, ServerTasksCapabilitySchema, ClientCapabilitiesSchema, InitializeRequestParamsSchema, InitializeRequestSchema, ServerCapabilitiesSchema, InitializeResultSchema, InitializedNotificationSchema, DiscoverRequestSchema, DiscoverResultSchema, PingRequestSchema, ProgressSchema, ProgressNotificationParamsSchema, ProgressNotificationSchema, PaginatedRequestParamsSchema, PaginatedRequestSchema, PaginatedResultSchema, ResourceContentsSchema, TextResourceContentsSchema, Base64Schema, BlobResourceContentsSchema, RoleSchema, AnnotationsSchema, ResourceSchema, ResourceTemplateSchema, ListResourcesRequestSchema, ListResourcesResultSchema, ListResourceTemplatesRequestSchema, ListResourceTemplatesResultSchema, ResourceRequestParamsSchema, ReadResourceRequestParamsSchema, ReadResourceRequestSchema, ReadResourceResultSchema, ResourceListChangedNotificationSchema, SubscribeRequestParamsSchema, SubscribeRequestSchema, UnsubscribeRequestParamsSchema, UnsubscribeRequestSchema, SubscriptionFilterSchema, SubscriptionsListenRequestParamsSchema, SubscriptionsListenRequestSchema, SubscriptionsAcknowledgedNotificationParamsSchema, SubscriptionsAcknowledgedNotificationSchema, SubscriptionsListenResultMetaSchema, SubscriptionsListenResultSchema, ResourceUpdatedNotificationParamsSchema, ResourceUpdatedNotificationSchema, PromptArgumentSchema, PromptSchema, ListPromptsRequestSchema, ListPromptsResultSchema, GetPromptRequestParamsSchema, GetPromptRequestSchema, TextContentSchema, ImageContentSchema, AudioContentSchema, ToolUseContentSchema, EmbeddedResourceSchema, ResourceLinkSchema, ContentBlockSchema, PromptMessageSchema, GetPromptResultSchema, PromptListChangedNotificationSchema, ToolAnnotationsSchema, ToolExecutionSchema, ToolSchema, ListToolsRequestSchema, ListToolsResultSchema, CallToolResultSchema, CompatibilityCallToolResultSchema, CallToolRequestParamsSchema, CallToolRequestSchema, ToolListChangedNotificationSchema, ListChangedOptionsBaseSchema, LoggingLevelSchema, SetLevelRequestParamsSchema, SetLevelRequestSchema, LoggingMessageNotificationParamsSchema, LoggingMessageNotificationSchema, ModelHintSchema, ModelPreferencesSchema, ToolChoiceSchema, ToolResultContentSchema, SamplingContentSchema, SamplingMessageContentBlockSchema, SamplingMessageSchema, CreateMessageRequestParamsSchema, CreateMessageRequestSchema, CreateMessageResultSchema, CreateMessageResultWithToolsSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema, LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema, EnumSchemaSchema, PrimitiveSchemaDefinitionSchema, ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema, ElicitRequestParamsSchema, ElicitRequestSchema, ElicitationCompleteNotificationParamsSchema, ElicitationCompleteNotificationSchema, ElicitResultSchema, ResourceTemplateReferenceSchema, PromptReferenceSchema, CompleteRequestParamsSchema, CompleteRequestSchema, CompleteResultSchema, RootSchema, ListRootsRequestSchema, ListRootsResultSchema, RootsListChangedNotificationSchema, TaskCreationParamsSchema, TaskStatusSchema, TaskSchema, CreateTaskResultSchema, TaskStatusNotificationParamsSchema, TaskStatusNotificationSchema, GetTaskRequestSchema, GetTaskResultSchema, GetTaskPayloadRequestSchema, GetTaskPayloadResultSchema, ListTasksRequestSchema, ListTasksResultSchema, CancelTaskRequestSchema, CancelTaskResultSchema, ClientRequestSchema, ClientNotificationSchema, ClientResultSchema, ServerRequestSchema, ServerNotificationSchema, ServerResultSchema;
+var init_schemas_DscsoNZN = __esm({
+  "node_modules/@modelcontextprotocol/core/dist/schemas-DscsoNZN.mjs"() {
     init_v4();
     LATEST_PROTOCOL_VERSION = "2025-11-25";
     DEFAULT_NEGOTIATED_PROTOCOL_VERSION = "2025-03-26";
@@ -62325,6 +62325,14 @@ var init_auth_BNDyLTqp = __esm({
       ListToolsResultSchema,
       SubscriptionsListenResultSchema
     ]);
+  }
+});
+
+// node_modules/@modelcontextprotocol/core/dist/auth-UMQCo-ad.mjs
+var SafeUrlSchema, OAuthProtectedResourceMetadataSchema, OAuthMetadataSchema, OpenIdProviderMetadataSchema, OpenIdProviderDiscoveryMetadataSchema, OAuthTokensSchema, IdJagTokenExchangeResponseSchema, OAuthErrorResponseSchema, OptionalSafeUrlSchema, OAuthClientMetadataSchema, OAuthClientInformationSchema, OAuthClientInformationFullSchema, OAuthClientRegistrationErrorSchema, OAuthTokenRevocationRequestSchema;
+var init_auth_UMQCo_ad = __esm({
+  "node_modules/@modelcontextprotocol/core/dist/auth-UMQCo-ad.mjs"() {
+    init_v4();
     SafeUrlSchema = url().superRefine((val, ctx) => {
       if (!URL.canParse(val)) {
         ctx.addIssue({
@@ -62483,11 +62491,12 @@ var init_auth_BNDyLTqp = __esm({
 // node_modules/@modelcontextprotocol/core/dist/internal.mjs
 var init_internal3 = __esm({
   "node_modules/@modelcontextprotocol/core/dist/internal.mjs"() {
-    init_auth_BNDyLTqp();
+    init_schemas_DscsoNZN();
+    init_auth_UMQCo_ad();
   }
 });
 
-// node_modules/@modelcontextprotocol/server/dist/src-Cqbh3MYc.mjs
+// node_modules/@modelcontextprotocol/server/dist/src-DdvbAHrR.mjs
 function stampErrorBrands(instance, ctor) {
   const brands = /* @__PURE__ */ new Set();
   let current = ctor;
@@ -64734,6 +64743,7 @@ function assertCompleteRequestResourceTemplate(request2) {
 function scanXMcpHeaderDeclarations(inputSchema) {
   const declarations = [];
   const seenLower = /* @__PURE__ */ new Map();
+  let numberFault;
   const visit2 = /* @__PURE__ */ __name((node2, path3, reachable) => {
     if (node2 === null || typeof node2 !== "object") return void 0;
     const schema = node2;
@@ -64743,7 +64753,11 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (typeof raw !== "string" || raw.length === 0) return `${pathName(path3)}: x-mcp-header MUST be a non-empty string`;
       if (!RFC9110_TOKEN.test(raw)) return `${pathName(path3)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
       const type = typeof schema.type === "string" ? schema.type : void 0;
-      if (type === void 0 || !PERMITTED_X_MCP_HEADER_TYPES.has(type)) return `${pathName(path3)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
+      if (type === void 0 || !PERMITTED_X_MCP_HEADER_TYPES.has(type)) {
+        const fault$1 = `${pathName(path3)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
+        if (type !== "number") return fault$1;
+        numberFault ??= fault$1;
+      }
       const lower = raw.toLowerCase();
       const prior = seenLower.get(lower);
       if (prior !== void 0) return `x-mcp-header '${raw}' is not case-insensitively unique (also declared as '${prior}')`;
@@ -64770,12 +64784,17 @@ function scanXMcpHeaderDeclarations(inputSchema) {
     }
   }, "visit");
   const fault = visit2(inputSchema, [], true);
-  return fault === void 0 ? {
+  if (fault !== void 0) return {
+    valid: false,
+    reason: numberFault ?? fault
+  };
+  return numberFault === void 0 ? {
     valid: true,
     declarations
   } : {
     valid: false,
-    reason: fault
+    reason: numberFault,
+    declarations
   };
 }
 function pathName(path3) {
@@ -65102,15 +65121,17 @@ function standardSchemaToJsonSchema(schema, io = "input") {
     ...result
   };
 }
-function isProvablyObjectShapedRoot(schema) {
+function isProvablyObjectShapedRoot(schema, root = schema) {
   if ("properties" in schema || "patternProperties" in schema || "additionalProperties" in schema || "required" in schema) return true;
+  const ref = typeof schema.$ref === "string" && LOCAL_DEFINITION_REF.exec(schema.$ref);
+  if (ref && root[ref[1]]?.[ref[2]]?.type === "object") return true;
   for (const key of [
     "oneOf",
     "anyOf",
     "allOf"
   ]) {
     const members2 = schema[key];
-    if (Array.isArray(members2) && members2.length > 0) return members2.every((m) => m !== null && typeof m === "object" && (m.type === "object" || isProvablyObjectShapedRoot(m)));
+    if (Array.isArray(members2) && members2.length > 0) return members2.every((m) => m !== null && typeof m === "object" && (m.type === "object" || isProvablyObjectShapedRoot(m, "$id" in m ? {} : root)));
   }
   return false;
 }
@@ -65504,11 +65525,11 @@ function preloadSchemas() {
   warmInputSchemaMaps2026();
   warmWireResultSchemas2026();
 }
-var BRANDS, OAuthErrorCode, OAuthError, SdkErrorCode, SdkError, SdkHttpError, REQUIRED_CLIENT_CAPABILITIES_BY_METHOD, FIRST_MODERN_PROTOCOL_VERSION, SUPPORTED_MODERN_PROTOCOL_VERSIONS, TOOL_RESULT_FOREIGN_FAMILY_KEYS, memo$1, REF_REWRITE_DATA_POSITION_KEYS, REF_REWRITE_NAME_MAP_KEYS, requestMethodKeys$1, notificationMethodKeys$1, resultMethodKeys, maps$1, rev2025RequestMethods, rev2025NotificationMethods, NOT_IN_ERA$1, rev2025Codec, memo2, CACHEABLE_RESULT_METHODS, RESULT_CACHE_HINT_FALLBACK, ProtocolErrorCode, ProtocolError, ResourceNotFoundError, UrlElicitationRequiredError, UnsupportedProtocolVersionError, MissingRequiredClientCapabilityError, DEFAULT_CACHE_TTL_MS, DEFAULT_CACHE_SCOPE, EXTENDED_RESULT_TYPE_METHODS, INPUT_REQUEST_METHODS_2026, maps, requestMethodKeys, notificationMethodKeys, rev2026RequestMethods, rev2026NotificationMethods, NOT_IN_ERA, REQUIRED_ENVELOPE_KEYS, rev2026Codec, wireResultSchemasMemo, MODERN_WIRE_REVISION, ALL_CODECS, schemas_exports3, isJSONRPCRequest, isJSONRPCNotification, isJSONRPCResultResponse, isJSONRPCErrorResponse, isInputRequiredResult, isInitializeRequest, MCP_PARAM_HEADER_PREFIX, X_MCP_HEADER_KEY, RFC9110_TOKEN, PERMITTED_X_MCP_HEADER_TYPES, NON_REACHABLE_SUBSCHEMA_KEYWORDS, OBJECT_VALUED_SUBSCHEMA_KEYWORDS, BASE64_SENTINEL_PREFIX, BASE64_SENTINEL_SUFFIX, BASE64_CANONICAL, CANONICAL_DECIMAL, HEADER_MISMATCH_ERROR_CODE, INBOUND_VALIDATION_LADDER, LADDER_ERROR_HTTP_STATUS, MCP_NAME_HEADER_SOURCE, warnedZodFallback, JSON_SCHEMA_CONVERSION_TARGET, DATETIME_FRACTION_DIGITS, ANNOTATION_ONLY_JSON_SCHEMA_KEYWORDS, ROOT_KEYS, PROPERTY_KEYS_BY_TYPE, SUPPORTED_STRING_FORMATS, inputRequired, REQUEST_STATE_ONLY_LEG_PACING_MS, SPEC_SCHEMA_KEYS, authSchemas, _specTypeSchemas, _isSpecType, specTypeSchemas, isSpecType, DEFAULT_REQUEST_TIMEOUT_MSEC, RESERVED_ENVELOPE_META_KEYS, RETRY_PARAMS_KEYS, NO_REQUEST_STATE, writeNegotiatedProtocolVersion, Protocol, require_content_type, import_content_type, STDIO_DEFAULT_MAX_BUFFER_SIZE, TOOL_NAME_REGEX;
-var init_src_Cqbh3MYc = __esm({
-  "node_modules/@modelcontextprotocol/server/dist/src-Cqbh3MYc.mjs"() {
-    init_chunk_Br0eD_fh();
-    init_dialects_DoSzNhcb();
+var BRANDS, OAuthErrorCode, OAuthError, SdkErrorCode, SdkError, SdkHttpError, REQUIRED_CLIENT_CAPABILITIES_BY_METHOD, FIRST_MODERN_PROTOCOL_VERSION, SUPPORTED_MODERN_PROTOCOL_VERSIONS, TOOL_RESULT_FOREIGN_FAMILY_KEYS, memo$1, REF_REWRITE_DATA_POSITION_KEYS, REF_REWRITE_NAME_MAP_KEYS, requestMethodKeys$1, notificationMethodKeys$1, resultMethodKeys, maps$1, rev2025RequestMethods, rev2025NotificationMethods, NOT_IN_ERA$1, rev2025Codec, memo2, CACHEABLE_RESULT_METHODS, RESULT_CACHE_HINT_FALLBACK, ProtocolErrorCode, ProtocolError, ResourceNotFoundError, UrlElicitationRequiredError, UnsupportedProtocolVersionError, MissingRequiredClientCapabilityError, DEFAULT_CACHE_TTL_MS, DEFAULT_CACHE_SCOPE, EXTENDED_RESULT_TYPE_METHODS, INPUT_REQUEST_METHODS_2026, maps, requestMethodKeys, notificationMethodKeys, rev2026RequestMethods, rev2026NotificationMethods, NOT_IN_ERA, REQUIRED_ENVELOPE_KEYS, rev2026Codec, wireResultSchemasMemo, MODERN_WIRE_REVISION, ALL_CODECS, schemas_exports3, isJSONRPCRequest, isJSONRPCNotification, isJSONRPCResultResponse, isJSONRPCErrorResponse, isInputRequiredResult, isInitializeRequest, MCP_PARAM_HEADER_PREFIX, X_MCP_HEADER_KEY, RFC9110_TOKEN, PERMITTED_X_MCP_HEADER_TYPES, NON_REACHABLE_SUBSCHEMA_KEYWORDS, OBJECT_VALUED_SUBSCHEMA_KEYWORDS, BASE64_SENTINEL_PREFIX, BASE64_SENTINEL_SUFFIX, BASE64_CANONICAL, CANONICAL_DECIMAL, HEADER_MISMATCH_ERROR_CODE, INBOUND_VALIDATION_LADDER, LADDER_ERROR_HTTP_STATUS, MCP_NAME_HEADER_SOURCE, warnedZodFallback, JSON_SCHEMA_CONVERSION_TARGET, LOCAL_DEFINITION_REF, DATETIME_FRACTION_DIGITS, ANNOTATION_ONLY_JSON_SCHEMA_KEYWORDS, ROOT_KEYS, PROPERTY_KEYS_BY_TYPE, SUPPORTED_STRING_FORMATS, inputRequired, REQUEST_STATE_ONLY_LEG_PACING_MS, SPEC_SCHEMA_KEYS, authSchemas, _specTypeSchemas, _isSpecType, specTypeSchemas, isSpecType, DEFAULT_REQUEST_TIMEOUT_MSEC, RESERVED_ENVELOPE_META_KEYS, RETRY_PARAMS_KEYS, NO_REQUEST_STATE, writeNegotiatedProtocolVersion, Protocol, require_content_type, import_content_type, STDIO_DEFAULT_MAX_BUFFER_SIZE, TOOL_NAME_REGEX;
+var init_src_DdvbAHrR = __esm({
+  "node_modules/@modelcontextprotocol/server/dist/src-DdvbAHrR.mjs"() {
+    init_chunk_vYduTEsO();
+    init_dialects_CDpMbily();
     init_internal3();
     init_v4();
     BRANDS = /* @__PURE__ */ Symbol.for("mcp.sdk.errorBrands");
@@ -66359,8 +66380,7 @@ var init_src_Cqbh3MYc = __esm({
     PERMITTED_X_MCP_HEADER_TYPES = /* @__PURE__ */ new Set([
       "string",
       "integer",
-      "boolean",
-      "number"
+      "boolean"
     ]);
     __name(scanXMcpHeaderDeclarations, "scanXMcpHeaderDeclarations");
     NON_REACHABLE_SUBSCHEMA_KEYWORDS = [
@@ -66515,6 +66535,7 @@ var init_src_Cqbh3MYc = __esm({
     warnedZodFallback = false;
     JSON_SCHEMA_CONVERSION_TARGET = "draft-2020-12";
     __name(standardSchemaToJsonSchema, "standardSchemaToJsonSchema");
+    LOCAL_DEFINITION_REF = /^#\/(\$defs|definitions)\/([^/~%]+)$/;
     __name(isProvablyObjectShapedRoot, "isProvablyObjectShapedRoot");
     __name(formatIssue, "formatIssue");
     __name(validateStandardSchema, "validateStandardSchema");
@@ -67597,7 +67618,7 @@ var init_src_Cqbh3MYc = __esm({
   }
 });
 
-// node_modules/@modelcontextprotocol/server/dist/cfWorkerProvider-p3WaZPqB.mjs
+// node_modules/@modelcontextprotocol/server/dist/cfWorkerProvider-hgYAfIZf.mjs
 function deepCompareStrict(a, b) {
   const typeofa = typeof a;
   if (typeofa !== typeof b) return false;
@@ -68342,9 +68363,9 @@ Known schemas:
   };
 }
 var schemaArrayKeyword, schemaMapKeyword, ignoredKeyword, initialBaseURI, DATE, DAYS, TIME, HOSTNAME, URIREF, URITEMPLATE, URL_, UUID, JSON_POINTER, JSON_POINTER_URI_FRAGMENT, RELATIVE_JSON_POINTER, EMAIL, IPV4, IPV6, DURATION, format, DATE_TIME_SEPARATOR, NOT_URI_FRAGMENT, URI_PATTERN, Z_ANCHOR, Validator, CfWorkerJsonSchemaValidator;
-var init_cfWorkerProvider_p3WaZPqB = __esm({
-  "node_modules/@modelcontextprotocol/server/dist/cfWorkerProvider-p3WaZPqB.mjs"() {
-    init_dialects_DoSzNhcb();
+var init_cfWorkerProvider_hgYAfIZf = __esm({
+  "node_modules/@modelcontextprotocol/server/dist/cfWorkerProvider-hgYAfIZf.mjs"() {
+    init_dialects_CDpMbily();
     __name(deepCompareStrict, "deepCompareStrict");
     __name(encodePointer, "encodePointer");
     __name(escapePointer, "escapePointer");
@@ -68544,13 +68565,13 @@ var init_cfWorkerProvider_p3WaZPqB = __esm({
 // node_modules/@modelcontextprotocol/server/dist/shimsWorkerd.mjs
 var init_shimsWorkerd = __esm({
   "node_modules/@modelcontextprotocol/server/dist/shimsWorkerd.mjs"() {
-    init_src_Cqbh3MYc();
-    init_cfWorkerProvider_p3WaZPqB();
+    init_src_DdvbAHrR();
+    init_cfWorkerProvider_hgYAfIZf();
     preloadSchemas();
   }
 });
 
-// node_modules/@modelcontextprotocol/server/dist/mcp-DIH4cS6P.mjs
+// node_modules/@modelcontextprotocol/server/dist/mcp-oHn3ureC.mjs
 function isCompletable(schema) {
   return !!schema && typeof schema === "object" && COMPLETABLE_SYMBOL in schema;
 }
@@ -68563,197 +68584,8 @@ function armSseKeepAlive(intervalMs, onTick) {
   timer2.unref?.();
   return timer2;
 }
-function createServerNotifier(bus) {
-  return {
-    toolsChanged: /* @__PURE__ */ __name(() => bus.publish({ kind: "tools_list_changed" }), "toolsChanged"),
-    promptsChanged: /* @__PURE__ */ __name(() => bus.publish({ kind: "prompts_list_changed" }), "promptsChanged"),
-    resourcesChanged: /* @__PURE__ */ __name(() => bus.publish({ kind: "resources_list_changed" }), "resourcesChanged"),
-    resourceUpdated: /* @__PURE__ */ __name((uri2) => bus.publish({
-      kind: "resource_updated",
-      uri: uri2
-    }), "resourceUpdated")
-  };
-}
-function listenFilterAccepts(filter, event) {
-  switch (event.kind) {
-    case "tools_list_changed":
-      return filter.toolsListChanged === true;
-    case "prompts_list_changed":
-      return filter.promptsListChanged === true;
-    case "resources_list_changed":
-      return filter.resourcesListChanged === true;
-    case "resource_updated":
-      return filter.resourceSubscriptions !== void 0 && filter.resourceSubscriptions.includes(event.uri);
-  }
-}
-function honoredSubset(requested, capabilities) {
-  const honored = {};
-  const allow = /* @__PURE__ */ __name((bit) => capabilities === void 0 || bit === true, "allow");
-  if (requested.toolsListChanged === true && allow(capabilities?.tools?.listChanged)) honored.toolsListChanged = true;
-  if (requested.promptsListChanged === true && allow(capabilities?.prompts?.listChanged)) honored.promptsListChanged = true;
-  if (requested.resourcesListChanged === true && allow(capabilities?.resources?.listChanged)) honored.resourcesListChanged = true;
-  if (requested.resourceSubscriptions !== void 0 && requested.resourceSubscriptions.length > 0 && allow(capabilities?.resources?.subscribe)) honored.resourceSubscriptions = [...requested.resourceSubscriptions];
-  return honored;
-}
-function serverEventToNotification(event) {
-  switch (event.kind) {
-    case "tools_list_changed":
-      return { method: "notifications/tools/list_changed" };
-    case "prompts_list_changed":
-      return { method: "notifications/prompts/list_changed" };
-    case "resources_list_changed":
-      return { method: "notifications/resources/list_changed" };
-    case "resource_updated":
-      return {
-        method: "notifications/resources/updated",
-        params: { uri: event.uri }
-      };
-  }
-}
-function jsonRpcError(id2, code, message) {
-  return Response.json({
-    jsonrpc: "2.0",
-    error: {
-      code,
-      message
-    },
-    id: id2
-  }, { status: 200 });
-}
-function stampSubscriptionId(notification, subscriptionId) {
-  return {
-    method: notification.method,
-    params: {
-      ...notification.params,
-      _meta: {
-        ...notification.params?._meta,
-        [SUBSCRIPTION_ID_META_KEY]: subscriptionId
-      }
-    }
-  };
-}
-function parseListenFilter(message) {
-  const outcome = codecForVersion(MODERN_WIRE_REVISION).validateRequest("subscriptions/listen", message);
-  return outcome.ok ? outcome.value.params?.notifications : void 0;
-}
-function createListenRouter(options2) {
-  const { bus, onerror } = options2;
-  const maxSubscriptions = options2.maxSubscriptions ?? DEFAULT_MAX_SUBSCRIPTIONS;
-  const keepAliveMs = options2.keepAliveMs ?? DEFAULT_SSE_KEEP_ALIVE_MS;
-  const open2 = /* @__PURE__ */ new Set();
-  function serve(message, signal, capabilities, serverInfo) {
-    if (open2.size >= maxSubscriptions) {
-      onerror?.(/* @__PURE__ */ new Error(`subscriptions/listen refused: subscription limit reached (${maxSubscriptions})`));
-      return jsonRpcError(message.id, -32603, "Subscription limit reached");
-    }
-    const filter = parseListenFilter(message);
-    if (filter === void 0) return jsonRpcError(message.id, -32602, "Invalid params: 'notifications' is required and must be a valid SubscriptionFilter");
-    const honored = honoredSubset(filter, capabilities);
-    const subscriptionId = message.id;
-    const encoder2 = new TextEncoder();
-    let controller;
-    let closed = false;
-    let unsubscribe;
-    let keepAliveTimer;
-    let abortCleanup;
-    const writeFrame = /* @__PURE__ */ __name((frame) => {
-      if (closed) return;
-      try {
-        controller.enqueue(encoder2.encode(frame));
-      } catch (error63) {
-        onerror?.(error63 instanceof Error ? error63 : new Error(String(error63)));
-      }
-    }, "writeFrame");
-    const writeNotification = /* @__PURE__ */ __name((method, params) => {
-      writeFrame(`event: message
-data: ${JSON.stringify({
-        jsonrpc: "2.0",
-        method,
-        params
-      })}
-
-`);
-    }, "writeNotification");
-    const teardown = /* @__PURE__ */ __name((graceful) => {
-      if (closed) return;
-      if (graceful) writeFrame(`event: message
-data: ${JSON.stringify({
-        jsonrpc: "2.0",
-        id: subscriptionId,
-        result: {
-          resultType: "complete",
-          _meta: {
-            [SUBSCRIPTION_ID_META_KEY]: subscriptionId,
-            [SERVER_INFO_META_KEY]: serverInfo
-          }
-        }
-      })}
-
-`);
-      closed = true;
-      try {
-        unsubscribe?.();
-      } catch (error63) {
-        onerror?.(error63 instanceof Error ? error63 : new Error(String(error63)));
-      }
-      if (keepAliveTimer !== void 0) clearInterval(keepAliveTimer);
-      abortCleanup?.();
-      open2.delete(teardown);
-      try {
-        controller.close();
-      } catch {
-      }
-    }, "teardown");
-    const readable = new ReadableStream({
-      start(streamController) {
-        controller = streamController;
-        const ack = stampSubscriptionId({
-          method: "notifications/subscriptions/acknowledged",
-          params: { notifications: honored }
-        }, subscriptionId);
-        writeNotification(ack.method, ack.params);
-        if (Object.keys(honored).length === 0) {
-          teardown(true);
-          return;
-        }
-        unsubscribe = bus.subscribe((event) => {
-          if (closed || !listenFilterAccepts(honored, event)) return;
-          const note = stampSubscriptionId(serverEventToNotification(event), subscriptionId);
-          writeNotification(note.method, note.params);
-        });
-        keepAliveTimer = armSseKeepAlive(keepAliveMs, () => writeFrame(": keepalive\n\n"));
-        open2.add(teardown);
-      },
-      cancel() {
-        teardown(false);
-      }
-    });
-    if (signal !== void 0) if (signal.aborted) teardown(false);
-    else {
-      const onAbort = /* @__PURE__ */ __name(() => teardown(false), "onAbort");
-      signal.addEventListener("abort", onAbort, { once: true });
-      abortCleanup = /* @__PURE__ */ __name(() => signal.removeEventListener("abort", onAbort), "abortCleanup");
-    }
-    return new Response(readable, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-        "X-Accel-Buffering": "no"
-      }
-    });
-  }
-  __name(serve, "serve");
-  return {
-    serve,
-    closeAll() {
-      for (const teardown of open2) teardown(true);
-    },
-    get openCount() {
-      return open2.size;
-    }
-  };
+function perRequestClassificationOf(transport) {
+  return transport instanceof PerRequestHTTPServerTransport ? readClassification(transport) : void 0;
 }
 function headerQuotedValue(value) {
   return value.replaceAll(/[\\"]/g, String.raw`\$&`).replaceAll(/[^\u0020-\u007E]/g, " ");
@@ -68966,10 +68798,10 @@ function unwrapOptionalSchema(schema) {
   if (!isOptionalSchema(schema)) return schema;
   return schema.def?.innerType ?? schema;
 }
-var COMPLETABLE_SYMBOL, DEFAULT_SSE_KEEP_ALIVE_MS, MAX_TIMER_DELAY_MS, InMemoryServerEventBus, DEFAULT_MAX_SUBSCRIPTIONS, DEFAULT_LEGACY_SHIM_MAX_ROUNDS, DEFAULT_LEGACY_SHIM_ROUND_TIMEOUT_MS, LegacyInputRequiredShim, INPUT_REQUIRED_CAPABLE_METHODS, writeClientIdentity, installDiscoverHandler, readServerIdentity, Server, McpServer, EMPTY_OBJECT_JSON_SCHEMA, EMPTY_COMPLETION_RESULT;
-var init_mcp_DIH4cS6P = __esm({
-  "node_modules/@modelcontextprotocol/server/dist/mcp-DIH4cS6P.mjs"() {
-    init_src_Cqbh3MYc();
+var COMPLETABLE_SYMBOL, DEFAULT_SSE_KEEP_ALIVE_MS, MAX_TIMER_DELAY_MS, readClassification, PerRequestHTTPServerTransport, DEFAULT_LEGACY_SHIM_MAX_ROUNDS, DEFAULT_LEGACY_SHIM_ROUND_TIMEOUT_MS, LegacyInputRequiredShim, INPUT_REQUIRED_CAPABLE_METHODS, writeClientIdentity, installDiscoverHandler, readServerIdentity, Server, McpServer, EMPTY_OBJECT_JSON_SCHEMA, EMPTY_COMPLETION_RESULT;
+var init_mcp_oHn3ureC = __esm({
+  "node_modules/@modelcontextprotocol/server/dist/mcp-oHn3ureC.mjs"() {
+    init_src_DdvbAHrR();
     init_shimsWorkerd();
     COMPLETABLE_SYMBOL = /* @__PURE__ */ Symbol.for("mcp.completable");
     __name(isCompletable, "isCompletable");
@@ -68977,48 +68809,228 @@ var init_mcp_DIH4cS6P = __esm({
     DEFAULT_SSE_KEEP_ALIVE_MS = 15e3;
     MAX_TIMER_DELAY_MS = 2 ** 31 - 1;
     __name(armSseKeepAlive, "armSseKeepAlive");
-    InMemoryServerEventBus = class {
+    PerRequestHTTPServerTransport = class {
       static {
-        __name(this, "InMemoryServerEventBus");
+        __name(this, "PerRequestHTTPServerTransport");
       }
-      _listeners = /* @__PURE__ */ new Set();
+      static {
+        readClassification = /* @__PURE__ */ __name((transport) => transport._classification, "readClassification");
+      }
+      onclose;
+      onerror;
+      onmessage;
+      _classification;
+      _responseMode;
+      _started = false;
+      _used = false;
+      _closed = false;
+      _terminalDelivered = false;
       /**
-      * @param onerror - Optional callback for errors thrown by listeners
-      *   during dispatch.
+      * `true` only while the inbound message is being delivered synchronously
+      * to the connected protocol layer. The pre-handler gates (the era
+      * registry gate, the edge→instance handoff check, the missing-handler
+      * rejection) answer inside this window; request handlers always run
+      * after it (the protocol layer defers them to a microtask). An error
+      * sent inside the window is therefore ladder-originated, and an error
+      * sent after it is handler-produced.
       */
-      constructor(onerror) {
-        this.onerror = onerror;
+      _dispatchWindowOpen = false;
+      _requestId;
+      _deferredResponse;
+      _sse;
+      _abortCleanup;
+      _keepAliveMs;
+      constructor(options2) {
+        this._classification = options2.classification;
+        this._responseMode = options2.responseMode ?? "auto";
+        this._keepAliveMs = options2.keepAliveMs ?? DEFAULT_SSE_KEEP_ALIVE_MS;
       }
-      publish(event) {
-        for (const listener of this._listeners) try {
-          listener(event);
+      async start() {
+        if (this._started) throw new Error("PerRequestHTTPServerTransport is already started");
+        this._started = true;
+      }
+      /**
+      * Serves the single exchange: delivers the classified message to the
+      * connected server instance and resolves with the HTTP response.
+      *
+      * Throws when called a second time (the transport is strictly
+      * single-use), or before a server has been connected to the transport.
+      * The returned promise rejects with a connection-closed error when the
+      * transport is closed before a response was produced (for example because
+      * the client disconnected).
+      */
+      async handleMessage(message, extra) {
+        if (this._used) throw new Error("PerRequestHTTPServerTransport serves exactly one exchange; construct a new transport per request");
+        if (!this._started || this.onmessage === void 0) throw new Error("PerRequestHTTPServerTransport is not connected: connect a server to this transport before handling a message");
+        if (this._closed) throw new Error("PerRequestHTTPServerTransport is closed");
+        this._used = true;
+        const signal = extra?.request?.signal;
+        if (signal?.aborted) {
+          await this.close();
+          throw new SdkError(SdkErrorCode.ConnectionClosed, "The request was aborted before it could be handled");
+        }
+        const messageExtra = {
+          classification: this._classification,
+          ...extra?.request !== void 0 && { request: extra.request },
+          ...extra?.authInfo !== void 0 && { authInfo: extra.authInfo }
+        };
+        if (isJSONRPCRequest(message)) {
+          this._requestId = message.id;
+          let resolve3;
+          let reject;
+          const promise2 = new Promise((promiseResolve, promiseReject) => {
+            resolve3 = promiseResolve;
+            reject = promiseReject;
+          });
+          this._deferredResponse = {
+            promise: promise2,
+            resolve: resolve3,
+            reject,
+            settled: false
+          };
+          if (signal !== void 0) {
+            const onAbort = /* @__PURE__ */ __name(() => void this.close(), "onAbort");
+            signal.addEventListener("abort", onAbort, { once: true });
+            this._abortCleanup = () => signal.removeEventListener("abort", onAbort);
+          }
+          this._dispatchWindowOpen = true;
+          try {
+            this.onmessage(message, messageExtra);
+          } finally {
+            this._dispatchWindowOpen = false;
+          }
+          if (this._responseMode === "sse" && !this._closed && !this._deferredResponse.settled) this.upgradeToSse();
+          return promise2;
+        }
+        this.onmessage(message, messageExtra);
+        return new Response(null, { status: 202 });
+      }
+      async send(message, options2) {
+        if (this._closed) return;
+        const isResponse = isJSONRPCResultResponse(message) || isJSONRPCErrorResponse(message);
+        const relatedId = isResponse ? message.id : options2?.relatedRequestId;
+        if (this._requestId === void 0 || relatedId === void 0 || relatedId !== this._requestId) {
+          if (isResponse) this.onerror?.(/* @__PURE__ */ new Error(`Received a response for an unknown request id: ${String(message.id)}`));
+          return;
+        }
+        if (isResponse) {
+          if (this._terminalDelivered) return;
+          this._terminalDelivered = true;
+          const errorCode = isJSONRPCErrorResponse(message) ? message.error.code : void 0;
+          const ladderStatus = errorCode !== void 0 && (this._dispatchWindowOpen || errorCode === ProtocolErrorCode.MissingRequiredClientCapability) ? LADDER_ERROR_HTTP_STATUS[errorCode] : void 0;
+          if (ladderStatus !== void 0 && this._sse === void 0) {
+            this.settleResponse(Response.json(message, {
+              status: ladderStatus,
+              headers: { "Content-Type": "application/json" }
+            }));
+            queueMicrotask(() => void this.close());
+            return;
+          }
+          if (this._sse !== void 0 || this._responseMode === "sse") {
+            if (this._sse === void 0) this.upgradeToSse();
+            this.writeMessageFrame(message);
+            this.finalizeStream();
+            return;
+          }
+          this.settleResponse(Response.json(message, {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          }));
+          queueMicrotask(() => void this.close());
+          return;
+        }
+        if (this._responseMode === "json") return;
+        if (this._sse === void 0) this.upgradeToSse();
+        this.writeMessageFrame(message);
+      }
+      /**
+      * Writes an SSE comment frame (a keep-alive heartbeat). Dropped when the
+      * exchange is not currently streaming.
+      */
+      writeCommentFrame(comment) {
+        if (this._closed || this._sse === void 0 || this._sse.closed) return;
+        const frame = comment.split("\n").map((line) => `: ${line}`).join("\n");
+        this.writeFrame(`${frame}
+
+`);
+      }
+      async close() {
+        if (this._closed) return;
+        this._closed = true;
+        this._abortCleanup?.();
+        this._abortCleanup = void 0;
+        if (this._sse?.keepAliveTimer !== void 0) clearInterval(this._sse.keepAliveTimer);
+        if (this._sse !== void 0 && !this._sse.closed) {
+          this._sse.closed = true;
+          try {
+            this._sse.controller.close();
+          } catch {
+          }
+        }
+        if (this._deferredResponse !== void 0 && !this._deferredResponse.settled) {
+          this._deferredResponse.settled = true;
+          this._deferredResponse.reject(new SdkError(SdkErrorCode.ConnectionClosed, "Connection closed before a response was produced"));
+        }
+        this.onclose?.();
+      }
+      settleResponse(response) {
+        if (this._deferredResponse === void 0 || this._deferredResponse.settled) return;
+        this._deferredResponse.settled = true;
+        this._deferredResponse.resolve(response);
+      }
+      upgradeToSse() {
+        let controller;
+        const readable = new ReadableStream({
+          start: /* @__PURE__ */ __name((streamController) => {
+            controller = streamController;
+          }, "start"),
+          cancel: /* @__PURE__ */ __name(() => {
+            this.close();
+          }, "cancel")
+        });
+        this._sse = {
+          controller,
+          encoder: new TextEncoder(),
+          closed: false
+        };
+        this._sse.keepAliveTimer = armSseKeepAlive(this._keepAliveMs, () => this.writeCommentFrame("keepalive"));
+        this.settleResponse(new Response(readable, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache, no-transform",
+            Connection: "keep-alive",
+            "X-Accel-Buffering": "no"
+          }
+        }));
+      }
+      finalizeStream() {
+        if (this._sse?.keepAliveTimer !== void 0) clearInterval(this._sse.keepAliveTimer);
+        if (this._sse !== void 0 && !this._sse.closed) {
+          this._sse.closed = true;
+          try {
+            this._sse.controller.close();
+          } catch {
+          }
+        }
+        queueMicrotask(() => void this.close());
+      }
+      writeMessageFrame(message) {
+        this.writeFrame(`event: message
+data: ${JSON.stringify(message)}
+
+`);
+      }
+      writeFrame(frame) {
+        if (this._sse === void 0 || this._sse.closed) return;
+        try {
+          this._sse.controller.enqueue(this._sse.encoder.encode(frame));
         } catch (error63) {
-          this.onerror?.(error63 instanceof Error ? error63 : new Error(String(error63)));
+          this.onerror?.(/* @__PURE__ */ new Error(`Failed to write to the response stream: ${error63}`));
         }
       }
-      subscribe(listener) {
-        this._listeners.add(listener);
-        let live = true;
-        return () => {
-          if (!live) return;
-          live = false;
-          this._listeners.delete(listener);
-        };
-      }
-      /** The number of currently registered listeners (test/introspection only — the routers track capacity via their own open-subscription set). */
-      get listenerCount() {
-        return this._listeners.size;
-      }
     };
-    __name(createServerNotifier, "createServerNotifier");
-    __name(listenFilterAccepts, "listenFilterAccepts");
-    __name(honoredSubset, "honoredSubset");
-    __name(serverEventToNotification, "serverEventToNotification");
-    DEFAULT_MAX_SUBSCRIPTIONS = 1024;
-    __name(jsonRpcError, "jsonRpcError");
-    __name(stampSubscriptionId, "stampSubscriptionId");
-    __name(parseListenFilter, "parseListenFilter");
-    __name(createListenRouter, "createListenRouter");
+    __name(perRequestClassificationOf, "perRequestClassificationOf");
     __name(headerQuotedValue, "headerQuotedValue");
     __name(buildWwwAuthenticateHeader, "buildWwwAuthenticateHeader");
     __name(bearerAuthChallengeResponse, "bearerAuthChallengeResponse");
@@ -69161,6 +69173,7 @@ var init_mcp_DIH4cS6P = __esm({
       _requestStateVerify;
       _inputRequiredServing;
       _legacyShim;
+      _boundFromTransport = false;
       /** Lazily-built legacy shim; the loop lives in legacyInputRequiredShim.ts behind a narrow host contract. */
       _legacyInputRequiredShim() {
         return this._legacyShim ??= new LegacyInputRequiredShim({
@@ -69200,6 +69213,15 @@ var init_mcp_DIH4cS6P = __esm({
       /** Attaches to the given transport; rejects while this instance is connected to another one. */
       async connect(transport) {
         if (this.transport !== void 0) throw new SdkError(SdkErrorCode.AlreadyConnected, "Use a separate Server instance per connection: this instance is already connected to a transport. To connect it to a new transport, call close() first.");
+        if (this._boundFromTransport) {
+          this._boundFromTransport = false;
+          this._negotiatedProtocolVersion = void 0;
+        }
+        const revision = perRequestClassificationOf(transport)?.revision;
+        if (revision !== void 0 && !this._servedModernEra() && SUPPORTED_MODERN_PROTOCOL_VERSIONS.includes(revision) && modernProtocolVersions(this._supportedProtocolVersions).includes(revision)) {
+          this._negotiatedProtocolVersion = revision;
+          this._boundFromTransport = true;
+        }
         await super.connect(transport);
       }
       /**
@@ -69525,8 +69547,8 @@ var init_mcp_DIH4cS6P = __esm({
       * @deprecated Read client identity from the per-request handler context instead: on
       * 2026-07-28 (per-request envelope) requests `ctx.mcpReq.envelope` carries the client's
       * declared capabilities, while on 2025-era connections this accessor keeps returning the
-      * `initialize`-scoped value. The accessor remains functional — instances serving the
-      * 2026-07-28 era are backfilled per request from the validated envelope.
+      * `initialize`-scoped value. The accessor remains functional where `createMcpHandler`
+      * serves the 2026-07-28 era: it backfills it per request from the validated envelope.
       */
       getClientCapabilities() {
         return this._clientCapabilities;
@@ -69537,8 +69559,8 @@ var init_mcp_DIH4cS6P = __esm({
       * @deprecated Read client identity from the per-request handler context instead: on
       * 2026-07-28 (per-request envelope) requests `ctx.mcpReq.envelope` carries the client's
       * name and version, while on 2025-era connections this accessor keeps returning the
-      * `initialize`-scoped value. The accessor remains functional — instances serving the
-      * 2026-07-28 era are backfilled per request from the validated envelope.
+      * `initialize`-scoped value. The accessor remains functional where `createMcpHandler`
+      * serves the 2026-07-28 era: it backfills it per request from the validated envelope.
       */
       getClientVersion() {
         return this._clientVersion;
@@ -70092,8 +70114,14 @@ var init_mcp_DIH4cS6P = __esm({
               if (updates.uri) this._registeredResources[updates.uri] = registeredResource;
             }
             if (updates.name !== void 0) registeredResource.name = updates.name;
-            if (updates.title !== void 0) registeredResource.title = updates.title;
             if (updates.metadata !== void 0) registeredResource.metadata = updates.metadata;
+            if (updates.title !== void 0) {
+              registeredResource.title = updates.title;
+              registeredResource.metadata = {
+                ...registeredResource.metadata,
+                title: updates.title
+              };
+            }
             if (updates.callback !== void 0) registeredResource.readCallback = updates.callback;
             if (updates.scopeChallenge !== void 0) registeredResource.scopeChallenge = updates.scopeChallenge === null ? void 0 : updates.scopeChallenge;
             if (updates.enabled !== void 0) registeredResource.enabled = updates.enabled;
@@ -70119,9 +70147,15 @@ var init_mcp_DIH4cS6P = __esm({
               delete this._registeredResourceTemplates[name];
               if (updates.name) this._registeredResourceTemplates[updates.name] = registeredResourceTemplate;
             }
-            if (updates.title !== void 0) registeredResourceTemplate.title = updates.title;
             if (updates.template !== void 0) registeredResourceTemplate.resourceTemplate = updates.template;
             if (updates.metadata !== void 0) registeredResourceTemplate.metadata = updates.metadata;
+            if (updates.title !== void 0) {
+              registeredResourceTemplate.title = updates.title;
+              registeredResourceTemplate.metadata = {
+                ...registeredResourceTemplate.metadata,
+                title: updates.title
+              };
+            }
             if (updates.callback !== void 0) registeredResourceTemplate.readCallback = updates.callback;
             if (updates.scopeChallenge !== void 0) registeredResourceTemplate.scopeChallenge = updates.scopeChallenge === null ? void 0 : updates.scopeChallenge;
             if (updates.enabled !== void 0) registeredResourceTemplate.enabled = updates.enabled;
@@ -70332,6 +70366,261 @@ var init_mcp_DIH4cS6P = __esm({
   }
 });
 
+// node_modules/@modelcontextprotocol/server/dist/listenRouter-Bartj63y.mjs
+function createServerNotifier(bus) {
+  return {
+    toolsChanged: /* @__PURE__ */ __name(() => bus.publish({ kind: "tools_list_changed" }), "toolsChanged"),
+    promptsChanged: /* @__PURE__ */ __name(() => bus.publish({ kind: "prompts_list_changed" }), "promptsChanged"),
+    resourcesChanged: /* @__PURE__ */ __name(() => bus.publish({ kind: "resources_list_changed" }), "resourcesChanged"),
+    resourceUpdated: /* @__PURE__ */ __name((uri2) => bus.publish({
+      kind: "resource_updated",
+      uri: uri2
+    }), "resourceUpdated")
+  };
+}
+function listenFilterAccepts(filter, event) {
+  switch (event.kind) {
+    case "tools_list_changed":
+      return filter.toolsListChanged === true;
+    case "prompts_list_changed":
+      return filter.promptsListChanged === true;
+    case "resources_list_changed":
+      return filter.resourcesListChanged === true;
+    case "resource_updated":
+      return filter.resourceSubscriptions !== void 0 && filter.resourceSubscriptions.includes(event.uri);
+  }
+}
+function honoredSubset(requested, capabilities) {
+  const honored = {};
+  const allow = /* @__PURE__ */ __name((bit) => capabilities === void 0 || bit === true, "allow");
+  if (requested.toolsListChanged === true && allow(capabilities?.tools?.listChanged)) honored.toolsListChanged = true;
+  if (requested.promptsListChanged === true && allow(capabilities?.prompts?.listChanged)) honored.promptsListChanged = true;
+  if (requested.resourcesListChanged === true && allow(capabilities?.resources?.listChanged)) honored.resourcesListChanged = true;
+  if (requested.resourceSubscriptions !== void 0 && requested.resourceSubscriptions.length > 0 && allow(capabilities?.resources?.subscribe)) honored.resourceSubscriptions = [...requested.resourceSubscriptions];
+  return honored;
+}
+function serverEventToNotification(event) {
+  switch (event.kind) {
+    case "tools_list_changed":
+      return {
+        method: "notifications/tools/list_changed",
+        ...event.params !== void 0 && { params: event.params }
+      };
+    case "prompts_list_changed":
+      return {
+        method: "notifications/prompts/list_changed",
+        ...event.params !== void 0 && { params: event.params }
+      };
+    case "resources_list_changed":
+      return {
+        method: "notifications/resources/list_changed",
+        ...event.params !== void 0 && { params: event.params }
+      };
+    case "resource_updated":
+      return {
+        method: "notifications/resources/updated",
+        params: {
+          ...event.params,
+          uri: event.uri
+        }
+      };
+  }
+}
+function jsonRpcError(id2, code, message) {
+  return Response.json({
+    jsonrpc: "2.0",
+    error: {
+      code,
+      message
+    },
+    id: id2
+  }, { status: 200 });
+}
+function stampSubscriptionId(notification, subscriptionId) {
+  return {
+    method: notification.method,
+    params: {
+      ...notification.params,
+      _meta: {
+        ...notification.params?._meta,
+        [SUBSCRIPTION_ID_META_KEY]: subscriptionId
+      }
+    }
+  };
+}
+function parseListenFilter(message) {
+  const outcome = codecForVersion(MODERN_WIRE_REVISION).validateRequest("subscriptions/listen", message);
+  return outcome.ok ? outcome.value.params?.notifications : void 0;
+}
+function createListenRouter(options2) {
+  const { bus, onerror } = options2;
+  const maxSubscriptions = options2.maxSubscriptions ?? DEFAULT_MAX_SUBSCRIPTIONS;
+  const keepAliveMs = options2.keepAliveMs ?? DEFAULT_SSE_KEEP_ALIVE_MS;
+  const open2 = /* @__PURE__ */ new Set();
+  function serve(message, signal, capabilities, serverInfo) {
+    if (open2.size >= maxSubscriptions) {
+      onerror?.(/* @__PURE__ */ new Error(`subscriptions/listen refused: subscription limit reached (${maxSubscriptions})`));
+      return jsonRpcError(message.id, -32603, "Subscription limit reached");
+    }
+    const filter = parseListenFilter(message);
+    if (filter === void 0) return jsonRpcError(message.id, -32602, "Invalid params: 'notifications' is required and must be a valid SubscriptionFilter");
+    const honored = honoredSubset(filter, capabilities);
+    const subscriptionId = message.id;
+    const encoder2 = new TextEncoder();
+    let controller;
+    let closed = false;
+    let unsubscribe;
+    let keepAliveTimer;
+    let abortCleanup;
+    const writeFrame = /* @__PURE__ */ __name((frame) => {
+      if (closed) return;
+      try {
+        controller.enqueue(encoder2.encode(frame));
+      } catch (error63) {
+        onerror?.(error63 instanceof Error ? error63 : new Error(String(error63)));
+      }
+    }, "writeFrame");
+    const writeNotification = /* @__PURE__ */ __name((method, params) => {
+      writeFrame(`event: message
+data: ${JSON.stringify({
+        jsonrpc: "2.0",
+        method,
+        params
+      })}
+
+`);
+    }, "writeNotification");
+    const teardown = /* @__PURE__ */ __name((graceful) => {
+      if (closed) return;
+      if (graceful) writeFrame(`event: message
+data: ${JSON.stringify({
+        jsonrpc: "2.0",
+        id: subscriptionId,
+        result: {
+          resultType: "complete",
+          _meta: {
+            [SUBSCRIPTION_ID_META_KEY]: subscriptionId,
+            [SERVER_INFO_META_KEY]: serverInfo
+          }
+        }
+      })}
+
+`);
+      closed = true;
+      try {
+        unsubscribe?.();
+      } catch (error63) {
+        onerror?.(error63 instanceof Error ? error63 : new Error(String(error63)));
+      }
+      if (keepAliveTimer !== void 0) clearInterval(keepAliveTimer);
+      abortCleanup?.();
+      open2.delete(teardown);
+      try {
+        controller.close();
+      } catch {
+      }
+    }, "teardown");
+    const readable = new ReadableStream({
+      start(streamController) {
+        controller = streamController;
+        const ack = stampSubscriptionId({
+          method: "notifications/subscriptions/acknowledged",
+          params: { notifications: honored }
+        }, subscriptionId);
+        writeNotification(ack.method, ack.params);
+        if (Object.keys(honored).length === 0) {
+          teardown(true);
+          return;
+        }
+        unsubscribe = bus.subscribe((event) => {
+          if (closed || !listenFilterAccepts(honored, event)) return;
+          const note = stampSubscriptionId(serverEventToNotification(event), subscriptionId);
+          writeNotification(note.method, note.params);
+        });
+        keepAliveTimer = armSseKeepAlive(keepAliveMs, () => writeFrame(": keepalive\n\n"));
+        open2.add(teardown);
+      },
+      cancel() {
+        teardown(false);
+      }
+    });
+    if (signal !== void 0) if (signal.aborted) teardown(false);
+    else {
+      const onAbort = /* @__PURE__ */ __name(() => teardown(false), "onAbort");
+      signal.addEventListener("abort", onAbort, { once: true });
+      abortCleanup = /* @__PURE__ */ __name(() => signal.removeEventListener("abort", onAbort), "abortCleanup");
+    }
+    return new Response(readable, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no"
+      }
+    });
+  }
+  __name(serve, "serve");
+  return {
+    serve,
+    closeAll() {
+      for (const teardown of open2) teardown(true);
+    },
+    get openCount() {
+      return open2.size;
+    }
+  };
+}
+var InMemoryServerEventBus, DEFAULT_MAX_SUBSCRIPTIONS;
+var init_listenRouter_Bartj63y = __esm({
+  "node_modules/@modelcontextprotocol/server/dist/listenRouter-Bartj63y.mjs"() {
+    init_mcp_oHn3ureC();
+    init_src_DdvbAHrR();
+    InMemoryServerEventBus = class {
+      static {
+        __name(this, "InMemoryServerEventBus");
+      }
+      _listeners = /* @__PURE__ */ new Set();
+      /**
+      * @param onerror - Optional callback for errors thrown by listeners
+      *   during dispatch.
+      */
+      constructor(onerror) {
+        this.onerror = onerror;
+      }
+      publish(event) {
+        for (const listener of this._listeners) try {
+          listener(event);
+        } catch (error63) {
+          this.onerror?.(error63 instanceof Error ? error63 : new Error(String(error63)));
+        }
+      }
+      subscribe(listener) {
+        this._listeners.add(listener);
+        let live = true;
+        return () => {
+          if (!live) return;
+          live = false;
+          this._listeners.delete(listener);
+        };
+      }
+      /** The number of currently registered listeners (test/introspection only — the routers track capacity via their own open-subscription set). */
+      get listenerCount() {
+        return this._listeners.size;
+      }
+    };
+    __name(createServerNotifier, "createServerNotifier");
+    __name(listenFilterAccepts, "listenFilterAccepts");
+    __name(honoredSubset, "honoredSubset");
+    __name(serverEventToNotification, "serverEventToNotification");
+    DEFAULT_MAX_SUBSCRIPTIONS = 1024;
+    __name(jsonRpcError, "jsonRpcError");
+    __name(stampSubscriptionId, "stampSubscriptionId");
+    __name(parseListenFilter, "parseListenFilter");
+    __name(createListenRouter, "createListenRouter");
+  }
+});
+
 // node_modules/@modelcontextprotocol/server/dist/index.mjs
 async function invoke(server2, message, ctx) {
   const transport = new PerRequestHTTPServerTransport({
@@ -70394,7 +70683,10 @@ function jsonRpcErrorResponse(httpStatus, code, message, data, id2 = null) {
       ...data !== void 0 && { data }
     },
     id: id2
-  }, { status: httpStatus });
+  }, {
+    status: httpStatus,
+    ...httpStatus === 405 && { headers: { Allow: "POST" } }
+  });
 }
 function rejectionResponse(rejection2, id2 = null) {
   return jsonRpcErrorResponse(rejection2.httpStatus, rejection2.code, rejection2.message, rejection2.data, id2);
@@ -70601,7 +70893,7 @@ function createMcpHandler(factory, options2 = {}) {
       const inputSchema = toolName === void 0 ? void 0 : product.toolInputSchemaJson(toolName);
       if (inputSchema !== void 0) {
         const scan = scanXMcpHeaderDeclarations(inputSchema);
-        if (scan.valid && scan.declarations.length > 0) {
+        if (scan.declarations !== void 0 && scan.declarations.length > 0) {
           const rejection2 = validateMcpParamHeaders(scan.declarations, callParams?.arguments, request2.headers);
           if (rejection2 !== void 0) {
             product.close().catch(reportError);
@@ -70722,230 +71014,13 @@ function createMcpHandler(factory, options2 = {}) {
     }, "close")
   };
 }
-var PerRequestHTTPServerTransport, DEFAULT_MAX_REQUEST_BODY_SIZE, MAX_BATCH_SIZE, WebStandardStreamableHTTPServerTransport;
+var DEFAULT_MAX_REQUEST_BODY_SIZE, MAX_BATCH_SIZE, WebStandardStreamableHTTPServerTransport;
 var init_dist3 = __esm({
   "node_modules/@modelcontextprotocol/server/dist/index.mjs"() {
-    init_mcp_DIH4cS6P();
-    init_src_Cqbh3MYc();
+    init_mcp_oHn3ureC();
+    init_src_DdvbAHrR();
+    init_listenRouter_Bartj63y();
     init_shimsWorkerd();
-    PerRequestHTTPServerTransport = class {
-      static {
-        __name(this, "PerRequestHTTPServerTransport");
-      }
-      onclose;
-      onerror;
-      onmessage;
-      _classification;
-      _responseMode;
-      _started = false;
-      _used = false;
-      _closed = false;
-      _terminalDelivered = false;
-      /**
-      * `true` only while the inbound message is being delivered synchronously
-      * to the connected protocol layer. The pre-handler gates (the era
-      * registry gate, the edge→instance handoff check, the missing-handler
-      * rejection) answer inside this window; request handlers always run
-      * after it (the protocol layer defers them to a microtask). An error
-      * sent inside the window is therefore ladder-originated, and an error
-      * sent after it is handler-produced.
-      */
-      _dispatchWindowOpen = false;
-      _requestId;
-      _deferredResponse;
-      _sse;
-      _abortCleanup;
-      _keepAliveMs;
-      constructor(options2) {
-        this._classification = options2.classification;
-        this._responseMode = options2.responseMode ?? "auto";
-        this._keepAliveMs = options2.keepAliveMs ?? DEFAULT_SSE_KEEP_ALIVE_MS;
-      }
-      async start() {
-        if (this._started) throw new Error("PerRequestHTTPServerTransport is already started");
-        this._started = true;
-      }
-      /**
-      * Serves the single exchange: delivers the classified message to the
-      * connected server instance and resolves with the HTTP response.
-      *
-      * Throws when called a second time (the transport is strictly
-      * single-use), or before a server has been connected to the transport.
-      * The returned promise rejects with a connection-closed error when the
-      * transport is closed before a response was produced (for example because
-      * the client disconnected).
-      */
-      async handleMessage(message, extra) {
-        if (this._used) throw new Error("PerRequestHTTPServerTransport serves exactly one exchange; construct a new transport per request");
-        if (!this._started || this.onmessage === void 0) throw new Error("PerRequestHTTPServerTransport is not connected: connect a server to this transport before handling a message");
-        if (this._closed) throw new Error("PerRequestHTTPServerTransport is closed");
-        this._used = true;
-        const signal = extra?.request?.signal;
-        if (signal?.aborted) {
-          await this.close();
-          throw new SdkError(SdkErrorCode.ConnectionClosed, "The request was aborted before it could be handled");
-        }
-        const messageExtra = {
-          classification: this._classification,
-          ...extra?.request !== void 0 && { request: extra.request },
-          ...extra?.authInfo !== void 0 && { authInfo: extra.authInfo }
-        };
-        if (isJSONRPCRequest(message)) {
-          this._requestId = message.id;
-          let resolve3;
-          let reject;
-          const promise2 = new Promise((promiseResolve, promiseReject) => {
-            resolve3 = promiseResolve;
-            reject = promiseReject;
-          });
-          this._deferredResponse = {
-            promise: promise2,
-            resolve: resolve3,
-            reject,
-            settled: false
-          };
-          if (signal !== void 0) {
-            const onAbort = /* @__PURE__ */ __name(() => void this.close(), "onAbort");
-            signal.addEventListener("abort", onAbort, { once: true });
-            this._abortCleanup = () => signal.removeEventListener("abort", onAbort);
-          }
-          this._dispatchWindowOpen = true;
-          try {
-            this.onmessage(message, messageExtra);
-          } finally {
-            this._dispatchWindowOpen = false;
-          }
-          if (this._responseMode === "sse" && !this._closed && !this._deferredResponse.settled) this.upgradeToSse();
-          return promise2;
-        }
-        this.onmessage(message, messageExtra);
-        return new Response(null, { status: 202 });
-      }
-      async send(message, options2) {
-        if (this._closed) return;
-        const isResponse = isJSONRPCResultResponse(message) || isJSONRPCErrorResponse(message);
-        const relatedId = isResponse ? message.id : options2?.relatedRequestId;
-        if (this._requestId === void 0 || relatedId === void 0 || relatedId !== this._requestId) {
-          if (isResponse) this.onerror?.(/* @__PURE__ */ new Error(`Received a response for an unknown request id: ${String(message.id)}`));
-          return;
-        }
-        if (isResponse) {
-          if (this._terminalDelivered) return;
-          this._terminalDelivered = true;
-          const errorCode = isJSONRPCErrorResponse(message) ? message.error.code : void 0;
-          const ladderStatus = errorCode !== void 0 && (this._dispatchWindowOpen || errorCode === ProtocolErrorCode.MissingRequiredClientCapability) ? LADDER_ERROR_HTTP_STATUS[errorCode] : void 0;
-          if (ladderStatus !== void 0 && this._sse === void 0) {
-            this.settleResponse(Response.json(message, {
-              status: ladderStatus,
-              headers: { "Content-Type": "application/json" }
-            }));
-            queueMicrotask(() => void this.close());
-            return;
-          }
-          if (this._sse !== void 0 || this._responseMode === "sse") {
-            if (this._sse === void 0) this.upgradeToSse();
-            this.writeMessageFrame(message);
-            this.finalizeStream();
-            return;
-          }
-          this.settleResponse(Response.json(message, {
-            status: 200,
-            headers: { "Content-Type": "application/json" }
-          }));
-          queueMicrotask(() => void this.close());
-          return;
-        }
-        if (this._responseMode === "json") return;
-        if (this._sse === void 0) this.upgradeToSse();
-        this.writeMessageFrame(message);
-      }
-      /**
-      * Writes an SSE comment frame (a keep-alive heartbeat). Dropped when the
-      * exchange is not currently streaming.
-      */
-      writeCommentFrame(comment) {
-        if (this._closed || this._sse === void 0 || this._sse.closed) return;
-        const frame = comment.split("\n").map((line) => `: ${line}`).join("\n");
-        this.writeFrame(`${frame}
-
-`);
-      }
-      async close() {
-        if (this._closed) return;
-        this._closed = true;
-        this._abortCleanup?.();
-        this._abortCleanup = void 0;
-        if (this._sse?.keepAliveTimer !== void 0) clearInterval(this._sse.keepAliveTimer);
-        if (this._sse !== void 0 && !this._sse.closed) {
-          this._sse.closed = true;
-          try {
-            this._sse.controller.close();
-          } catch {
-          }
-        }
-        if (this._deferredResponse !== void 0 && !this._deferredResponse.settled) {
-          this._deferredResponse.settled = true;
-          this._deferredResponse.reject(new SdkError(SdkErrorCode.ConnectionClosed, "Connection closed before a response was produced"));
-        }
-        this.onclose?.();
-      }
-      settleResponse(response) {
-        if (this._deferredResponse === void 0 || this._deferredResponse.settled) return;
-        this._deferredResponse.settled = true;
-        this._deferredResponse.resolve(response);
-      }
-      upgradeToSse() {
-        let controller;
-        const readable = new ReadableStream({
-          start: /* @__PURE__ */ __name((streamController) => {
-            controller = streamController;
-          }, "start"),
-          cancel: /* @__PURE__ */ __name(() => {
-            this.close();
-          }, "cancel")
-        });
-        this._sse = {
-          controller,
-          encoder: new TextEncoder(),
-          closed: false
-        };
-        this._sse.keepAliveTimer = armSseKeepAlive(this._keepAliveMs, () => this.writeCommentFrame("keepalive"));
-        this.settleResponse(new Response(readable, {
-          status: 200,
-          headers: {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache, no-transform",
-            Connection: "keep-alive",
-            "X-Accel-Buffering": "no"
-          }
-        }));
-      }
-      finalizeStream() {
-        if (this._sse?.keepAliveTimer !== void 0) clearInterval(this._sse.keepAliveTimer);
-        if (this._sse !== void 0 && !this._sse.closed) {
-          this._sse.closed = true;
-          try {
-            this._sse.controller.close();
-          } catch {
-          }
-        }
-        queueMicrotask(() => void this.close());
-      }
-      writeMessageFrame(message) {
-        this.writeFrame(`event: message
-data: ${JSON.stringify(message)}
-
-`);
-      }
-      writeFrame(frame) {
-        if (this._sse === void 0 || this._sse.closed) return;
-        try {
-          this._sse.controller.enqueue(this._sse.encoder.encode(frame));
-        } catch (error63) {
-          this.onerror?.(/* @__PURE__ */ new Error(`Failed to write to the response stream: ${error63}`));
-        }
-      }
-    };
     __name(invoke, "invoke");
     DEFAULT_MAX_REQUEST_BODY_SIZE = 4 * 1024 * 1024;
     MAX_BATCH_SIZE = 100;
@@ -72289,7 +72364,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.27.0";
+  const current = options2.current ?? "1.27.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73145,7 +73220,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.27.0",
+          version: "1.27.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73354,7 +73429,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.27.0"
+    currentVersion: "1.27.1"
   };
 }
 async function download(ctx, url3) {
@@ -73905,7 +73980,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.DuiNvUS1.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.DuiNvUS1.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.7eBjX4Dg.js", app: "_app/immutable/entry/app.BeLhvI8p.js", imports: ["_app/immutable/entry/start.7eBjX4Dg.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bm2FJUYq.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/app.BeLhvI8p.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -74624,14 +74699,14 @@ export {
 };
 /**
 * @file
-* @license @lucide/svelte v1.61.0 - ISC
+* @license @lucide/svelte v1.66.0 - ISC
 *
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
 /*! Bundled license information:
 
-@modelcontextprotocol/server/dist/src-Cqbh3MYc.mjs:
+@modelcontextprotocol/server/dist/src-DdvbAHrR.mjs:
   (*!
   * content-type
   * Copyright(c) 2015 Douglas Christopher Wilson
