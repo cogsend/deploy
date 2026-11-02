@@ -11142,6 +11142,43 @@ var init_thread_segments = __esm({
 });
 
 // .svelte-kit/output/server/chunks/x-limits.js
+function shortenBlueskyUrl(url3) {
+  try {
+    const parsed = new URL(url3);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return url3;
+    const path3 = (parsed.pathname === "/" ? "" : parsed.pathname) + parsed.search + parsed.hash;
+    return path3.length > 15 ? `${parsed.host}${path3.slice(0, 13)}...` : parsed.host + path3;
+  } catch {
+    return url3;
+  }
+}
+function blueskyRichText(text3, { shortenLinks }) {
+  const facets = [];
+  let out = "";
+  let last = 0;
+  for (const match2 of text3.matchAll(LINK_RE)) {
+    const url3 = match2[0].replace(TRAILING_PUNCT_RE2, "");
+    out += text3.slice(last, match2.index);
+    const shown = shortenLinks ? shortenBlueskyUrl(url3) : url3;
+    const byteStart = utf8ByteLength(out);
+    out += shown;
+    facets.push({
+      index: {
+        byteStart,
+        byteEnd: byteStart + utf8ByteLength(shown)
+      },
+      features: [{
+        $type: "app.bsky.richtext.facet#link",
+        uri: url3
+      }]
+    });
+    last = match2.index + url3.length;
+  }
+  return {
+    text: out + text3.slice(last),
+    facets
+  };
+}
 function countGraphemes(text3) {
   if (!text3) return 0;
   try {
@@ -11174,15 +11211,20 @@ function tooLong(length, max, label) {
     message: `${length} / ${max} characters (${label})`
   };
 }
-function validateBlueskyText(text3, maxGraphemes = 300) {
-  const length = countGraphemes(text3);
+function blueskyTextLength(text3, opts) {
+  return countGraphemes(blueskyRichText(text3, opts).text);
+}
+function validateBlueskyText(text3, { shortenLinks = true } = {}) {
+  const maxGraphemes = 300;
+  const posted = blueskyRichText(text3, { shortenLinks }).text;
+  const length = countGraphemes(posted);
   if (length > maxGraphemes) return {
     ok: false,
     length,
     max: maxGraphemes,
     message: `${length} graphemes \u2014 over by ${length - maxGraphemes} (max ${maxGraphemes})`
   };
-  const bytes = utf8ByteLength(text3);
+  const bytes = utf8ByteLength(posted);
   if (bytes > 3e3) return {
     ok: false,
     length,
@@ -11299,15 +11341,20 @@ function xLimitFor(meta3) {
 function storedXLimit(value) {
   return typeof value === "number" && value >= 280 && value <= 25e3 ? Math.floor(value) : 280;
 }
-var LINKEDIN_MAX_CHARS, INSTAGRAM_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
+var LINK_RE, TRAILING_PUNCT_RE2, LINKEDIN_MAX_CHARS, INSTAGRAM_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
 var init_x_limits = __esm({
   ".svelte-kit/output/server/chunks/x-limits.js"() {
     "use strict";
     init_bytes();
     init_links();
+    LINK_RE = /https?:\/\/[^\s]+/gi;
+    TRAILING_PUNCT_RE2 = /[.,);:!?]+$/;
+    __name(shortenBlueskyUrl, "shortenBlueskyUrl");
+    __name(blueskyRichText, "blueskyRichText");
     __name(countGraphemes, "countGraphemes");
     __name(mastodonWeightedLength, "mastodonWeightedLength");
     __name(tooLong, "tooLong");
+    __name(blueskyTextLength, "blueskyTextLength");
     __name(validateBlueskyText, "validateBlueskyText");
     __name(validateMastodonText, "validateMastodonText");
     LINKEDIN_MAX_CHARS = 3e3;
@@ -12630,27 +12677,6 @@ function upstreamError(prefix, status, body) {
 function pds(creds) {
   return sanitizeBlueskyPdsHost(creds.pdsHost || DEFAULT_PDS);
 }
-function buildLinkFacets(text3) {
-  const facets = [];
-  const re = /https?:\/\/[^\s]+/gi;
-  let match2;
-  while ((match2 = re.exec(text3)) !== null) {
-    const url3 = match2[0].replace(/[.,);:!?]+$/, "");
-    const byteStart = utf8ByteLength(text3.slice(0, match2.index));
-    const byteEnd = byteStart + utf8ByteLength(url3);
-    facets.push({
-      index: {
-        byteStart,
-        byteEnd
-      },
-      features: [{
-        $type: "app.bsky.richtext.facet#link",
-        uri: url3
-      }]
-    });
-  }
-  return facets;
-}
 function jwtExpiryMs(token) {
   const payload2 = token?.split(".")[1];
   if (!payload2) return null;
@@ -12935,10 +12961,10 @@ async function publishOne(content, creds, fetchImpl, reply, rkey, video) {
   } catch {
     embed = void 0;
   }
-  const facets = buildLinkFacets(content.text);
+  const { text: text3, facets } = blueskyRichText(content.text || "", { shortenLinks: true });
   try {
     return await createPostRecord(session, {
-      text: content.text,
+      text: text3,
       createdAt: (/* @__PURE__ */ new Date()).toISOString(),
       facets: facets.length ? facets : void 0,
       embed,
@@ -12949,13 +12975,45 @@ async function publishOne(content, creds, fetchImpl, reply, rkey, video) {
     session = await refreshSession(session, fetchImpl);
     Object.assign(creds, session);
     return createPostRecord(session, {
-      text: content.text,
+      text: text3,
       createdAt: (/* @__PURE__ */ new Date()).toISOString(),
       facets: facets.length ? facets : void 0,
       embed,
       reply
     }, fetchImpl, rkey);
   }
+}
+function validateBlueskyPost(content, meta3, { shortenLinks }) {
+  const issues = [];
+  const segments = content.thread && content.thread.length > 0 ? content.thread : [content];
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    issues.push(...videoValidation("bluesky", seg.media, meta3, `thread[${i}].media`));
+    const hasMedia = (seg.media?.length ?? 0) > 0;
+    if (!seg.text?.trim() && !hasMedia) issues.push({
+      field: `thread[${i}]`,
+      message: "Segment needs text or media",
+      code: "empty"
+    });
+    const textCheck = validateBlueskyText(seg.text || "", { shortenLinks });
+    if (!textCheck.ok && (seg.text || "").length > 0) issues.push({
+      field: `thread[${i}].text`,
+      message: textCheck.message || "Text too long",
+      code: "max_length"
+    });
+    if ((seg.media?.length ?? 0) > 4) issues.push({
+      field: `thread[${i}].media`,
+      message: "Bluesky allows max 4 images",
+      code: "max_images"
+    });
+    for (const m of seg.media ?? []) if (isVideoAttachment(m)) continue;
+    else if (mediaByteLength(m) > 2e6) issues.push({
+      field: `thread[${i}].media`,
+      message: "Bluesky allows max 2MB per image",
+      code: "max_image_bytes"
+    });
+  }
+  return issues;
 }
 async function blueskyCreateSession(handle2, appPassword, pdsHost = DEFAULT_PDS, fetchImpl = providerFetch) {
   const host = sanitizeBlueskyPdsHost(pdsHost);
@@ -14539,10 +14597,13 @@ function zernioProviderFor(platform2, opts = {}) {
     id: platform2,
     mediaByUrl: true,
     capabilities: direct.capabilities,
-    validate: /* @__PURE__ */ __name((content, meta3) => direct.validate(content, platform2 === "x" && meta3 ? {
-      ...meta3,
-      maxCharacters: void 0
-    } : meta3), "validate"),
+    validate: /* @__PURE__ */ __name((content, meta3) => {
+      if (platform2 === "bluesky") return validateBlueskyPost(content, meta3, { shortenLinks: false });
+      return direct.validate(content, platform2 === "x" && meta3 ? {
+        ...meta3,
+        maxCharacters: void 0
+      } : meta3);
+    }, "validate"),
     async publish(content, creds, _meta, fetchImpl = providerFetch, publishOpts) {
       const { zernioApiKey: apiKey, zernioAccountId: accountId } = creds;
       if (!apiKey || !accountId) throw new ProviderError("Zernio credentials require zernioApiKey and zernioAccountId", { code: "auth" });
@@ -14658,7 +14719,6 @@ var init_providers = __esm({
     __name(sanitizeBlueskyPdsHost, "sanitizeBlueskyPdsHost");
     __name(upstreamError, "upstreamError");
     __name(pds, "pds");
-    __name(buildLinkFacets, "buildLinkFacets");
     ACCESS_JWT_SKEW_MS = 3e5;
     __name(jwtExpiryMs, "jwtExpiryMs");
     __name(ensureSession, "ensureSession");
@@ -14678,6 +14738,7 @@ var init_providers = __esm({
     __name(jobFailure, "jobFailure");
     __name(uploadVideo$1, "uploadVideo$1");
     __name(publishOne, "publishOne");
+    __name(validateBlueskyPost, "validateBlueskyPost");
     blueskyProvider = {
       id: "bluesky",
       capabilities: {
@@ -14687,38 +14748,7 @@ var init_providers = __esm({
         supportsVisibility: false,
         supportsThreads: true
       },
-      validate(content, meta3) {
-        const issues = [];
-        const segments = content.thread && content.thread.length > 0 ? content.thread : [content];
-        for (let i = 0; i < segments.length; i++) {
-          const seg = segments[i];
-          issues.push(...videoValidation("bluesky", seg.media, meta3, `thread[${i}].media`));
-          const hasMedia = (seg.media?.length ?? 0) > 0;
-          if (!seg.text?.trim() && !hasMedia) issues.push({
-            field: `thread[${i}]`,
-            message: "Segment needs text or media",
-            code: "empty"
-          });
-          const textCheck = validateBlueskyText(seg.text || "");
-          if (!textCheck.ok && (seg.text || "").length > 0) issues.push({
-            field: `thread[${i}].text`,
-            message: textCheck.message || "Text too long",
-            code: "max_length"
-          });
-          if ((seg.media?.length ?? 0) > 4) issues.push({
-            field: `thread[${i}].media`,
-            message: "Bluesky allows max 4 images",
-            code: "max_images"
-          });
-          for (const m of seg.media ?? []) if (isVideoAttachment(m)) continue;
-          else if (mediaByteLength(m) > 2e6) issues.push({
-            field: `thread[${i}].media`,
-            message: "Bluesky allows max 2MB per image",
-            code: "max_image_bytes"
-          });
-        }
-        return issues;
-      },
+      validate: /* @__PURE__ */ __name((content, meta3) => validateBlueskyPost(content, meta3, { shortenLinks: true }), "validate"),
       async publish(content, creds, _meta, fetchImpl = providerFetch, opts) {
         const segments = content.thread && content.thread.length > 0 ? content.thread : [content];
         const resumeIds = opts?.resume?.segmentIds ?? [];
@@ -41232,7 +41262,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1793642994890");
+  response.headers.set("x-sveltekit-version", "1793646346200");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43934,7 +43964,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_dok9o";
+  const global = "__sveltekit_12rznge";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44678,7 +44708,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_dok9o";
+  const global = "__sveltekit_12rznge";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44703,7 +44733,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1793642994890")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1793646346200")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47257,7 +47287,7 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.CCXciEa4.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    imports = ["_app/immutable/nodes/0.BrRTfvo3.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/B3VdBfGm.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/DciI2oh6.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js"];
     stylesheets = ["_app/immutable/assets/0.CIFeZrgT.css"];
     fonts = [];
   }
@@ -48424,7 +48454,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.Bu6g3PL1.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js"];
+    imports5 = ["_app/immutable/nodes/4.P5Ta_u10.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BJp7Yl8a.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/BOH0rYfo.js", "_app/immutable/chunks/BVV_jcK-.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -49558,7 +49588,9 @@ function Editor($$renderer, $$props) {
     });
     let maxChars = derived2(() => activeTab === "global" ? globalLimit().max : platformMax(activeTab, accountsFor(activeTab)));
     let tabSupportsThreads = derived2(() => activeTab === "global" ? [...selectedPlatforms()].some((p) => supportsThreads(p)) : supportsThreads(activeTab));
+    const blueskyShortensLinks = derived2(() => !accountsFor("bluesky").some((account) => isZernioConnection(account.metaJson)));
     function countForPlatform(text3, platform2) {
+      if (platform2 === "bluesky") return blueskyTextLength(text3, { shortenLinks: blueskyShortensLinks() });
       if (platform2 === "mastodon") return mastodonWeightedLength(text3);
       if (platform2 === "x") return xWeightedLength(text3);
       return countGraphemes(text3);
@@ -49594,7 +49626,7 @@ function Editor($$renderer, $$props) {
       const linkedinFlat = flattenThreadBody(linkedinText);
       return {
         bluesky: {
-          len: maxThreadSegmentLength(bskyText, countGraphemes),
+          len: maxThreadSegmentLength(bskyText, (s2) => countForPlatform(s2, "bluesky")),
           max: PLATFORM_LIMITS.bluesky
         },
         mastodon: {
@@ -49622,7 +49654,10 @@ function Editor($$renderer, $$props) {
     const blueskyBytesOver = derived2(() => {
       const bskyText = effectivePlatformBody(baseBody, overrides, "bluesky");
       let over = 0;
-      for (const seg of splitThreadSegments(bskyText)) over = Math.max(over, utf8ByteLength(seg) - 3e3);
+      for (const seg of splitThreadSegments(bskyText)) {
+        const posted = blueskyRichText(seg, { shortenLinks: blueskyShortensLinks() }).text;
+        over = Math.max(over, utf8ByteLength(posted) - 3e3);
+      }
       return over;
     });
     const threadsLinkCount = derived2(() => {
@@ -50801,6 +50836,7 @@ var init_page_svelte3 = __esm({
     init_profile_settings();
     init_media_limits();
     init_platforms();
+    init_zernio();
     init_links();
     init_thread_segments();
     init_x_quote();
@@ -51012,7 +51048,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.vbCt7X1u.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/fhXCtrcK.js", "_app/immutable/chunks/D6yi91ex.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
+    imports6 = ["_app/immutable/nodes/5.DvAE5uRV.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/YVgRZEJp.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/Ba5-HeR1.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/BJp7Yl8a.js", "_app/immutable/chunks/D6yi91ex.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_QajWYu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/DciI2oh6.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BXYmtSvN.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -52303,7 +52339,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id12 = "src/routes/p/[token]/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.a7yyJhsw.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports14 = ["_app/immutable/nodes/13.Cl0dO8nr.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/Ba5-HeR1.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -53421,7 +53457,7 @@ var init__15 = __esm({
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id13 = "src/routes/posts/+page.server.ts";
-    imports15 = ["_app/immutable/nodes/14.DcJZX1Aq.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/W8_OUZDm.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/DiDgEUL0.js", "_app/immutable/chunks/8UXXD-Gy.js", "_app/immutable/chunks/D2IVBObk.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CWu9KPtc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    imports15 = ["_app/immutable/nodes/14.CWHj8kO1.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/CgLv6xEW.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/D4H8Yj-y.js", "_app/immutable/chunks/W8_OUZDm.js", "_app/immutable/chunks/G5_mCTct.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/Ba5-HeR1.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/CAEkDNQM.js", "_app/immutable/chunks/DndmLIPV.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/DciI2oh6.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BXYmtSvN.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -56919,7 +56955,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.26.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.27.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57043,7 +57079,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.BiwU8c5Q.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/D6yi91ex.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
+    imports16 = ["_app/immutable/nodes/15.B_ScvCAo.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/chunks/g1BXMUOw.js", "_app/immutable/chunks/BB7hYyLQ.js", "_app/immutable/chunks/BIdJ99pW.js", "_app/immutable/chunks/CQGp-izy.js", "_app/immutable/chunks/D6yi91ex.js", "_app/immutable/chunks/w5LHnTCy.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/Bs_cm13Y.js", "_app/immutable/chunks/BkHK_QYd.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BOH0rYfo.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -61193,7 +61229,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.26.0",
+          version: "1.27.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -72253,7 +72289,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.26.0";
+  const current = options2.current ?? "1.27.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73109,7 +73145,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.26.0",
+          version: "1.27.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73318,7 +73354,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.26.0"
+    currentVersion: "1.27.0"
   };
 }
 async function download(ctx, url3) {
@@ -73869,7 +73905,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.C4hXEAi_.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.C4hXEAi_.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.1xkjveTD.js", app: "_app/immutable/entry/app.DuiNvUS1.js", imports: ["_app/immutable/entry/start.1xkjveTD.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DCWCsC1g.js", "_app/immutable/chunks/BVV_jcK-.js", "_app/immutable/chunks/CKBqBhm7.js", "_app/immutable/chunks/DrnP2i24.js", "_app/immutable/entry/app.DuiNvUS1.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
