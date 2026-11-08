@@ -11237,6 +11237,9 @@ function validateBlueskyText(text3, { shortenLinks = true } = {}) {
     max: maxGraphemes
   };
 }
+function mastodonCountedText(text3, contentWarning) {
+  return [contentWarning, text3].filter(Boolean).join("\n");
+}
 function validateMastodonText(text3, maxChars = 500) {
   const length = mastodonWeightedLength(text3);
   if (length > maxChars) return {
@@ -11250,6 +11253,20 @@ function validateMastodonText(text3, maxChars = 500) {
     length,
     max: maxChars
   };
+}
+function countThreadsLinks(text3) {
+  const links = text3.match(/https?:\/\/[^\s]+/gi) ?? [];
+  return new Set(links.map((l) => l.replace(/[.,);:!?]+$/, "").toLowerCase())).size;
+}
+function mostThreadsLinksInAPost(body) {
+  return Math.max(0, ...splitThreadSegments(body).map(countThreadsLinks));
+}
+function countCashtags(text3) {
+  const found = text3.match(/\$[A-Za-z]{1,6}\b/g) || [];
+  return new Set(found.map((t) => t.toUpperCase())).size;
+}
+function mostCashtagsInAPost(body) {
+  return Math.max(0, ...splitThreadSegments(body).map(countCashtags));
 }
 function validateLinkedinText(text3, maxChars = LINKEDIN_MAX_CHARS) {
   const length = countGraphemes(text3);
@@ -11341,12 +11358,13 @@ function xLimitFor(meta3) {
 function storedXLimit(value) {
   return typeof value === "number" && value >= 280 && value <= 25e3 ? Math.floor(value) : 280;
 }
-var LINK_RE, TRAILING_PUNCT_RE2, LINKEDIN_MAX_CHARS, INSTAGRAM_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
+var LINK_RE, TRAILING_PUNCT_RE2, X_CASHTAG_MESSAGE, LINKEDIN_MAX_CHARS, INSTAGRAM_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
 var init_x_limits = __esm({
   ".svelte-kit/output/server/chunks/x-limits.js"() {
     "use strict";
     init_bytes();
     init_links();
+    init_thread_segments();
     LINK_RE = /https?:\/\/[^\s]+/gi;
     TRAILING_PUNCT_RE2 = /[.,);:!?]+$/;
     __name(shortenBlueskyUrl, "shortenBlueskyUrl");
@@ -11356,7 +11374,13 @@ var init_x_limits = __esm({
     __name(tooLong, "tooLong");
     __name(blueskyTextLength, "blueskyTextLength");
     __name(validateBlueskyText, "validateBlueskyText");
+    __name(mastodonCountedText, "mastodonCountedText");
     __name(validateMastodonText, "validateMastodonText");
+    __name(countThreadsLinks, "countThreadsLinks");
+    __name(mostThreadsLinksInAPost, "mostThreadsLinksInAPost");
+    X_CASHTAG_MESSAGE = "X allows max 1 cashtag (e.g. $AAPL) per post";
+    __name(countCashtags, "countCashtags");
+    __name(mostCashtagsInAPost, "mostCashtagsInAPost");
     LINKEDIN_MAX_CHARS = 3e3;
     INSTAGRAM_MAX_CHARS = 2200;
     __name(validateLinkedinText, "validateLinkedinText");
@@ -11611,7 +11635,11 @@ function isUploadRequest(init2) {
   if (typeof FormData !== "undefined" && body instanceof FormData) return true;
   if (typeof Blob !== "undefined" && body instanceof Blob) return true;
   if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) return true;
+  if (typeof ReadableStream !== "undefined" && body instanceof ReadableStream) return true;
   return false;
+}
+function providerTimeoutMs(init2) {
+  return isUploadRequest(init2) ? PROVIDER_UPLOAD_TIMEOUT_MS : PROVIDER_FETCH_TIMEOUT_MS;
 }
 function mergeSignals(timeoutMs, existing) {
   const timeout = AbortSignal.timeout(timeoutMs);
@@ -11644,12 +11672,11 @@ var init_timed_fetch = __esm({
     PROVIDER_FETCH_TIMEOUT_MS = 15e3;
     PROVIDER_UPLOAD_TIMEOUT_MS = 6e4;
     __name(isUploadRequest, "isUploadRequest");
+    __name(providerTimeoutMs, "providerTimeoutMs");
     __name(mergeSignals, "mergeSignals");
     __name(isTimeoutError, "isTimeoutError");
     __name(timedFetch, "timedFetch");
-    providerFetch = /* @__PURE__ */ __name((input2, init2) => {
-      return timedFetch(isUploadRequest(init2) ? PROVIDER_UPLOAD_TIMEOUT_MS : PROVIDER_FETCH_TIMEOUT_MS)(input2, init2);
-    }, "providerFetch");
+    providerFetch = /* @__PURE__ */ __name((input2, init2) => timedFetch(providerTimeoutMs(init2))(input2, init2), "providerFetch");
   }
 });
 
@@ -14177,10 +14204,6 @@ function validateSegmentMedia(media, meta3) {
   }
   return issues;
 }
-function countCashtags(text3) {
-  const found = text3.match(/\$[A-Za-z]{1,6}\b/g) || [];
-  return new Set(found.map((t) => t.toUpperCase())).size;
-}
 function base64Url(bytes) {
   let bin = "";
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
@@ -15349,7 +15372,7 @@ var init_providers = __esm({
             message: "Segment needs text or media",
             code: "empty"
           });
-          const check2 = validateMastodonText([seg.options?.spoilerText, seg.text].filter(Boolean).join("\n"), max);
+          const check2 = validateMastodonText(mastodonCountedText(seg.text || "", seg.options?.spoilerText), max);
           if (!check2.ok) issues.push({
             field: `thread[${i}].text`,
             message: check2.message || "Text too long",
@@ -15536,10 +15559,9 @@ var init_providers = __esm({
             message: "Threads allows max 8MB per image",
             code: "max_image_bytes"
           });
-          const links = (seg.text || "").match(/https?:\/\/[^\s]+/gi) || [];
-          if (new Set(links.map((l) => l.replace(/[.,);:!?]+$/, "").toLowerCase())).size > 5) issues.push({
+          if (countThreadsLinks(seg.text || "") > 5) issues.push({
             field: `thread[${i}].text`,
-            message: "Threads allows max 5 links per post",
+            message: `Threads allows max 5 links per post`,
             code: "max_links"
           });
         }
@@ -15920,7 +15942,6 @@ var init_providers = __esm({
     __name(isVideoLengthRefusal, "isVideoLengthRefusal");
     __name(videoTooLong, "videoTooLong");
     __name(validateSegmentMedia, "validateSegmentMedia");
-    __name(countCashtags, "countCashtags");
     __name(base64Url, "base64Url");
     __name(generateCodeVerifier, "generateCodeVerifier");
     __name(codeChallenge, "codeChallenge");
@@ -15975,7 +15996,7 @@ var init_providers = __esm({
           });
           if (countCashtags(seg.text || "") > 1) issues.push({
             field: `thread[${i}].text`,
-            message: "X allows max 1 cashtag (e.g. $AAPL) per post",
+            message: X_CASHTAG_MESSAGE,
             code: "max_cashtags"
           });
         }
@@ -16293,6 +16314,7 @@ function isAuthFailure(err, message) {
   return /401|unauthorized|invalid credentials|expired/i.test(message) || isThreadsPermissionFailure(message);
 }
 function isFailureRetryable(err, message) {
+  if (err instanceof ContentRuleError) return false;
   const classified = classifyProviderError(err);
   if (classified.code) return classified.retryable === true;
   return isRetryableError(message);
@@ -16534,7 +16556,7 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
     status: "publishing",
     attemptCount: claimedGeneration,
     updatedAt: now
-  }).where(and(eq(publishTargets.id, targetId), eq(publishTargets.attemptCount, target.attemptCount), or(inArray(publishTargets.status, ["pending", "failed"]), and(eq(publishTargets.status, "scheduled"), lte(publishTargets.scheduledFor, now)), and(eq(publishTargets.status, "publishing"), isNull(publishTargets.remotePostId), lte(publishTargets.updatedAt, staleBefore))))).returning({ id: publishTargets.id })).length) {
+  }).where(and(eq(publishTargets.id, targetId), eq(publishTargets.attemptCount, target.attemptCount), or(inArray(publishTargets.status, ["pending", "failed"]), and(eq(publishTargets.status, "scheduled"), lte(publishTargets.scheduledFor, now)), and(eq(publishTargets.status, "publishing"), isNull(publishTargets.remotePostId), lte(publishTargets.updatedAt, staleBefore), lt(publishTargets.attemptCount, 5))))).returning({ id: publishTargets.id })).length) {
     const latest = await first(db.select().from(publishTargets).where(eq(publishTargets.id, targetId)));
     if (latest?.status === "published" || latest?.remotePostId) return {
       status: "published",
@@ -16597,7 +16619,7 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
       ...meta3,
       handle: meta3.handle || conn.handle || void 0
     });
-    if (issues.length) throw new Error(issues.map((i) => i.message).join("; "));
+    if (issues.length) throw new ContentRuleError(issues.map((i) => i.message).join("; "));
     const baseFetch = options2.fetchImpl ?? providerFetch;
     const fetchImpl = options2.budget ? countingFetch(baseFetch, options2.budget) : baseFetch;
     let workingCreds = creds;
@@ -16856,7 +16878,7 @@ function isRetryableError(message) {
   if (/401|unauthorized|invalid credentials|forbidden|403/.test(lower)) return false;
   return true;
 }
-var S32, VIDEO_PROCESSING_DEADLINE_MS, isVideoMedia, VIDEO_START_CALLS, INLINE_PUBLISH_MS, DRAFT_STATUS_SQL;
+var S32, VIDEO_PROCESSING_DEADLINE_MS, ContentRuleError, isVideoMedia, VIDEO_START_CALLS, INLINE_PUBLISH_MS, DRAFT_STATUS_SQL;
 var init_publish = __esm({
   ".svelte-kit/output/server/chunks/publish.js"() {
     "use strict";
@@ -16885,6 +16907,11 @@ var init_publish = __esm({
     __name(retryDelayMs, "retryDelayMs");
     __name(isThreadsPermissionFailure, "isThreadsPermissionFailure");
     __name(isAuthFailure, "isAuthFailure");
+    ContentRuleError = class extends Error {
+      static {
+        __name(this, "ContentRuleError");
+      }
+    };
     __name(isFailureRetryable, "isFailureRetryable");
     __name(statusAfterFailedPublish, "statusAfterFailedPublish");
     __name(buildNormalizedPost, "buildNormalizedPost");
@@ -18411,16 +18438,22 @@ async function maybeSendFailureDigest(db, env3, opts = {}) {
 }
 async function recoverStalePublishing(db, now = /* @__PURE__ */ new Date()) {
   const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS);
-  await db.update(publishTargets).set({
-    status: "pending",
-    scheduledFor: null,
+  const spent = sql`${publishTargets.attemptCount} >= ${5}`;
+  const failed = (await db.update(publishTargets).set({
+    status: sql`CASE WHEN ${spent} THEN 'failed' ELSE 'pending' END`,
+    errorMessage: sql`CASE WHEN ${spent} THEN ${STALLED_PUBLISH_MESSAGE} ELSE ${publishTargets.errorMessage} END`,
+    scheduledFor: sql`CASE WHEN ${spent} THEN ${publishTargets.scheduledFor} ELSE NULL END`,
     jobId: null,
     updatedAt: now
-  }).where(and(eq(publishTargets.status, "publishing"), isNull(publishTargets.remotePostId), lte(publishTargets.updatedAt, staleBefore)));
+  }).where(and(eq(publishTargets.status, "publishing"), isNull(publishTargets.remotePostId), lte(publishTargets.updatedAt, staleBefore))).returning({
+    draftId: publishTargets.draftId,
+    status: publishTargets.status
+  })).filter((row) => row.status === "failed");
+  if (failed.length) await refreshDraftStatuses(db, failed.map((row) => row.draftId));
 }
 async function claimDueTargets(db, now = /* @__PURE__ */ new Date(), limit = 50) {
   const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS);
-  const rows = await db.select().from(publishTargets).where(and(isNull(publishTargets.remotePostId), inArray(publishTargets.connectionId, db.select({ id: connections.id }).from(connections).where(ne(connections.status, "disconnected"))), or(and(isNotNull(publishTargets.scheduledFor), lte(publishTargets.scheduledFor, now), inArray(publishTargets.status, ["scheduled", "pending"])), and(isNull(publishTargets.scheduledFor), eq(publishTargets.status, "pending")), and(eq(publishTargets.status, "publishing"), lte(publishTargets.updatedAt, staleBefore))))).orderBy(asc(publishTargets.scheduledFor)).limit(Math.min(500, Math.max(1, Math.floor(limit))));
+  const rows = await db.select().from(publishTargets).where(and(isNull(publishTargets.remotePostId), inArray(publishTargets.connectionId, db.select({ id: connections.id }).from(connections).where(ne(connections.status, "disconnected"))), or(and(isNotNull(publishTargets.scheduledFor), lte(publishTargets.scheduledFor, now), inArray(publishTargets.status, ["scheduled", "pending"])), and(isNull(publishTargets.scheduledFor), eq(publishTargets.status, "pending")), and(eq(publishTargets.status, "publishing"), lte(publishTargets.updatedAt, staleBefore), lt(publishTargets.attemptCount, 5))))).orderBy(asc(publishTargets.scheduledFor)).limit(Math.min(500, Math.max(1, Math.floor(limit))));
   return selectDueScheduledTargets(rows.map((r2) => ({
     id: r2.id,
     status: r2.status,
@@ -18559,7 +18592,7 @@ async function consumePublishJob(db, env3, store, targetId, fetchImpl, budget) {
     mustTry: true
   });
 }
-var HEARTBEAT_ID, DIGEST_ID, JANITOR_SETTING, MASTODON_LIMITS_PER_RUN;
+var HEARTBEAT_ID, DIGEST_ID, STALLED_PUBLISH_MESSAGE, JANITOR_SETTING, MASTODON_LIMITS_PER_RUN;
 var init_scheduler = __esm({
   ".svelte-kit/output/server/chunks/scheduler.js"() {
     "use strict";
@@ -18583,6 +18616,7 @@ var init_scheduler = __esm({
     DIGEST_ID = "failure-digest";
     __name(escapeHtml, "escapeHtml");
     __name(maybeSendFailureDigest, "maybeSendFailureDigest");
+    STALLED_PUBLISH_MESSAGE = `Publishing stopped before it finished 5 times. Check the account before retrying, as it may have been posted.`;
     __name(recoverStalePublishing, "recoverStalePublishing");
     __name(claimDueTargets, "claimDueTargets");
     JANITOR_SETTING = "janitor_at";
@@ -41262,7 +41296,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1793655384290");
+  response.headers.set("x-sveltekit-version", "1794121284379");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43964,7 +43998,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_3z5czf";
+  const global = "__sveltekit_1q346n3";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44708,7 +44742,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_3z5czf";
+  const global = "__sveltekit_1q346n3";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44733,7 +44767,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1793655384290")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1794121284379")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47287,7 +47321,7 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.CNktbrjS.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/By9RmFPS.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/FWvekpb6.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    imports = ["_app/immutable/nodes/0.CIEtSfYI.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/By9RmFPS.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/Ca7kRzJu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/D20gE_Xc.js"];
     stylesheets = ["_app/immutable/assets/0.CIFeZrgT.css"];
     fonts = [];
   }
@@ -48454,7 +48488,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.D3VZHMXt.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DlPuqcoy.js", "_app/immutable/chunks/B8Qk5jBb.js"];
+    imports5 = ["_app/immutable/nodes/4.DUv_DUuG.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DlPuqcoy.js", "_app/immutable/chunks/B8Qk5jBb.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -49591,7 +49625,7 @@ function Editor($$renderer, $$props) {
     const blueskyShortensLinks = derived2(() => !accountsFor("bluesky").some((account) => isZernioConnection(account.metaJson)));
     function countForPlatform(text3, platform2) {
       if (platform2 === "bluesky") return blueskyTextLength(text3, { shortenLinks: blueskyShortensLinks() });
-      if (platform2 === "mastodon") return mastodonWeightedLength(text3);
+      if (platform2 === "mastodon") return mastodonWeightedLength(mastodonCountedText(text3, mastoCW));
       if (platform2 === "x") return xWeightedLength(text3);
       return countGraphemes(text3);
     }
@@ -49630,7 +49664,7 @@ function Editor($$renderer, $$props) {
           max: PLATFORM_LIMITS.bluesky
         },
         mastodon: {
-          len: maxThreadSegmentLength(mastoText, mastodonWeightedLength),
+          len: maxThreadSegmentLength(mastoText, (s2) => countForPlatform(s2, "mastodon")),
           max: platformMax("mastodon", accountsFor("mastodon"))
         },
         linkedin: {
@@ -49660,11 +49694,14 @@ function Editor($$renderer, $$props) {
       }
       return over;
     });
-    const threadsLinkCount = derived2(() => {
-      const found = effectivePlatformBody(baseBody, overrides, "threads").match(/https?:\/\/[^\s]+/gi) ?? [];
-      return new Set(found.map((u) => u.replace(/[.,);:!?]+$/, "").toLowerCase()).filter(Boolean)).size;
-    });
+    const threadsLinkCount = derived2(() => mostThreadsLinksInAPost(effectivePlatformBody(baseBody, overrides, "threads")));
     const threadsLinksOver = derived2(() => threadsLinkCount() > 5 && selectedPlatforms().has("threads"));
+    derived2(() => selectedPlatforms().has("x") && mostCashtagsInAPost(effectivePlatformBody(baseBody, overrides, "x")) > 1);
+    derived2(() => {
+      if (!selectedPlatforms().has("instagram")) return null;
+      const check2 = validateInstagramText(flattenThreadBody(effectivePlatformBody(baseBody, overrides, "instagram")));
+      return check2.ok ? null : check2.message ?? "Instagram cannot take this caption";
+    });
     const linkedinMediaProblem = derived2(() => {
       if (!selectedPlatforms().has("linkedin")) return null;
       if (media.length > 4) return `LinkedIn combines the thread into one post \u2014 max 4 images (${media.length} attached)`;
@@ -51048,7 +51085,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.ChipPWCZ.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/DwjJXDhP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/Dk8Yd-2s.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/FWvekpb6.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js"];
+    imports6 = ["_app/immutable/nodes/5.BaPCSiGP.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/76sg9EgG.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DoBbhMVD.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Ca7kRzJu.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -52339,7 +52376,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id12 = "src/routes/p/[token]/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.BGsEn_TQ.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Dk8Yd-2s.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports14 = ["_app/immutable/nodes/13.BC-7-B7K.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/DoBbhMVD.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -53457,7 +53494,7 @@ var init__15 = __esm({
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id13 = "src/routes/posts/+page.server.ts";
-    imports15 = ["_app/immutable/nodes/14.axH7H_ZT.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/B87q3Imq.js", "_app/immutable/chunks/DwjJXDhP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/Dk8Yd-2s.js", "_app/immutable/chunks/B4niDChe.js", "_app/immutable/chunks/Ci3HjfUo.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/FWvekpb6.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
+    imports15 = ["_app/immutable/nodes/14.DrHPl419.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/B87q3Imq.js", "_app/immutable/chunks/76sg9EgG.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/DoBbhMVD.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Ca7kRzJu.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -56955,7 +56992,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.27.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.27.2")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57079,7 +57116,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.BDOepTu5.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
+    imports16 = ["_app/immutable/nodes/15.CNrq4-ch.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -61229,7 +61266,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.27.1",
+          version: "1.27.2",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -72364,7 +72401,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.27.1";
+  const current = options2.current ?? "1.27.2";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73220,7 +73257,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.27.1",
+          version: "1.27.2",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73429,7 +73466,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.27.1"
+    currentVersion: "1.27.2"
   };
 }
 async function download(ctx, url3) {
@@ -73980,7 +74017,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.7eBjX4Dg.js", app: "_app/immutable/entry/app.BeLhvI8p.js", imports: ["_app/immutable/entry/start.7eBjX4Dg.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bm2FJUYq.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/app.BeLhvI8p.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.7eBjX4Dg.js", app: "_app/immutable/entry/app.B4jPtY3_.js", imports: ["_app/immutable/entry/start.7eBjX4Dg.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bm2FJUYq.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/app.B4jPtY3_.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
