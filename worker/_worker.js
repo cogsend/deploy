@@ -2000,6 +2000,64 @@ var init_devalue = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/bytes.js
+function utf8Bytes(text3) {
+  return encoder.encode(text3);
+}
+function utf8ByteLength(text3) {
+  return utf8Bytes(text3).length;
+}
+function bytesToHex(bytes) {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+function hexToBytes(hex4) {
+  const clean = hex4.trim();
+  if (clean.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(clean)) throw new Error("Invalid hex");
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+  return out;
+}
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunk = 32768;
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(binary);
+}
+function base64ToBytes(b64) {
+  const binary = atob(b64);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+  return out;
+}
+function randomBytes(length) {
+  return crypto.getRandomValues(new Uint8Array(length));
+}
+function randomHex(length = 32) {
+  return bytesToHex(randomBytes(length));
+}
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+var encoder;
+var init_bytes = __esm({
+  ".svelte-kit/output/server/chunks/bytes.js"() {
+    "use strict";
+    encoder = new TextEncoder();
+    __name(utf8Bytes, "utf8Bytes");
+    __name(utf8ByteLength, "utf8ByteLength");
+    __name(bytesToHex, "bytesToHex");
+    __name(hexToBytes, "hexToBytes");
+    __name(bytesToBase64, "bytesToBase64");
+    __name(base64ToBytes, "base64ToBytes");
+    __name(randomBytes, "randomBytes");
+    __name(randomHex, "randomHex");
+    __name(timingSafeEqual, "timingSafeEqual");
+  }
+});
+
 // node_modules/drizzle-orm/entity.js
 function is(value, type) {
   if (!value || typeof value !== "object") {
@@ -8955,293 +9013,6 @@ var init_client = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/bytes.js
-function utf8Bytes(text3) {
-  return encoder.encode(text3);
-}
-function utf8ByteLength(text3) {
-  return utf8Bytes(text3).length;
-}
-function bytesToHex(bytes) {
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-function hexToBytes(hex4) {
-  const clean = hex4.trim();
-  if (clean.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(clean)) throw new Error("Invalid hex");
-  const out = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
-  return out;
-}
-function bytesToBase64(bytes) {
-  let binary = "";
-  const chunk = 32768;
-  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  return btoa(binary);
-}
-function base64ToBytes(b64) {
-  const binary = atob(b64);
-  const out = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
-  return out;
-}
-function randomBytes(length) {
-  return crypto.getRandomValues(new Uint8Array(length));
-}
-function randomHex(length = 32) {
-  return bytesToHex(randomBytes(length));
-}
-function timingSafeEqual(a, b) {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-  return diff === 0;
-}
-var encoder;
-var init_bytes = __esm({
-  ".svelte-kit/output/server/chunks/bytes.js"() {
-    "use strict";
-    encoder = new TextEncoder();
-    __name(utf8Bytes, "utf8Bytes");
-    __name(utf8ByteLength, "utf8ByteLength");
-    __name(bytesToHex, "bytesToHex");
-    __name(hexToBytes, "hexToBytes");
-    __name(bytesToBase64, "bytesToBase64");
-    __name(base64ToBytes, "base64ToBytes");
-    __name(randomBytes, "randomBytes");
-    __name(randomHex, "randomHex");
-    __name(timingSafeEqual, "timingSafeEqual");
-  }
-});
-
-// .svelte-kit/output/server/chunks/crypto.js
-async function sha256(data) {
-  return new Uint8Array(await crypto.subtle.digest("SHA-256", data));
-}
-async function keyFromEnv(hexOrSecret) {
-  const raw = /^[0-9a-fA-F]{64}$/.test(hexOrSecret) ? hexToBytes(hexOrSecret) : await sha256(utf8Bytes(hexOrSecret));
-  return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
-}
-async function encryptSecret(plaintext, encryptionKey) {
-  const key = await keyFromEnv(encryptionKey);
-  const iv = randomBytes(12);
-  const packed = new Uint8Array(await crypto.subtle.encrypt({
-    name: "AES-GCM",
-    iv
-  }, key, utf8Bytes(plaintext)));
-  const data = packed.subarray(0, packed.length - TAG_BYTES);
-  const tag = packed.subarray(packed.length - TAG_BYTES);
-  return `v1:${bytesToBase64(iv)}:${bytesToBase64(tag)}:${bytesToBase64(data)}`;
-}
-async function decryptSecret(payload2, encryptionKey) {
-  const parts = payload2.split(":");
-  if (parts.length !== 4 || parts[0] !== "v1") throw new Error("Invalid encrypted payload");
-  const [, ivB64, tagB64, dataB64] = parts;
-  const key = await keyFromEnv(encryptionKey);
-  const iv = base64ToBytes(ivB64);
-  const tag = base64ToBytes(tagB64);
-  const data = base64ToBytes(dataB64);
-  const packed = new Uint8Array(data.length + tag.length);
-  packed.set(data, 0);
-  packed.set(tag, data.length);
-  try {
-    const dec = await crypto.subtle.decrypt({
-      name: "AES-GCM",
-      iv
-    }, key, packed);
-    return new TextDecoder().decode(dec);
-  } catch {
-    throw new Error("Invalid encrypted payload");
-  }
-}
-async function encryptJson(value, encryptionKey) {
-  return encryptSecret(JSON.stringify(value), encryptionKey);
-}
-async function decryptJson(payload2, encryptionKey) {
-  return JSON.parse(await decryptSecret(payload2, encryptionKey));
-}
-async function hashPassword(password) {
-  const salt = randomBytes(16);
-  const key = await crypto.subtle.importKey("raw", utf8Bytes(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({
-    name: "PBKDF2",
-    hash: "SHA-256",
-    salt,
-    iterations: PBKDF2_ITERS
-  }, key, 256);
-  return `pbkdf2$${PBKDF2_ITERS}$${bytesToBase64(salt)}$${bytesToBase64(new Uint8Array(bits))}`;
-}
-async function passwordKeyHex(password, salt) {
-  const key = await crypto.subtle.importKey("raw", utf8Bytes(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({
-    name: "PBKDF2",
-    hash: "SHA-256",
-    salt,
-    iterations: PBKDF2_ITERS
-  }, key, 256);
-  return bytesToHex(new Uint8Array(bits));
-}
-async function verifyPassword(password, stored) {
-  const parts = stored.split("$");
-  if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
-  const iterations = Number.parseInt(parts[1], 10);
-  if (!Number.isInteger(iterations) || iterations < 1 || iterations > PBKDF2_MAX_ITERS) return false;
-  const salt = base64ToBytes(parts[2]);
-  const expected = base64ToBytes(parts[3]);
-  if (salt.length === 0 || expected.length === 0) return false;
-  const key = await crypto.subtle.importKey("raw", utf8Bytes(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = new Uint8Array(await crypto.subtle.deriveBits({
-    name: "PBKDF2",
-    hash: "SHA-256",
-    salt,
-    iterations
-  }, key, expected.length * 8));
-  return timingSafeEqual(expected, bits);
-}
-async function hmacKey(secret) {
-  const cached3 = hmacKeys.get(secret);
-  if (cached3) return cached3;
-  const pending2 = crypto.subtle.importKey("raw", utf8Bytes(secret), {
-    name: "HMAC",
-    hash: "SHA-256"
-  }, false, ["sign"]).catch((err) => {
-    hmacKeys.delete(secret);
-    throw err;
-  });
-  hmacKeys.set(secret, pending2);
-  if (hmacKeys.size > HMAC_KEY_CACHE_MAX) {
-    const oldest = hmacKeys.keys().next().value;
-    if (oldest !== void 0 && oldest !== secret) hmacKeys.delete(oldest);
-  }
-  return pending2;
-}
-async function hmacHex(secret, value) {
-  const key = await hmacKey(secret);
-  const sig = await crypto.subtle.sign("HMAC", key, utf8Bytes(value));
-  return Array.from(new Uint8Array(sig), (b) => b.toString(16).padStart(2, "0")).join("");
-}
-var PBKDF2_ITERS, PBKDF2_MAX_ITERS, TAG_BYTES, HMAC_KEY_CACHE_MAX, hmacKeys;
-var init_crypto = __esm({
-  ".svelte-kit/output/server/chunks/crypto.js"() {
-    "use strict";
-    init_bytes();
-    PBKDF2_ITERS = 25e3;
-    PBKDF2_MAX_ITERS = 1e5;
-    TAG_BYTES = 16;
-    __name(sha256, "sha256");
-    __name(keyFromEnv, "keyFromEnv");
-    __name(encryptSecret, "encryptSecret");
-    __name(decryptSecret, "decryptSecret");
-    __name(encryptJson, "encryptJson");
-    __name(decryptJson, "decryptJson");
-    __name(hashPassword, "hashPassword");
-    __name(passwordKeyHex, "passwordKeyHex");
-    __name(verifyPassword, "verifyPassword");
-    HMAC_KEY_CACHE_MAX = 32;
-    hmacKeys = /* @__PURE__ */ new Map();
-    __name(hmacKey, "hmacKey");
-    __name(hmacHex, "hmacHex");
-  }
-});
-
-// .svelte-kit/output/server/chunks/profile-settings.js
-function isVisibility(v) {
-  return typeof v === "string" && MASTO_VISIBILITIES.includes(v);
-}
-function sanitizeAccountIds(ids) {
-  if (!Array.isArray(ids)) return [];
-  return ids.filter((id2) => typeof id2 === "string" && id2.length > 0 && id2.length <= 128);
-}
-function isValidProfilePictureUrl(raw) {
-  if (typeof raw !== "string") return false;
-  const s2 = raw.trim();
-  if (!s2 || s2.length > 2e3) return false;
-  try {
-    return new URL(s2).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-function sanitizeProfilePictureUrl(raw) {
-  const s2 = typeof raw === "string" ? raw.trim() : "";
-  return isValidProfilePictureUrl(s2) ? s2 : "";
-}
-function parseProfileSettings(raw) {
-  if (typeof raw === "string") try {
-    raw = JSON.parse(raw);
-  } catch {
-    return { ...DEFAULT_PROFILE_SETTINGS };
-  }
-  if (!raw || typeof raw !== "object") return { ...DEFAULT_PROFILE_SETTINGS };
-  const r2 = raw;
-  return {
-    mastoVisibility: isVisibility(r2.mastoVisibility) ? r2.mastoVisibility : "public",
-    defaultAccountIds: sanitizeAccountIds(r2.defaultAccountIds),
-    profilePictureUrl: sanitizeProfilePictureUrl(r2.profilePictureUrl)
-  };
-}
-function normalizeProfileSettings(input2) {
-  if (!input2 || typeof input2 !== "object") return {
-    ok: false,
-    error: "Invalid settings"
-  };
-  const r2 = input2;
-  if (r2.mastoVisibility !== void 0 && !isVisibility(r2.mastoVisibility)) return {
-    ok: false,
-    error: "Invalid visibility"
-  };
-  if (r2.defaultAccountIds !== void 0) {
-    if (!Array.isArray(r2.defaultAccountIds) || r2.defaultAccountIds.length > 50 || r2.defaultAccountIds.some((id2) => typeof id2 !== "string" || id2.length === 0 || id2.length > 128)) return {
-      ok: false,
-      error: "Invalid default accounts"
-    };
-  }
-  if (r2.profilePictureUrl !== void 0) {
-    if (typeof r2.profilePictureUrl !== "string") return {
-      ok: false,
-      error: "Invalid profile picture URL"
-    };
-    const trimmed = r2.profilePictureUrl.trim();
-    if (trimmed.length > 0 && !isValidProfilePictureUrl(trimmed)) return {
-      ok: false,
-      error: "Invalid profile picture URL"
-    };
-  }
-  return {
-    ok: true,
-    settings: parseProfileSettings(input2)
-  };
-}
-var MASTO_VISIBILITIES, MASTO_VISIBILITY_LABELS, DEFAULT_PROFILE_SETTINGS, PROFILE_PICTURE_URL_MAX;
-var init_profile_settings = __esm({
-  ".svelte-kit/output/server/chunks/profile-settings.js"() {
-    "use strict";
-    MASTO_VISIBILITIES = [
-      "public",
-      "unlisted",
-      "private",
-      "direct"
-    ];
-    MASTO_VISIBILITY_LABELS = {
-      public: "Public",
-      unlisted: "Unlisted",
-      private: "Followers",
-      direct: "Direct"
-    };
-    DEFAULT_PROFILE_SETTINGS = {
-      mastoVisibility: "public",
-      defaultAccountIds: [],
-      profilePictureUrl: ""
-    };
-    __name(isVisibility, "isVisibility");
-    PROFILE_PICTURE_URL_MAX = 2e3;
-    __name(sanitizeAccountIds, "sanitizeAccountIds");
-    __name(isValidProfilePictureUrl, "isValidProfilePictureUrl");
-    __name(sanitizeProfilePictureUrl, "sanitizeProfilePictureUrl");
-    __name(parseProfileSettings, "parseProfileSettings");
-    __name(normalizeProfileSettings, "normalizeProfileSettings");
-  }
-});
-
 // node_modules/drizzle-orm/operations.js
 var init_operations2 = __esm({
   "node_modules/drizzle-orm/operations.js"() {
@@ -9265,352 +9036,6 @@ var init_drizzle_orm = __esm({
     init_table();
     init_utils2();
     init_view_common();
-  }
-});
-
-// .svelte-kit/output/server/chunks/auth.js
-function isLocalAppUrl(url3) {
-  try {
-    return LOCAL_HOSTS.has(new URL(String(url3)).hostname);
-  } catch {
-    return false;
-  }
-}
-function isLocalRequestHost(host) {
-  let h = String(host ?? "").toLowerCase().trim();
-  if (!h) return false;
-  if (h.startsWith("[")) {
-    const end = h.indexOf("]");
-    if (end !== -1) h = h.slice(0, end + 1);
-  } else {
-    const parts = h.split(":");
-    if (parts.length === 2) h = parts[0];
-  }
-  if (LOCAL_HOSTS.has(h) || h.endsWith(".localhost")) return true;
-  return PRIVATE_HOST.test(h);
-}
-function requestOrigin(url3) {
-  try {
-    return new URL(String(url3)).origin;
-  } catch {
-    return null;
-  }
-}
-function isPinnedAppUrl(value) {
-  const origin2 = requestOrigin(String(value ?? "").trim());
-  return origin2 !== null && !isLocalAppUrl(origin2);
-}
-function resolveAppUrl(input2) {
-  const configuredOrigin = requestOrigin(normalize(input2.configured));
-  if (configuredOrigin && !isLocalAppUrl(configuredOrigin)) return {
-    url: configuredOrigin,
-    source: "configured"
-  };
-  const requested = requestOrigins(input2.requestUrl);
-  if (requested.public) return {
-    url: requested.public,
-    source: "request"
-  };
-  if (configuredOrigin) return {
-    url: configuredOrigin,
-    source: "configured"
-  };
-  if (requested.loopback) return {
-    url: requested.loopback,
-    source: "request"
-  };
-  const storedOrigin = requestOrigin(normalize(input2.stored));
-  if (storedOrigin) return {
-    url: storedOrigin,
-    source: "stored"
-  };
-  return {
-    url: "",
-    source: "none"
-  };
-}
-function normalize(value) {
-  return String(value ?? "").trim().replace(/\/+$/, "");
-}
-function requestOrigins(url3) {
-  const origin2 = requestOrigin(url3);
-  if (!origin2) return {
-    public: null,
-    loopback: null
-  };
-  const { hostname: hostname3 } = new URL(origin2);
-  if (hostname3 === "cogsend.internal") return {
-    public: null,
-    loopback: null
-  };
-  if (isLocalAppUrl(origin2)) return {
-    public: null,
-    loopback: origin2
-  };
-  if (isLocalRequestHost(hostname3)) return {
-    public: null,
-    loopback: null
-  };
-  return {
-    public: origin2,
-    loopback: null
-  };
-}
-function shouldUseSecureCookie(opts) {
-  const appUrl = (opts.appUrl || "").trim();
-  try {
-    if (appUrl) {
-      if (isLocalAppUrl(appUrl)) return false;
-      if (new URL(appUrl).protocol !== "https:") return false;
-      return true;
-    }
-  } catch {
-  }
-  if (isLocalRequestHost(opts.requestHost)) return false;
-  return opts.isProduction;
-}
-function sessionMaxAgeSeconds(remember) {
-  return remember ? SESSION_MAX_AGE_REMEMBER : SESSION_MAX_AGE_SESSION;
-}
-function shouldSlideSession(expiresAt, now, maxAgeSeconds) {
-  return expiresAt.getTime() - now.getTime() < maxAgeSeconds * 1e3 / 2;
-}
-function nextSessionExpiry(now, maxAgeSeconds) {
-  return new Date(now.getTime() + maxAgeSeconds * 1e3);
-}
-function isSessionIdle(lastSeen, now, remember = false) {
-  if (!lastSeen) return true;
-  const limit = remember ? SESSION_IDLE_REMEMBER_MS : SESSION_IDLE_MS;
-  return now.getTime() - lastSeen.getTime() > limit;
-}
-function shouldTouchSeen(lastSeen, now) {
-  if (!lastSeen) return true;
-  return now.getTime() - lastSeen.getTime() > SESSION_SEEN_WRITE_MS;
-}
-function isFullyVerified(user) {
-  return Boolean(user && user.totpEnabled && user.mfaVerified);
-}
-function asMachineUser(admin) {
-  return {
-    id: admin.id,
-    email: admin.email,
-    timezone: admin.timezone,
-    totpEnabled: true,
-    mfaVerified: true,
-    displayName: admin.displayName ?? null,
-    profilePictureUrl: parseProfileSettings(admin.settingsJson).profilePictureUrl
-  };
-}
-function needsTotpEnroll(user) {
-  return Boolean(user && !user.totpEnabled);
-}
-async function hashToken(raw, secret) {
-  return hmacHex(secret, `session:${raw}`);
-}
-async function passwordFingerprint(env3, passwordHash) {
-  return hmacHex(env3.AUTH_SECRET, `pwd-fp:hash:${passwordHash ?? ""}`);
-}
-async function needsSetup(db) {
-  return !await first(db.select({ id: users.id }).from(users).limit(1));
-}
-async function getAdminUser(db) {
-  return await first(db.select().from(users).limit(1)) ?? null;
-}
-async function createSession(db, env3, userId, remember = true, mfaVerified = false, passwordHash) {
-  const raw = randomHex(32);
-  const token = await hashToken(raw, env3.AUTH_SECRET);
-  const maxAge = sessionMaxAgeSeconds(remember);
-  const now = /* @__PURE__ */ new Date();
-  await db.insert(sessions).values({
-    id: newId(),
-    token,
-    userId,
-    expiresAt: nextSessionExpiry(now, maxAge),
-    remember,
-    mfaVerified,
-    createdAt: now,
-    pwdFp: await passwordFingerprint(env3, passwordHash),
-    lastSeenAt: now
-  });
-  return {
-    raw,
-    maxAge
-  };
-}
-async function revokeOtherSessions(db, userId, keepSessionId) {
-  if (keepSessionId) {
-    await db.delete(sessions).where(and(eq(sessions.userId, userId), ne(sessions.id, keepSessionId)));
-    return;
-  }
-  await db.delete(sessions).where(eq(sessions.userId, userId));
-}
-async function destroySession(db, env3, rawToken) {
-  if (!rawToken) return;
-  const token = await hashToken(rawToken, env3.AUTH_SECRET);
-  await db.delete(sessions).where(eq(sessions.token, token));
-}
-function cookieSecureFlag(env3, requestHost) {
-  return shouldUseSecureCookie({
-    isProduction: true,
-    appUrl: env3.APP_URL,
-    requestHost
-  });
-}
-async function getSessionUser(db, env3, rawToken) {
-  if (!rawToken) return null;
-  const token = await hashToken(rawToken, env3.AUTH_SECRET);
-  const row = await first(db.select({
-    sessionId: sessions.id,
-    expiresAt: sessions.expiresAt,
-    remember: sessions.remember,
-    pwdFp: sessions.pwdFp,
-    lastSeenAt: sessions.lastSeenAt,
-    userId: users.id,
-    email: users.email,
-    timezone: users.timezone,
-    totpEnabled: users.totpEnabled,
-    mfaVerified: sessions.mfaVerified,
-    passwordHash: users.passwordHash,
-    displayName: users.displayName,
-    settingsJson: users.settingsJson
-  }).from(sessions).innerJoin(users, eq(sessions.userId, users.id)).where(eq(sessions.token, token)));
-  if (!row) return null;
-  const now = /* @__PURE__ */ new Date();
-  if (row.expiresAt < now) {
-    await db.delete(sessions).where(eq(sessions.id, row.sessionId));
-    return null;
-  }
-  const fp = await passwordFingerprint(env3, row.passwordHash);
-  if (!row.pwdFp || row.pwdFp !== fp) {
-    await db.delete(sessions).where(eq(sessions.id, row.sessionId));
-    return null;
-  }
-  if (isSessionIdle(row.lastSeenAt, now, Boolean(row.remember))) {
-    await db.delete(sessions).where(eq(sessions.id, row.sessionId));
-    return null;
-  }
-  const user = {
-    id: row.userId,
-    email: row.email,
-    timezone: row.timezone,
-    totpEnabled: Boolean(row.totpEnabled),
-    mfaVerified: Boolean(row.mfaVerified),
-    displayName: row.displayName ?? null,
-    profilePictureUrl: parseProfileSettings(row.settingsJson).profilePictureUrl
-  };
-  const maxAge = sessionMaxAgeSeconds(row.remember);
-  const touch = shouldTouchSeen(row.lastSeenAt, now);
-  if (shouldSlideSession(row.expiresAt, now, maxAge)) {
-    await db.update(sessions).set({
-      expiresAt: nextSessionExpiry(now, maxAge),
-      ...touch ? {
-        pwdFp: fp,
-        lastSeenAt: now
-      } : {}
-    }).where(eq(sessions.id, row.sessionId));
-    return {
-      user,
-      slideMaxAge: maxAge
-    };
-  }
-  if (touch) await db.update(sessions).set({
-    pwdFp: fp,
-    lastSeenAt: now
-  }).where(eq(sessions.id, row.sessionId));
-  return { user };
-}
-async function purgeExpiredSessions(db) {
-  await db.delete(sessions).where(lt(sessions.expiresAt, /* @__PURE__ */ new Date()));
-}
-var LOCAL_HOSTS, PRIVATE_HOST, SESSION_MAX_AGE_REMEMBER, SESSION_MAX_AGE_SESSION, SESSION_IDLE_MS, SESSION_IDLE_REMEMBER_MS, SESSION_SEEN_WRITE_MS, SESSION_COOKIE;
-var init_auth = __esm({
-  ".svelte-kit/output/server/chunks/auth.js"() {
-    "use strict";
-    init_client();
-    init_bytes();
-    init_crypto();
-    init_profile_settings();
-    init_drizzle_orm();
-    LOCAL_HOSTS = /* @__PURE__ */ new Set([
-      "localhost",
-      "127.0.0.1",
-      "0.0.0.0",
-      "::1",
-      "[::1]"
-    ]);
-    __name(isLocalAppUrl, "isLocalAppUrl");
-    PRIVATE_HOST = /^(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})$/;
-    __name(isLocalRequestHost, "isLocalRequestHost");
-    __name(requestOrigin, "requestOrigin");
-    __name(isPinnedAppUrl, "isPinnedAppUrl");
-    __name(resolveAppUrl, "resolveAppUrl");
-    __name(normalize, "normalize");
-    __name(requestOrigins, "requestOrigins");
-    SESSION_MAX_AGE_REMEMBER = 2592e3;
-    SESSION_MAX_AGE_SESSION = 604800;
-    __name(shouldUseSecureCookie, "shouldUseSecureCookie");
-    __name(sessionMaxAgeSeconds, "sessionMaxAgeSeconds");
-    __name(shouldSlideSession, "shouldSlideSession");
-    __name(nextSessionExpiry, "nextSessionExpiry");
-    SESSION_IDLE_MS = 864e5;
-    SESSION_IDLE_REMEMBER_MS = 6048e5;
-    SESSION_SEEN_WRITE_MS = 9e5;
-    __name(isSessionIdle, "isSessionIdle");
-    __name(shouldTouchSeen, "shouldTouchSeen");
-    SESSION_COOKIE = "cog_session";
-    __name(isFullyVerified, "isFullyVerified");
-    __name(asMachineUser, "asMachineUser");
-    __name(needsTotpEnroll, "needsTotpEnroll");
-    __name(hashToken, "hashToken");
-    __name(passwordFingerprint, "passwordFingerprint");
-    __name(needsSetup, "needsSetup");
-    __name(getAdminUser, "getAdminUser");
-    __name(createSession, "createSession");
-    __name(revokeOtherSessions, "revokeOtherSessions");
-    __name(destroySession, "destroySession");
-    __name(cookieSecureFlag, "cookieSecureFlag");
-    __name(getSessionUser, "getSessionUser");
-    __name(purgeExpiredSessions, "purgeExpiredSessions");
-  }
-});
-
-// .svelte-kit/output/server/chunks/rate-limit.js
-function isRateLimitedPath(path3) {
-  const trimmed = path3.length > 1 ? path3.replace(/\/+$/, "") : path3;
-  return RATE_LIMITED_PATHS.includes(trimmed);
-}
-function rateLimitBucket(path3) {
-  if (isRateLimitedPath(path3)) return "";
-  if (path3.startsWith("/p/")) return path3.includes("/media/") ? "share-media:" : "share:";
-  return null;
-}
-function rateLimitKey(headers2) {
-  return headers2.get("cf-connecting-ip")?.trim() || null;
-}
-async function rateLimitProblem(limiter, key) {
-  if (!limiter || !key) return null;
-  try {
-    const { success: success2 } = await limiter.limit({ key });
-    return success2 ? null : "Too many attempts \u2014 wait a minute and try again";
-  } catch {
-    return null;
-  }
-}
-var RATE_LIMITED_PATHS;
-var init_rate_limit = __esm({
-  ".svelte-kit/output/server/chunks/rate-limit.js"() {
-    "use strict";
-    RATE_LIMITED_PATHS = [
-      "/api/auth/login",
-      "/api/auth/claim",
-      "/api/auth/totp/verify",
-      "/api/update/unlock",
-      "/api/update/remember"
-    ];
-    __name(isRateLimitedPath, "isRateLimitedPath");
-    __name(rateLimitBucket, "rateLimitBucket");
-    __name(rateLimitKey, "rateLimitKey");
-    __name(rateLimitProblem, "rateLimitProblem");
   }
 });
 
@@ -10003,6 +9428,750 @@ var init_tick_token = __esm({
     __name(rotateTickToken, "rotateTickToken");
     __name(revokeTickToken, "revokeTickToken");
     __name(verifyTickToken, "verifyTickToken");
+  }
+});
+
+// .svelte-kit/output/server/chunks/api-keys.js
+function isApiKeyFormat(raw) {
+  if (!raw?.startsWith("cog_")) return false;
+  const hex4 = raw.slice(4);
+  return hex4.length === RAW_HEX_LEN2 && /^[0-9a-fA-F]+$/.test(hex4);
+}
+async function hashApiKey(raw) {
+  const digest = await crypto.subtle.digest("SHA-256", utf8Bytes(`apikey:${raw}`));
+  return bytesToHex(new Uint8Array(digest));
+}
+async function getActiveApiKey(db, userId) {
+  return await first(db.select().from(apiKeys).where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt))).orderBy(desc(apiKeys.createdAt)).limit(1)) ?? null;
+}
+async function rotateApiKey(db, userId, scopes = ALL_SCOPES) {
+  const raw = `${API_KEY_PREFIX}${randomHex(32)}`;
+  const now = /* @__PURE__ */ new Date();
+  const id2 = newId();
+  const finalScopes = normalizeApiScopes(scopes);
+  await db.insert(apiKeys).values({
+    id: id2,
+    userId,
+    keyHash: await hashApiKey(raw),
+    prefix: raw.slice(0, 12),
+    scopes: JSON.stringify(finalScopes),
+    createdAt: now,
+    lastUsedAt: null,
+    revokedAt: null
+  });
+  await db.update(apiKeys).set({ revokedAt: now }).where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt), ne(apiKeys.id, id2)));
+  return {
+    raw,
+    prefix: raw.slice(0, 12),
+    createdAt: now,
+    scopes: finalScopes
+  };
+}
+async function revokeApiKeys(db, userId) {
+  const active = await db.select({ id: apiKeys.id }).from(apiKeys).where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)));
+  if (active.length === 0) return 0;
+  await db.update(apiKeys).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)));
+  return active.length;
+}
+async function verifyApiKey(db, raw) {
+  if (!isApiKeyFormat(raw)) return null;
+  const row = await first(db.select({
+    keyId: apiKeys.id,
+    userId: apiKeys.userId,
+    scopes: apiKeys.scopes
+  }).from(apiKeys).where(and(eq(apiKeys.keyHash, await hashApiKey(raw)), isNull(apiKeys.revokedAt))));
+  if (!row) return null;
+  return {
+    keyId: row.keyId,
+    userId: row.userId,
+    scopes: parseApiScopes(row.scopes)
+  };
+}
+function touchApiKey(db, keyId) {
+  return (async () => {
+    try {
+      await db.update(apiKeys).set({ lastUsedAt: /* @__PURE__ */ new Date() }).where(eq(apiKeys.id, keyId));
+    } catch {
+    }
+  })();
+}
+var API_KEY_PREFIX, RAW_HEX_LEN2;
+var init_api_keys = __esm({
+  ".svelte-kit/output/server/chunks/api-keys.js"() {
+    "use strict";
+    init_tick_token();
+    init_bytes();
+    init_client();
+    init_drizzle_orm();
+    API_KEY_PREFIX = "cog_";
+    RAW_HEX_LEN2 = 64;
+    __name(isApiKeyFormat, "isApiKeyFormat");
+    __name(hashApiKey, "hashApiKey");
+    __name(getActiveApiKey, "getActiveApiKey");
+    __name(rotateApiKey, "rotateApiKey");
+    __name(revokeApiKeys, "revokeApiKeys");
+    __name(verifyApiKey, "verifyApiKey");
+    __name(touchApiKey, "touchApiKey");
+  }
+});
+
+// .svelte-kit/output/server/chunks/profile-settings.js
+function isVisibility(v) {
+  return typeof v === "string" && MASTO_VISIBILITIES.includes(v);
+}
+function sanitizeAccountIds(ids) {
+  if (!Array.isArray(ids)) return [];
+  return ids.filter((id2) => typeof id2 === "string" && id2.length > 0 && id2.length <= 128);
+}
+function isValidProfilePictureUrl(raw) {
+  if (typeof raw !== "string") return false;
+  const s2 = raw.trim();
+  if (!s2 || s2.length > 2e3) return false;
+  try {
+    return new URL(s2).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+function sanitizeProfilePictureUrl(raw) {
+  const s2 = typeof raw === "string" ? raw.trim() : "";
+  return isValidProfilePictureUrl(s2) ? s2 : "";
+}
+function parseProfileSettings(raw) {
+  if (typeof raw === "string") try {
+    raw = JSON.parse(raw);
+  } catch {
+    return { ...DEFAULT_PROFILE_SETTINGS };
+  }
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_PROFILE_SETTINGS };
+  const r2 = raw;
+  return {
+    mastoVisibility: isVisibility(r2.mastoVisibility) ? r2.mastoVisibility : "public",
+    defaultAccountIds: sanitizeAccountIds(r2.defaultAccountIds),
+    profilePictureUrl: sanitizeProfilePictureUrl(r2.profilePictureUrl)
+  };
+}
+function normalizeProfileSettings(input2) {
+  if (!input2 || typeof input2 !== "object") return {
+    ok: false,
+    error: "Invalid settings"
+  };
+  const r2 = input2;
+  if (r2.mastoVisibility !== void 0 && !isVisibility(r2.mastoVisibility)) return {
+    ok: false,
+    error: "Invalid visibility"
+  };
+  if (r2.defaultAccountIds !== void 0) {
+    if (!Array.isArray(r2.defaultAccountIds) || r2.defaultAccountIds.length > 50 || r2.defaultAccountIds.some((id2) => typeof id2 !== "string" || id2.length === 0 || id2.length > 128)) return {
+      ok: false,
+      error: "Invalid default accounts"
+    };
+  }
+  if (r2.profilePictureUrl !== void 0) {
+    if (typeof r2.profilePictureUrl !== "string") return {
+      ok: false,
+      error: "Invalid profile picture URL"
+    };
+    const trimmed = r2.profilePictureUrl.trim();
+    if (trimmed.length > 0 && !isValidProfilePictureUrl(trimmed)) return {
+      ok: false,
+      error: "Invalid profile picture URL"
+    };
+  }
+  return {
+    ok: true,
+    settings: parseProfileSettings(input2)
+  };
+}
+var MASTO_VISIBILITIES, MASTO_VISIBILITY_LABELS, DEFAULT_PROFILE_SETTINGS, PROFILE_PICTURE_URL_MAX;
+var init_profile_settings = __esm({
+  ".svelte-kit/output/server/chunks/profile-settings.js"() {
+    "use strict";
+    MASTO_VISIBILITIES = [
+      "public",
+      "unlisted",
+      "private",
+      "direct"
+    ];
+    MASTO_VISIBILITY_LABELS = {
+      public: "Public",
+      unlisted: "Unlisted",
+      private: "Followers",
+      direct: "Direct"
+    };
+    DEFAULT_PROFILE_SETTINGS = {
+      mastoVisibility: "public",
+      defaultAccountIds: [],
+      profilePictureUrl: ""
+    };
+    __name(isVisibility, "isVisibility");
+    PROFILE_PICTURE_URL_MAX = 2e3;
+    __name(sanitizeAccountIds, "sanitizeAccountIds");
+    __name(isValidProfilePictureUrl, "isValidProfilePictureUrl");
+    __name(sanitizeProfilePictureUrl, "sanitizeProfilePictureUrl");
+    __name(parseProfileSettings, "parseProfileSettings");
+    __name(normalizeProfileSettings, "normalizeProfileSettings");
+  }
+});
+
+// .svelte-kit/output/server/chunks/crypto.js
+async function sha256(data) {
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", data));
+}
+async function keyFromEnv(hexOrSecret) {
+  const raw = /^[0-9a-fA-F]{64}$/.test(hexOrSecret) ? hexToBytes(hexOrSecret) : await sha256(utf8Bytes(hexOrSecret));
+  return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+async function encryptSecret(plaintext, encryptionKey) {
+  const key = await keyFromEnv(encryptionKey);
+  const iv = randomBytes(12);
+  const packed = new Uint8Array(await crypto.subtle.encrypt({
+    name: "AES-GCM",
+    iv
+  }, key, utf8Bytes(plaintext)));
+  const data = packed.subarray(0, packed.length - TAG_BYTES);
+  const tag = packed.subarray(packed.length - TAG_BYTES);
+  return `v1:${bytesToBase64(iv)}:${bytesToBase64(tag)}:${bytesToBase64(data)}`;
+}
+async function decryptSecret(payload2, encryptionKey) {
+  const parts = payload2.split(":");
+  if (parts.length !== 4 || parts[0] !== "v1") throw new Error("Invalid encrypted payload");
+  const [, ivB64, tagB64, dataB64] = parts;
+  const key = await keyFromEnv(encryptionKey);
+  const iv = base64ToBytes(ivB64);
+  const tag = base64ToBytes(tagB64);
+  const data = base64ToBytes(dataB64);
+  const packed = new Uint8Array(data.length + tag.length);
+  packed.set(data, 0);
+  packed.set(tag, data.length);
+  try {
+    const dec = await crypto.subtle.decrypt({
+      name: "AES-GCM",
+      iv
+    }, key, packed);
+    return new TextDecoder().decode(dec);
+  } catch {
+    throw new Error("Invalid encrypted payload");
+  }
+}
+async function encryptJson(value, encryptionKey) {
+  return encryptSecret(JSON.stringify(value), encryptionKey);
+}
+async function decryptJson(payload2, encryptionKey) {
+  return JSON.parse(await decryptSecret(payload2, encryptionKey));
+}
+async function hashPassword(password) {
+  const salt = randomBytes(16);
+  const key = await crypto.subtle.importKey("raw", utf8Bytes(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({
+    name: "PBKDF2",
+    hash: "SHA-256",
+    salt,
+    iterations: PBKDF2_ITERS
+  }, key, 256);
+  return `pbkdf2$${PBKDF2_ITERS}$${bytesToBase64(salt)}$${bytesToBase64(new Uint8Array(bits))}`;
+}
+async function passwordKeyHex(password, salt) {
+  const key = await crypto.subtle.importKey("raw", utf8Bytes(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({
+    name: "PBKDF2",
+    hash: "SHA-256",
+    salt,
+    iterations: PBKDF2_ITERS
+  }, key, 256);
+  return bytesToHex(new Uint8Array(bits));
+}
+async function verifyPassword(password, stored) {
+  const parts = stored.split("$");
+  if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
+  const iterations = Number.parseInt(parts[1], 10);
+  if (!Number.isInteger(iterations) || iterations < 1 || iterations > PBKDF2_MAX_ITERS) return false;
+  const salt = base64ToBytes(parts[2]);
+  const expected = base64ToBytes(parts[3]);
+  if (salt.length === 0 || expected.length === 0) return false;
+  const key = await crypto.subtle.importKey("raw", utf8Bytes(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({
+    name: "PBKDF2",
+    hash: "SHA-256",
+    salt,
+    iterations
+  }, key, expected.length * 8));
+  return timingSafeEqual(expected, bits);
+}
+async function hmacKey(secret) {
+  const cached3 = hmacKeys.get(secret);
+  if (cached3) return cached3;
+  const pending2 = crypto.subtle.importKey("raw", utf8Bytes(secret), {
+    name: "HMAC",
+    hash: "SHA-256"
+  }, false, ["sign"]).catch((err) => {
+    hmacKeys.delete(secret);
+    throw err;
+  });
+  hmacKeys.set(secret, pending2);
+  if (hmacKeys.size > HMAC_KEY_CACHE_MAX) {
+    const oldest = hmacKeys.keys().next().value;
+    if (oldest !== void 0 && oldest !== secret) hmacKeys.delete(oldest);
+  }
+  return pending2;
+}
+async function hmacHex(secret, value) {
+  const key = await hmacKey(secret);
+  const sig = await crypto.subtle.sign("HMAC", key, utf8Bytes(value));
+  return Array.from(new Uint8Array(sig), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+var PBKDF2_ITERS, PBKDF2_MAX_ITERS, TAG_BYTES, HMAC_KEY_CACHE_MAX, hmacKeys;
+var init_crypto = __esm({
+  ".svelte-kit/output/server/chunks/crypto.js"() {
+    "use strict";
+    init_bytes();
+    PBKDF2_ITERS = 25e3;
+    PBKDF2_MAX_ITERS = 1e5;
+    TAG_BYTES = 16;
+    __name(sha256, "sha256");
+    __name(keyFromEnv, "keyFromEnv");
+    __name(encryptSecret, "encryptSecret");
+    __name(decryptSecret, "decryptSecret");
+    __name(encryptJson, "encryptJson");
+    __name(decryptJson, "decryptJson");
+    __name(hashPassword, "hashPassword");
+    __name(passwordKeyHex, "passwordKeyHex");
+    __name(verifyPassword, "verifyPassword");
+    HMAC_KEY_CACHE_MAX = 32;
+    hmacKeys = /* @__PURE__ */ new Map();
+    __name(hmacKey, "hmacKey");
+    __name(hmacHex, "hmacHex");
+  }
+});
+
+// .svelte-kit/output/server/chunks/auth.js
+function isLocalAppUrl(url3) {
+  try {
+    return LOCAL_HOSTS.has(new URL(String(url3)).hostname);
+  } catch {
+    return false;
+  }
+}
+function isLocalRequestHost(host) {
+  let h = String(host ?? "").toLowerCase().trim();
+  if (!h) return false;
+  if (h.startsWith("[")) {
+    const end = h.indexOf("]");
+    if (end !== -1) h = h.slice(0, end + 1);
+  } else {
+    const parts = h.split(":");
+    if (parts.length === 2) h = parts[0];
+  }
+  if (LOCAL_HOSTS.has(h) || h.endsWith(".localhost")) return true;
+  return PRIVATE_HOST.test(h);
+}
+function requestOrigin(url3) {
+  try {
+    return new URL(String(url3)).origin;
+  } catch {
+    return null;
+  }
+}
+function isPinnedAppUrl(value) {
+  const origin2 = requestOrigin(String(value ?? "").trim());
+  return origin2 !== null && !isLocalAppUrl(origin2);
+}
+function resolveAppUrl(input2) {
+  const configuredOrigin = requestOrigin(normalize(input2.configured));
+  if (configuredOrigin && !isLocalAppUrl(configuredOrigin)) return {
+    url: configuredOrigin,
+    source: "configured"
+  };
+  const requested = requestOrigins(input2.requestUrl);
+  if (requested.public) return {
+    url: requested.public,
+    source: "request"
+  };
+  if (configuredOrigin) return {
+    url: configuredOrigin,
+    source: "configured"
+  };
+  if (requested.loopback) return {
+    url: requested.loopback,
+    source: "request"
+  };
+  const storedOrigin = requestOrigin(normalize(input2.stored));
+  if (storedOrigin) return {
+    url: storedOrigin,
+    source: "stored"
+  };
+  return {
+    url: "",
+    source: "none"
+  };
+}
+function normalize(value) {
+  return String(value ?? "").trim().replace(/\/+$/, "");
+}
+function requestOrigins(url3) {
+  const origin2 = requestOrigin(url3);
+  if (!origin2) return {
+    public: null,
+    loopback: null
+  };
+  const { hostname: hostname3 } = new URL(origin2);
+  if (hostname3 === "cogsend.internal") return {
+    public: null,
+    loopback: null
+  };
+  if (isLocalAppUrl(origin2)) return {
+    public: null,
+    loopback: origin2
+  };
+  if (isLocalRequestHost(hostname3)) return {
+    public: null,
+    loopback: null
+  };
+  return {
+    public: origin2,
+    loopback: null
+  };
+}
+function shouldUseSecureCookie(opts) {
+  const appUrl = (opts.appUrl || "").trim();
+  try {
+    if (appUrl) {
+      if (isLocalAppUrl(appUrl)) return false;
+      if (new URL(appUrl).protocol !== "https:") return false;
+      return true;
+    }
+  } catch {
+  }
+  if (isLocalRequestHost(opts.requestHost)) return false;
+  return opts.isProduction;
+}
+function sessionMaxAgeSeconds(remember) {
+  return remember ? SESSION_MAX_AGE_REMEMBER : SESSION_MAX_AGE_SESSION;
+}
+function shouldSlideSession(expiresAt, now, maxAgeSeconds) {
+  return expiresAt.getTime() - now.getTime() < maxAgeSeconds * 1e3 / 2;
+}
+function nextSessionExpiry(now, maxAgeSeconds) {
+  return new Date(now.getTime() + maxAgeSeconds * 1e3);
+}
+function isSessionIdle(lastSeen, now, remember = false) {
+  if (!lastSeen) return true;
+  const limit = remember ? SESSION_IDLE_REMEMBER_MS : SESSION_IDLE_MS;
+  return now.getTime() - lastSeen.getTime() > limit;
+}
+function shouldTouchSeen(lastSeen, now) {
+  if (!lastSeen) return true;
+  return now.getTime() - lastSeen.getTime() > SESSION_SEEN_WRITE_MS;
+}
+function isFullyVerified(user) {
+  return Boolean(user && user.totpEnabled && user.mfaVerified);
+}
+function asMachineUser(admin) {
+  return {
+    id: admin.id,
+    email: admin.email,
+    timezone: admin.timezone,
+    totpEnabled: true,
+    mfaVerified: true,
+    displayName: admin.displayName ?? null,
+    profilePictureUrl: parseProfileSettings(admin.settingsJson).profilePictureUrl
+  };
+}
+function needsTotpEnroll(user) {
+  return Boolean(user && !user.totpEnabled);
+}
+async function hashToken(raw, secret) {
+  return hmacHex(secret, `session:${raw}`);
+}
+async function passwordFingerprint(env3, passwordHash) {
+  return hmacHex(env3.AUTH_SECRET, `pwd-fp:hash:${passwordHash ?? ""}`);
+}
+async function needsSetup(db) {
+  return !await first(db.select({ id: users.id }).from(users).limit(1));
+}
+async function getAdminUser(db) {
+  return await first(db.select().from(users).limit(1)) ?? null;
+}
+async function createSession(db, env3, userId, remember = true, mfaVerified = false, passwordHash) {
+  const raw = randomHex(32);
+  const token = await hashToken(raw, env3.AUTH_SECRET);
+  const maxAge = sessionMaxAgeSeconds(remember);
+  const now = /* @__PURE__ */ new Date();
+  await db.insert(sessions).values({
+    id: newId(),
+    token,
+    userId,
+    expiresAt: nextSessionExpiry(now, maxAge),
+    remember,
+    mfaVerified,
+    createdAt: now,
+    pwdFp: await passwordFingerprint(env3, passwordHash),
+    lastSeenAt: now
+  });
+  return {
+    raw,
+    maxAge
+  };
+}
+async function revokeOtherSessions(db, userId, keepSessionId) {
+  if (keepSessionId) {
+    await db.delete(sessions).where(and(eq(sessions.userId, userId), ne(sessions.id, keepSessionId)));
+    return;
+  }
+  await db.delete(sessions).where(eq(sessions.userId, userId));
+}
+async function destroySession(db, env3, rawToken) {
+  if (!rawToken) return;
+  const token = await hashToken(rawToken, env3.AUTH_SECRET);
+  await db.delete(sessions).where(eq(sessions.token, token));
+}
+function cookieSecureFlag(env3, requestHost) {
+  return shouldUseSecureCookie({
+    isProduction: true,
+    appUrl: env3.APP_URL,
+    requestHost
+  });
+}
+async function getSessionUser(db, env3, rawToken) {
+  if (!rawToken) return null;
+  const token = await hashToken(rawToken, env3.AUTH_SECRET);
+  const row = await first(db.select({
+    sessionId: sessions.id,
+    expiresAt: sessions.expiresAt,
+    remember: sessions.remember,
+    pwdFp: sessions.pwdFp,
+    lastSeenAt: sessions.lastSeenAt,
+    userId: users.id,
+    email: users.email,
+    timezone: users.timezone,
+    totpEnabled: users.totpEnabled,
+    mfaVerified: sessions.mfaVerified,
+    passwordHash: users.passwordHash,
+    displayName: users.displayName,
+    settingsJson: users.settingsJson
+  }).from(sessions).innerJoin(users, eq(sessions.userId, users.id)).where(eq(sessions.token, token)));
+  if (!row) return null;
+  const now = /* @__PURE__ */ new Date();
+  if (row.expiresAt < now) {
+    await db.delete(sessions).where(eq(sessions.id, row.sessionId));
+    return null;
+  }
+  const fp = await passwordFingerprint(env3, row.passwordHash);
+  if (!row.pwdFp || row.pwdFp !== fp) {
+    await db.delete(sessions).where(eq(sessions.id, row.sessionId));
+    return null;
+  }
+  if (isSessionIdle(row.lastSeenAt, now, Boolean(row.remember))) {
+    await db.delete(sessions).where(eq(sessions.id, row.sessionId));
+    return null;
+  }
+  const user = {
+    id: row.userId,
+    email: row.email,
+    timezone: row.timezone,
+    totpEnabled: Boolean(row.totpEnabled),
+    mfaVerified: Boolean(row.mfaVerified),
+    displayName: row.displayName ?? null,
+    profilePictureUrl: parseProfileSettings(row.settingsJson).profilePictureUrl
+  };
+  const maxAge = sessionMaxAgeSeconds(row.remember);
+  const touch = shouldTouchSeen(row.lastSeenAt, now);
+  if (shouldSlideSession(row.expiresAt, now, maxAge)) {
+    await db.update(sessions).set({
+      expiresAt: nextSessionExpiry(now, maxAge),
+      ...touch ? {
+        pwdFp: fp,
+        lastSeenAt: now
+      } : {}
+    }).where(eq(sessions.id, row.sessionId));
+    return {
+      user,
+      slideMaxAge: maxAge
+    };
+  }
+  if (touch) await db.update(sessions).set({
+    pwdFp: fp,
+    lastSeenAt: now
+  }).where(eq(sessions.id, row.sessionId));
+  return { user };
+}
+async function purgeExpiredSessions(db) {
+  await db.delete(sessions).where(lt(sessions.expiresAt, /* @__PURE__ */ new Date()));
+}
+var LOCAL_HOSTS, PRIVATE_HOST, SESSION_MAX_AGE_REMEMBER, SESSION_MAX_AGE_SESSION, SESSION_IDLE_MS, SESSION_IDLE_REMEMBER_MS, SESSION_SEEN_WRITE_MS, SESSION_COOKIE;
+var init_auth = __esm({
+  ".svelte-kit/output/server/chunks/auth.js"() {
+    "use strict";
+    init_bytes();
+    init_profile_settings();
+    init_crypto();
+    init_client();
+    init_drizzle_orm();
+    LOCAL_HOSTS = /* @__PURE__ */ new Set([
+      "localhost",
+      "127.0.0.1",
+      "0.0.0.0",
+      "::1",
+      "[::1]"
+    ]);
+    __name(isLocalAppUrl, "isLocalAppUrl");
+    PRIVATE_HOST = /^(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})$/;
+    __name(isLocalRequestHost, "isLocalRequestHost");
+    __name(requestOrigin, "requestOrigin");
+    __name(isPinnedAppUrl, "isPinnedAppUrl");
+    __name(resolveAppUrl, "resolveAppUrl");
+    __name(normalize, "normalize");
+    __name(requestOrigins, "requestOrigins");
+    SESSION_MAX_AGE_REMEMBER = 2592e3;
+    SESSION_MAX_AGE_SESSION = 604800;
+    __name(shouldUseSecureCookie, "shouldUseSecureCookie");
+    __name(sessionMaxAgeSeconds, "sessionMaxAgeSeconds");
+    __name(shouldSlideSession, "shouldSlideSession");
+    __name(nextSessionExpiry, "nextSessionExpiry");
+    SESSION_IDLE_MS = 864e5;
+    SESSION_IDLE_REMEMBER_MS = 6048e5;
+    SESSION_SEEN_WRITE_MS = 9e5;
+    __name(isSessionIdle, "isSessionIdle");
+    __name(shouldTouchSeen, "shouldTouchSeen");
+    SESSION_COOKIE = "cog_session";
+    __name(isFullyVerified, "isFullyVerified");
+    __name(asMachineUser, "asMachineUser");
+    __name(needsTotpEnroll, "needsTotpEnroll");
+    __name(hashToken, "hashToken");
+    __name(passwordFingerprint, "passwordFingerprint");
+    __name(needsSetup, "needsSetup");
+    __name(getAdminUser, "getAdminUser");
+    __name(createSession, "createSession");
+    __name(revokeOtherSessions, "revokeOtherSessions");
+    __name(destroySession, "destroySession");
+    __name(cookieSecureFlag, "cookieSecureFlag");
+    __name(getSessionUser, "getSessionUser");
+    __name(purgeExpiredSessions, "purgeExpiredSessions");
+  }
+});
+
+// .svelte-kit/output/server/chunks/links.js
+function cleanUrl(raw) {
+  return raw.replace(TRAILING_PUNCT_RE, "");
+}
+function extractUrls(text3) {
+  if (!text3) return [];
+  const out = [];
+  URL_RE.lastIndex = 0;
+  let m;
+  while ((m = URL_RE.exec(text3)) !== null) {
+    const cleaned = cleanUrl(m[0]);
+    if (cleaned) out.push(cleaned);
+  }
+  return out;
+}
+function extractFirstUrl(text3) {
+  return extractUrls(text3)[0] ?? null;
+}
+function safeHttpUrl(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const { protocol } = new URL(trimmed);
+    return protocol === "https:" || protocol === "http:" ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
+var URL_RE, TRAILING_PUNCT_RE;
+var init_links = __esm({
+  ".svelte-kit/output/server/chunks/links.js"() {
+    "use strict";
+    URL_RE = /https?:\/\/[^\s<>"'`]+/gi;
+    TRAILING_PUNCT_RE = /[.,);:!?'\]"'`]+$/;
+    __name(cleanUrl, "cleanUrl");
+    __name(extractUrls, "extractUrls");
+    __name(extractFirstUrl, "extractFirstUrl");
+    __name(safeHttpUrl, "safeHttpUrl");
+  }
+});
+
+// .svelte-kit/output/server/chunks/due-jobs.js
+function asTime(value) {
+  if (value == null) return null;
+  if (typeof value === "number") return Number.isNaN(value) ? null : value;
+  const t = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  return Number.isNaN(t) ? null : t;
+}
+function isFreshPublishing(target, now = /* @__PURE__ */ new Date()) {
+  if (target.remotePostId) return false;
+  if (target.status !== "publishing") return false;
+  const updated = asTime(target.updatedAt);
+  if (updated == null) return false;
+  return now.getTime() - updated < STALE_CLAIM_MS;
+}
+function selectDueScheduledTargets(targets, now = /* @__PURE__ */ new Date(), graceMs = 0) {
+  return targets.filter((t) => {
+    if (t.status === "published" || t.remotePostId) return false;
+    const when = asTime(t.scheduledFor);
+    if (when != null && when > now.getTime() + graceMs) return false;
+    if (t.status === "publishing") {
+      const updated = asTime(t.updatedAt);
+      if (updated == null) return false;
+      return updated <= now.getTime() - STALE_CLAIM_MS;
+    }
+    if (t.status === "pending" && when == null) return true;
+    if (!t.scheduledFor || when == null) return false;
+    return t.status === "scheduled" || t.status === "pending";
+  });
+}
+var STALE_CLAIM_MS, LEASE_REFRESH_MS;
+var init_due_jobs = __esm({
+  ".svelte-kit/output/server/chunks/due-jobs.js"() {
+    "use strict";
+    STALE_CLAIM_MS = 42e4;
+    LEASE_REFRESH_MS = 12e4;
+    __name(asTime, "asTime");
+    __name(isFreshPublishing, "isFreshPublishing");
+    __name(selectDueScheduledTargets, "selectDueScheduledTargets");
+  }
+});
+
+// .svelte-kit/output/server/chunks/threads-error.js
+function formatThreadsMetaMarker(code, subcode) {
+  return subcode !== void 0 ? ` [meta ${code}.${subcode}]` : ` [meta ${code}]`;
+}
+function parseThreadsMetaMarker(message) {
+  const match2 = MARKER_PATTERN.exec(message);
+  if (!match2) return null;
+  const code = Number(match2[1]);
+  if (!Number.isInteger(code)) return null;
+  const sub = match2[2] !== void 0 ? Number(match2[2]) : void 0;
+  return sub !== void 0 && Number.isInteger(sub) ? {
+    code,
+    subcode: sub
+  } : { code };
+}
+function hasThreadsPermissionText(message) {
+  return THREADS_MARKER.test(message) && PERMISSION_TEXT.test(message);
+}
+function isThreadsAuthFailure(message) {
+  const marker = parseThreadsMetaMarker(message);
+  if (marker) return THREADS_META_AUTH_CODES.includes(marker.code);
+  return hasThreadsPermissionText(message);
+}
+function isThreadsMediaFetchFailure(message) {
+  return /media download has failed|could not be fetched from this uri|media could not be fetched|\[meta \d+\.(?:2207052|4279004|4279009)\]/i.test(message);
+}
+var THREADS_META_AUTH_CODES, MARKER_PATTERN, THREADS_MARKER, PERMISSION_TEXT;
+var init_threads_error = __esm({
+  ".svelte-kit/output/server/chunks/threads-error.js"() {
+    "use strict";
+    THREADS_META_AUTH_CODES = [190, 200];
+    MARKER_PATTERN = /\[meta (\d+)(?:\.(\d+))?\]/;
+    THREADS_MARKER = /threads/i;
+    PERMISSION_TEXT = /missing permissions|permission denied|does not have permission/i;
+    __name(formatThreadsMetaMarker, "formatThreadsMetaMarker");
+    __name(parseThreadsMetaMarker, "parseThreadsMetaMarker");
+    __name(hasThreadsPermissionText, "hasThreadsPermissionText");
+    __name(isThreadsAuthFailure, "isThreadsAuthFailure");
+    __name(isThreadsMediaFetchFailure, "isThreadsMediaFetchFailure");
   }
 });
 
@@ -10927,87 +11096,53 @@ var init_media = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/threads-error.js
-function formatThreadsMetaMarker(code, subcode) {
-  return subcode !== void 0 ? ` [meta ${code}.${subcode}]` : ` [meta ${code}]`;
+// .svelte-kit/output/server/chunks/poll.js
+function validatePollConfig(input2) {
+  if (!input2 || typeof input2 !== "object") return {
+    ok: false,
+    error: "Invalid poll"
+  };
+  const r2 = input2;
+  if (!Array.isArray(r2.options)) return {
+    ok: false,
+    error: "Poll needs options"
+  };
+  const options2 = r2.options.map((o) => typeof o === "string" ? o.trim() : "").filter((o) => o);
+  if (options2.length < 2) return {
+    ok: false,
+    error: "Poll needs at least 2 options"
+  };
+  if (options2.length > 4) return {
+    ok: false,
+    error: "Poll allows max 4 options"
+  };
+  if (options2.some((o) => o.length > 50)) return {
+    ok: false,
+    error: "Poll options allow max 50 characters each"
+  };
+  if (typeof r2.expiresIn !== "number" || !Number.isInteger(r2.expiresIn) || r2.expiresIn < 300 || r2.expiresIn > 604800) return {
+    ok: false,
+    error: "Poll needs a duration between 5 minutes and 7 days"
+  };
+  return {
+    ok: true,
+    config: {
+      options: options2,
+      expiresIn: r2.expiresIn,
+      multiple: r2.multiple === true ? true : void 0,
+      hideTotals: r2.hideTotals === true ? true : void 0
+    }
+  };
 }
-function parseThreadsMetaMarker(message) {
-  const match2 = MARKER_PATTERN.exec(message);
-  if (!match2) return null;
-  const code = Number(match2[1]);
-  if (!Number.isInteger(code)) return null;
-  const sub = match2[2] !== void 0 ? Number(match2[2]) : void 0;
-  return sub !== void 0 && Number.isInteger(sub) ? {
-    code,
-    subcode: sub
-  } : { code };
+function parsePollConfig(input2) {
+  const v = validatePollConfig(input2);
+  return v.ok ? v.config : null;
 }
-function hasThreadsPermissionText(message) {
-  return THREADS_MARKER.test(message) && PERMISSION_TEXT.test(message);
-}
-function isThreadsAuthFailure(message) {
-  const marker = parseThreadsMetaMarker(message);
-  if (marker) return THREADS_META_AUTH_CODES.includes(marker.code);
-  return hasThreadsPermissionText(message);
-}
-function isThreadsMediaFetchFailure(message) {
-  return /media download has failed|could not be fetched from this uri|media could not be fetched|\[meta \d+\.(?:2207052|4279004|4279009)\]/i.test(message);
-}
-var THREADS_META_AUTH_CODES, MARKER_PATTERN, THREADS_MARKER, PERMISSION_TEXT;
-var init_threads_error = __esm({
-  ".svelte-kit/output/server/chunks/threads-error.js"() {
+var init_poll = __esm({
+  ".svelte-kit/output/server/chunks/poll.js"() {
     "use strict";
-    THREADS_META_AUTH_CODES = [190, 200];
-    MARKER_PATTERN = /\[meta (\d+)(?:\.(\d+))?\]/;
-    THREADS_MARKER = /threads/i;
-    PERMISSION_TEXT = /missing permissions|permission denied|does not have permission/i;
-    __name(formatThreadsMetaMarker, "formatThreadsMetaMarker");
-    __name(parseThreadsMetaMarker, "parseThreadsMetaMarker");
-    __name(hasThreadsPermissionText, "hasThreadsPermissionText");
-    __name(isThreadsAuthFailure, "isThreadsAuthFailure");
-    __name(isThreadsMediaFetchFailure, "isThreadsMediaFetchFailure");
-  }
-});
-
-// .svelte-kit/output/server/chunks/links.js
-function cleanUrl(raw) {
-  return raw.replace(TRAILING_PUNCT_RE, "");
-}
-function extractUrls(text3) {
-  if (!text3) return [];
-  const out = [];
-  URL_RE.lastIndex = 0;
-  let m;
-  while ((m = URL_RE.exec(text3)) !== null) {
-    const cleaned = cleanUrl(m[0]);
-    if (cleaned) out.push(cleaned);
-  }
-  return out;
-}
-function extractFirstUrl(text3) {
-  return extractUrls(text3)[0] ?? null;
-}
-function safeHttpUrl(value) {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  try {
-    const { protocol } = new URL(trimmed);
-    return protocol === "https:" || protocol === "http:" ? trimmed : null;
-  } catch {
-    return null;
-  }
-}
-var URL_RE, TRAILING_PUNCT_RE;
-var init_links = __esm({
-  ".svelte-kit/output/server/chunks/links.js"() {
-    "use strict";
-    URL_RE = /https?:\/\/[^\s<>"'`]+/gi;
-    TRAILING_PUNCT_RE = /[.,);:!?'\]"'`]+$/;
-    __name(cleanUrl, "cleanUrl");
-    __name(extractUrls, "extractUrls");
-    __name(extractFirstUrl, "extractFirstUrl");
-    __name(safeHttpUrl, "safeHttpUrl");
+    __name(validatePollConfig, "validatePollConfig");
+    __name(parsePollConfig, "parsePollConfig");
   }
 });
 
@@ -11447,6 +11582,100 @@ var init_x_limits = __esm({
     __name(isPaidXSubscription, "isPaidXSubscription");
     __name(xLimitFor, "xLimitFor");
     __name(storedXLimit, "storedXLimit");
+  }
+});
+
+// .svelte-kit/output/server/chunks/threads-topic.js
+function normalizeThreadsTopic(text3) {
+  return text3.trim().replace(/\s+/g, " ").replace(/^#\s*/, "");
+}
+function validateThreadsTopic(input2) {
+  if (input2 === void 0 || input2 === null) return {
+    ok: true,
+    topic: null
+  };
+  if (typeof input2 !== "string") return {
+    ok: false,
+    error: "Topic tag must be text"
+  };
+  const topic = normalizeThreadsTopic(input2);
+  if (!topic) return {
+    ok: true,
+    topic: null
+  };
+  if (/[.&]/.test(topic)) return {
+    ok: false,
+    error: "Topic tags cannot contain . or &"
+  };
+  if (countGraphemes(topic) > 50) return {
+    ok: false,
+    error: `Topic tags allow max 50 characters`
+  };
+  return {
+    ok: true,
+    topic
+  };
+}
+function parseThreadsTopic(input2) {
+  const v = validateThreadsTopic(input2);
+  return v.ok ? v.topic : null;
+}
+var init_threads_topic = __esm({
+  ".svelte-kit/output/server/chunks/threads-topic.js"() {
+    "use strict";
+    init_x_limits();
+    __name(normalizeThreadsTopic, "normalizeThreadsTopic");
+    __name(validateThreadsTopic, "validateThreadsTopic");
+    __name(parseThreadsTopic, "parseThreadsTopic");
+  }
+});
+
+// .svelte-kit/output/server/chunks/public-media.js
+function isPublicMediaVariant(value) {
+  return value === "jpeg" || value === "cover";
+}
+function messageFor(key, exp, variant) {
+  return variant ? `media-public:${key}:${variant}:${exp}` : `media-public:${key}:${exp}`;
+}
+async function signingKey(secret) {
+  return hmacHex(secret, "subkey:media-url:v1");
+}
+async function signPublicMediaUrl(secret, appUrl, storageKey, nowMs = Date.now(), variant) {
+  const exp = nowMs + PUBLIC_MEDIA_TTL_MS;
+  const sig = await hmacHex(await signingKey(secret), messageFor(storageKey, exp, variant));
+  const v = variant ? `&v=${variant}` : "";
+  return `${appUrl.replace(/\/$/, "")}/api/media/public/${encodeURIComponent(storageKey)}?exp=${exp}${v}&sig=${sig}`;
+}
+async function verifyPublicMediaSig(secret, storageKey, exp, sig, nowMs = Date.now(), variant) {
+  if (!Number.isInteger(exp) || exp <= nowMs) return {
+    ok: false,
+    error: "URL expired"
+  };
+  if (exp - nowMs > 864e5) return {
+    ok: false,
+    error: "URL lifetime too long"
+  };
+  const expected = await hmacHex(await signingKey(secret), messageFor(storageKey, exp, variant));
+  const a = utf8Bytes(sig);
+  const b = utf8Bytes(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return {
+    ok: false,
+    error: "Bad signature"
+  };
+  return { ok: true };
+}
+var PUBLIC_MEDIA_TTL_MS;
+var init_public_media = __esm({
+  ".svelte-kit/output/server/chunks/public-media.js"() {
+    "use strict";
+    init_bytes();
+    init_crypto();
+    PUBLIC_MEDIA_TTL_MS = 72e5;
+    __name(isPublicMediaVariant, "isPublicMediaVariant");
+    __name(messageFor, "messageFor");
+    __name(signingKey, "signingKey");
+    __name(signPublicMediaUrl, "signPublicMediaUrl");
+    __name(verifyPublicMediaSig, "verifyPublicMediaSig");
   }
 });
 
@@ -11913,9 +12142,9 @@ var ProviderError, UNCONFIRMED_POST_MARK, PublishPartialError;
 var init_zernio = __esm({
   ".svelte-kit/output/server/chunks/zernio.js"() {
     "use strict";
-    init_platforms();
     init_x_limits();
     init_video_rules();
+    init_platforms();
     init_timed_fetch();
     __name(mediaByteLength, "mediaByteLength");
     ProviderError = class extends Error {
@@ -12558,56 +12787,6 @@ var init_x_post_preview = __esm({
     __name(fetchXPostPreview, "fetchXPostPreview");
     __name(fetchXPostCard, "fetchXPostCard");
     __name(fetchLinkCard, "fetchLinkCard");
-  }
-});
-
-// .svelte-kit/output/server/chunks/poll.js
-function validatePollConfig(input2) {
-  if (!input2 || typeof input2 !== "object") return {
-    ok: false,
-    error: "Invalid poll"
-  };
-  const r2 = input2;
-  if (!Array.isArray(r2.options)) return {
-    ok: false,
-    error: "Poll needs options"
-  };
-  const options2 = r2.options.map((o) => typeof o === "string" ? o.trim() : "").filter((o) => o);
-  if (options2.length < 2) return {
-    ok: false,
-    error: "Poll needs at least 2 options"
-  };
-  if (options2.length > 4) return {
-    ok: false,
-    error: "Poll allows max 4 options"
-  };
-  if (options2.some((o) => o.length > 50)) return {
-    ok: false,
-    error: "Poll options allow max 50 characters each"
-  };
-  if (typeof r2.expiresIn !== "number" || !Number.isInteger(r2.expiresIn) || r2.expiresIn < 300 || r2.expiresIn > 604800) return {
-    ok: false,
-    error: "Poll needs a duration between 5 minutes and 7 days"
-  };
-  return {
-    ok: true,
-    config: {
-      options: options2,
-      expiresIn: r2.expiresIn,
-      multiple: r2.multiple === true ? true : void 0,
-      hideTotals: r2.hideTotals === true ? true : void 0
-    }
-  };
-}
-function parsePollConfig(input2) {
-  const v = validatePollConfig(input2);
-  return v.ok ? v.config : null;
-}
-var init_poll = __esm({
-  ".svelte-kit/output/server/chunks/poll.js"() {
-    "use strict";
-    __name(validatePollConfig, "validatePollConfig");
-    __name(parsePollConfig, "parsePollConfig");
   }
 });
 
@@ -14718,18 +14897,18 @@ var MISSING_VIDEO_MESSAGE, DEFAULT_PDS, ACCESS_JWT_SKEW_MS, VIDEO_SERVICE, VIDEO
 var init_providers = __esm({
   ".svelte-kit/output/server/chunks/providers.js"() {
     "use strict";
-    init_bytes();
-    init_threads_error();
-    init_media_limits();
-    init_platforms();
     init_x_limits();
     init_links();
     init_x_post_preview();
-    init_thread_segments();
-    init_video_rules();
+    init_media_limits();
     init_zernio();
+    init_video_rules();
     init_timed_fetch();
+    init_threads_error();
+    init_thread_segments();
     init_poll();
+    init_bytes();
+    init_platforms();
     __name(isVideoAttachment, "isVideoAttachment");
     __name(segmentVideo, "segmentVideo");
     __name(videoFactsOf, "videoFactsOf");
@@ -16144,141 +16323,6 @@ var init_providers = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/due-jobs.js
-function asTime(value) {
-  if (value == null) return null;
-  if (typeof value === "number") return Number.isNaN(value) ? null : value;
-  const t = value instanceof Date ? value.getTime() : new Date(value).getTime();
-  return Number.isNaN(t) ? null : t;
-}
-function isFreshPublishing(target, now = /* @__PURE__ */ new Date()) {
-  if (target.remotePostId) return false;
-  if (target.status !== "publishing") return false;
-  const updated = asTime(target.updatedAt);
-  if (updated == null) return false;
-  return now.getTime() - updated < STALE_CLAIM_MS;
-}
-function selectDueScheduledTargets(targets, now = /* @__PURE__ */ new Date(), graceMs = 0) {
-  return targets.filter((t) => {
-    if (t.status === "published" || t.remotePostId) return false;
-    const when = asTime(t.scheduledFor);
-    if (when != null && when > now.getTime() + graceMs) return false;
-    if (t.status === "publishing") {
-      const updated = asTime(t.updatedAt);
-      if (updated == null) return false;
-      return updated <= now.getTime() - STALE_CLAIM_MS;
-    }
-    if (t.status === "pending" && when == null) return true;
-    if (!t.scheduledFor || when == null) return false;
-    return t.status === "scheduled" || t.status === "pending";
-  });
-}
-var STALE_CLAIM_MS, LEASE_REFRESH_MS;
-var init_due_jobs = __esm({
-  ".svelte-kit/output/server/chunks/due-jobs.js"() {
-    "use strict";
-    STALE_CLAIM_MS = 42e4;
-    LEASE_REFRESH_MS = 12e4;
-    __name(asTime, "asTime");
-    __name(isFreshPublishing, "isFreshPublishing");
-    __name(selectDueScheduledTargets, "selectDueScheduledTargets");
-  }
-});
-
-// .svelte-kit/output/server/chunks/threads-topic.js
-function normalizeThreadsTopic(text3) {
-  return text3.trim().replace(/\s+/g, " ").replace(/^#\s*/, "");
-}
-function validateThreadsTopic(input2) {
-  if (input2 === void 0 || input2 === null) return {
-    ok: true,
-    topic: null
-  };
-  if (typeof input2 !== "string") return {
-    ok: false,
-    error: "Topic tag must be text"
-  };
-  const topic = normalizeThreadsTopic(input2);
-  if (!topic) return {
-    ok: true,
-    topic: null
-  };
-  if (/[.&]/.test(topic)) return {
-    ok: false,
-    error: "Topic tags cannot contain . or &"
-  };
-  if (countGraphemes(topic) > 50) return {
-    ok: false,
-    error: `Topic tags allow max 50 characters`
-  };
-  return {
-    ok: true,
-    topic
-  };
-}
-function parseThreadsTopic(input2) {
-  const v = validateThreadsTopic(input2);
-  return v.ok ? v.topic : null;
-}
-var init_threads_topic = __esm({
-  ".svelte-kit/output/server/chunks/threads-topic.js"() {
-    "use strict";
-    init_x_limits();
-    __name(normalizeThreadsTopic, "normalizeThreadsTopic");
-    __name(validateThreadsTopic, "validateThreadsTopic");
-    __name(parseThreadsTopic, "parseThreadsTopic");
-  }
-});
-
-// .svelte-kit/output/server/chunks/public-media.js
-function isPublicMediaVariant(value) {
-  return value === "jpeg" || value === "cover";
-}
-function messageFor(key, exp, variant) {
-  return variant ? `media-public:${key}:${variant}:${exp}` : `media-public:${key}:${exp}`;
-}
-async function signingKey(secret) {
-  return hmacHex(secret, "subkey:media-url:v1");
-}
-async function signPublicMediaUrl(secret, appUrl, storageKey, nowMs = Date.now(), variant) {
-  const exp = nowMs + PUBLIC_MEDIA_TTL_MS;
-  const sig = await hmacHex(await signingKey(secret), messageFor(storageKey, exp, variant));
-  const v = variant ? `&v=${variant}` : "";
-  return `${appUrl.replace(/\/$/, "")}/api/media/public/${encodeURIComponent(storageKey)}?exp=${exp}${v}&sig=${sig}`;
-}
-async function verifyPublicMediaSig(secret, storageKey, exp, sig, nowMs = Date.now(), variant) {
-  if (!Number.isInteger(exp) || exp <= nowMs) return {
-    ok: false,
-    error: "URL expired"
-  };
-  if (exp - nowMs > 864e5) return {
-    ok: false,
-    error: "URL lifetime too long"
-  };
-  const expected = await hmacHex(await signingKey(secret), messageFor(storageKey, exp, variant));
-  const a = utf8Bytes(sig);
-  const b = utf8Bytes(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return {
-    ok: false,
-    error: "Bad signature"
-  };
-  return { ok: true };
-}
-var PUBLIC_MEDIA_TTL_MS;
-var init_public_media = __esm({
-  ".svelte-kit/output/server/chunks/public-media.js"() {
-    "use strict";
-    init_bytes();
-    init_crypto();
-    PUBLIC_MEDIA_TTL_MS = 72e5;
-    __name(isPublicMediaVariant, "isPublicMediaVariant");
-    __name(messageFor, "messageFor");
-    __name(signingKey, "signingKey");
-    __name(signPublicMediaUrl, "signPublicMediaUrl");
-    __name(verifyPublicMediaSig, "verifyPublicMediaSig");
-  }
-});
-
 // .svelte-kit/output/server/chunks/publish.js
 function fnv1a(text3) {
   let hash3 = 2166136261;
@@ -16531,7 +16575,7 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
           errorMessage: reason,
           jobId: null,
           updatedAt: now
-        }).where(and(eq(publishTargets.id, targetId), isNull(publishTargets.remotePostId), inArray(publishTargets.status, ["pending", "failed"]))).returning({ id: publishTargets.id })).length) {
+        }).where(and(eq(publishTargets.id, targetId), isNull(publishTargets.remotePostId), eq(publishTargets.status, "pending"))).returning({ id: publishTargets.id })).length) {
           await refreshDraftStatus(db, target.draftId);
           return {
             status: "failed",
@@ -16560,7 +16604,7 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
     status: "publishing",
     attemptCount: claimedGeneration,
     updatedAt: now
-  }).where(and(eq(publishTargets.id, targetId), eq(publishTargets.attemptCount, target.attemptCount), or(inArray(publishTargets.status, ["pending", "failed"]), and(eq(publishTargets.status, "scheduled"), lte(publishTargets.scheduledFor, now)), and(eq(publishTargets.status, "publishing"), isNull(publishTargets.remotePostId), lte(publishTargets.updatedAt, staleBefore), lt(publishTargets.attemptCount, 5))))).returning({ id: publishTargets.id })).length) {
+  }).where(and(eq(publishTargets.id, targetId), eq(publishTargets.attemptCount, target.attemptCount), or(eq(publishTargets.status, "pending"), and(eq(publishTargets.status, "scheduled"), lte(publishTargets.scheduledFor, now)), and(eq(publishTargets.status, "publishing"), isNull(publishTargets.remotePostId), lte(publishTargets.updatedAt, staleBefore), lt(publishTargets.attemptCount, 5))))).returning({ id: publishTargets.id })).length) {
     const latest = await first(db.select().from(publishTargets).where(eq(publishTargets.id, targetId)));
     if (latest?.status === "published" || latest?.remotePostId) return {
       status: "published",
@@ -16887,22 +16931,22 @@ var S32, VIDEO_PROCESSING_DEADLINE_MS, ContentRuleError, isVideoMedia, VIDEO_STA
 var init_publish = __esm({
   ".svelte-kit/output/server/chunks/publish.js"() {
     "use strict";
-    init_client();
-    init_crypto();
-    init_threads_error();
     init_auth();
-    init_app_settings();
-    init_media();
     init_links();
-    init_thread_segments();
-    init_video_rules();
-    init_zernio();
-    init_providers();
-    init_timed_fetch();
-    init_poll();
     init_due_jobs();
+    init_threads_error();
+    init_media();
+    init_poll();
     init_threads_topic();
     init_public_media();
+    init_video_rules();
+    init_zernio();
+    init_thread_segments();
+    init_crypto();
+    init_client();
+    init_providers();
+    init_timed_fetch();
+    init_app_settings();
     init_drizzle_orm();
     __name(fnv1a, "fnv1a");
     S32 = "234567abcdefghijklmnopqrstuvwxyz";
@@ -16958,6 +17002,39 @@ var init_publish = __esm({
     __name(refreshDraftStatus, "refreshDraftStatus");
     __name(refreshDraftStatuses, "refreshDraftStatuses");
     __name(isRetryableError, "isRetryableError");
+  }
+});
+
+// .svelte-kit/output/server/chunks/excerpt.js
+function getGraphemeSegmenter() {
+  if (graphemeSegmenter) return graphemeSegmenter;
+  try {
+    graphemeSegmenter = new Intl.Segmenter(void 0, { granularity: "grapheme" });
+    return graphemeSegmenter;
+  } catch {
+    return null;
+  }
+}
+function segmentGraphemes(text3) {
+  const seg = getGraphemeSegmenter();
+  if (!seg) return [...text3];
+  return [...seg.segment(text3)].map((s2) => s2.segment);
+}
+function draftExcerpt(body, max = 120) {
+  const text3 = (body || "").replace(/\s*---\s*/g, " \xB7 ").replace(/\s+/g, " ").trim();
+  if (!text3) return "Empty draft";
+  const chars2 = segmentGraphemes(text3);
+  if (chars2.length <= max) return text3;
+  return chars2.slice(0, max).join("").trimEnd() + "\u2026";
+}
+var graphemeSegmenter;
+var init_excerpt = __esm({
+  ".svelte-kit/output/server/chunks/excerpt.js"() {
+    "use strict";
+    graphemeSegmenter = null;
+    __name(getGraphemeSegmenter, "getGraphemeSegmenter");
+    __name(segmentGraphemes, "segmentGraphemes");
+    __name(draftExcerpt, "draftExcerpt");
   }
 });
 
@@ -17104,8 +17181,8 @@ var init_auth_gate = __esm({
   ".svelte-kit/output/server/chunks/auth-gate.js"() {
     "use strict";
     init_client();
-    init_crypto();
     init_auth();
+    init_crypto();
     init_drizzle_orm();
     AUTH_GATE_WINDOW_MS = 9e5;
     __name(gateExpires, "gateExpires");
@@ -18218,10 +18295,10 @@ var ALPHABET, REV, QR_PX, MFA_COOKIE;
 var init_totp = __esm({
   ".svelte-kit/output/server/chunks/totp.js"() {
     "use strict";
-    init_client();
     init_bytes();
-    init_crypto();
     init_auth();
+    init_crypto();
+    init_client();
     init_auth_gate();
     init_drizzle_orm();
     init_dist();
@@ -18259,39 +18336,6 @@ var init_totp = __esm({
     __name(purgeExpiredMfaChallenges, "purgeExpiredMfaChallenges");
     __name(totpStatus, "totpStatus");
     __name(rotateStart, "rotateStart");
-  }
-});
-
-// .svelte-kit/output/server/chunks/excerpt.js
-function getGraphemeSegmenter() {
-  if (graphemeSegmenter) return graphemeSegmenter;
-  try {
-    graphemeSegmenter = new Intl.Segmenter(void 0, { granularity: "grapheme" });
-    return graphemeSegmenter;
-  } catch {
-    return null;
-  }
-}
-function segmentGraphemes(text3) {
-  const seg = getGraphemeSegmenter();
-  if (!seg) return [...text3];
-  return [...seg.segment(text3)].map((s2) => s2.segment);
-}
-function draftExcerpt(body, max = 120) {
-  const text3 = (body || "").replace(/\s*---\s*/g, " \xB7 ").replace(/\s+/g, " ").trim();
-  if (!text3) return "Empty draft";
-  const chars2 = segmentGraphemes(text3);
-  if (chars2.length <= max) return text3;
-  return chars2.slice(0, max).join("").trimEnd() + "\u2026";
-}
-var graphemeSegmenter;
-var init_excerpt = __esm({
-  ".svelte-kit/output/server/chunks/excerpt.js"() {
-    "use strict";
-    graphemeSegmenter = null;
-    __name(getGraphemeSegmenter, "getGraphemeSegmenter");
-    __name(segmentGraphemes, "segmentGraphemes");
-    __name(draftExcerpt, "draftExcerpt");
   }
 });
 
@@ -18601,17 +18645,17 @@ var HEARTBEAT_ID, DIGEST_ID, STALLED_PUBLISH_MESSAGE, JANITOR_SETTING, MASTODON_
 var init_scheduler = __esm({
   ".svelte-kit/output/server/chunks/scheduler.js"() {
     "use strict";
-    init_client();
-    init_human_error();
     init_auth();
-    init_app_settings();
-    init_totp();
+    init_due_jobs();
+    init_excerpt();
+    init_human_error();
     init_platforms();
+    init_client();
+    init_publish();
+    init_app_settings();
     init_providers();
     init_timed_fetch();
-    init_due_jobs();
-    init_publish();
-    init_excerpt();
+    init_totp();
     init_drizzle_orm();
     HEARTBEAT_ID = "default";
     __name(writeHeartbeat, "writeHeartbeat");
@@ -18633,87 +18677,43 @@ var init_scheduler = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/api-keys.js
-function isApiKeyFormat(raw) {
-  if (!raw?.startsWith("cog_")) return false;
-  const hex4 = raw.slice(4);
-  return hex4.length === RAW_HEX_LEN2 && /^[0-9a-fA-F]+$/.test(hex4);
+// .svelte-kit/output/server/chunks/rate-limit.js
+function isRateLimitedPath(path3) {
+  const trimmed = path3.length > 1 ? path3.replace(/\/+$/, "") : path3;
+  return RATE_LIMITED_PATHS.includes(trimmed);
 }
-async function hashApiKey(raw) {
-  const digest = await crypto.subtle.digest("SHA-256", utf8Bytes(`apikey:${raw}`));
-  return bytesToHex(new Uint8Array(digest));
+function rateLimitBucket(path3) {
+  if (isRateLimitedPath(path3)) return "";
+  if (path3.startsWith("/p/")) return path3.includes("/media/") ? "share-media:" : "share:";
+  return null;
 }
-async function getActiveApiKey(db, userId) {
-  return await first(db.select().from(apiKeys).where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt))).orderBy(desc(apiKeys.createdAt)).limit(1)) ?? null;
+function rateLimitKey(headers2) {
+  return headers2.get("cf-connecting-ip")?.trim() || null;
 }
-async function rotateApiKey(db, userId, scopes = ALL_SCOPES) {
-  const raw = `${API_KEY_PREFIX}${randomHex(32)}`;
-  const now = /* @__PURE__ */ new Date();
-  const id2 = newId();
-  const finalScopes = normalizeApiScopes(scopes);
-  await db.insert(apiKeys).values({
-    id: id2,
-    userId,
-    keyHash: await hashApiKey(raw),
-    prefix: raw.slice(0, 12),
-    scopes: JSON.stringify(finalScopes),
-    createdAt: now,
-    lastUsedAt: null,
-    revokedAt: null
-  });
-  await db.update(apiKeys).set({ revokedAt: now }).where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt), ne(apiKeys.id, id2)));
-  return {
-    raw,
-    prefix: raw.slice(0, 12),
-    createdAt: now,
-    scopes: finalScopes
-  };
+async function rateLimitProblem(limiter, key) {
+  if (!limiter || !key) return null;
+  try {
+    const { success: success2 } = await limiter.limit({ key });
+    return success2 ? null : "Too many attempts \u2014 wait a minute and try again";
+  } catch {
+    return null;
+  }
 }
-async function revokeApiKeys(db, userId) {
-  const active = await db.select({ id: apiKeys.id }).from(apiKeys).where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)));
-  if (active.length === 0) return 0;
-  await db.update(apiKeys).set({ revokedAt: /* @__PURE__ */ new Date() }).where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)));
-  return active.length;
-}
-async function verifyApiKey(db, raw) {
-  if (!isApiKeyFormat(raw)) return null;
-  const row = await first(db.select({
-    keyId: apiKeys.id,
-    userId: apiKeys.userId,
-    scopes: apiKeys.scopes
-  }).from(apiKeys).where(and(eq(apiKeys.keyHash, await hashApiKey(raw)), isNull(apiKeys.revokedAt))));
-  if (!row) return null;
-  return {
-    keyId: row.keyId,
-    userId: row.userId,
-    scopes: parseApiScopes(row.scopes)
-  };
-}
-function touchApiKey(db, keyId) {
-  return (async () => {
-    try {
-      await db.update(apiKeys).set({ lastUsedAt: /* @__PURE__ */ new Date() }).where(eq(apiKeys.id, keyId));
-    } catch {
-    }
-  })();
-}
-var API_KEY_PREFIX, RAW_HEX_LEN2;
-var init_api_keys = __esm({
-  ".svelte-kit/output/server/chunks/api-keys.js"() {
+var RATE_LIMITED_PATHS;
+var init_rate_limit = __esm({
+  ".svelte-kit/output/server/chunks/rate-limit.js"() {
     "use strict";
-    init_client();
-    init_bytes();
-    init_tick_token();
-    init_drizzle_orm();
-    API_KEY_PREFIX = "cog_";
-    RAW_HEX_LEN2 = 64;
-    __name(isApiKeyFormat, "isApiKeyFormat");
-    __name(hashApiKey, "hashApiKey");
-    __name(getActiveApiKey, "getActiveApiKey");
-    __name(rotateApiKey, "rotateApiKey");
-    __name(revokeApiKeys, "revokeApiKeys");
-    __name(verifyApiKey, "verifyApiKey");
-    __name(touchApiKey, "touchApiKey");
+    RATE_LIMITED_PATHS = [
+      "/api/auth/login",
+      "/api/auth/claim",
+      "/api/auth/totp/verify",
+      "/api/update/unlock",
+      "/api/update/remember"
+    ];
+    __name(isRateLimitedPath, "isRateLimitedPath");
+    __name(rateLimitBucket, "rateLimitBucket");
+    __name(rateLimitKey, "rateLimitKey");
+    __name(rateLimitProblem, "rateLimitProblem");
   }
 });
 
@@ -40031,16 +40031,16 @@ var INIT_SQL, BACKFILL_INDEXES, ensuredBindings, COLUMN_BACKFILLS, LEGACY_TABLES
 var init_hooks_server = __esm({
   ".svelte-kit/output/server/entries/hooks.server.js"() {
     "use strict";
-    init_client();
-    init_crypto();
-    init_auth();
-    init_rate_limit();
     init_tick_token();
-    init_app_settings();
-    init_media();
-    init_publish();
-    init_scheduler();
     init_api_keys();
+    init_auth();
+    init_client();
+    init_publish();
+    init_app_settings();
+    init_crypto();
+    init_media();
+    init_scheduler();
+    init_rate_limit();
     init_exports();
     init_drizzle_orm();
     init_zod();
@@ -41301,7 +41301,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1794133524912");
+  response.headers.set("x-sveltekit-version", "1794150319496");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43645,7 +43645,7 @@ function parseCookie(str, options2) {
   const len = str.length;
   if (len < 2)
     return obj;
-  const dec = options2?.decode || decode3;
+  const dec = options2?.decode ?? defaultDecode;
   let index18 = 0;
   do {
     const eqIdx = eqIndex(str, index18, len);
@@ -43665,36 +43665,37 @@ function parseCookie(str, options2) {
   return obj;
 }
 function stringifySetCookie(cookie, options2) {
-  const enc = options2?.encode || defaultEncode;
+  const enc = options2?.encode ?? defaultEncode;
   if (!cookieNameRegExp.test(cookie.name)) {
-    throw new TypeError(`argument name is invalid: ${cookie.name}`);
+    throw new TypeError(`cookie name is invalid: ${cookie.name}`);
   }
   const value = cookie.value == null ? "" : enc(cookie.value);
-  if (!cookieValueRegExp.test(value)) {
-    throw new TypeError(`argument val is invalid: ${cookie.value}`);
+  if (enc !== defaultEncode && !cookieValueRegExp.test(value)) {
+    throw new TypeError(`cookie value is invalid: ${cookie.value}`);
   }
   let str = cookie.name + "=" + value;
   if (cookie.maxAge !== void 0) {
-    if (!Number.isInteger(cookie.maxAge)) {
-      throw new TypeError(`option maxAge is invalid: ${cookie.maxAge}`);
+    if (!Number.isSafeInteger(cookie.maxAge)) {
+      throw new TypeError(`cookie maxAge is invalid: ${cookie.maxAge}`);
     }
     str += "; Max-Age=" + cookie.maxAge;
   }
   if (cookie.domain) {
     if (!domainValueRegExp.test(cookie.domain)) {
-      throw new TypeError(`option domain is invalid: ${cookie.domain}`);
+      throw new TypeError(`cookie domain is invalid: ${cookie.domain}`);
     }
     str += "; Domain=" + cookie.domain;
   }
   if (cookie.path) {
     if (!pathValueRegExp.test(cookie.path)) {
-      throw new TypeError(`option path is invalid: ${cookie.path}`);
+      throw new TypeError(`cookie path is invalid: ${cookie.path}`);
     }
     str += "; Path=" + cookie.path;
   }
   if (cookie.expires) {
-    if (!Number.isFinite(cookie.expires.valueOf())) {
-      throw new TypeError(`option expires is invalid: ${cookie.expires}`);
+    const year = cookie.expires.getUTCFullYear();
+    if (!(year >= 1601 && year <= 9999)) {
+      throw new TypeError(`cookie expires is invalid: ${cookie.expires}`);
     }
     str += "; Expires=" + cookie.expires.toUTCString();
   }
@@ -43720,7 +43721,7 @@ function stringifySetCookie(cookie, options2) {
         str += "; Priority=High";
         break;
       default:
-        throw new TypeError(`option priority is invalid: ${cookie.priority}`);
+        throw new TypeError(`cookie priority is invalid: ${cookie.priority}`);
     }
   }
   if (cookie.sameSite) {
@@ -43737,13 +43738,13 @@ function stringifySetCookie(cookie, options2) {
         str += "; SameSite=None";
         break;
       default:
-        throw new TypeError(`option sameSite is invalid: ${cookie.sameSite}`);
+        throw new TypeError(`cookie sameSite is invalid: ${cookie.sameSite}`);
     }
   }
   return str;
 }
 function parseSetCookie(str, options2) {
-  const dec = options2?.decode || decode3;
+  const dec = options2?.decode ?? defaultDecode;
   const len = str.length;
   const endIdx = endIndex(str, 0, len);
   let eqIdx = eqIndex(str, 0, len);
@@ -43832,7 +43833,7 @@ function valueSlice(str, min2, max) {
   }
   return str.slice(start, end);
 }
-function decode3(str) {
+function defaultDecode(str) {
   if (str.indexOf("%") === -1)
     return str;
   try {
@@ -43842,17 +43843,17 @@ function decode3(str) {
   }
 }
 function defaultEncode(str) {
-  return cookieOctetRegExp.test(str) ? str : encodeURIComponent(str);
+  return cookieOctetInvalidRegExp.test(str) ? encodeURIComponent(str) : str;
 }
-var cookieNameRegExp, cookieValueRegExp, domainValueRegExp, pathValueRegExp, maxAgeRegExp, cookieOctetRegExp, NullObject;
+var cookieNameRegExp, cookieValueRegExp, cookieOctetInvalidRegExp, domainValueRegExp, pathValueRegExp, maxAgeRegExp, NullObject;
 var init_dist2 = __esm({
   "node_modules/cookie/dist/index.js"() {
     cookieNameRegExp = /^[\u0021-\u003A\u003C\u003E-\u007E]+$/;
     cookieValueRegExp = /^[\u0021-\u003A\u003C-\u007E]*$/;
+    cookieOctetInvalidRegExp = /[\u0000-\u0020\u007F-\uFFFF",;\\%]/;
     domainValueRegExp = /^([.]?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i;
     pathValueRegExp = /^[\u0020-\u003A\u003D-\u007E]*$/;
     maxAgeRegExp = /^-?\d+$/;
-    cookieOctetRegExp = /^[!#$&'()*+\-.\/0-9:<=>?@A-Z[\]\^_`a-z{|}~]*$/;
     NullObject = /* @__PURE__ */ (() => {
       const C = /* @__PURE__ */ __name(function() {
       }, "C");
@@ -43865,7 +43866,7 @@ var init_dist2 = __esm({
     __name(endIndex, "endIndex");
     __name(eqIndex, "eqIndex");
     __name(valueSlice, "valueSlice");
-    __name(decode3, "decode");
+    __name(defaultDecode, "defaultDecode");
     __name(defaultEncode, "defaultEncode");
   }
 });
@@ -44003,7 +44004,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1e20w2e";
+  const global = "__sveltekit_1paismy";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44747,7 +44748,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1e20w2e";
+  const global = "__sveltekit_1paismy";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44772,7 +44773,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1794133524912")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1794150319496")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -46077,9 +46078,9 @@ var ROUTES_PREFIX, NULL_BODY_STATUS, s, escape_html_attr_dict, escape_html_dict,
 var init_instance = __esm({
   ".svelte-kit/output/server/chunks/instance.js"() {
     "use strict";
+    init_functions();
     init_internal2();
     init_server_errors();
-    init_functions();
     init_env();
     init_server3();
     init_navigation();
@@ -46672,25 +46673,6 @@ var init_layout_server_ts = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/time-zone.js
-function parseTimeZone(raw) {
-  if (typeof raw !== "string") return null;
-  const zone = raw.trim();
-  if (!zone || zone.length > 64) return null;
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: zone });
-    return zone;
-  } catch {
-    return null;
-  }
-}
-var init_time_zone = __esm({
-  ".svelte-kit/output/server/chunks/time-zone.js"() {
-    "use strict";
-    __name(parseTimeZone, "parseTimeZone");
-  }
-});
-
 // .svelte-kit/output/server/chunks/index-server.js
 function onDestroy(fn) {
   ssr_context.r.on_destroy(fn);
@@ -46714,9 +46696,9 @@ var page;
 var init_state = __esm({
   ".svelte-kit/output/server/chunks/state.js"() {
     "use strict";
-    init_server_errors();
-    init_server3();
     init_index_server();
+    init_server3();
+    init_server_errors();
     __name(context2, "context");
     page = {
       get data() {
@@ -46867,104 +46849,24 @@ var init_Icon = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/check.js
-function Check2($$renderer, $$props) {
+// .svelte-kit/output/server/chunks/chevron-down.js
+function Chevron_down($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData }]));
 }
 var __iconData;
-var init_check = __esm({
-  ".svelte-kit/output/server/chunks/check.js"() {
-    "use strict";
-    init_server3();
-    init_Icon();
-    __iconData = {
-      "name": "check",
-      "size": 24,
-      "node": [["path", { "d": "M20 6 9 17l-5-5" }]]
-    };
-    __iconData.node;
-    __name(Check2, "Check");
-  }
-});
-
-// .svelte-kit/output/server/chunks/chevron-down.js
-function Chevron_down($$renderer, $$props) {
-  let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData2 }]));
-}
-var __iconData2;
 var init_chevron_down = __esm({
   ".svelte-kit/output/server/chunks/chevron-down.js"() {
     "use strict";
     init_server3();
     init_Icon();
-    __iconData2 = {
+    __iconData = {
       "name": "chevron-down",
       "size": 24,
       "node": [["path", { "d": "m6 9 6 6 6-6" }]]
     };
-    __iconData2.node;
+    __iconData.node;
     __name(Chevron_down, "Chevron_down");
-  }
-});
-
-// .svelte-kit/output/server/chunks/initials.js
-function Triangle_alert($$renderer, $$props) {
-  let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData3 }]));
-}
-function initialsOf(name, email3) {
-  const source = (name?.trim() || email3?.split("@")[0] || "?").replace(/^@/, "");
-  const parts = source.split(/[\s._-]+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return source.slice(0, 2).toUpperCase();
-}
-var __iconData3, composeSession;
-var init_initials = __esm({
-  ".svelte-kit/output/server/chunks/initials.js"() {
-    "use strict";
-    init_server3();
-    init_Icon();
-    __iconData3 = {
-      "name": "triangle-alert",
-      "size": 24,
-      "node": [
-        ["path", { "d": "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" }],
-        ["path", { "d": "M12 9v4" }],
-        ["path", { "d": "M12 17h.01" }]
-      ],
-      "aliases": ["alert-triangle"]
-    };
-    __iconData3.node;
-    __name(Triangle_alert, "Triangle_alert");
-    composeSession = {
-      active: false,
-      hasContent: false,
-      startNew: null
-    };
-    __name(initialsOf, "initialsOf");
-  }
-});
-
-// .svelte-kit/output/server/chunks/x.js
-function X($$renderer, $$props) {
-  let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData4 }]));
-}
-var __iconData4;
-var init_x = __esm({
-  ".svelte-kit/output/server/chunks/x.js"() {
-    "use strict";
-    init_server3();
-    init_Icon();
-    __iconData4 = {
-      "name": "x",
-      "size": 24,
-      "node": [["path", { "d": "M18 6 6 18" }], ["path", { "d": "m6 6 12 12" }]]
-    };
-    __iconData4.node;
-    __name(X, "X");
   }
 });
 
@@ -46974,6 +46876,44 @@ var init_favicon = __esm({
   ".svelte-kit/output/server/chunks/favicon.js"() {
     "use strict";
     favicon_default = "data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%20role='img'%3e%3ctitle%3eCogSend%20favicon%3c/title%3e%3crect%20width='64'%20height='64'%20rx='15'%20fill='%230c0c0e'%20/%3e%3cpath%20d='M24.82%2012.27L39.18%2012.27L39.95%2019.28A15%2015%200%200%201%2044.72%2024.05L51.73%2024.82L51.73%2039.18L44.72%2039.95A15%2015%200%200%201%2039.95%2044.72L39.18%2051.73L24.82%2051.73L24.05%2044.72A15%2015%200%200%201%2019.28%2039.95L12.27%2039.18L12.27%2024.82L19.28%2024.05A15%2015%200%200%201%2024.05%2019.28Z%20M32%2032m-8%200a8%208%200%201%200%2016%200a8%208%200%201%200%20-16%200'%20fill='%23ffffff'%20fill-rule='evenodd'%20/%3e%3c/svg%3e";
+  }
+});
+
+// .svelte-kit/output/server/chunks/initials.js
+function Triangle_exclamation_point($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData2 }]));
+}
+function initialsOf(name, email3) {
+  const source = (name?.trim() || email3?.split("@")[0] || "?").replace(/^@/, "");
+  const parts = source.split(/[\s._-]+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return source.slice(0, 2).toUpperCase();
+}
+var __iconData2, composeSession;
+var init_initials = __esm({
+  ".svelte-kit/output/server/chunks/initials.js"() {
+    "use strict";
+    init_server3();
+    init_Icon();
+    __iconData2 = {
+      "name": "triangle-exclamation-point",
+      "size": 24,
+      "node": [
+        ["path", { "d": "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" }],
+        ["path", { "d": "M12 9v4" }],
+        ["path", { "d": "M12 17h.01" }]
+      ],
+      "aliases": ["alert-triangle", "triangle-alert"]
+    };
+    __iconData2.node;
+    __name(Triangle_exclamation_point, "Triangle_exclamation_point");
+    composeSession = {
+      active: false,
+      hasContent: false,
+      startNew: null
+    };
+    __name(initialsOf, "initialsOf");
   }
 });
 
@@ -47066,8 +47006,8 @@ function selectionDrift(state2, selected) {
 var init_post_state = __esm({
   ".svelte-kit/output/server/chunks/post-state.js"() {
     "use strict";
-    init_video_rules();
     init_due_jobs();
+    init_video_rules();
     __name(toDate, "toDate");
     __name(isPublished, "isPublished");
     __name(isTargetSending, "isTargetSending");
@@ -47133,9 +47073,9 @@ var toast, timer, publishActivity;
 var init_publish_tracker_svelte = __esm({
   ".svelte-kit/output/server/chunks/publish-tracker.svelte.js"() {
     "use strict";
-    init_video_rules();
-    init_post_state();
     init_server3();
+    init_post_state();
+    init_video_rules();
     toast = {
       message: "",
       tone: "success",
@@ -47153,6 +47093,48 @@ var init_publish_tracker_svelte = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/check.js
+function Check2($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData3 }]));
+}
+var __iconData3;
+var init_check = __esm({
+  ".svelte-kit/output/server/chunks/check.js"() {
+    "use strict";
+    init_server3();
+    init_Icon();
+    __iconData3 = {
+      "name": "check",
+      "size": 24,
+      "node": [["path", { "d": "M20 6 9 17l-5-5" }]]
+    };
+    __iconData3.node;
+    __name(Check2, "Check");
+  }
+});
+
+// .svelte-kit/output/server/chunks/x.js
+function X($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData4 }]));
+}
+var __iconData4;
+var init_x = __esm({
+  ".svelte-kit/output/server/chunks/x.js"() {
+    "use strict";
+    init_server3();
+    init_Icon();
+    __iconData4 = {
+      "name": "x",
+      "size": 24,
+      "node": [["path", { "d": "M18 6 6 18" }], ["path", { "d": "m6 6 12 12" }]]
+    };
+    __iconData4.node;
+    __name(X, "X");
+  }
+});
+
 // .svelte-kit/output/server/chunks/update-notice.svelte.js
 var updateNotice;
 var init_update_notice_svelte = __esm({
@@ -47163,6 +47145,25 @@ var init_update_notice_svelte = __esm({
       tag: null,
       seen: null
     };
+  }
+});
+
+// .svelte-kit/output/server/chunks/time-zone.js
+function parseTimeZone(raw) {
+  if (typeof raw !== "string") return null;
+  const zone = raw.trim();
+  if (!zone || zone.length > 64) return null;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: zone });
+    return zone;
+  } catch {
+    return null;
+  }
+}
+var init_time_zone = __esm({
+  ".svelte-kit/output/server/chunks/time-zone.js"() {
+    "use strict";
+    __name(parseTimeZone, "parseTimeZone");
   }
 });
 
@@ -47190,7 +47191,7 @@ function Toast($$renderer, $$props) {
         });
       } else if (tone === "warn") {
         $$renderer2.push("<!--[1-->");
-        Triangle_alert($$renderer2, {
+        Triangle_exclamation_point($$renderer2, {
           class: "h-3.5 w-3.5",
           strokeWidth: 2.5
         });
@@ -47275,19 +47276,19 @@ var __iconData5, favicon_dark_default, logo_glyph_default;
 var init_layout_svelte = __esm({
   ".svelte-kit/output/server/entries/pages/_layout.svelte.js"() {
     "use strict";
-    init_time_zone();
     init_server3();
     init_navigation();
-    init_index_server();
     init_state();
-    init_Icon();
-    init_check();
     init_chevron_down();
-    init_initials();
-    init_x();
+    init_Icon();
+    init_index_server();
     init_favicon();
+    init_initials();
     init_publish_tracker_svelte();
+    init_check();
+    init_x();
     init_update_notice_svelte();
+    init_time_zone();
     __iconData5 = {
       "name": "pen-line",
       "size": 24,
@@ -47326,8 +47327,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.DC4Ko66I.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/By9RmFPS.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/Chza7i5s.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CygZ-CpP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/D20gE_Xc.js"];
-    stylesheets = ["_app/immutable/assets/0.CIFeZrgT.css"];
+    imports = ["_app/immutable/nodes/0.BcbfKs4M.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/CLya6AOR.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/MO2eXnrz.js", "_app/immutable/chunks/D9PKfT4g.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/DmxIf2bR.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/BzqdfMN8.js"];
+    stylesheets = ["_app/immutable/assets/0.BoLPfCW_.css"];
     fonts = [];
   }
 });
@@ -47366,7 +47367,7 @@ var init__2 = __esm({
     "use strict";
     index3 = 1;
     component2 = /* @__PURE__ */ __name(async () => component_cache2 ??= (await Promise.resolve().then(() => (init_error_svelte(), error_svelte_exports))).default, "component");
-    imports2 = ["_app/immutable/nodes/1.6yG3ZcyC.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js"];
+    imports2 = ["_app/immutable/nodes/1.BD_Y8OGV.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/B4ZfKWh4.js"];
     stylesheets2 = [];
     fonts2 = [];
   }
@@ -47412,7 +47413,7 @@ var init__3 = __esm({
     "use strict";
     index4 = 2;
     component3 = /* @__PURE__ */ __name(async () => component_cache3 ??= (await Promise.resolve().then(() => (init_error_svelte2(), error_svelte_exports2))).default, "component");
-    imports3 = ["_app/immutable/nodes/2.CDgollbw.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js"];
+    imports3 = ["_app/immutable/nodes/2.D_1mWFSf.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/B4ZfKWh4.js"];
     stylesheets3 = [];
     fonts3 = [];
   }
@@ -47495,9 +47496,9 @@ function requireScope(locals, scope) {
 var init_require = __esm({
   ".svelte-kit/output/server/chunks/require.js"() {
     "use strict";
-    init_http();
-    init_auth();
     init_tick_token();
+    init_auth();
+    init_http();
     __name(requireUser, "requireUser");
     __name(requireSession, "requireSession");
     __name(assertScheduler, "assertScheduler");
@@ -47673,7 +47674,7 @@ var init__4 = __esm({
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte(), page_svelte_exports))).default, "component");
     server_id2 = "src/routes/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.DWnLfmmh.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/B87q3Imq.js"];
+    imports4 = ["_app/immutable/nodes/3.DfuWX8ph.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/By61rDl3.js"];
     stylesheets4 = [];
     fonts4 = [];
   }
@@ -47894,9 +47895,9 @@ var KEY_PREFIX, PLATFORM_IDS2;
 var init_platform_credentials = __esm({
   ".svelte-kit/output/server/chunks/platform-credentials.js"() {
     "use strict";
-    init_client();
-    init_crypto();
     init_platform_setup();
+    init_crypto();
+    init_client();
     init_drizzle_orm();
     KEY_PREFIX = "oauth_app:";
     __name(platformAppSettingKey, "platformAppSettingKey");
@@ -48031,8 +48032,8 @@ var load3;
 var init_page_server_ts2 = __esm({
   ".svelte-kit/output/server/entries/pages/accounts/_page.server.ts.js"() {
     "use strict";
-    init_require();
     init_connection_list();
+    init_require();
     load3 = /* @__PURE__ */ __name(async ({ locals }) => {
       const user = requireUser(locals.user);
       try {
@@ -48071,64 +48072,23 @@ var init_page_server_ts2 = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/CopyButton.js
-function Copy($$renderer, $$props) {
-  let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData8 }]));
-}
-function CopyButton($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { value, ariaLabel } = $$props;
-    onDestroy(() => {
-    });
-    $$renderer2.push(`<button type="button"${attr("aria-label", ariaLabel)}${attr_class(`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors text-stone-400 hover:bg-stone-200/70 hover:text-stone-900`)}>`);
-    $$renderer2.push("<!--[-1-->");
-    Copy($$renderer2, { class: "h-4 w-4" });
-    $$renderer2.push(`<!--]--></button> <div class="sr-only" role="status" aria-live="polite" data-testid="copy-status">${escape_html("")}</div>`);
-  });
-}
-var __iconData8;
-var init_CopyButton = __esm({
-  ".svelte-kit/output/server/chunks/CopyButton.js"() {
-    "use strict";
-    init_server3();
-    init_index_server();
-    init_Icon();
-    __iconData8 = {
-      "name": "copy",
-      "size": 24,
-      "node": [["rect", {
-        "width": "14",
-        "height": "14",
-        "x": "8",
-        "y": "8",
-        "rx": "2",
-        "ry": "2"
-      }], ["path", { "d": "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" }]]
-    };
-    __iconData8.node;
-    __name(Copy, "Copy");
-    __name(CopyButton, "CopyButton");
-  }
-});
-
 // .svelte-kit/output/server/chunks/plus.js
 function Plus($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData9 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData8 }]));
 }
-var __iconData9;
+var __iconData8;
 var init_plus = __esm({
   ".svelte-kit/output/server/chunks/plus.js"() {
     "use strict";
     init_server3();
     init_Icon();
-    __iconData9 = {
+    __iconData8 = {
       "name": "plus",
       "size": 24,
       "node": [["path", { "d": "M5 12h14" }], ["path", { "d": "M12 5v14" }]]
     };
-    __iconData9.node;
+    __iconData8.node;
     __name(Plus, "Plus");
   }
 });
@@ -48161,6 +48121,47 @@ var init_ConfirmDialog = __esm({
     init_server3();
     init_index_server();
     __name(ConfirmDialog, "ConfirmDialog");
+  }
+});
+
+// .svelte-kit/output/server/chunks/CopyButton.js
+function Copy($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData9 }]));
+}
+function CopyButton($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { value, ariaLabel } = $$props;
+    onDestroy(() => {
+    });
+    $$renderer2.push(`<button type="button"${attr("aria-label", ariaLabel)}${attr_class(`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors text-stone-400 hover:bg-stone-200/70 hover:text-stone-900`)}>`);
+    $$renderer2.push("<!--[-1-->");
+    Copy($$renderer2, { class: "h-4 w-4" });
+    $$renderer2.push(`<!--]--></button> <div class="sr-only" role="status" aria-live="polite" data-testid="copy-status">${escape_html("")}</div>`);
+  });
+}
+var __iconData9;
+var init_CopyButton = __esm({
+  ".svelte-kit/output/server/chunks/CopyButton.js"() {
+    "use strict";
+    init_server3();
+    init_index_server();
+    init_Icon();
+    __iconData9 = {
+      "name": "copy",
+      "size": 24,
+      "node": [["rect", {
+        "width": "14",
+        "height": "14",
+        "x": "8",
+        "y": "8",
+        "rx": "2",
+        "ry": "2"
+      }], ["path", { "d": "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" }]]
+    };
+    __iconData9.node;
+    __name(Copy, "Copy");
+    __name(CopyButton, "CopyButton");
   }
 });
 
@@ -48461,20 +48462,20 @@ function _page2($$renderer, $$props) {
 var init_page_svelte2 = __esm({
   ".svelte-kit/output/server/entries/pages/accounts/_page.svelte.js"() {
     "use strict";
-    init_human_error();
-    init_platforms();
-    init_platform_setup();
-    init_x_limits();
     init_server3();
     init_index_server();
     init_state();
-    init_CopyButton();
     init_plus();
     init_x();
     init_ConfirmDialog();
+    init_CopyButton();
     init_AccountAvatar();
     init_SocialIcon();
+    init_platforms();
+    init_human_error();
+    init_platform_setup();
     init_session_expired();
+    init_x_limits();
     __name(_page2, "_page");
   }
 });
@@ -48498,7 +48499,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.BehA4po1.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/08Ptsa4k.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DlPuqcoy.js", "_app/immutable/chunks/B8Qk5jBb.js"];
+    imports5 = ["_app/immutable/nodes/4.Cb4EGNJ_.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/BVH4e0hY.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/D0u_0LSN.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -48553,11 +48554,11 @@ var load4;
 var init_page_server_ts3 = __esm({
   ".svelte-kit/output/server/entries/pages/compose/_page.server.ts.js"() {
     "use strict";
-    init_client();
     init_profile_settings();
+    init_client();
+    init_draft_record();
     init_require();
     init_serialize();
-    init_draft_record();
     init_drizzle_orm();
     load4 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       const user = requireUser(locals.user);
@@ -48591,142 +48592,6 @@ var init_page_server_ts3 = __esm({
         canMakeJpegCopies: Boolean(locals.bindings?.IMAGES)
       };
     }, "load");
-  }
-});
-
-// .svelte-kit/output/server/chunks/published-lock.js
-function isFullyPublished(targets) {
-  const live = targets.filter((t) => t.status !== "cancelled");
-  return live.length > 0 && live.every((t) => t.status === "published" || Boolean(t.remotePostId));
-}
-var PUBLISHED_EDIT_ERROR, PUBLISH_IN_PROGRESS_ERROR;
-var init_published_lock = __esm({
-  ".svelte-kit/output/server/chunks/published-lock.js"() {
-    "use strict";
-    PUBLISHED_EDIT_ERROR = "Already published \u2014 duplicate it to post again";
-    PUBLISH_IN_PROGRESS_ERROR = "Publishing in progress \u2014 try again shortly";
-    __name(isFullyPublished, "isFullyPublished");
-  }
-});
-
-// .svelte-kit/output/server/chunks/platform-sync.js
-function isShareTokenFormat(value) {
-  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
-}
-function sharePath(token) {
-  return `/p/${token}`;
-}
-function shareLifetimeMs(days = 14) {
-  if (typeof days !== "number" || !Number.isInteger(days)) return null;
-  if (days < 1 || days > 30) return null;
-  return days * DAY_MS;
-}
-function hasGoneOut(targets) {
-  return targets.some((t) => t.status !== "cancelled" && (t.status === "published" || Boolean(t.remotePostId)));
-}
-function threadCards(body, media) {
-  return resolvePublishSegments(body, (i) => media.some((m) => m.segmentIndex === i)).map(({ text: text3, segmentIndex }) => ({
-    text: text3,
-    media: media.filter((m) => m.segmentIndex === segmentIndex)
-  }));
-}
-function shareVersions(input2) {
-  const versions = [{
-    key: "post",
-    label: "Post",
-    cards: threadCards(input2.baseBody, input2.media)
-  }];
-  for (const platform2 of PLATFORM_ORDER) {
-    if (!input2.platforms.includes(platform2)) continue;
-    const variant = input2.variants.find((v) => v.platform === platform2);
-    if (!variant || variant.body === null) continue;
-    const cards = supportsThreads(platform2) ? threadCards(variant.body, input2.media) : [{
-      text: joinThreadTexts(splitThreadSegments(variant.body)),
-      media: input2.media
-    }];
-    versions.push({
-      key: platform2,
-      label: platformName(platform2),
-      cards
-    });
-  }
-  return versions;
-}
-function isPlatformCustomized(overrides, platform2) {
-  const o = overrides[platform2];
-  return o != null && o.body !== null && o.body !== void 0;
-}
-function effectivePlatformBody(mainBody, overrides, platform2) {
-  if (isPlatformCustomized(overrides, platform2)) return overrides[platform2].body ?? "";
-  return mainBody;
-}
-function customizePlatformBody(overrides, platform2, body) {
-  return {
-    ...overrides,
-    [platform2]: { body }
-  };
-}
-function resetPlatformToFollow(overrides, platform2) {
-  const next = { ...overrides };
-  if (next[platform2]) next[platform2] = { body: null };
-  return next;
-}
-function customizedBodiesForSave(_mainBody, overrides, platforms) {
-  const out = {};
-  for (const p of platforms) if (isPlatformCustomized(overrides, p)) out[p] = overrides[p].body ?? "";
-  return out;
-}
-function overridesFromVariants(variants, mainBody) {
-  const map2 = {};
-  for (const v of variants) {
-    if (!isPlatformId(v.platform)) continue;
-    if (v.body === null || v.body === void 0 || v.body === mainBody) map2[v.platform] = { body: null };
-    else map2[v.platform] = { body: v.body };
-  }
-  return map2;
-}
-function platformsFromConnections(connections2) {
-  const set2 = /* @__PURE__ */ new Set();
-  for (const c of connections2) if (isPlatformId(c.platform)) set2.add(c.platform);
-  return Array.from(set2);
-}
-function restorableTargetIds(targets) {
-  return (targets ?? []).filter((t) => t.status !== "cancelled").map((t) => t.connectionId).filter((id2) => Boolean(id2));
-}
-function resolveRestoredSelection(targetIds, connections2) {
-  const wanted = targetIds.filter((id2) => Boolean(id2));
-  if (!wanted.length) return null;
-  const ids = new Set(connections2.map((c) => c.id));
-  return wanted.filter((id2) => ids.has(id2));
-}
-function resolveSavedSelection(ids, connections2) {
-  if (!Array.isArray(ids)) return null;
-  const known = new Set(connections2.map((c) => c.id));
-  return ids.filter((id2) => typeof id2 === "string" && known.has(id2));
-}
-var DAY_MS;
-var init_platform_sync = __esm({
-  ".svelte-kit/output/server/chunks/platform-sync.js"() {
-    "use strict";
-    init_platforms();
-    init_thread_segments();
-    DAY_MS = 864e5;
-    __name(isShareTokenFormat, "isShareTokenFormat");
-    __name(sharePath, "sharePath");
-    __name(shareLifetimeMs, "shareLifetimeMs");
-    __name(hasGoneOut, "hasGoneOut");
-    __name(threadCards, "threadCards");
-    __name(shareVersions, "shareVersions");
-    __name(isPlatformCustomized, "isPlatformCustomized");
-    __name(effectivePlatformBody, "effectivePlatformBody");
-    __name(customizePlatformBody, "customizePlatformBody");
-    __name(resetPlatformToFollow, "resetPlatformToFollow");
-    __name(customizedBodiesForSave, "customizedBodiesForSave");
-    __name(overridesFromVariants, "overridesFromVariants");
-    __name(platformsFromConnections, "platformsFromConnections");
-    __name(restorableTargetIds, "restorableTargetIds");
-    __name(resolveRestoredSelection, "resolveRestoredSelection");
-    __name(resolveSavedSelection, "resolveSavedSelection");
   }
 });
 
@@ -49031,10 +48896,35 @@ var init_schedule_helpers = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/user.js
+function User($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData11 }]));
+}
+var __iconData11;
+var init_user = __esm({
+  ".svelte-kit/output/server/chunks/user.js"() {
+    "use strict";
+    init_server3();
+    init_Icon();
+    __iconData11 = {
+      "name": "user",
+      "size": 24,
+      "node": [["path", { "d": "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" }], ["circle", {
+        "cx": "12",
+        "cy": "7",
+        "r": "4"
+      }]]
+    };
+    __iconData11.node;
+    __name(User, "User");
+  }
+});
+
 // .svelte-kit/output/server/chunks/MediaPreview.js
 function Play($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData11 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData12 }]));
 }
 function isVideoMedia2(m) {
   return (m.mime || "").toLowerCase().startsWith("video/");
@@ -49189,19 +49079,19 @@ function MediaPreview($$renderer, $$props) {
     $$renderer2.push(`<!--]--></div>`);
   });
 }
-var __iconData11, MIN_ASPECT, MAX_ASPECT, MEDIA_BASE;
+var __iconData12, MIN_ASPECT, MAX_ASPECT, MEDIA_BASE;
 var init_MediaPreview = __esm({
   ".svelte-kit/output/server/chunks/MediaPreview.js"() {
     "use strict";
-    init_video_rules();
     init_server3();
     init_Icon();
-    __iconData11 = {
+    init_video_rules();
+    __iconData12 = {
       "name": "play",
       "size": 24,
       "node": [["path", { "d": "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" }]]
     };
-    __iconData11.node;
+    __iconData12.node;
     __name(Play, "Play");
     MIN_ASPECT = 1 / 2;
     MAX_ASPECT = 3;
@@ -49217,28 +49107,139 @@ var init_MediaPreview = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/user.js
-function User($$renderer, $$props) {
-  let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData12 }]));
+// .svelte-kit/output/server/chunks/platform-sync.js
+function isShareTokenFormat(value) {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
 }
-var __iconData12;
-var init_user = __esm({
-  ".svelte-kit/output/server/chunks/user.js"() {
+function sharePath(token) {
+  return `/p/${token}`;
+}
+function shareLifetimeMs(days = 14) {
+  if (typeof days !== "number" || !Number.isInteger(days)) return null;
+  if (days < 1 || days > 30) return null;
+  return days * DAY_MS;
+}
+function hasGoneOut(targets) {
+  return targets.some((t) => t.status !== "cancelled" && (t.status === "published" || Boolean(t.remotePostId)));
+}
+function threadCards(body, media) {
+  return resolvePublishSegments(body, (i) => media.some((m) => m.segmentIndex === i)).map(({ text: text3, segmentIndex }) => ({
+    text: text3,
+    media: media.filter((m) => m.segmentIndex === segmentIndex)
+  }));
+}
+function shareVersions(input2) {
+  const versions = [{
+    key: "post",
+    label: "Post",
+    cards: threadCards(input2.baseBody, input2.media)
+  }];
+  for (const platform2 of PLATFORM_ORDER) {
+    if (!input2.platforms.includes(platform2)) continue;
+    const variant = input2.variants.find((v) => v.platform === platform2);
+    if (!variant || variant.body === null) continue;
+    const cards = supportsThreads(platform2) ? threadCards(variant.body, input2.media) : [{
+      text: joinThreadTexts(splitThreadSegments(variant.body)),
+      media: input2.media
+    }];
+    versions.push({
+      key: platform2,
+      label: platformName(platform2),
+      cards
+    });
+  }
+  return versions;
+}
+function isPlatformCustomized(overrides, platform2) {
+  const o = overrides[platform2];
+  return o != null && o.body !== null && o.body !== void 0;
+}
+function effectivePlatformBody(mainBody, overrides, platform2) {
+  if (isPlatformCustomized(overrides, platform2)) return overrides[platform2].body ?? "";
+  return mainBody;
+}
+function customizePlatformBody(overrides, platform2, body) {
+  return {
+    ...overrides,
+    [platform2]: { body }
+  };
+}
+function resetPlatformToFollow(overrides, platform2) {
+  const next = { ...overrides };
+  if (next[platform2]) next[platform2] = { body: null };
+  return next;
+}
+function customizedBodiesForSave(_mainBody, overrides, platforms) {
+  const out = {};
+  for (const p of platforms) if (isPlatformCustomized(overrides, p)) out[p] = overrides[p].body ?? "";
+  return out;
+}
+function overridesFromVariants(variants, mainBody) {
+  const map2 = {};
+  for (const v of variants) {
+    if (!isPlatformId(v.platform)) continue;
+    if (v.body === null || v.body === void 0 || v.body === mainBody) map2[v.platform] = { body: null };
+    else map2[v.platform] = { body: v.body };
+  }
+  return map2;
+}
+function platformsFromConnections(connections2) {
+  const set2 = /* @__PURE__ */ new Set();
+  for (const c of connections2) if (isPlatformId(c.platform)) set2.add(c.platform);
+  return Array.from(set2);
+}
+function restorableTargetIds(targets) {
+  return (targets ?? []).filter((t) => t.status !== "cancelled").map((t) => t.connectionId).filter((id2) => Boolean(id2));
+}
+function resolveRestoredSelection(targetIds, connections2) {
+  const wanted = targetIds.filter((id2) => Boolean(id2));
+  if (!wanted.length) return null;
+  const ids = new Set(connections2.map((c) => c.id));
+  return wanted.filter((id2) => ids.has(id2));
+}
+function resolveSavedSelection(ids, connections2) {
+  if (!Array.isArray(ids)) return null;
+  const known = new Set(connections2.map((c) => c.id));
+  return ids.filter((id2) => typeof id2 === "string" && known.has(id2));
+}
+var DAY_MS;
+var init_platform_sync = __esm({
+  ".svelte-kit/output/server/chunks/platform-sync.js"() {
     "use strict";
-    init_server3();
-    init_Icon();
-    __iconData12 = {
-      "name": "user",
-      "size": 24,
-      "node": [["path", { "d": "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" }], ["circle", {
-        "cx": "12",
-        "cy": "7",
-        "r": "4"
-      }]]
-    };
-    __iconData12.node;
-    __name(User, "User");
+    init_platforms();
+    init_thread_segments();
+    DAY_MS = 864e5;
+    __name(isShareTokenFormat, "isShareTokenFormat");
+    __name(sharePath, "sharePath");
+    __name(shareLifetimeMs, "shareLifetimeMs");
+    __name(hasGoneOut, "hasGoneOut");
+    __name(threadCards, "threadCards");
+    __name(shareVersions, "shareVersions");
+    __name(isPlatformCustomized, "isPlatformCustomized");
+    __name(effectivePlatformBody, "effectivePlatformBody");
+    __name(customizePlatformBody, "customizePlatformBody");
+    __name(resetPlatformToFollow, "resetPlatformToFollow");
+    __name(customizedBodiesForSave, "customizedBodiesForSave");
+    __name(overridesFromVariants, "overridesFromVariants");
+    __name(platformsFromConnections, "platformsFromConnections");
+    __name(restorableTargetIds, "restorableTargetIds");
+    __name(resolveRestoredSelection, "resolveRestoredSelection");
+    __name(resolveSavedSelection, "resolveSavedSelection");
+  }
+});
+
+// .svelte-kit/output/server/chunks/published-lock.js
+function isFullyPublished(targets) {
+  const live = targets.filter((t) => t.status !== "cancelled");
+  return live.length > 0 && live.every((t) => t.status === "published" || Boolean(t.remotePostId));
+}
+var PUBLISHED_EDIT_ERROR, PUBLISH_IN_PROGRESS_ERROR;
+var init_published_lock = __esm({
+  ".svelte-kit/output/server/chunks/published-lock.js"() {
+    "use strict";
+    PUBLISHED_EDIT_ERROR = "Already published \u2014 duplicate it to post again";
+    PUBLISH_IN_PROGRESS_ERROR = "Publishing in progress \u2014 try again shortly";
+    __name(isFullyPublished, "isFullyPublished");
   }
 });
 
@@ -49255,7 +49256,7 @@ function Chevron_up($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData$7 }]));
 }
-function Circle_alert($$renderer, $$props) {
+function Circle_exclamation_point($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData$6 }]));
 }
@@ -49318,7 +49319,7 @@ function MediaFit($$renderer, $$props) {
       for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
         let row = each_array[$$index];
         $$renderer2.push(`<li${attr("data-testid", `${stringify3(testId)}-${stringify3(row.platform)}`)}${attr("data-level", row.level)}${attr_class(`flex items-start gap-1.5 text-[12px] font-medium ${row.level === "error" ? "text-red-700" : "text-stone-600"}`)}>`);
-        Triangle_alert($$renderer2, {
+        Triangle_exclamation_point($$renderer2, {
           class: "mt-0.5 h-3.5 w-3.5 shrink-0",
           "aria-hidden": "true"
         });
@@ -49467,7 +49468,7 @@ function PostStatusBanner($$renderer, $$props) {
     $$renderer2.push(`<!--]--> `);
     if (summary()) {
       $$renderer2.push(`<!--[0--><li${attr_class(`flex items-start gap-2 ${post.failed.length ? "text-red-700" : ""}`)} data-testid="post-status-summary">`);
-      Circle_alert($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-500" });
+      Circle_exclamation_point($$renderer2, { class: "mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-500" });
       $$renderer2.push(`<!----> <span>${escape_html(summary())} <a${attr("href", summaryHref())}${attr_class(clsx$1(linkClass))}>Details in Posts</a></span></li>`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--></ul> `);
@@ -49476,7 +49477,7 @@ function PostStatusBanner($$renderer, $$props) {
     $$renderer2.push(`<!--]--> `);
     if (canAct() && (drift.added.length || drift.removed.length)) {
       $$renderer2.push(`<!--[0--><div data-testid="schedule-drift" class="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200/70 bg-amber-50/70 px-3 py-2">`);
-      Triangle_alert($$renderer2, { class: "h-3.5 w-3.5 shrink-0 text-amber-600" });
+      Triangle_exclamation_point($$renderer2, { class: "h-3.5 w-3.5 shrink-0 text-amber-600" });
       $$renderer2.push(`<!----> <p class="min-w-48 flex-1 text-[12px] font-medium text-amber-900">`);
       if (drift.removed.length) $$renderer2.push(`<!--[0-->${escape_html(names(drift.removed))}
 					${escape_html(drift.removed.length === 1 ? "is" : "are")} still scheduled even though
@@ -49833,6 +49834,7 @@ function Editor($$renderer, $$props) {
       videoJobs = [];
     }
     __name(abortVideoJobs, "abortVideoJobs");
+    onDestroy(abortVideoJobs);
     function resetEditorForNewDraft() {
       editorGeneration++;
       abortVideoJobs();
@@ -50482,7 +50484,12 @@ function Editor($$renderer, $$props) {
     afterNavigate(({ from, to }) => {
       from?.url.pathname === "/posts" && Boolean(to?.url.searchParams.get("id"));
     });
-    beforeNavigate(() => {
+    beforeNavigate(({ to, type, cancel }) => {
+      if (videoJobs.length && type !== "leave" && to?.route.id !== "/compose") {
+        cancel();
+        showToast("A video is still converting or uploading. Wait for it, or cancel it first.", "warn");
+        return;
+      }
       if (editLocked()) return;
       if (!dirty && Object.keys(altPending).length === 0) return;
       persistAll(false, { navigate: false });
@@ -50879,39 +50886,39 @@ var __iconData$8, __iconData$7, __iconData$6, __iconData$5, __iconData$4, __icon
 var init_page_svelte3 = __esm({
   ".svelte-kit/output/server/entries/pages/compose/_page.svelte.js"() {
     "use strict";
-    init_bytes();
-    init_human_error();
-    init_profile_settings();
-    init_media_limits();
-    init_platforms();
-    init_x_limits();
-    init_links();
-    init_thread_segments();
-    init_x_quote();
-    init_video_rules();
-    init_poll();
-    init_threads_topic();
-    init_post_state();
-    init_published_lock();
-    init_platform_sync();
     init_server3();
     init_navigation();
-    init_index_server();
     init_state();
+    init_index_server();
     init_Icon();
-    init_check();
-    init_CopyButton();
     init_schedule_helpers();
-    init_MediaPreview();
-    init_plus();
-    init_initials();
-    init_user();
+    init_check();
     init_x();
-    init_publish_tracker_svelte();
+    init_plus();
+    init_user();
+    init_x_limits();
+    init_human_error();
     init_ConfirmDialog();
-    init_AccountAvatar();
-    init_SocialIcon();
+    init_initials();
+    init_media_limits();
+    init_video_rules();
+    init_platforms();
+    init_MediaPreview();
+    init_CopyButton();
+    init_publish_tracker_svelte();
+    init_platform_sync();
+    init_poll();
+    init_threads_topic();
+    init_profile_settings();
     init_relative_time();
+    init_thread_segments();
+    init_bytes();
+    init_published_lock();
+    init_post_state();
+    init_x_quote();
+    init_SocialIcon();
+    init_links();
+    init_AccountAvatar();
     __iconData$8 = {
       "name": "calendar",
       "size": 24,
@@ -50938,7 +50945,7 @@ var init_page_svelte3 = __esm({
     __iconData$7.node;
     __name(Chevron_up, "Chevron_up");
     __iconData$6 = {
-      "name": "circle-alert",
+      "name": "circle-exclamation-point",
       "size": 24,
       "node": [
         ["circle", {
@@ -50959,10 +50966,10 @@ var init_page_svelte3 = __esm({
           "y2": "16"
         }]
       ],
-      "aliases": ["alert-circle"]
+      "aliases": ["alert-circle", "circle-alert"]
     };
     __iconData$6.node;
-    __name(Circle_alert, "Circle_alert");
+    __name(Circle_exclamation_point, "Circle_exclamation_point");
     __iconData$5 = {
       "name": "image",
       "size": 24,
@@ -51095,7 +51102,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.DSHnabDO.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/BK72y0b1.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/JyCEJvqX.js", "_app/immutable/chunks/CygZ-CpP.js", "_app/immutable/chunks/08Ptsa4k.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Chza7i5s.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js"];
+    imports6 = ["_app/immutable/nodes/5.CmY2ANcE.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/CLya6AOR.js", "_app/immutable/chunks/DtpI6-TY.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/BVH4e0hY.js", "_app/immutable/chunks/C9uq04a2.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/D0u_0LSN.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/RYJgHCdq.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DuMNcp0T.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -51520,10 +51527,10 @@ var DAY_MS2, INSIGHT_RANGES, dayKeyFormatters, labelFormatter, zonedFormatters;
 var init_insights_report = __esm({
   ".svelte-kit/output/server/chunks/insights-report.js"() {
     "use strict";
-    init_client();
-    init_threads_error();
     init_platforms();
+    init_threads_error();
     init_time_zone();
+    init_client();
     init_drizzle_orm();
     DAY_MS2 = 864e5;
     INSIGHT_RANGES = [
@@ -51571,8 +51578,8 @@ var load7;
 var init_page_server_ts6 = __esm({
   ".svelte-kit/output/server/entries/pages/insights/_page.server.ts.js"() {
     "use strict";
-    init_require();
     init_insights_report();
+    init_require();
     load7 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       const user = requireUser(locals.user);
       try {
@@ -51838,16 +51845,16 @@ var __iconData14;
 var init_page_svelte4 = __esm({
   ".svelte-kit/output/server/entries/pages/insights/_page.svelte.js"() {
     "use strict";
-    init_human_error();
-    init_platforms();
-    init_time_zone();
     init_server3();
     init_index_server();
     init_Icon();
     init_x();
     init_AccountAvatar();
+    init_human_error();
     init_session_expired();
+    init_platforms();
     init_relative_time();
+    init_time_zone();
     __iconData14 = {
       "name": "chart-column",
       "size": 24,
@@ -51884,7 +51891,7 @@ var init__9 = __esm({
     index10 = 8;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports9 = ["_app/immutable/nodes/8.CZZrqM-x.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/By9RmFPS.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports9 = ["_app/immutable/nodes/8.rzfHms3E.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/D9PKfT4g.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets9 = [];
     fonts9 = [];
   }
@@ -51969,7 +51976,7 @@ var init__10 = __esm({
     index11 = 9;
     component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id8 = "src/routes/login/+page.server.ts";
-    imports10 = ["_app/immutable/nodes/9.C_JN8H6U.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/CL0Rsr0s.js"];
+    imports10 = ["_app/immutable/nodes/9.DVmiMRgp.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/CL0Rsr0s.js"];
     stylesheets10 = [];
     fonts10 = [];
   }
@@ -52034,7 +52041,7 @@ var init__11 = __esm({
     index12 = 10;
     component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
     server_id9 = "src/routes/login/setup-2fa/+page.server.ts";
-    imports11 = ["_app/immutable/nodes/10.DMrvVJ7r.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js"];
+    imports11 = ["_app/immutable/nodes/10.DBGnFvwQ.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js"];
     stylesheets11 = [];
     fonts11 = [];
   }
@@ -52101,7 +52108,7 @@ var init__12 = __esm({
     index13 = 11;
     component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
     server_id10 = "src/routes/login/verify/+page.server.ts";
-    imports12 = ["_app/immutable/nodes/11.0HWxZERk.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js"];
+    imports12 = ["_app/immutable/nodes/11.DhXz3z4c.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js"];
     stylesheets12 = [];
     fonts12 = [];
   }
@@ -52235,10 +52242,10 @@ async function resolveSharedMedia(db, secret, token, storageKey, now = /* @__PUR
 var init_draft_shares = __esm({
   ".svelte-kit/output/server/chunks/draft-shares.js"() {
     "use strict";
-    init_client();
     init_bytes();
-    init_crypto();
     init_platform_sync();
+    init_crypto();
+    init_client();
     init_drizzle_orm();
     __name(shareToken, "shareToken");
     __name(hashShareToken, "hashShareToken");
@@ -52261,9 +52268,9 @@ var load12;
 var init_page_server_ts11 = __esm({
   ".svelte-kit/output/server/entries/pages/p/_token_/_page.server.ts.js"() {
     "use strict";
-    init_serialize();
     init_platform_sync();
     init_draft_shares();
+    init_serialize();
     init_exports();
     load12 = /* @__PURE__ */ __name(async ({ params, locals, setHeaders }) => {
       setHeaders({ "cache-control": "private, no-store" });
@@ -52386,7 +52393,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id12 = "src/routes/p/[token]/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.Czi2zzWR.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/JyCEJvqX.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CygZ-CpP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports14 = ["_app/immutable/nodes/13.CTfapDl4.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/RYJgHCdq.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -52566,8 +52573,8 @@ var load13;
 var init_page_server_ts12 = __esm({
   ".svelte-kit/output/server/entries/pages/posts/_page.server.ts.js"() {
     "use strict";
-    init_require();
     init_post_list();
+    init_require();
     load13 = /* @__PURE__ */ __name(async ({ locals }) => {
       const user = requireUser(locals.user);
       try {
@@ -53390,31 +53397,31 @@ var __iconData$32, __iconData$22, __iconData$13, __iconData16, pending, AUTH_ERR
 var init_page_svelte9 = __esm({
   ".svelte-kit/output/server/entries/pages/posts/_page.svelte.js"() {
     "use strict";
-    init_human_error();
-    init_threads_error();
-    init_platforms();
-    init_links();
-    init_thread_segments();
-    init_x_quote();
-    init_video_rules();
-    init_post_state();
-    init_excerpt();
     init_server3();
-    init_navigation();
     init_index_server();
+    init_navigation();
     init_state();
     init_Icon();
-    init_chevron_down();
-    init_circle_x();
     init_schedule_helpers();
-    init_pencil();
-    init_MediaPreview();
     init_x();
-    init_publish_tracker_svelte();
+    init_circle_x();
+    init_pencil();
+    init_chevron_down();
     init_ConfirmDialog();
+    init_MediaPreview();
+    init_publish_tracker_svelte();
     init_SocialIcon();
+    init_platforms();
+    init_excerpt();
+    init_links();
+    init_x_quote();
+    init_human_error();
+    init_post_state();
+    init_video_rules();
     init_session_expired();
     init_relative_time();
+    init_threads_error();
+    init_thread_segments();
     __iconData$32 = {
       "name": "calendar-clock",
       "size": 24,
@@ -53504,7 +53511,7 @@ var init__15 = __esm({
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id13 = "src/routes/posts/+page.server.ts";
-    imports15 = ["_app/immutable/nodes/14.s9WfWGPM.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/B87q3Imq.js", "_app/immutable/chunks/BK72y0b1.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/JyCEJvqX.js", "_app/immutable/chunks/CygZ-CpP.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Chza7i5s.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
+    imports15 = ["_app/immutable/nodes/14.B9QLQ0Qk.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/DtpI6-TY.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/By61rDl3.js", "_app/immutable/chunks/CDL-WMvG.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/MO2eXnrz.js", "_app/immutable/chunks/D0u_0LSN.js", "_app/immutable/chunks/RYJgHCdq.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BTpSoDTa.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -53521,54 +53528,6 @@ var init_docs_links = __esm({
       api: `${DOCS_URL}api/`,
       mcp: `${DOCS_URL}mcp/`
     };
-  }
-});
-
-// .svelte-kit/output/server/chunks/scheduler-status.js
-function schedulerMessage(status, deployCron) {
-  const stuck = status.stuckPublishing ?? 0;
-  if (stuck) return `${stuck} post${stuck === 1 ? "" : "s"} stuck publishing \u2014 retry from Posts`;
-  if (status.lastTickAt === null) {
-    if (deployCron?.status === "unavailable") return "Scheduled publishing is idle: Cloudflare refused the cron trigger (error 10072)";
-    if (deployCron?.status === "disabled") return "Scheduled publishing is idle: no cron trigger is configured";
-    return "Scheduled publishing is idle: no tick yet";
-  }
-  if (!status.ok) return "Scheduled publishing is delayed \u2014 scheduled posts are waiting";
-  return "Scheduled publishing is on time";
-}
-function tickAdvice(status, deployCron) {
-  if (status.stuckPublishing) return {
-    level: "warn",
-    message: `${status.stuckPublishing} post${status.stuckPublishing === 1 ? " is" : "s are"} stuck publishing. Retry them from Posts.`
-  };
-  if (status.lastTickAt === null) {
-    if (deployCron?.status === "unavailable") return {
-      level: "warn",
-      message: "This deployment has no cron trigger: Cloudflare refused it because the account is at its free-plan limit of 5 cron triggers (error 10072). Scheduled posts will wait until something ticks \u2014 free a trigger slot on another Worker, upgrade the plan, or point an external cron at the tick URL below."
-    };
-    if (deployCron?.status === "disabled") return {
-      level: "warn",
-      message: "This deployment has no cron trigger, so scheduled posts only publish when something calls the tick URL. Point an external cron at it with the token below."
-    };
-    return {
-      level: "info",
-      message: "No tick has arrived yet. The built-in cron runs every minute once the Worker has a trigger; if scheduled posts do not fire, use the tick URL below with an external cron."
-    };
-  }
-  if (!status.ok) return {
-    level: "warn",
-    message: "The scheduler has gone quiet, so scheduled posts are waiting. Check the Worker cron trigger (Settings \u2192 Trigger events), or drive the tick URL below from an external cron."
-  };
-  return {
-    level: "ok",
-    message: "Ticks are arriving on schedule."
-  };
-}
-var init_scheduler_status = __esm({
-  ".svelte-kit/output/server/chunks/scheduler-status.js"() {
-    "use strict";
-    __name(schedulerMessage, "schedulerMessage");
-    __name(tickAdvice, "tickAdvice");
   }
 });
 
@@ -53889,6 +53848,54 @@ var init_update_manifest = __esm({
     }]))}${encodeURIComponent("CogSend updater")}`;
     __name(jwtClaims, "jwtClaims");
     __name(singleAssetUploads, "singleAssetUploads");
+  }
+});
+
+// .svelte-kit/output/server/chunks/scheduler-status.js
+function schedulerMessage(status, deployCron) {
+  const stuck = status.stuckPublishing ?? 0;
+  if (stuck) return `${stuck} post${stuck === 1 ? "" : "s"} stuck publishing \u2014 retry from Posts`;
+  if (status.lastTickAt === null) {
+    if (deployCron?.status === "unavailable") return "Scheduled publishing is idle: Cloudflare refused the cron trigger (error 10072)";
+    if (deployCron?.status === "disabled") return "Scheduled publishing is idle: no cron trigger is configured";
+    return "Scheduled publishing is idle: no tick yet";
+  }
+  if (!status.ok) return "Scheduled publishing is delayed \u2014 scheduled posts are waiting";
+  return "Scheduled publishing is on time";
+}
+function tickAdvice(status, deployCron) {
+  if (status.stuckPublishing) return {
+    level: "warn",
+    message: `${status.stuckPublishing} post${status.stuckPublishing === 1 ? " is" : "s are"} stuck publishing. Retry them from Posts.`
+  };
+  if (status.lastTickAt === null) {
+    if (deployCron?.status === "unavailable") return {
+      level: "warn",
+      message: "This deployment has no cron trigger: Cloudflare refused it because the account is at its free-plan limit of 5 cron triggers (error 10072). Scheduled posts will wait until something ticks \u2014 free a trigger slot on another Worker, upgrade the plan, or point an external cron at the tick URL below."
+    };
+    if (deployCron?.status === "disabled") return {
+      level: "warn",
+      message: "This deployment has no cron trigger, so scheduled posts only publish when something calls the tick URL. Point an external cron at it with the token below."
+    };
+    return {
+      level: "info",
+      message: "No tick has arrived yet. The built-in cron runs every minute once the Worker has a trigger; if scheduled posts do not fire, use the tick URL below with an external cron."
+    };
+  }
+  if (!status.ok) return {
+    level: "warn",
+    message: "The scheduler has gone quiet, so scheduled posts are waiting. Check the Worker cron trigger (Settings \u2192 Trigger events), or drive the tick URL below from an external cron."
+  };
+  return {
+    level: "ok",
+    message: "Ticks are arriving on schedule."
+  };
+}
+var init_scheduler_status = __esm({
+  ".svelte-kit/output/server/chunks/scheduler-status.js"() {
+    "use strict";
+    __name(schedulerMessage, "schedulerMessage");
+    __name(tickAdvice, "tickAdvice");
   }
 });
 
@@ -57002,7 +57009,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.29.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.29.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57087,24 +57094,24 @@ function _page10($$renderer, $$props) {
 var init_page_svelte10 = __esm({
   ".svelte-kit/output/server/entries/pages/settings/_page.svelte.js"() {
     "use strict";
-    init_docs_links();
-    init_human_error();
-    init_profile_settings();
-    init_platforms();
-    init_scheduler_status();
-    init_github_update();
-    init_update_manifest();
     init_server3();
-    init_navigation();
     init_index_server();
+    init_navigation();
     init_check();
     init_CopyButton();
     init_pencil();
     init_user();
-    init_update_notice_svelte();
-    init_ConfirmDialog();
+    init_docs_links();
     init_AccountAvatar();
+    init_ConfirmDialog();
+    init_github_update();
+    init_update_manifest();
+    init_update_notice_svelte();
+    init_human_error();
     init_session_expired();
+    init_platforms();
+    init_profile_settings();
+    init_scheduler_status();
     init_date_fns();
     __name(UpdatePanel, "UpdatePanel");
     __name(_page10, "_page");
@@ -57126,7 +57133,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.oTGoT8cB.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
+    imports16 = ["_app/immutable/nodes/15.zePdnpAp.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/CDL-WMvG.js", "_app/immutable/chunks/C9uq04a2.js", "_app/immutable/chunks/DmxIf2bR.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/D0u_0LSN.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/lyktyNIf.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -57238,9 +57245,9 @@ var UPDATE_TARGET_SETTING, UPDATE_JOB_SETTING, UPDATE_PREVIOUS_SETTING, UPDATE_T
 var init_saved_token = __esm({
   ".svelte-kit/output/server/chunks/saved-token.js"() {
     "use strict";
-    init_client();
     init_bytes();
     init_crypto();
+    init_client();
     init_drizzle_orm();
     UPDATE_TARGET_SETTING = "update_target";
     UPDATE_JOB_SETTING = "update_job";
@@ -57318,12 +57325,12 @@ var GET2, PATCH;
 var init_server_ts2 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/account/_server.ts.js"() {
     "use strict";
-    init_client();
     init_crypto();
+    init_client();
     init_http();
-    init_auth();
     init_auth_gate();
     init_rate_limit();
+    init_auth();
     init_require();
     init_saved_token();
     init_credentials();
@@ -57443,12 +57450,12 @@ var init_server_ts3 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/claim/_server.ts.js"() {
     "use strict";
     init_bytes();
+    init_credentials();
+    init_auth();
+    init_cookies();
     init_crypto();
     init_http();
-    init_auth();
-    init_credentials();
     init_totp();
-    init_cookies();
     init_drizzle_orm();
     CLAIM_LABEL = "claim:setup-key:v1";
     POST = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies, url: url3 }) => {
@@ -57501,13 +57508,13 @@ var POST2;
 var init_server_ts4 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/login/_server.ts.js"() {
     "use strict";
-    init_crypto();
-    init_http();
     init_auth();
+    init_crypto();
     init_auth_gate();
     init_rate_limit();
-    init_totp();
     init_cookies();
+    init_http();
+    init_totp();
     POST2 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies, url: url3 }) => {
       try {
         const body = await request2.json().catch(() => null);
@@ -57559,10 +57566,10 @@ var POST3;
 var init_server_ts5 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/logout/_server.ts.js"() {
     "use strict";
-    init_client();
-    init_http();
     init_auth();
     init_cookies();
+    init_client();
+    init_http();
     init_drizzle_orm();
     POST3 = /* @__PURE__ */ __name(async ({ locals, cookies, url: url3 }) => {
       const raw = cookies.get(SESSION_COOKIE);
@@ -57610,15 +57617,15 @@ var GET3, MEDIA_DELETE_BATCH, MAX_MEDIA_BATCHES, DELETE;
 var init_server_ts6 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/me/_server.ts.js"() {
     "use strict";
-    init_client();
-    init_crypto();
-    init_http();
     init_auth();
+    init_cookies();
+    init_client();
+    init_http();
+    init_require();
     init_auth_gate();
     init_rate_limit();
-    init_require();
     init_totp();
-    init_cookies();
+    init_crypto();
     init_media();
     init_drizzle_orm();
     GET3 = /* @__PURE__ */ __name(async ({ locals }) => {
@@ -57686,9 +57693,9 @@ var POST4;
 var init_server_ts7 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/confirm/_server.ts.js"() {
     "use strict";
+    init_cookies();
     init_http();
     init_totp();
-    init_cookies();
     POST4 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies, url: url3 }) => {
       try {
         const body = await request2.json().catch(() => null);
@@ -57716,9 +57723,9 @@ var POST5;
 var init_server_ts8 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/enroll/start/_server.ts.js"() {
     "use strict";
+    init_cookies();
     init_http();
     init_totp();
-    init_cookies();
     POST5 = /* @__PURE__ */ __name(async ({ locals, cookies, url: url3 }) => {
       try {
         const existing = cookies.get(MFA_COOKIE);
@@ -57746,10 +57753,10 @@ var POST6;
 var init_server_ts9 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/rotate/start/_server.ts.js"() {
     "use strict";
-    init_http();
     init_require();
-    init_totp();
     init_cookies();
+    init_http();
+    init_totp();
     POST6 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies, url: url3 }) => {
       try {
         requireSession(locals.user, locals.authMethod);
@@ -57803,9 +57810,9 @@ var POST7;
 var init_server_ts11 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/auth/totp/verify/_server.ts.js"() {
     "use strict";
+    init_cookies();
     init_http();
     init_totp();
-    init_cookies();
     POST7 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies, url: url3 }) => {
       try {
         const body = await request2.json().catch(() => null);
@@ -57836,9 +57843,9 @@ var GET5;
 var init_server_ts12 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_server.ts.js"() {
     "use strict";
+    init_connection_list();
     init_http();
     init_require();
-    init_connection_list();
     GET5 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireUser(locals.user);
@@ -57961,9 +57968,9 @@ var toAppOrigin;
 var init_oauth_callback = __esm({
   ".svelte-kit/output/server/chunks/oauth-callback.js"() {
     "use strict";
-    init_client();
-    init_crypto();
     init_auth();
+    init_crypto();
+    init_client();
     init_oauth_state();
     init_exports();
     init_drizzle_orm();
@@ -57982,12 +57989,12 @@ var POST8;
 var init_server_ts13 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/bluesky/_server.ts.js"() {
     "use strict";
-    init_client();
     init_crypto();
-    init_http();
-    init_require();
+    init_client();
     init_oauth_callback();
+    init_http();
     init_providers();
+    init_require();
     init_drizzle_orm();
     POST8 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
@@ -58055,9 +58062,9 @@ function platformNotConfigured(id2) {
 var init_platform_setup2 = __esm({
   ".svelte-kit/output/server/chunks/platform-setup2.js"() {
     "use strict";
-    init_http();
     init_platforms();
     init_platform_setup();
+    init_http();
     __name(platformNotConfigured, "platformNotConfigured");
   }
 });
@@ -58071,17 +58078,17 @@ var POST9;
 var init_server_ts14 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/instagram/_server.ts.js"() {
     "use strict";
-    init_client();
     init_bytes();
-    init_crypto();
     init_human_error();
+    init_crypto();
+    init_client();
     init_http();
-    init_auth();
-    init_require();
     init_platform_credentials();
-    init_oauth_state();
-    init_providers();
     init_platform_setup2();
+    init_providers();
+    init_auth();
+    init_oauth_state();
+    init_require();
     POST9 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
@@ -58122,8 +58129,8 @@ var GET6;
 var init_server_ts15 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/instagram/callback/_server.ts.js"() {
     "use strict";
-    init_crypto();
     init_oauth_callback();
+    init_crypto();
     init_providers();
     GET6 = createOAuthCallback({
       platform: "instagram",
@@ -58170,17 +58177,17 @@ var POST10;
 var init_server_ts16 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/_server.ts.js"() {
     "use strict";
-    init_client();
     init_bytes();
-    init_crypto();
     init_human_error();
+    init_crypto();
+    init_client();
     init_http();
-    init_auth();
-    init_require();
     init_platform_credentials();
-    init_oauth_state();
-    init_providers();
     init_platform_setup2();
+    init_providers();
+    init_auth();
+    init_oauth_state();
+    init_require();
     POST10 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
@@ -58221,8 +58228,8 @@ var GET7;
 var init_server_ts17 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/linkedin/callback/_server.ts.js"() {
     "use strict";
-    init_crypto();
     init_oauth_callback();
+    init_crypto();
     init_providers();
     GET7 = createOAuthCallback({
       platform: "linkedin",
@@ -58270,15 +58277,15 @@ var POST11;
 var init_server_ts18 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/mastodon/_server.ts.js"() {
     "use strict";
-    init_client();
-    init_bytes();
-    init_crypto();
-    init_human_error();
-    init_http();
     init_auth();
-    init_require();
-    init_oauth_state();
+    init_bytes();
+    init_human_error();
+    init_crypto();
+    init_client();
+    init_http();
     init_providers();
+    init_oauth_state();
+    init_require();
     init_timed_fetch();
     POST11 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies }) => {
       try {
@@ -58329,9 +58336,9 @@ var GET8;
 var init_server_ts19 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/mastodon/callback/_server.ts.js"() {
     "use strict";
-    init_crypto();
     init_auth();
     init_oauth_callback();
+    init_crypto();
     init_providers();
     init_timed_fetch();
     GET8 = createOAuthCallback({
@@ -58373,17 +58380,17 @@ var POST12;
 var init_server_ts20 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/threads/_server.ts.js"() {
     "use strict";
-    init_client();
     init_bytes();
-    init_crypto();
     init_human_error();
+    init_crypto();
+    init_client();
     init_http();
-    init_auth();
-    init_require();
     init_platform_credentials();
-    init_oauth_state();
-    init_providers();
     init_platform_setup2();
+    init_providers();
+    init_auth();
+    init_oauth_state();
+    init_require();
     POST12 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
@@ -58424,8 +58431,8 @@ var GET9;
 var init_server_ts21 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/threads/callback/_server.ts.js"() {
     "use strict";
-    init_crypto();
     init_oauth_callback();
+    init_crypto();
     init_providers();
     GET9 = createOAuthCallback({
       platform: "threads",
@@ -58471,17 +58478,17 @@ var POST13;
 var init_server_ts22 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/x/_server.ts.js"() {
     "use strict";
-    init_client();
     init_bytes();
-    init_crypto();
     init_human_error();
+    init_crypto();
+    init_client();
     init_http();
-    init_auth();
-    init_require();
     init_platform_credentials();
-    init_oauth_state();
-    init_providers();
     init_platform_setup2();
+    init_providers();
+    init_auth();
+    init_oauth_state();
+    init_require();
     POST13 = /* @__PURE__ */ __name(async ({ locals, cookies }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
@@ -58524,10 +58531,10 @@ var GET10;
 var init_server_ts23 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/x/callback/_server.ts.js"() {
     "use strict";
-    init_crypto();
     init_oauth_callback();
-    init_x_limits();
+    init_crypto();
     init_providers();
+    init_x_limits();
     GET10 = createOAuthCallback({
       platform: "x",
       pendingMarker: "x",
@@ -58668,10 +58675,10 @@ function zernioCallbackUrl(appUrl, boundState) {
 var init_zernio_import = __esm({
   ".svelte-kit/output/server/chunks/zernio-import.js"() {
     "use strict";
-    init_client();
-    init_crypto();
-    init_http();
     init_x_limits();
+    init_crypto();
+    init_client();
+    init_http();
     init_zernio();
     init_drizzle_orm();
     __name(handleOf2, "handleOf");
@@ -58694,11 +58701,11 @@ var POST14;
 var init_server_ts24 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/accounts/_server.ts.js"() {
     "use strict";
-    init_client();
     init_http();
     init_require();
     init_zernio();
     init_zernio_import();
+    init_client();
     POST14 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
@@ -58748,12 +58755,12 @@ var GET11;
 var init_server_ts25 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/callback/_server.ts.js"() {
     "use strict";
-    init_client();
-    init_crypto();
-    init_auth();
-    init_oauth_state();
-    init_oauth_callback();
     init_x_limits();
+    init_auth();
+    init_crypto();
+    init_client();
+    init_oauth_callback();
+    init_oauth_state();
     init_zernio();
     init_zernio_import();
     init_exports();
@@ -58814,16 +58821,16 @@ var POST15;
 var init_server_ts26 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/zernio/connect/_server.ts.js"() {
     "use strict";
-    init_client();
     init_bytes();
-    init_crypto();
     init_human_error();
-    init_http();
-    init_auth();
-    init_require();
     init_platforms();
-    init_oauth_state();
     init_x_limits();
+    init_auth();
+    init_crypto();
+    init_client();
+    init_http();
+    init_oauth_state();
+    init_require();
     init_zernio();
     init_zernio_import();
     POST15 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies }) => {
@@ -58952,8 +58959,11 @@ function pickTargetWinner(rows) {
 function classifyWinner(winner, now = /* @__PURE__ */ new Date()) {
   if (!winner) return "missing";
   if (winner.status === "published" || winner.remotePostId) return "published";
-  if (isFreshPublishing(winner, now)) return "inFlight";
+  if (isFreshPublishing(winner, now) || isSpentPublishing(winner)) return "inFlight";
   return "reusable";
+}
+function isSpentPublishing(row) {
+  return row.status === "publishing" && row.attemptCount >= 5;
 }
 function draftHasInFlightPublish(targets, now = /* @__PURE__ */ new Date()) {
   return targets.some((t) => isTargetSending(t, now));
@@ -58990,7 +59000,7 @@ async function classifyConnections(db, draftId, conns, now = /* @__PURE__ */ new
 }
 function reusableWhere(id2, now) {
   const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS);
-  return and(eq(publishTargets.id, id2), isNull(publishTargets.remotePostId), or(inArray(publishTargets.status, [...REUSABLE_STATUSES]), and(eq(publishTargets.status, "publishing"), lte(publishTargets.updatedAt, staleBefore))));
+  return and(eq(publishTargets.id, id2), isNull(publishTargets.remotePostId), or(inArray(publishTargets.status, [...REUSABLE_STATUSES]), and(eq(publishTargets.status, "publishing"), lte(publishTargets.updatedAt, staleBefore), lt(publishTargets.attemptCount, 5))));
 }
 async function cancelSiblings(db, rows, winnerId, now) {
   for (const row of rows) {
@@ -59054,7 +59064,7 @@ async function ensureTargets(db, draftId, conns, mode, runAt2, now = /* @__PURE_
       });
       continue;
     }
-    if (isFreshPublishing(winner, now)) {
+    if (isFreshPublishing(winner, now) || isSpentPublishing(winner)) {
       out.push({
         target: winner,
         reused: true,
@@ -59103,10 +59113,11 @@ var REUSABLE_STATUSES;
 var init_publish_plan = __esm({
   ".svelte-kit/output/server/chunks/publish-plan.js"() {
     "use strict";
-    init_client();
     init_due_jobs();
     init_post_state();
     init_published_lock();
+    init_client();
+    init_publish();
     init_drizzle_orm();
     REUSABLE_STATUSES = [
       "pending",
@@ -59118,6 +59129,7 @@ var init_publish_plan = __esm({
     __name(isUniqueConstraintError, "isUniqueConstraintError");
     __name(pickTargetWinner, "pickTargetWinner");
     __name(classifyWinner, "classifyWinner");
+    __name(isSpentPublishing, "isSpentPublishing");
     __name(draftHasInFlightPublish, "draftHasInFlightPublish");
     __name(draftEditBlock, "draftEditBlock");
     __name(refuseInFlightOrPublished, "refuseInFlightOrPublished");
@@ -59139,14 +59151,14 @@ var DELETE2, PATCH2;
 var init_server_ts28 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/_server.ts.js"() {
     "use strict";
+    init_due_jobs();
+    init_x_limits();
     init_client();
     init_http();
-    init_require();
-    init_serialize();
-    init_x_limits();
-    init_due_jobs();
     init_publish();
     init_publish_plan();
+    init_require();
+    init_serialize();
     init_drizzle_orm();
     DELETE2 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
@@ -59234,14 +59246,14 @@ var POST17;
 var init_server_ts29 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/connections/_id_/verify/_server.ts.js"() {
     "use strict";
-    init_client();
+    init_x_limits();
     init_crypto();
+    init_client();
     init_http();
+    init_providers();
     init_auth();
     init_require();
-    init_x_limits();
     init_zernio();
-    init_providers();
     init_drizzle_orm();
     POST17 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       const { id: id2 } = params;
@@ -59600,14 +59612,14 @@ async function segmentProblem(locals, draft, segmentIndex) {
 }
 async function overUserFileCap(db, userId, adding) {
   const userDraftIds = await db.select({ id: drafts.id }).from(drafts).where(eq(drafts.userId, userId));
-  let userFiles = 0;
+  const keys = /* @__PURE__ */ new Set();
   for (const chunk of chunkIds(userDraftIds.map((d) => d.id))) {
     if (!chunk.length) break;
-    const rows = await db.select({ id: draftMedia.id }).from(draftMedia).where(inArray(draftMedia.draftId, chunk));
-    userFiles += rows.length;
-    if (userFiles + adding > 1e3) break;
+    const rows = await db.selectDistinct({ storageKey: draftMedia.storageKey }).from(draftMedia).where(inArray(draftMedia.draftId, chunk));
+    for (const row of rows) keys.add(row.storageKey);
+    if (keys.size + adding > 1e3) break;
   }
-  return userFiles + adding > MAX_FILES_PER_USER;
+  return keys.size + adding > MAX_FILES_PER_USER;
 }
 async function videoSlotProblem(locals, draft, segmentIndex) {
   const problem = await segmentProblem(locals, draft, segmentIndex);
@@ -59625,10 +59637,10 @@ var MAX_SEGMENT_INDEX, MAX_ALT_LENGTH, MAX_FILES_PER_USER, isVideoRow;
 var init_draft_media = __esm({
   ".svelte-kit/output/server/chunks/draft-media.js"() {
     "use strict";
-    init_client();
-    init_http();
     init_media_limits();
     init_thread_segments();
+    init_client();
+    init_http();
     init_publish_plan();
     init_drizzle_orm();
     MAX_SEGMENT_INDEX = 100;
@@ -60303,23 +60315,23 @@ var DRAFT_BODY_MAX_LENGTH, MAX_VARIANT_OPTIONS_LENGTH, MAX_VALIDATE_LENGTH, MEDI
 var init_operations3 = __esm({
   ".svelte-kit/output/server/chunks/operations.js"() {
     "use strict";
-    init_client();
-    init_human_error();
-    init_http();
-    init_media();
-    init_platforms();
-    init_serialize();
-    init_connection_list();
     init_x_limits();
     init_providers();
-    init_poll();
-    init_due_jobs();
-    init_threads_topic();
-    init_publish();
-    init_publish_plan();
+    init_client();
+    init_serialize();
+    init_platforms();
     init_request_limits();
+    init_publish_plan();
+    init_publish();
+    init_human_error();
+    init_poll();
+    init_threads_topic();
+    init_media();
     init_draft_media();
+    init_due_jobs();
+    init_http();
     init_post_list();
+    init_connection_list();
     init_draft_record();
     init_drizzle_orm();
     DRAFT_BODY_MAX_LENGTH = 1e5;
@@ -60379,10 +60391,10 @@ var GET12, POST18;
 var init_server_ts30 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_server.ts.js"() {
     "use strict";
-    init_http();
-    init_require();
     init_operations3();
+    init_http();
     init_post_list();
+    init_require();
     GET12 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
@@ -60426,9 +60438,9 @@ var GET13, PATCH3, DELETE3;
 var init_server_ts31 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/_server.ts.js"() {
     "use strict";
+    init_operations3();
     init_http();
     init_require();
-    init_operations3();
     GET13 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
@@ -60512,13 +60524,13 @@ var MAX_UPLOAD_BYTES, MAX_FORM_VIDEO_BYTES, POST20, PATCH4, DELETE4;
 var init_server_ts33 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/_server.ts.js"() {
     "use strict";
-    init_client();
-    init_http();
-    init_require();
-    init_media();
     init_media_limits();
-    init_serialize();
+    init_client();
     init_draft_media();
+    init_http();
+    init_media();
+    init_require();
+    init_serialize();
     init_drizzle_orm();
     MAX_UPLOAD_BYTES = 1e8;
     MAX_FORM_VIDEO_BYTES = 95e6;
@@ -60727,14 +60739,14 @@ var MAX_COVER_BYTES, sharedWithAnotherPost, PUT, DELETE5;
 var init_server_ts34 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/cover/_server.ts.js"() {
     "use strict";
-    init_client();
     init_bytes();
-    init_http();
-    init_require();
-    init_media();
     init_media_limits();
-    init_serialize();
+    init_client();
     init_draft_media();
+    init_http();
+    init_media();
+    init_require();
+    init_serialize();
     init_drizzle_orm();
     MAX_COVER_BYTES = 8e6;
     __name(videoRow, "videoRow");
@@ -60877,11 +60889,11 @@ var POST21, DELETE6;
 var init_server_ts35 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js"() {
     "use strict";
-    init_http();
-    init_require();
     init_media_limits();
     init_draft_media();
+    init_http();
     init_media_uploads();
+    init_require();
     __name(readJson, "readJson");
     POST21 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
@@ -60966,12 +60978,12 @@ var init_server_ts36 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js"() {
     "use strict";
     init_client();
-    init_http();
-    init_require();
-    init_media();
-    init_serialize();
     init_draft_media();
+    init_http();
+    init_media();
     init_media_uploads();
+    init_require();
+    init_serialize();
     init_drizzle_orm();
     __name(readParts, "readParts");
     __name(keyInUse, "keyInUse");
@@ -61039,10 +61051,10 @@ var PUT2;
 var init_server_ts37 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js"() {
     "use strict";
-    init_http();
-    init_require();
     init_draft_media();
+    init_http();
     init_media_uploads();
+    init_require();
     PUT2 = /* @__PURE__ */ __name(async ({ params, request: request2, url: url3, locals }) => {
       try {
         const user = requireUser(locals.user);
@@ -61077,8 +61089,8 @@ var init_server_ts38 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js"() {
     "use strict";
     init_http();
-    init_require();
     init_operations3();
+    init_require();
     POST23 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
@@ -61139,11 +61151,11 @@ var GET14, POST25, DELETE7;
 var init_server_ts40 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/share/_server.ts.js"() {
     "use strict";
+    init_platform_sync();
     init_client();
+    init_draft_shares();
     init_http();
     init_require();
-    init_platform_sync();
-    init_draft_shares();
     init_drizzle_orm();
     __name(ownsDraft, "ownsDraft");
     __name(present, "present");
@@ -61245,7 +61257,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.29.0",
+          version: "1.29.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -61270,9 +61282,9 @@ var init_server_ts43 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js"() {
     "use strict";
     init_http();
-    init_require();
     init_time_zone();
     init_insights_report();
+    init_require();
     GET16 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
@@ -61364,10 +61376,10 @@ var GET17, POST28, DELETE9;
 var init_server_ts46 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js"() {
     "use strict";
-    init_http();
     init_tick_token();
-    init_require();
     init_api_keys();
+    init_http();
+    init_require();
     __name(metadataOf, "metadataOf");
     GET17 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
@@ -61428,12 +61440,12 @@ var GET18;
 var init_server_ts47 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js"() {
     "use strict";
-    init_http();
-    init_require();
     init_links();
-    init_x_post_preview();
+    init_http();
     init_x_quote();
+    init_x_post_preview();
     init_timed_fetch();
+    init_require();
     GET18 = /* @__PURE__ */ __name(async ({ url: url3, locals }) => {
       try {
         requireUser(locals.user);
@@ -71947,9 +71959,9 @@ var init_server_ts48 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js"() {
     "use strict";
     init_human_error();
+    init_operations3();
     init_http();
     init_require();
-    init_operations3();
     init_dist3();
     init_zod();
     id = external_exports.string().min(1).max(128);
@@ -72296,8 +72308,8 @@ var init_server_ts50 = __esm({
     "use strict";
     init_client();
     init_http();
-    init_require();
     init_media();
+    init_require();
     init_drizzle_orm();
     GET21 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
       try {
@@ -72342,8 +72354,8 @@ var init_server_ts51 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js"() {
     "use strict";
     init_http();
-    init_require();
     init_post_list();
+    init_require();
     GET22 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
@@ -72380,7 +72392,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.29.0";
+  const current = options2.current ?? "1.29.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -72456,8 +72468,8 @@ var CACHE_KEY, OFFER_PRERELEASES_SETTING, OK_TTL_MS, FAIL_TTL_MS, TIMEOUT_MS, GI
 var init_release = __esm({
   ".svelte-kit/output/server/chunks/release.js"() {
     "use strict";
-    init_app_settings();
     init_release_check();
+    init_app_settings();
     CACHE_KEY = "release_check";
     OFFER_PRERELEASES_SETTING = "offer_prereleases";
     OK_TTL_MS = 36e5;
@@ -72487,8 +72499,8 @@ var init_server_ts52 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js"() {
     "use strict";
     init_http();
-    init_require();
     init_release();
+    init_require();
     GET23 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         requireUser(locals.user);
@@ -72511,11 +72523,11 @@ var GET24;
 var init_server_ts53 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js"() {
     "use strict";
-    init_http();
     init_app_settings();
+    init_scheduler_status();
+    init_http();
     init_require();
     init_scheduler();
-    init_scheduler_status();
     GET24 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireUser(locals.user);
@@ -72584,8 +72596,8 @@ var init_server_ts55 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js"() {
     "use strict";
     init_http();
-    init_tick_token();
     init_require();
+    init_tick_token();
     GET25 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
@@ -72676,14 +72688,14 @@ var GET26, SETTINGS_KEYS, PATCH5;
 var init_server_ts56 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js"() {
     "use strict";
+    init_profile_settings();
+    init_instance_name();
+    init_time_zone();
     init_client();
     init_http();
-    init_profile_settings();
-    init_app_settings();
     init_require();
-    init_time_zone();
+    init_app_settings();
     init_release();
-    init_instance_name();
     init_drizzle_orm();
     GET26 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
@@ -72776,11 +72788,11 @@ var PUT4, DELETE12;
 var init_server_ts57 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js"() {
     "use strict";
-    init_http();
-    init_require();
-    init_platforms();
     init_platform_setup();
+    init_platforms();
+    init_http();
     init_platform_credentials();
+    init_require();
     __name(statusFor, "statusFor");
     __name(platformFrom, "platformFrom");
     PUT4 = /* @__PURE__ */ __name(async ({ locals, params, request: request2 }) => {
@@ -72825,13 +72837,13 @@ var POST32;
 var init_server_ts58 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js"() {
     "use strict";
+    init_due_jobs();
+    init_request_limits();
     init_client();
     init_http();
-    init_require();
-    init_due_jobs();
     init_publish();
     init_publish_plan();
-    init_request_limits();
+    init_require();
     init_drizzle_orm();
     POST32 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
@@ -73218,10 +73230,10 @@ var GET27;
 var init_server_ts62 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js"() {
     "use strict";
+    init_github_update();
     init_http();
     init_require();
     init_saved_token();
-    init_github_update();
     GET27 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
@@ -73236,7 +73248,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.29.0",
+          version: "1.29.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73270,9 +73282,9 @@ var POST36, DELETE13;
 var init_server_ts63 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js"() {
     "use strict";
-    init_http();
-    init_auth();
     init_auth_gate();
+    init_auth();
+    init_http();
     init_rate_limit();
     init_require();
     init_saved_token();
@@ -73314,9 +73326,9 @@ var POST37;
 var init_server_ts64 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js"() {
     "use strict";
-    init_http();
-    init_auth();
     init_auth_gate();
+    init_auth();
+    init_http();
     init_rate_limit();
     init_require();
     init_saved_token();
@@ -73445,7 +73457,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.29.0"
+    currentVersion: "1.29.1"
   };
 }
 async function download(ctx, url3) {
@@ -73792,12 +73804,12 @@ var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, sta
 var init_server_ts65 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js"() {
     "use strict";
-    init_bytes();
     init_http();
     init_require();
     init_saved_token();
-    init_release_check();
     init_update_manifest();
+    init_release_check();
+    init_bytes();
     API_BASE = "https://api.cloudflare.com/client/v4";
     CloudflareApiError = class extends Error {
       static {
@@ -73896,8 +73908,8 @@ var init_server_ts66 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js"() {
     "use strict";
     init_http();
-    init_require();
     init_operations3();
+    init_require();
     POST39 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireUser(locals.user);
@@ -73921,9 +73933,9 @@ var SHARED_MEDIA_CACHE, GET28;
 var init_server_ts67 = __esm({
   ".svelte-kit/output/server/entries/endpoints/p/_token_/media/_key_/_server.ts.js"() {
     "use strict";
+    init_draft_shares();
     init_http();
     init_media();
-    init_draft_shares();
     SHARED_MEDIA_CACHE = "private, max-age=300";
     GET28 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
       try {
@@ -73996,7 +74008,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.7eBjX4Dg.js", app: "_app/immutable/entry/app.CdjTSHdu.js", imports: ["_app/immutable/entry/start.7eBjX4Dg.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bm2FJUYq.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/app.CdjTSHdu.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.i6R8d0nY.js", app: "_app/immutable/entry/app.p4RKCSnB.js", imports: ["_app/immutable/entry/start.i6R8d0nY.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/C8NUa1si.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/app.p4RKCSnB.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -74715,7 +74727,7 @@ export {
 };
 /**
 * @file
-* @license @lucide/svelte v1.66.0 - ISC
+* @license @lucide/svelte v1.70.0 - ISC
 *
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
