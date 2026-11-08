@@ -11142,24 +11142,53 @@ var init_thread_segments = __esm({
 });
 
 // .svelte-kit/output/server/chunks/x-limits.js
-function shortenBlueskyUrl(url3) {
+function toZernioPlatform(platform2) {
+  return TO_ZERNIO[platform2] ?? null;
+}
+function fromZernioPlatform(platform2) {
+  return FROM_ZERNIO[platform2] ?? null;
+}
+function isZernioConnection(meta3) {
+  if (!meta3) return false;
+  let parsed = meta3;
+  if (typeof meta3 === "string") try {
+    parsed = JSON.parse(meta3);
+  } catch {
+    return false;
+  }
+  return typeof parsed === "object" && parsed !== null && parsed.provider === "zernio";
+}
+function zernioRequestId(key) {
+  return key.replace(/[^\w.-]/g, "-").slice(0, 128);
+}
+function shortenBlueskyUrl(url3, style = "short") {
   try {
     const parsed = new URL(url3);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return url3;
     const path3 = (parsed.pathname === "/" ? "" : parsed.pathname) + parsed.search + parsed.hash;
-    return path3.length > 15 ? `${parsed.host}${path3.slice(0, 13)}...` : parsed.host + path3;
+    if (path3.length <= 15) return parsed.host + path3;
+    return style === "compact" ? `${parsed.host}/...` : `${parsed.host}${path3.slice(0, 13)}...`;
   } catch {
     return url3;
   }
 }
-function blueskyRichText(text3, { shortenLinks }) {
+function blueskyLinkStyleFor(meta3) {
+  if (isZernioConnection(meta3)) return "full";
+  return meta3?.compactLinks === true ? "compact" : "short";
+}
+function longestBlueskyLinkStyle(styles) {
+  if (styles.includes("full")) return "full";
+  if (styles.length && styles.every((style) => style === "compact")) return "compact";
+  return "short";
+}
+function blueskyRichText(text3, { links }) {
   const facets = [];
   let out = "";
   let last = 0;
   for (const match2 of text3.matchAll(LINK_RE)) {
     const url3 = match2[0].replace(TRAILING_PUNCT_RE2, "");
     out += text3.slice(last, match2.index);
-    const shown = shortenLinks ? shortenBlueskyUrl(url3) : url3;
+    const shown = links === "full" ? url3 : shortenBlueskyUrl(url3, links);
     const byteStart = utf8ByteLength(out);
     out += shown;
     facets.push({
@@ -11214,9 +11243,9 @@ function tooLong(length, max, label) {
 function blueskyTextLength(text3, opts) {
   return countGraphemes(blueskyRichText(text3, opts).text);
 }
-function validateBlueskyText(text3, { shortenLinks = true } = {}) {
+function validateBlueskyText(text3, { links = "short" } = {}) {
   const maxGraphemes = 300;
-  const posted = blueskyRichText(text3, { shortenLinks }).text;
+  const posted = blueskyRichText(text3, { links }).text;
   const length = countGraphemes(posted);
   if (length > maxGraphemes) return {
     ok: false,
@@ -11358,16 +11387,32 @@ function xLimitFor(meta3) {
 function storedXLimit(value) {
   return typeof value === "number" && value >= 280 && value <= 25e3 ? Math.floor(value) : 280;
 }
-var LINK_RE, TRAILING_PUNCT_RE2, X_CASHTAG_MESSAGE, LINKEDIN_MAX_CHARS, INSTAGRAM_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
+var ZERNIO_API_BASE, ZERNIO_PENDING_MARKER, TO_ZERNIO, FROM_ZERNIO, LINK_RE, TRAILING_PUNCT_RE2, X_CASHTAG_MESSAGE, LINKEDIN_MAX_CHARS, INSTAGRAM_MAX_CHARS, X_LIGHT_RANGES, EMOJI, xSegmenter, X_LONG_POST_MAX, X_FOLD;
 var init_x_limits = __esm({
   ".svelte-kit/output/server/chunks/x-limits.js"() {
     "use strict";
     init_bytes();
     init_links();
     init_thread_segments();
+    ZERNIO_API_BASE = "https://zernio.com/api";
+    ZERNIO_PENDING_MARKER = "zernio";
+    TO_ZERNIO = {
+      x: "twitter",
+      threads: "threads",
+      instagram: "instagram",
+      linkedin: "linkedin",
+      bluesky: "bluesky"
+    };
+    FROM_ZERNIO = Object.fromEntries(Object.entries(TO_ZERNIO).map(([ours, theirs]) => [theirs, ours]));
+    __name(toZernioPlatform, "toZernioPlatform");
+    __name(fromZernioPlatform, "fromZernioPlatform");
+    __name(isZernioConnection, "isZernioConnection");
+    __name(zernioRequestId, "zernioRequestId");
     LINK_RE = /https?:\/\/[^\s]+/gi;
     TRAILING_PUNCT_RE2 = /[.,);:!?]+$/;
     __name(shortenBlueskyUrl, "shortenBlueskyUrl");
+    __name(blueskyLinkStyleFor, "blueskyLinkStyleFor");
+    __name(longestBlueskyLinkStyle, "longestBlueskyLinkStyle");
     __name(blueskyRichText, "blueskyRichText");
     __name(countGraphemes, "countGraphemes");
     __name(mastodonWeightedLength, "mastodonWeightedLength");
@@ -11586,47 +11631,6 @@ var init_video_rules = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/zernio.js
-function toZernioPlatform(platform2) {
-  return TO_ZERNIO[platform2] ?? null;
-}
-function fromZernioPlatform(platform2) {
-  return FROM_ZERNIO[platform2] ?? null;
-}
-function isZernioConnection(meta3) {
-  if (!meta3) return false;
-  let parsed = meta3;
-  if (typeof meta3 === "string") try {
-    parsed = JSON.parse(meta3);
-  } catch {
-    return false;
-  }
-  return typeof parsed === "object" && parsed !== null && parsed.provider === "zernio";
-}
-function zernioRequestId(key) {
-  return key.replace(/[^\w.-]/g, "-").slice(0, 128);
-}
-var ZERNIO_API_BASE, ZERNIO_PENDING_MARKER, TO_ZERNIO, FROM_ZERNIO;
-var init_zernio = __esm({
-  ".svelte-kit/output/server/chunks/zernio.js"() {
-    "use strict";
-    ZERNIO_API_BASE = "https://zernio.com/api";
-    ZERNIO_PENDING_MARKER = "zernio";
-    TO_ZERNIO = {
-      x: "twitter",
-      threads: "threads",
-      instagram: "instagram",
-      linkedin: "linkedin",
-      bluesky: "bluesky"
-    };
-    FROM_ZERNIO = Object.fromEntries(Object.entries(TO_ZERNIO).map(([ours, theirs]) => [theirs, ours]));
-    __name(toZernioPlatform, "toZernioPlatform");
-    __name(fromZernioPlatform, "fromZernioPlatform");
-    __name(isZernioConnection, "isZernioConnection");
-    __name(zernioRequestId, "zernioRequestId");
-  }
-});
-
 // .svelte-kit/output/server/chunks/timed-fetch.js
 function isUploadRequest(init2) {
   if ((init2?.method || "GET").toUpperCase() === "PUT") return true;
@@ -11680,7 +11684,7 @@ var init_timed_fetch = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/zernio2.js
+// .svelte-kit/output/server/chunks/zernio.js
 function mediaByteLength(media) {
   if (typeof media.size === "number" && media.size >= 0) return media.size;
   if (media.bytes) return media.bytes.length;
@@ -11906,11 +11910,11 @@ async function getPost(opts) {
   }));
 }
 var ProviderError, UNCONFIRMED_POST_MARK, PublishPartialError;
-var init_zernio2 = __esm({
-  ".svelte-kit/output/server/chunks/zernio2.js"() {
+var init_zernio = __esm({
+  ".svelte-kit/output/server/chunks/zernio.js"() {
     "use strict";
     init_platforms();
-    init_zernio();
+    init_x_limits();
     init_video_rules();
     init_timed_fetch();
     __name(mediaByteLength, "mediaByteLength");
@@ -12951,7 +12955,7 @@ async function uploadVideo$1(creds, video, segmentIndex, fetchImpl, opts) {
     state: { jobId }
   });
 }
-async function publishOne(content, creds, fetchImpl, reply, rkey, video) {
+async function publishOne(content, creds, fetchImpl, reply, rkey, video, links = "short") {
   let session = await ensureSession(creds, fetchImpl);
   const media = content.media ?? [];
   const single = segmentVideo(media);
@@ -12988,7 +12992,7 @@ async function publishOne(content, creds, fetchImpl, reply, rkey, video) {
   } catch {
     embed = void 0;
   }
-  const { text: text3, facets } = blueskyRichText(content.text || "", { shortenLinks: true });
+  const { text: text3, facets } = blueskyRichText(content.text || "", { links });
   try {
     return await createPostRecord(session, {
       text: text3,
@@ -13010,7 +13014,7 @@ async function publishOne(content, creds, fetchImpl, reply, rkey, video) {
     }, fetchImpl, rkey);
   }
 }
-function validateBlueskyPost(content, meta3, { shortenLinks }) {
+function validateBlueskyPost(content, meta3, { links }) {
   const issues = [];
   const segments = content.thread && content.thread.length > 0 ? content.thread : [content];
   for (let i = 0; i < segments.length; i++) {
@@ -13022,7 +13026,7 @@ function validateBlueskyPost(content, meta3, { shortenLinks }) {
       message: "Segment needs text or media",
       code: "empty"
     });
-    const textCheck = validateBlueskyText(seg.text || "", { shortenLinks });
+    const textCheck = validateBlueskyText(seg.text || "", { links });
     if (!textCheck.ok && (seg.text || "").length > 0) issues.push({
       field: `thread[${i}].text`,
       message: textCheck.message || "Text too long",
@@ -14621,7 +14625,7 @@ function zernioProviderFor(platform2, opts = {}) {
     mediaByUrl: true,
     capabilities: direct.capabilities,
     validate: /* @__PURE__ */ __name((content, meta3) => {
-      if (platform2 === "bluesky") return validateBlueskyPost(content, meta3, { shortenLinks: false });
+      if (platform2 === "bluesky") return validateBlueskyPost(content, meta3, { links: "full" });
       return direct.validate(content, platform2 === "x" && meta3 ? {
         ...meta3,
         maxCharacters: void 0
@@ -14718,13 +14722,12 @@ var init_providers = __esm({
     init_threads_error();
     init_media_limits();
     init_platforms();
-    init_zernio();
+    init_x_limits();
     init_links();
     init_x_post_preview();
     init_thread_segments();
-    init_x_limits();
     init_video_rules();
-    init_zernio2();
+    init_zernio();
     init_timed_fetch();
     init_poll();
     __name(isVideoAttachment, "isVideoAttachment");
@@ -14771,8 +14774,9 @@ var init_providers = __esm({
         supportsVisibility: false,
         supportsThreads: true
       },
-      validate: /* @__PURE__ */ __name((content, meta3) => validateBlueskyPost(content, meta3, { shortenLinks: true }), "validate"),
-      async publish(content, creds, _meta, fetchImpl = providerFetch, opts) {
+      validate: /* @__PURE__ */ __name((content, meta3) => validateBlueskyPost(content, meta3, { links: blueskyLinkStyleFor(meta3) }), "validate"),
+      async publish(content, creds, meta3, fetchImpl = providerFetch, opts) {
+        const links = blueskyLinkStyleFor(meta3);
         const segments = content.thread && content.thread.length > 0 ? content.thread : [content];
         const resumeIds = opts?.resume?.segmentIds ?? [];
         const resumeCids = opts?.resume?.segmentCids ?? [];
@@ -14805,7 +14809,7 @@ var init_providers = __esm({
             const result = await publishOne(segments[i], creds, fetchImpl, reply, opts?.recordKey?.(i), {
               segmentIndex: i,
               opts
-            });
+            }, links);
             segmentIds.push(result.uri ?? "");
             segmentCids.push(result.cid ?? "");
             if (result.uri && result.cid) {
@@ -16651,7 +16655,8 @@ async function publishTarget(db, env3, store, targetId, options2 = {}) {
     try {
       result = await provider.publish(content, workingCreds, {
         maxCharacters: meta3.maxCharacters,
-        handle: conn.handle || void 0
+        handle: conn.handle || void 0,
+        compactLinks: meta3.compactLinks
       }, fetchImpl, {
         resume: resumeFrom ?? void 0,
         allowLocalHosts: isLocalAppUrl(env3.APP_URL),
@@ -16891,7 +16896,7 @@ var init_publish = __esm({
     init_links();
     init_thread_segments();
     init_video_rules();
-    init_zernio2();
+    init_zernio();
     init_providers();
     init_timed_fetch();
     init_poll();
@@ -41296,7 +41301,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1794122638640");
+  response.headers.set("x-sveltekit-version", "1794133524912");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43998,7 +44003,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1dxc9tc";
+  const global = "__sveltekit_1e20w2e";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44742,7 +44747,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1dxc9tc";
+  const global = "__sveltekit_1e20w2e";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44767,7 +44772,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1794122638640")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1794133524912")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47321,7 +47326,7 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.CIEtSfYI.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/By9RmFPS.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/Ca7kRzJu.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    imports = ["_app/immutable/nodes/0.DC4Ko66I.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/By9RmFPS.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/Chza7i5s.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CygZ-CpP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/D20gE_Xc.js"];
     stylesheets = ["_app/immutable/assets/0.CIFeZrgT.css"];
     fonts = [];
   }
@@ -48370,7 +48375,7 @@ function _page2($$renderer, $$props) {
       }
     }
     __name(confirmDisconnect, "confirmDisconnect");
-    let savingLongPosts = null;
+    let savingSwitch = null;
     $$renderer2.push(`<div class="mx-auto flex w-full max-w-2xl flex-1 flex-col"><div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><p class="text-[11px] font-bold tracking-widest text-stone-500 uppercase">Integrations</p> <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-stone-900">Connected Accounts</h1></div> <button type="button" class="inline-flex items-center gap-2 rounded-full bg-stone-900 px-5 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800">`);
     Plus($$renderer2, { class: "h-4 w-4" });
     $$renderer2.push(`<!----> <span>Connect new</span></button></div> `);
@@ -48417,10 +48422,16 @@ function _page2($$renderer, $$props) {
           $$renderer2.push("<!--[0-->");
           const long = (account.metaJson?.maxCharacters ?? 280) > 280;
           $$renderer2.push(`<p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-stone-500"${attr("data-testid", `x-long-posts-${stringify3(account.id)}`)}><span>Long posts ${escape_html(long ? "on, up to 25,000 characters" : "off, 280 characters")} \xB7
-										${escape_html(longPostSource(account))}</span> <button type="button"${attr("disabled", savingLongPosts === account.id, true)} class="font-bold text-stone-900 underline">${escape_html(long ? "Turn off" : "Turn on")}</button> `);
-          if (typeof account.metaJson?.longPosts === "boolean") $$renderer2.push(`<!--[0--><button type="button"${attr("disabled", savingLongPosts === account.id, true)} class="font-bold text-stone-500 underline">Use what X reports</button>`);
+										${escape_html(longPostSource(account))}</span> <button type="button"${attr("disabled", savingSwitch === account.id, true)} class="font-bold text-stone-900 underline">${escape_html(long ? "Turn off" : "Turn on")}</button> `);
+          if (typeof account.metaJson?.longPosts === "boolean") $$renderer2.push(`<!--[0--><button type="button"${attr("disabled", savingSwitch === account.id, true)} class="font-bold text-stone-500 underline">Use what X reports</button>`);
           else $$renderer2.push("<!--[-1-->");
           $$renderer2.push(`<!--]--> <button type="button"${attr("disabled", verifying === account.id, true)} class="font-bold text-stone-500 underline">${escape_html(verifying === account.id ? "Checking\u2026" : "Check plan")}</button></p>`);
+        } else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> `);
+        if (account.platform === "bluesky" && !viaZernio(account) && !needsReconnect2) {
+          $$renderer2.push("<!--[0-->");
+          const compact2 = account.metaJson?.compactLinks === true;
+          $$renderer2.push(`<p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-stone-500"${attr("data-testid", `bluesky-compact-links-${stringify3(account.id)}`)}><span>Compact links ${escape_html(compact2 ? "on, a long link shows only its site" : "off, a long link shows its site and the start of the address")}</span> <button type="button"${attr("disabled", savingSwitch === account.id, true)} class="font-bold text-stone-900 underline">${escape_html(compact2 ? "Turn off" : "Turn on")}</button></p>`);
         } else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]--></div></div> <div class="mt-2 flex items-center justify-between gap-3 sm:mt-0 sm:justify-end">`);
         if (needsReconnect2) $$renderer2.push(`<!--[0--><span class="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-bold tracking-widest text-amber-700 uppercase">${escape_html(account.status)}</span> <button type="button"${attr("disabled", verifying === account.id || loading, true)} class="text-xs font-bold text-stone-900 underline">Reconnect</button> <button type="button"${attr("disabled", verifying === account.id, true)} class="text-xs font-bold text-stone-500 underline">${escape_html(verifying === account.id ? "Checking\u2026" : "Check")}</button>`);
@@ -48453,7 +48464,6 @@ var init_page_svelte2 = __esm({
     init_human_error();
     init_platforms();
     init_platform_setup();
-    init_zernio();
     init_x_limits();
     init_server3();
     init_index_server();
@@ -48488,7 +48498,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.DUv_DUuG.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DlPuqcoy.js", "_app/immutable/chunks/B8Qk5jBb.js"];
+    imports5 = ["_app/immutable/nodes/4.BehA4po1.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/08Ptsa4k.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DlPuqcoy.js", "_app/immutable/chunks/B8Qk5jBb.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -49622,9 +49632,9 @@ function Editor($$renderer, $$props) {
     });
     let maxChars = derived2(() => activeTab === "global" ? globalLimit().max : platformMax(activeTab, accountsFor(activeTab)));
     let tabSupportsThreads = derived2(() => activeTab === "global" ? [...selectedPlatforms()].some((p) => supportsThreads(p)) : supportsThreads(activeTab));
-    const blueskyShortensLinks = derived2(() => !accountsFor("bluesky").some((account) => isZernioConnection(account.metaJson)));
+    const blueskyLinks = derived2(() => longestBlueskyLinkStyle(accountsFor("bluesky").map((account) => blueskyLinkStyleFor(account.metaJson))));
     function countForPlatform(text3, platform2) {
-      if (platform2 === "bluesky") return blueskyTextLength(text3, { shortenLinks: blueskyShortensLinks() });
+      if (platform2 === "bluesky") return blueskyTextLength(text3, { links: blueskyLinks() });
       if (platform2 === "mastodon") return mastodonWeightedLength(mastodonCountedText(text3, mastoCW));
       if (platform2 === "x") return xWeightedLength(text3);
       return countGraphemes(text3);
@@ -49689,7 +49699,7 @@ function Editor($$renderer, $$props) {
       const bskyText = effectivePlatformBody(baseBody, overrides, "bluesky");
       let over = 0;
       for (const seg of splitThreadSegments(bskyText)) {
-        const posted = blueskyRichText(seg, { shortenLinks: blueskyShortensLinks() }).text;
+        const posted = blueskyRichText(seg, { links: blueskyLinks() }).text;
         over = Math.max(over, utf8ByteLength(posted) - 3e3);
       }
       return over;
@@ -50874,11 +50884,10 @@ var init_page_svelte3 = __esm({
     init_profile_settings();
     init_media_limits();
     init_platforms();
-    init_zernio();
+    init_x_limits();
     init_links();
     init_thread_segments();
     init_x_quote();
-    init_x_limits();
     init_video_rules();
     init_poll();
     init_threads_topic();
@@ -51086,7 +51095,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.B2i4d1M2.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/76sg9EgG.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DoBbhMVD.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Ca7kRzJu.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js"];
+    imports6 = ["_app/immutable/nodes/5.DSHnabDO.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/BK72y0b1.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/JyCEJvqX.js", "_app/immutable/chunks/CygZ-CpP.js", "_app/immutable/chunks/08Ptsa4k.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Chza7i5s.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -52377,7 +52386,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id12 = "src/routes/p/[token]/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.BC-7-B7K.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/DoBbhMVD.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports14 = ["_app/immutable/nodes/13.Czi2zzWR.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/JyCEJvqX.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CygZ-CpP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -53495,7 +53504,7 @@ var init__15 = __esm({
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id13 = "src/routes/posts/+page.server.ts";
-    imports15 = ["_app/immutable/nodes/14.DrHPl419.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/B87q3Imq.js", "_app/immutable/chunks/76sg9EgG.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/DoBbhMVD.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Ca7kRzJu.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
+    imports15 = ["_app/immutable/nodes/14.s9WfWGPM.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/CuNPi6HG.js", "_app/immutable/chunks/B87q3Imq.js", "_app/immutable/chunks/BK72y0b1.js", "_app/immutable/chunks/BxjeF34D.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/JyCEJvqX.js", "_app/immutable/chunks/CygZ-CpP.js", "_app/immutable/chunks/9Q3Nx_A9.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Chza7i5s.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/ClCvFyLA.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -56993,7 +57002,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.28.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.29.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57117,7 +57126,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.BSv9F9Rs.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
+    imports16 = ["_app/immutable/nodes/15.oTGoT8cB.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -58000,6 +58009,7 @@ var init_server_ts13 = __esm({
         }, locals.env.APP_ENCRYPTION_KEY);
         const existing = findExistingConnection(await locals.db.select().from(connections).where(and(eq(connections.userId, user.id), eq(connections.platform, "bluesky"))), session.handle ?? "", session.did, "did");
         const now = /* @__PURE__ */ new Date();
+        const compactLinks = parseJson(existing?.metaJson, {}).compactLinks;
         const data = {
           displayName: session.displayName || session.handle || null,
           handle: session.handle || null,
@@ -58007,7 +58017,8 @@ var init_server_ts13 = __esm({
           credentialsEncrypted: encrypted,
           metaJson: JSON.stringify({
             did: session.did,
-            pdsHost: session.pdsHost
+            pdsHost: session.pdsHost,
+            ...compactLinks === true ? { compactLinks } : {}
           }),
           status: "active",
           updatedAt: now
@@ -58660,8 +58671,8 @@ var init_zernio_import = __esm({
     init_client();
     init_crypto();
     init_http();
+    init_x_limits();
     init_zernio();
-    init_zernio2();
     init_drizzle_orm();
     __name(handleOf2, "handleOf");
     __name(toImportable, "toImportable");
@@ -58686,7 +58697,7 @@ var init_server_ts24 = __esm({
     init_client();
     init_http();
     init_require();
-    init_zernio2();
+    init_zernio();
     init_zernio_import();
     POST14 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
@@ -58742,8 +58753,8 @@ var init_server_ts25 = __esm({
     init_auth();
     init_oauth_state();
     init_oauth_callback();
+    init_x_limits();
     init_zernio();
-    init_zernio2();
     init_zernio_import();
     init_exports();
     init_drizzle_orm();
@@ -58812,8 +58823,8 @@ var init_server_ts26 = __esm({
     init_require();
     init_platforms();
     init_oauth_state();
+    init_x_limits();
     init_zernio();
-    init_zernio2();
     init_zernio_import();
     POST15 = /* @__PURE__ */ __name(async ({ request: request2, locals, cookies }) => {
       try {
@@ -58873,7 +58884,7 @@ var init_server_ts27 = __esm({
     init_http();
     init_require();
     init_serialize();
-    init_zernio2();
+    init_zernio();
     init_zernio_import();
     POST16 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
@@ -59132,7 +59143,6 @@ var init_server_ts28 = __esm({
     init_http();
     init_require();
     init_serialize();
-    init_zernio();
     init_x_limits();
     init_due_jobs();
     init_publish();
@@ -59180,18 +59190,25 @@ var init_server_ts28 = __esm({
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => null);
-        const longPosts = body?.longPosts;
-        if (!body || !Object.hasOwn(body, "longPosts")) return fail("Send longPosts", 400);
-        if (longPosts !== null && typeof longPosts !== "boolean") return fail("longPosts must be true, false or null", 400);
+        const setsLongPosts = !!body && Object.hasOwn(body, "longPosts");
+        const setsCompactLinks = !!body && Object.hasOwn(body, "compactLinks");
+        if (setsLongPosts === setsCompactLinks) return fail("Send longPosts or compactLinks", 400);
+        const value = setsLongPosts ? body.longPosts : body.compactLinks;
+        if (setsLongPosts && value !== null && typeof value !== "boolean") return fail("longPosts must be true, false or null", 400);
+        if (setsCompactLinks && typeof value !== "boolean") return fail("compactLinks must be true or false", 400);
         const owned = and(eq(connections.id, params.id), eq(connections.userId, user.id));
         const conn = await first(locals.db.select().from(connections).where(owned));
         if (!conn) return fail("Not found", 404);
-        if (conn.platform !== "x" || isZernioConnection(conn.metaJson)) return fail("Long posts can only be set on an X account connected directly", 400);
+        const platform2 = setsLongPosts ? "x" : "bluesky";
+        if (conn.platform !== platform2 || isZernioConnection(conn.metaJson)) return fail(setsLongPosts ? "Long posts can only be set on an X account connected directly" : "Compact links can only be set on a Bluesky account connected directly", 400);
         if (conn.status === "disconnected") return fail("Account disconnected \u2014 reconnect it first", 409);
         const meta3 = parseJson(conn.metaJson, {});
-        if (longPosts === null) delete meta3.longPosts;
-        else meta3.longPosts = longPosts;
-        meta3.maxCharacters = xLimitFor(meta3);
+        if (setsLongPosts) {
+          if (value === null) delete meta3.longPosts;
+          else meta3.longPosts = value;
+          meta3.maxCharacters = xLimitFor(meta3);
+        } else if (value) meta3.compactLinks = true;
+        else delete meta3.compactLinks;
         const metaJson = JSON.stringify(meta3);
         await locals.db.update(connections).set({
           metaJson,
@@ -59222,9 +59239,8 @@ var init_server_ts29 = __esm({
     init_http();
     init_auth();
     init_require();
-    init_zernio();
     init_x_limits();
-    init_zernio2();
+    init_zernio();
     init_providers();
     init_drizzle_orm();
     POST17 = /* @__PURE__ */ __name(async ({ params, locals }) => {
@@ -61229,7 +61245,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.28.0",
+          version: "1.29.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -72364,7 +72380,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.28.0";
+  const current = options2.current ?? "1.29.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73220,7 +73236,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.28.0",
+          version: "1.29.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73429,7 +73445,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.28.0"
+    currentVersion: "1.29.0"
   };
 }
 async function download(ctx, url3) {
@@ -73980,7 +73996,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.7eBjX4Dg.js", app: "_app/immutable/entry/app.CrMf1lI3.js", imports: ["_app/immutable/entry/start.7eBjX4Dg.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bm2FJUYq.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/app.CrMf1lI3.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.7eBjX4Dg.js", app: "_app/immutable/entry/app.CdjTSHdu.js", imports: ["_app/immutable/entry/start.7eBjX4Dg.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bm2FJUYq.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/app.CdjTSHdu.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
