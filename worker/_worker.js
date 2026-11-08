@@ -41296,7 +41296,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1794121284379");
+  response.headers.set("x-sveltekit-version", "1794122638640");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -43998,7 +43998,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1q346n3";
+  const global = "__sveltekit_1dxc9tc";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44742,7 +44742,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1q346n3";
+  const global = "__sveltekit_1dxc9tc";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44767,7 +44767,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1794121284379")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1794122638640")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -50187,10 +50187,11 @@ function Editor($$renderer, $$props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not save the cover");
-      const meta3 = data.media?.meta ?? null;
+      const saved = data.media;
       media = media.map((m) => m.id === mediaId ? {
         ...m,
-        meta: meta3
+        storageKey: saved?.storageKey ?? m.storageKey,
+        meta: saved?.meta ?? null
       } : m);
     }
     __name(saveCover, "saveCover");
@@ -51085,7 +51086,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.BaPCSiGP.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/76sg9EgG.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DoBbhMVD.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Ca7kRzJu.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js"];
+    imports6 = ["_app/immutable/nodes/5.B2i4d1M2.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/DLi3k_fj.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/CJhqfZEZ.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/76sg9EgG.js", "_app/immutable/chunks/BbklCUbW.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/DoBbhMVD.js", "_app/immutable/chunks/DT1B69XH.js", "_app/immutable/chunks/CQM4igsr.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/CzcybjUK.js", "_app/immutable/chunks/ClUK-k5e.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/Ca7kRzJu.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/ClCvFyLA.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -56992,7 +56993,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.27.2")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.28.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57116,7 +57117,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.CNrq4-ch.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
+    imports16 = ["_app/immutable/nodes/15.BSv9F9Rs.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/chunks/_DDmfJNh.js", "_app/immutable/chunks/DA0aH6Ay.js", "_app/immutable/chunks/BWPJcvHb.js", "_app/immutable/chunks/ChdpibCZ.js", "_app/immutable/chunks/CwM9PBMj.js", "_app/immutable/chunks/BTWigZYM.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B0pejJwx.js", "_app/immutable/chunks/i808Ruf7.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DlPuqcoy.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -59545,6 +59546,90 @@ var init_request_limits = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/draft-media.js
+function parseSegmentIndex(value) {
+  const n = typeof value === "number" ? value : parseInt(String(value ?? "0"), 10);
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(MAX_SEGMENT_INDEX, Math.max(0, Math.floor(n)));
+}
+function cleanAltText(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, MAX_ALT_LENGTH);
+}
+async function rejectIfNotEditable(db, draftId) {
+  const targets = await db.select().from(publishTargets).where(eq(publishTargets.draftId, draftId));
+  const blocked = draftEditBlock(targets);
+  return blocked ? fail(blocked, 409) : null;
+}
+async function keysUsedOnlyBy(db, keys, leaving) {
+  const unique = [...new Set(keys)];
+  const elsewhere = "draftId" in leaving ? ne(draftMedia.draftId, leaving.draftId) : ne(draftMedia.id, leaving.mediaId);
+  const kept = /* @__PURE__ */ new Set();
+  for (const chunk of chunkIds(unique, 90)) {
+    const rows = await db.selectDistinct({ key: draftMedia.storageKey }).from(draftMedia).where(and(inArray(draftMedia.storageKey, chunk), elsewhere));
+    for (const row of rows) kept.add(row.key);
+  }
+  return unique.filter((key) => !kept.has(key));
+}
+async function ownDraft(locals, id2, userId) {
+  return first(locals.db.select().from(drafts).where(and(eq(drafts.id, id2), eq(drafts.userId, userId))));
+}
+async function segmentProblem(locals, draft, segmentIndex) {
+  const variants = await locals.db.select({ body: draftVariants.body }).from(draftVariants).where(eq(draftVariants.draftId, draft.id));
+  const cards = Math.max(splitThreadSegments(draft.baseBody ?? "").length, ...variants.map((v) => splitThreadSegments(v.body ?? "").length));
+  if (segmentIndex < cards) return null;
+  return `segmentIndex ${segmentIndex} is past the last segment (${cards - 1})`;
+}
+async function overUserFileCap(db, userId, adding) {
+  const userDraftIds = await db.select({ id: drafts.id }).from(drafts).where(eq(drafts.userId, userId));
+  let userFiles = 0;
+  for (const chunk of chunkIds(userDraftIds.map((d) => d.id))) {
+    if (!chunk.length) break;
+    const rows = await db.select({ id: draftMedia.id }).from(draftMedia).where(inArray(draftMedia.draftId, chunk));
+    userFiles += rows.length;
+    if (userFiles + adding > 1e3) break;
+  }
+  return userFiles + adding > MAX_FILES_PER_USER;
+}
+async function videoSlotProblem(locals, draft, segmentIndex) {
+  const problem = await segmentProblem(locals, draft, segmentIndex);
+  if (problem) return fail(problem, 400);
+  const existing = await locals.db.select().from(draftMedia).where(eq(draftMedia.draftId, draft.id));
+  if (existing.length + 1 > 32) return fail(`Max 32 files per draft`, 413);
+  if (await overUserFileCap(locals.db, draft.userId, 1)) return fail(`Max ${MAX_FILES_PER_USER} files per account`, 413);
+  const onSegment = existing.filter((m) => (m.segmentIndex ?? 0) === segmentIndex);
+  if (onSegment.length >= 4) return fail(`Max 4 images per post`);
+  const videos = onSegment.filter(isVideoRow).length;
+  const mix = videoMixProblem(videos + 1, onSegment.length - videos);
+  return mix ? fail(mix) : null;
+}
+var MAX_SEGMENT_INDEX, MAX_ALT_LENGTH, MAX_FILES_PER_USER, isVideoRow;
+var init_draft_media = __esm({
+  ".svelte-kit/output/server/chunks/draft-media.js"() {
+    "use strict";
+    init_client();
+    init_http();
+    init_media_limits();
+    init_thread_segments();
+    init_publish_plan();
+    init_drizzle_orm();
+    MAX_SEGMENT_INDEX = 100;
+    MAX_ALT_LENGTH = 1500;
+    MAX_FILES_PER_USER = 1e3;
+    __name(parseSegmentIndex, "parseSegmentIndex");
+    __name(cleanAltText, "cleanAltText");
+    __name(rejectIfNotEditable, "rejectIfNotEditable");
+    __name(keysUsedOnlyBy, "keysUsedOnlyBy");
+    __name(ownDraft, "ownDraft");
+    __name(segmentProblem, "segmentProblem");
+    __name(overUserFileCap, "overUserFileCap");
+    isVideoRow = /* @__PURE__ */ __name((m) => (m.mime || "").toLowerCase().startsWith("video/"), "isVideoRow");
+    __name(videoSlotProblem, "videoSlotProblem");
+  }
+});
+
 // .svelte-kit/output/server/chunks/operations.js
 function parseDraftTitle(value) {
   if (value === null) return {
@@ -59859,41 +59944,6 @@ async function rescheduleDelivery(ctx, userId, id2, body) {
     scheduledFor: runAt2.toISOString()
   };
 }
-async function copyVideo(store, item, storageKey) {
-  if (!store.copy || !store.size) return null;
-  if (!await store.copy(item.storageKey, storageKey)) return null;
-  try {
-    const size = await store.size(storageKey) ?? 0;
-    const facts = await probeStoredVideo(store, storageKey, size);
-    if (!facts?.videoCodec || size <= 0 || size > 3e8) throw new Error("unplayable");
-    const meta3 = videoMetaFrom(facts);
-    const cover = parseJson(item.metaJson, {}).cover;
-    if (cover && await store.copy(coverKey(item.storageKey), coverKey(storageKey))) meta3.cover = cover;
-    return {
-      size,
-      facts,
-      meta: meta3
-    };
-  } catch {
-    await deleteMediaObjects(store, [storageKey]).catch(() => {
-    });
-    return null;
-  }
-}
-async function copyImageVariants(store, item, storageKey) {
-  const stored = parseJson(item.metaJson, {});
-  const copied = stored.animated ? { animated: true } : {};
-  const variants = [["preview", previewKey], ["jpeg", jpegKey]];
-  for (const [name, keyOf] of variants) {
-    const variant = stored[name];
-    if (!variant || !store.copy) continue;
-    try {
-      if (await store.copy(keyOf(item.storageKey), keyOf(storageKey))) copied[name] = variant;
-    } catch {
-    }
-  }
-  return Object.keys(copied).length ? copied : null;
-}
 async function listDrafts(ctx, userId, requestedLimit) {
   const limit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(1, Math.floor(requestedLimit))) : 200;
   const rows = await ctx.db.select().from(drafts).where(eq(drafts.userId, userId)).orderBy(desc(drafts.updatedAt)).limit(limit + 1);
@@ -59971,7 +60021,6 @@ async function duplicateDraft(ctx, userId, draftId) {
   const media = await ctx.db.select().from(draftMedia).where(eq(draftMedia.draftId, source.id));
   const now = /* @__PURE__ */ new Date();
   const newDraftId = newId();
-  const savedKeys = [];
   try {
     const [draft] = await ctx.db.insert(drafts).values({
       id: newDraftId,
@@ -59994,54 +60043,21 @@ async function duplicateDraft(ctx, userId, draftId) {
     }))).returning() : [];
     const mediaValues = [];
     for (const item of media) {
-      let extension;
       try {
-        extension = assertSafeStorageKey(item.storageKey).split(".").pop() ?? "";
+        assertSafeStorageKey(item.storageKey);
       } catch {
         continue;
       }
-      if (!ALLOWED_MEDIA_EXTENSIONS.has(extension)) continue;
-      const storageKey = `${Date.now()}-${randomHex(8)}.${extension}`;
-      if ((item.mime || "").toLowerCase().startsWith("video/")) {
-        const copied = await copyVideo(ctx.media, item, storageKey);
-        if (!copied) continue;
-        savedKeys.push(storageKey);
-        mediaValues.push({
-          id: newId(),
-          draftId: newDraftId,
-          storageKey,
-          mime: "video/mp4",
-          size: copied.size,
-          width: copied.facts.width,
-          height: copied.facts.height,
-          metaJson: JSON.stringify(copied.meta),
-          altText: item.altText,
-          sortOrder: item.sortOrder,
-          segmentIndex: item.segmentIndex,
-          createdAt: now
-        });
-        continue;
-      }
-      const bytes = await ctx.media.get(item.storageKey);
-      if (!bytes) continue;
-      const validated = validateImageUpload({
-        mime: item.mime,
-        size: bytes.length,
-        bytes
-      });
-      if (!validated.ok) continue;
-      await ctx.media.put(storageKey, bytes, validated.mime);
-      savedKeys.push(storageKey);
-      const imageMeta = await copyImageVariants(ctx.media, item, storageKey);
+      if (ctx.media.size && await ctx.media.size(item.storageKey) === null) continue;
       mediaValues.push({
         id: newId(),
         draftId: newDraftId,
-        storageKey,
-        mime: validated.mime,
-        size: bytes.length,
+        storageKey: item.storageKey,
+        mime: item.mime,
+        size: item.size,
         width: item.width,
         height: item.height,
-        metaJson: imageMeta ? JSON.stringify(imageMeta) : null,
+        metaJson: item.metaJson,
         altText: item.altText,
         sortOrder: item.sortOrder,
         segmentIndex: item.segmentIndex,
@@ -60056,8 +60072,6 @@ async function duplicateDraft(ctx, userId, draftId) {
       targets: []
     }) };
   } catch (error63) {
-    await deleteMediaObjects(ctx.media, savedKeys).catch(() => {
-    });
     await ctx.db.delete(drafts).where(eq(drafts.id, newDraftId)).catch(() => {
     });
     throw error63;
@@ -60262,23 +60276,21 @@ async function deleteDraft(ctx, userId, draftId) {
   const liveTargets = await ctx.db.select().from(publishTargets).where(eq(publishTargets.draftId, draftId));
   if (draftHasInFlightPublish(liveTargets)) invalid("Publishing in progress \u2014 try again shortly", 409);
   const files = await ctx.db.select().from(draftMedia).where(eq(draftMedia.draftId, draftId));
-  await deleteMediaObjects(ctx.media, files.map((file2) => file2.storageKey));
+  await deleteMediaObjects(ctx.media, await keysUsedOnlyBy(ctx.db, files.map((file2) => file2.storageKey), { draftId }));
   await ctx.db.delete(drafts).where(eq(drafts.id, draftId));
   return { ok: true };
 }
 function listQueue(ctx, userId, limit) {
   return loadQueueList(ctx.db, userId, limit);
 }
-var DRAFT_BODY_MAX_LENGTH, MAX_VARIANT_OPTIONS_LENGTH, MAX_VALIDATE_LENGTH, ALLOWED_MEDIA_EXTENSIONS, MEDIA_INSERT_CHUNK, VARIANT_PLATFORMS, VISIBILITIES;
+var DRAFT_BODY_MAX_LENGTH, MAX_VARIANT_OPTIONS_LENGTH, MAX_VALIDATE_LENGTH, MEDIA_INSERT_CHUNK, VARIANT_PLATFORMS, VISIBILITIES;
 var init_operations3 = __esm({
   ".svelte-kit/output/server/chunks/operations.js"() {
     "use strict";
     init_client();
-    init_bytes();
     init_human_error();
     init_http();
     init_media();
-    init_media_limits();
     init_platforms();
     init_serialize();
     init_connection_list();
@@ -60290,6 +60302,7 @@ var init_operations3 = __esm({
     init_publish();
     init_publish_plan();
     init_request_limits();
+    init_draft_media();
     init_post_list();
     init_draft_record();
     init_drizzle_orm();
@@ -60309,13 +60322,6 @@ var init_operations3 = __esm({
     __name(cancelDelivery, "cancelDelivery");
     __name(retryDelivery, "retryDelivery");
     __name(rescheduleDelivery, "rescheduleDelivery");
-    ALLOWED_MEDIA_EXTENSIONS = /* @__PURE__ */ new Set([
-      "jpg",
-      "png",
-      "webp",
-      "gif",
-      "mp4"
-    ]);
     MEDIA_INSERT_CHUNK = 8;
     VARIANT_PLATFORMS = /* @__PURE__ */ new Set([
       "mastodon",
@@ -60331,8 +60337,6 @@ var init_operations3 = __esm({
       "private",
       "direct"
     ]);
-    __name(copyVideo, "copyVideo");
-    __name(copyImageVariants, "copyImageVariants");
     __name(listDrafts, "listDrafts");
     __name(createDraft, "createDraft");
     __name(duplicateDraft, "duplicateDraft");
@@ -60461,79 +60465,6 @@ var init_server_ts32 = __esm({
         return handleError(error63);
       }
     }, "POST");
-  }
-});
-
-// .svelte-kit/output/server/chunks/draft-media.js
-function parseSegmentIndex(value) {
-  const n = typeof value === "number" ? value : parseInt(String(value ?? "0"), 10);
-  if (!Number.isFinite(n)) return 0;
-  return Math.min(MAX_SEGMENT_INDEX, Math.max(0, Math.floor(n)));
-}
-function cleanAltText(value) {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.slice(0, MAX_ALT_LENGTH);
-}
-async function rejectIfNotEditable(db, draftId) {
-  const targets = await db.select().from(publishTargets).where(eq(publishTargets.draftId, draftId));
-  const blocked = draftEditBlock(targets);
-  return blocked ? fail(blocked, 409) : null;
-}
-async function ownDraft(locals, id2, userId) {
-  return first(locals.db.select().from(drafts).where(and(eq(drafts.id, id2), eq(drafts.userId, userId))));
-}
-async function segmentProblem(locals, draft, segmentIndex) {
-  const variants = await locals.db.select({ body: draftVariants.body }).from(draftVariants).where(eq(draftVariants.draftId, draft.id));
-  const cards = Math.max(splitThreadSegments(draft.baseBody ?? "").length, ...variants.map((v) => splitThreadSegments(v.body ?? "").length));
-  if (segmentIndex < cards) return null;
-  return `segmentIndex ${segmentIndex} is past the last segment (${cards - 1})`;
-}
-async function overUserFileCap(db, userId, adding) {
-  const userDraftIds = await db.select({ id: drafts.id }).from(drafts).where(eq(drafts.userId, userId));
-  let userFiles = 0;
-  for (const chunk of chunkIds(userDraftIds.map((d) => d.id))) {
-    if (!chunk.length) break;
-    const rows = await db.select({ id: draftMedia.id }).from(draftMedia).where(inArray(draftMedia.draftId, chunk));
-    userFiles += rows.length;
-    if (userFiles + adding > 1e3) break;
-  }
-  return userFiles + adding > MAX_FILES_PER_USER;
-}
-async function videoSlotProblem(locals, draft, segmentIndex) {
-  const problem = await segmentProblem(locals, draft, segmentIndex);
-  if (problem) return fail(problem, 400);
-  const existing = await locals.db.select().from(draftMedia).where(eq(draftMedia.draftId, draft.id));
-  if (existing.length + 1 > 32) return fail(`Max 32 files per draft`, 413);
-  if (await overUserFileCap(locals.db, draft.userId, 1)) return fail(`Max ${MAX_FILES_PER_USER} files per account`, 413);
-  const onSegment = existing.filter((m) => (m.segmentIndex ?? 0) === segmentIndex);
-  if (onSegment.length >= 4) return fail(`Max 4 images per post`);
-  const videos = onSegment.filter(isVideoRow).length;
-  const mix = videoMixProblem(videos + 1, onSegment.length - videos);
-  return mix ? fail(mix) : null;
-}
-var MAX_SEGMENT_INDEX, MAX_ALT_LENGTH, MAX_FILES_PER_USER, isVideoRow;
-var init_draft_media = __esm({
-  ".svelte-kit/output/server/chunks/draft-media.js"() {
-    "use strict";
-    init_client();
-    init_http();
-    init_media_limits();
-    init_thread_segments();
-    init_publish_plan();
-    init_drizzle_orm();
-    MAX_SEGMENT_INDEX = 100;
-    MAX_ALT_LENGTH = 1500;
-    MAX_FILES_PER_USER = 1e3;
-    __name(parseSegmentIndex, "parseSegmentIndex");
-    __name(cleanAltText, "cleanAltText");
-    __name(rejectIfNotEditable, "rejectIfNotEditable");
-    __name(ownDraft, "ownDraft");
-    __name(segmentProblem, "segmentProblem");
-    __name(overUserFileCap, "overUserFileCap");
-    isVideoRow = /* @__PURE__ */ __name((m) => (m.mime || "").toLowerCase().startsWith("video/"), "isVideoRow");
-    __name(videoSlotProblem, "videoSlotProblem");
   }
 });
 
@@ -60723,7 +60654,7 @@ var init_server_ts33 = __esm({
         if (!mediaId) return fail("mediaId required");
         const gone = await first(locals.db.select().from(draftMedia).where(and(eq(draftMedia.id, mediaId), eq(draftMedia.draftId, params.id))));
         await locals.db.delete(draftMedia).where(and(eq(draftMedia.id, mediaId), eq(draftMedia.draftId, params.id)));
-        if (gone) await deleteMediaObjects(locals.media, [gone.storageKey]);
+        if (gone) await deleteMediaObjects(locals.media, await keysUsedOnlyBy(locals.db, [gone.storageKey], { mediaId: gone.id }));
         return ok({ ok: true });
       } catch (err) {
         return handleError(err);
@@ -60743,17 +60674,45 @@ async function videoRow(locals, draftId, mediaId) {
   const row = await first(locals.db.select().from(draftMedia).where(and(eq(draftMedia.id, mediaId), eq(draftMedia.draftId, draftId))));
   return row && (row.mime || "").toLowerCase().startsWith("video/") ? row : null;
 }
+async function ownVideo(locals, row) {
+  const store = locals.media;
+  if (!store.copy || !store.size) return null;
+  const storageKey = `${Date.now()}-${randomHex(8)}.mp4`;
+  if (!await store.copy(row.storageKey, storageKey)) return null;
+  let moved;
+  try {
+    const size = await store.size(storageKey);
+    if (!size) throw new Error("empty copy");
+    const meta3 = parseJson(row.metaJson, {});
+    delete meta3.cover;
+    [moved] = await locals.db.update(draftMedia).set({
+      storageKey,
+      size,
+      metaJson: JSON.stringify(meta3)
+    }).where(eq(draftMedia.id, row.id)).returning();
+    if (!moved) throw new Error("media row gone");
+  } catch {
+    await deleteMediaObjects(store, [storageKey]).catch(() => {
+    });
+    return null;
+  }
+  const unused = await keysUsedOnlyBy(locals.db, [row.storageKey], { mediaId: row.id });
+  await deleteMediaObjects(store, unused).catch(() => {
+  });
+  return moved;
+}
 async function guard(locals, draftId) {
   const user = requireUser(locals.user);
   requireScope(locals, "write");
   if (!await ownDraft(locals, draftId, user.id)) return fail("Not found", 404);
   return rejectIfNotEditable(locals.db, draftId);
 }
-var MAX_COVER_BYTES, PUT, DELETE5;
+var MAX_COVER_BYTES, sharedWithAnotherPost, PUT, DELETE5;
 var init_server_ts34 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/cover/_server.ts.js"() {
     "use strict";
     init_client();
+    init_bytes();
     init_http();
     init_require();
     init_media();
@@ -60763,6 +60722,8 @@ var init_server_ts34 = __esm({
     init_drizzle_orm();
     MAX_COVER_BYTES = 8e6;
     __name(videoRow, "videoRow");
+    sharedWithAnotherPost = /* @__PURE__ */ __name(async (locals, row) => (await keysUsedOnlyBy(locals.db, [row.storageKey], { mediaId: row.id })).length === 0, "sharedWithAnotherPost");
+    __name(ownVideo, "ownVideo");
     __name(guard, "guard");
     PUT = /* @__PURE__ */ __name(async ({ params, request: request2, url: url3, locals }) => {
       try {
@@ -60770,8 +60731,8 @@ var init_server_ts34 = __esm({
         if (Number.isFinite(declared) && declared > MAX_COVER_BYTES) return fail("Cover must be 8MB or smaller", 413);
         const blocked = await guard(locals, params.id);
         if (blocked) return blocked;
-        const row = await videoRow(locals, params.id, url3.searchParams.get("mediaId"));
-        if (!row) return fail("Video not found", 404);
+        const found = await videoRow(locals, params.id, url3.searchParams.get("mediaId"));
+        if (!found) return fail("Video not found", 404);
         const bytes = new Uint8Array(await request2.arrayBuffer());
         const check2 = validateImageUpload({
           mime: "image/jpeg",
@@ -60781,6 +60742,8 @@ var init_server_ts34 = __esm({
         });
         if (!check2.ok) return fail(check2.message);
         if (check2.mime !== "image/jpeg") return fail("Cover must be a JPEG");
+        const row = await sharedWithAnotherPost(locals, found) ? await ownVideo(locals, found) : found;
+        if (!row) return fail("Could not save the cover", 500);
         await locals.media.put(coverKey(row.storageKey), bytes, "image/jpeg");
         const atParam = url3.searchParams.get("atMs");
         const atMs = atParam === null || atParam === "" ? NaN : Number(atParam);
@@ -60801,7 +60764,7 @@ var init_server_ts34 = __esm({
         if (blocked) return blocked;
         const row = await videoRow(locals, params.id, url3.searchParams.get("mediaId"));
         if (!row) return fail("Video not found", 404);
-        await locals.media.delete(coverKey(row.storageKey));
+        if (!await sharedWithAnotherPost(locals, row)) await locals.media.delete(coverKey(row.storageKey));
         const meta3 = parseJson(row.metaJson, {});
         delete meta3.cover;
         const [media] = await locals.db.update(draftMedia).set({ metaJson: JSON.stringify(meta3) }).where(eq(draftMedia.id, row.id)).returning();
@@ -61266,7 +61229,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.27.2",
+          version: "1.28.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -72401,7 +72364,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.27.2";
+  const current = options2.current ?? "1.28.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73257,7 +73220,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.27.2",
+          version: "1.28.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73466,7 +73429,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.27.2"
+    currentVersion: "1.28.0"
   };
 }
 async function download(ctx, url3) {
@@ -74017,7 +73980,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.7eBjX4Dg.js", app: "_app/immutable/entry/app.B4jPtY3_.js", imports: ["_app/immutable/entry/start.7eBjX4Dg.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bm2FJUYq.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/app.B4jPtY3_.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.7eBjX4Dg.js", app: "_app/immutable/entry/app.CrMf1lI3.js", imports: ["_app/immutable/entry/start.7eBjX4Dg.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CRzLMJPS.js", "_app/immutable/chunks/Bm2FJUYq.js", "_app/immutable/chunks/B8Qk5jBb.js", "_app/immutable/chunks/DYz0-1h-.js", "_app/immutable/chunks/Cy_Ajf2Z.js", "_app/immutable/entry/app.CrMf1lI3.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
