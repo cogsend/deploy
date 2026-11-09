@@ -10257,6 +10257,15 @@ function imageOverCap(platform2, media) {
   }
   return null;
 }
+function imageTypeProblem(platform2, media) {
+  for (const m of media) {
+    const mime = (m.mime || "").toLowerCase();
+    if (mime.startsWith("video/")) continue;
+    if (platform2 === "linkedin" && mime === "image/webp") return "LinkedIn doesn't take WebP images";
+    if (platform2 === "threads" && mime !== "image/jpeg" && mime !== "image/png") return "Threads takes JPEG and PNG images only";
+  }
+  return null;
+}
 function jpegCopyExpected(meta3, canMakeJpegCopies) {
   return Boolean(meta3?.jpeg) || canMakeJpegCopies && !meta3?.animated;
 }
@@ -10372,6 +10381,7 @@ var init_media_limits = __esm({
     };
     __name(imageCap, "imageCap");
     __name(imageOverCap, "imageOverCap");
+    __name(imageTypeProblem, "imageTypeProblem");
     __name(jpegCopyExpected, "jpegCopyExpected");
     INSTAGRAM_MIN_ASPECT = 0.795;
     INSTAGRAM_MAX_ASPECT = 1.91 + 5e-3;
@@ -11234,6 +11244,32 @@ function resolvePublishSegments(body, segmentHasMedia) {
   }];
   return out;
 }
+function threadPosts(body, media) {
+  const onSegment = /* @__PURE__ */ __name((i) => media.filter((m) => (m.segmentIndex ?? 0) === i), "onSegment");
+  const posts = resolvePublishSegments(body ?? "", (i) => media.some((m) => (m.segmentIndex ?? 0) === i)).map(({ text: text3, segmentIndex }) => ({
+    segmentIndex,
+    text: text3,
+    media: onSegment(segmentIndex)
+  }));
+  const covered = new Set(posts.map((p) => p.segmentIndex));
+  for (const m of media) {
+    const i = m.segmentIndex ?? 0;
+    if (covered.has(i)) continue;
+    covered.add(i);
+    posts.push({
+      segmentIndex: i,
+      text: "",
+      media: onSegment(i)
+    });
+  }
+  const shown = posts.filter((p) => p.text || p.media.length);
+  if (shown.length === 0) return [{
+    segmentIndex: 0,
+    text: "",
+    media: []
+  }];
+  return shown.sort((a, b) => a.segmentIndex - b.segmentIndex);
+}
 function joinThreadSegments(segments) {
   if (!segments.length) return "";
   if (segments.length === 1) return segments[0] ?? "";
@@ -11268,6 +11304,7 @@ var init_thread_segments = __esm({
     THREAD_DELIMITER = "\n---\n";
     __name(splitThreadSegments, "splitThreadSegments");
     __name(resolvePublishSegments, "resolvePublishSegments");
+    __name(threadPosts, "threadPosts");
     __name(joinThreadSegments, "joinThreadSegments");
     __name(joinThreadTexts, "joinThreadTexts");
     __name(flattenThreadBody, "flattenThreadBody");
@@ -17027,6 +17064,19 @@ function draftExcerpt(body, max = 120) {
   if (chars2.length <= max) return text3;
   return chars2.slice(0, max).join("").trimEnd() + "\u2026";
 }
+function cardExcerpt(text3, max = 500, maxLines = 8) {
+  const body = (text3 || "").replace(/\r\n?/g, "\n").split("\n").map((line) => line.trimEnd()).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  if (!body) return "Empty draft";
+  const lines = body.split("\n");
+  let out = lines.length > maxLines ? lines.slice(0, maxLines).join("\n").trimEnd() : body;
+  let cut = out !== body;
+  const chars2 = segmentGraphemes(out);
+  if (chars2.length > max) {
+    out = chars2.slice(0, max).join("").trimEnd();
+    cut = true;
+  }
+  return cut ? `${out}\u2026` : out;
+}
 var graphemeSegmenter;
 var init_excerpt = __esm({
   ".svelte-kit/output/server/chunks/excerpt.js"() {
@@ -17035,6 +17085,7 @@ var init_excerpt = __esm({
     __name(getGraphemeSegmenter, "getGraphemeSegmenter");
     __name(segmentGraphemes, "segmentGraphemes");
     __name(draftExcerpt, "draftExcerpt");
+    __name(cardExcerpt, "cardExcerpt");
   }
 });
 
@@ -41301,7 +41352,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1794225036347");
+  response.headers.set("x-sveltekit-version", "1794236726159");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -44008,7 +44059,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_79b9z2";
+  const global = "__sveltekit_1wm6xj";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44752,7 +44803,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_79b9z2";
+  const global = "__sveltekit_1wm6xj";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44777,7 +44828,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1794225036347")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1794236726159")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47331,8 +47382,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.CbQgUXE3.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/CLya6AOR.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/MO2eXnrz.js", "_app/immutable/chunks/D9PKfT4g.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/DmxIf2bR.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/BzqdfMN8.js"];
-    stylesheets = ["_app/immutable/assets/0.BkuFMySJ.css"];
+    imports = ["_app/immutable/nodes/0.Dd6XoOv0.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/chunks/D_8DNKJO.js", "_app/immutable/chunks/Cg0Wahbt.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/BcuYANAt.js", "_app/immutable/chunks/BHis19o9.js", "_app/immutable/chunks/-lEAv-dx.js", "_app/immutable/chunks/DuREBlSJ.js", "_app/immutable/chunks/BPQY0Eon.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/Cq_ZiuY4.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/ghwa7ed6.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Rpy6H-VI.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/_-EIn4Id.js", "_app/immutable/chunks/C4yFpAq0.js"];
+    stylesheets = ["_app/immutable/assets/0.DWwA3pzC.css"];
     fonts = [];
   }
 });
@@ -47371,7 +47422,7 @@ var init__2 = __esm({
     "use strict";
     index3 = 1;
     component2 = /* @__PURE__ */ __name(async () => component_cache2 ??= (await Promise.resolve().then(() => (init_error_svelte(), error_svelte_exports))).default, "component");
-    imports2 = ["_app/immutable/nodes/1.BD_Y8OGV.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/B4ZfKWh4.js"];
+    imports2 = ["_app/immutable/nodes/1.1ROUGZhK.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/D_8DNKJO.js"];
     stylesheets2 = [];
     fonts2 = [];
   }
@@ -47417,7 +47468,7 @@ var init__3 = __esm({
     "use strict";
     index4 = 2;
     component3 = /* @__PURE__ */ __name(async () => component_cache3 ??= (await Promise.resolve().then(() => (init_error_svelte2(), error_svelte_exports2))).default, "component");
-    imports3 = ["_app/immutable/nodes/2.D_1mWFSf.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/B4ZfKWh4.js"];
+    imports3 = ["_app/immutable/nodes/2.ByaZipcY.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/D_8DNKJO.js"];
     stylesheets3 = [];
     fonts3 = [];
   }
@@ -47678,7 +47729,7 @@ var init__4 = __esm({
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte(), page_svelte_exports))).default, "component");
     server_id2 = "src/routes/+page.server.ts";
-    imports4 = ["_app/immutable/nodes/3.DfuWX8ph.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/By61rDl3.js"];
+    imports4 = ["_app/immutable/nodes/3.DdEseyrf.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/B0KXhste.js"];
     stylesheets4 = [];
     fonts4 = [];
   }
@@ -48512,7 +48563,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.BB4xpgex.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/BVH4e0hY.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/BHSIC6qJ.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    imports5 = ["_app/immutable/nodes/4.BsJ0IWQh.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/D_8DNKJO.js", "_app/immutable/chunks/BcuYANAt.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/DKQfRg2-.js", "_app/immutable/chunks/C4yFpAq0.js", "_app/immutable/chunks/DuREBlSJ.js", "_app/immutable/chunks/CiBQmfy8.js", "_app/immutable/chunks/cgX5krTP.js", "_app/immutable/chunks/DQ8k0Nin.js", "_app/immutable/chunks/_-EIn4Id.js", "_app/immutable/chunks/BGtA1vg1.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/PhuaCUZ2.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BRkMptyU.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/chunks/Rpy6H-VI.js", "_app/immutable/chunks/D20gE_Xc.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -49038,12 +49089,13 @@ function MediaViewer($$renderer, $$props) {
     let index18 = run2(() => start);
     const item = derived2(() => items[Math.min(index18, items.length - 1)]);
     const many = derived2(() => items.length > 1);
-    $$renderer2.push(`<div role="presentation" class="fixed inset-0 z-50 touch-pan-y bg-black/95 select-none"><div role="dialog" aria-modal="true"${attr("aria-label", many() ? `Image ${index18 + 1} of ${items.length}` : "Image")} data-testid="media-viewer" class="pointer-events-none absolute inset-0 flex items-center justify-center px-4 py-14 sm:px-16"><button type="button" data-testid="media-viewer-close" class="pointer-events-auto absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20" aria-label="Close">`);
+    const srcOf = /* @__PURE__ */ __name((m) => m.previewUrl || imageUrl(m, mediaBase), "srcOf");
+    $$renderer2.push(`<div role="presentation" class="fixed inset-0 z-50 touch-pan-y bg-black/95 select-none"><div role="dialog" aria-modal="true"${attr("aria-label", many() ? `Image ${index18 + 1} of ${items.length}` : "Image")} data-testid="media-viewer" class="pointer-events-none absolute inset-0 flex items-center justify-center px-4 py-14 sm:px-16"><p class="sr-only" aria-live="polite" data-testid="media-viewer-announce">${escape_html(many() ? `Image ${index18 + 1} of ${items.length}` : "Image")}${escape_html(item().altText ? `: ${item().altText}` : "")}</p> <button type="button" data-testid="media-viewer-close" class="pointer-events-auto absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20" aria-label="Close">`);
     X($$renderer2, { class: "h-5 w-5" });
     $$renderer2.push(`<!----></button> `);
     if (many()) $$renderer2.push(`<!--[0--><p class="absolute top-5 left-4 text-xs font-bold text-white/70" data-testid="media-viewer-count" aria-hidden="true">${escape_html(index18 + 1)} / ${escape_html(items.length)}</p>`);
     else $$renderer2.push("<!--[-1-->");
-    $$renderer2.push(`<!--]--> <figure class="flex w-full flex-col items-center gap-3"><img${attr("src", item().previewUrl || imageUrl(item(), mediaBase))}${attr("alt", item().altText || "")} draggable="false"${attr_class(`pointer-events-auto h-auto max-w-full rounded-lg ${item().altText ? "max-h-[calc(100dvh-13rem)]" : "max-h-[calc(100dvh-7rem)]"}`)}/> `);
+    $$renderer2.push(`<!--]--> <figure class="flex w-full flex-col items-center gap-3"><img${attr("src", srcOf(item()))}${attr("alt", item().altText || "")} draggable="false"${attr_class(`pointer-events-auto h-auto max-w-full rounded-lg ${item().altText ? "max-h-[calc(100dvh-13rem)]" : "max-h-[calc(100dvh-7rem)]"}`)}/> `);
     if (item().altText) $$renderer2.push(`<!--[0--><figcaption class="pointer-events-auto line-clamp-4 max-w-xl text-center text-[13px] leading-relaxed text-white/80" data-testid="media-viewer-alt">${escape_html(item().altText)}</figcaption>`);
     else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--></figure> `);
@@ -49101,12 +49153,12 @@ function MediaPreview($$renderer, $$props) {
       } else $$renderer3.push(`<!--[-1--><button type="button"${attr("data-testid", `media-view-${stringify3(m.id)}`)} class="block h-full w-full cursor-zoom-in"${attr("aria-label", `View ${label(m, i)}`)}><img${attr("src", m.previewUrl || imageUrl(m, mediaBase))}${attr("alt", label(m, i))} loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/></button>`);
       $$renderer3.push(`<!--]--> `);
       if (toolbar) {
-        $$renderer3.push(`<!--[0--><div class="absolute top-2 right-2 z-10 flex items-center gap-1.5">`);
+        $$renderer3.push(`<!--[0--><div class="absolute top-2 right-2 z-10 flex items-center gap-1.5 pointer-coarse:gap-3">`);
         toolbar($$renderer3, m);
         $$renderer3.push(`<!----></div>`);
       } else $$renderer3.push("<!--[-1-->");
       $$renderer3.push(`<!--]--> `);
-      if (i === shown().length - 1 && extra > 0) $$renderer3.push(`<!--[0--><div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-stone-900/60 text-lg font-extrabold text-white" role="img"${attr("aria-label", `${extra} more attachment${extra === 1 ? "" : "s"}`)}>+${escape_html(extra)}</div>`);
+      if (i === shown().length - 1 && extra > 0 && playing !== m.id) $$renderer3.push(`<!--[0--><div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-stone-900/60 text-lg font-extrabold text-white" role="img"${attr("aria-label", `${extra} more attachment${extra === 1 ? "" : "s"}`)}>+${escape_html(extra)}</div>`);
       else $$renderer3.push("<!--[-1-->");
       $$renderer3.push(`<!--]-->`);
     }
@@ -49447,10 +49499,14 @@ function MediaLibrary($$renderer, $$props) {
       return null;
     }
     __name(blocked, "blocked");
+    const cardNotice = derived2(() => card.video ? "This post has a video, which goes on its own." : card.room === 0 ? `This post already has 4 images. Remove one to attach another.` : null);
     const describe3 = /* @__PURE__ */ __name((f) => f.altText || (isVideo2(f) ? "Video without a description" : "Image without alt text"), "describe");
     const attachLabel = derived2(() => busy ? "Attaching\u2026" : picked.length > 1 ? `Attach ${picked.length}` : pickedVideo() ? "Attach video" : "Attach");
     $$renderer2.push(`<div role="presentation" class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"><div role="dialog" aria-modal="true" aria-labelledby="media-library-title" aria-describedby="media-library-body" data-testid="media-library" class="flex max-h-[90dvh] w-full max-w-lg flex-col rounded-[1.5rem] border border-stone-200/80 bg-white/95 p-5 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl"><h2 id="media-library-title" class="text-sm font-semibold">Your media</h2> <p id="media-library-body" class="mt-1 text-xs text-[var(--muted)]">Images and videos used in your posts. Attaching one stores nothing new, and you can change its
 			alt text in this post without changing the others.</p> <div class="mt-3 min-h-0 flex-1 overflow-y-auto">`);
+    if (cardNotice() && files.length) $$renderer2.push(`<!--[0--><p class="mb-2 rounded-xl bg-stone-100 px-3 py-2 text-xs font-medium text-stone-600" data-testid="media-library-card-notice">${escape_html(cardNotice())}</p>`);
+    else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
     {
       $$renderer2.push(`<!--[-1--><ul class="grid grid-cols-3 gap-2 sm:grid-cols-4" aria-label="Your media"><!--[-->`);
       const each_array = ensure_array_like(files);
@@ -49459,7 +49515,7 @@ function MediaLibrary($$renderer, $$props) {
         const reason = blocked(f);
         const on = picked.includes(f.storageKey);
         const cover = isVideo2(f) ? coverUrl(f) : null;
-        $$renderer2.push(`<li><button type="button" data-testid="media-library-file"${attr("data-key", f.storageKey)}${attr("aria-pressed", on)}${attr("aria-label", reason ? `${describe3(f)}. ${reason}` : describe3(f))}${attr("title", reason ?? f.altText ?? void 0)}${attr("disabled", Boolean(reason) || busy, true)} class="relative block aspect-square w-full overflow-hidden rounded-xl border border-stone-200/80 bg-stone-100 transition hover:border-stone-400 disabled:cursor-not-allowed disabled:opacity-40">`);
+        $$renderer2.push(`<li><button type="button" data-testid="media-library-file"${attr("data-key", f.storageKey)}${attr("aria-pressed", on)}${attr("aria-label", reason ? `${describe3(f)}. ${reason}` : describe3(f))}${attr("title", reason ?? f.altText ?? void 0)}${attr("aria-disabled", reason ? "true" : void 0)}${attr("disabled", busy, true)} class="relative block aspect-square w-full overflow-hidden rounded-xl border border-stone-200/80 bg-stone-100 transition hover:border-stone-400 disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40">`);
         if (broken.includes(f.storageKey)) {
           $$renderer2.push(`<!--[0--><span class="flex h-full w-full items-center justify-center text-stone-400">`);
           Image_off($$renderer2, { class: "h-5 w-5" });
@@ -49491,7 +49547,7 @@ function MediaLibrary($$renderer, $$props) {
     }
     $$renderer2.push(`<!--]--> `);
     $$renderer2.push("<!--[-1-->");
-    $$renderer2.push(`<!--]--></div> <div class="mt-4 flex items-center justify-end gap-2"><button type="button"${attr("disabled", busy, true)} class="rounded-full border border-stone-200 px-4 py-1.5 text-sm font-bold text-stone-500 hover:border-stone-300 hover:text-stone-900 disabled:opacity-50">Cancel</button> <button type="button" data-testid="media-library-attach"${attr("disabled", !picked.length || busy, true)} class="rounded-full bg-stone-900 px-4 py-1.5 text-sm font-bold text-white hover:bg-stone-800 disabled:opacity-50">${escape_html(attachLabel())}</button></div></div></div>`);
+    $$renderer2.push(`<!--]--></div> <p class="mt-2 min-h-4 text-xs font-medium text-stone-600 empty:hidden" role="status" data-testid="media-library-notice">${escape_html("")}</p> <div class="mt-4 flex items-center justify-end gap-2"><button type="button"${attr("disabled", busy, true)} class="rounded-full border border-stone-200 px-4 py-1.5 text-sm font-bold text-stone-500 hover:border-stone-300 hover:text-stone-900 disabled:opacity-50 pointer-coarse:py-2.5">Cancel</button> <button type="button" data-testid="media-library-attach"${attr("disabled", !picked.length || busy, true)} class="rounded-full bg-stone-900 px-4 py-1.5 text-sm font-bold text-white hover:bg-stone-800 disabled:opacity-50 pointer-coarse:py-2.5">${escape_html(attachLabel())}</button></div></div></div>`);
   });
 }
 function SharePreview($$renderer, $$props) {
@@ -49727,6 +49783,7 @@ function Editor($$renderer, $$props) {
     let mastoPoll = seededPoll;
     let threadsTopic = seededThreadsTopic;
     let uploadingSegment = null;
+    let dropTarget = null;
     let videoJobs = [];
     let coverFor = null;
     let coverBusy = false;
@@ -49779,6 +49836,7 @@ function Editor($$renderer, $$props) {
     let failedAvatarSrc = null;
     const avatarInitials = derived2(() => displayName?.trim() ? initialsOf(displayName) : "");
     const selectedPlatforms = derived2(() => new Set(connections2.filter((c) => selected.has(c.id)).map((c) => c.platform)));
+    const directPlatforms = derived2(() => new Set(connections2.filter((c) => selected.has(c.id) && !isZernioConnection(c.metaJson)).map((c) => c.platform)));
     const globalLimit = derived2(() => {
       let strictest = null;
       for (const platform2 of PLATFORM_ORDER) {
@@ -50363,6 +50421,10 @@ function Editor($$renderer, $$props) {
     __name(libraryCard, "libraryCard");
     async function attachFromLibrary(segmentIndex, files) {
       if (editLocked() || !files.length || libraryBusy) return;
+      if (uploadingSegment !== null) {
+        showToast("Wait for the upload to finish", "warn");
+        return;
+      }
       libraryBusy = true;
       uploadingSegment = segmentIndex;
       const generation = editorGeneration;
@@ -50489,6 +50551,14 @@ function Editor($$renderer, $$props) {
           platform: platform2,
           level: "error",
           message: over
+        });
+      }
+      for (const platform2 of directPlatforms()) {
+        const badType = imageTypeProblem(platform2, images);
+        if (badType && !rows.has(platform2)) rows.set(platform2, {
+          platform: platform2,
+          level: "error",
+          message: badType
         });
       }
       if (threadWide && linkedinMediaProblem() && !rows.has("linkedin")) rows.set("linkedin", {
@@ -50818,7 +50888,10 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]--> `);
       if (index18 < segments().length - 1) $$renderer2.push(`<!--[0--><div class="absolute top-10 bottom-[-24px] left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-stone-200/80"></div>`);
       else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index18)}`)} class="flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10"><textarea${attr("data-segment-index", index18)}${attr("data-testid", `segment-input-${stringify3(index18)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", index18 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index18 === 0 ? "Post text" : `Post ${index18 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
+      $$renderer2.push(`<!--]--></div> <div${attr("data-testid", `segment-card-${stringify3(index18)}`)} role="group"${attr("aria-label", `Post ${stringify3(index18 + 1)}`)}${attr("data-drop-target", dropTarget === index18 ? "" : void 0)}${attr_class(`flex min-w-0 flex-1 flex-col rounded-[1.5rem] border border-stone-200/80 bg-white p-5 shadow-[0_4px_24px_-8px_rgb(28_25_23/0.06)] transition-all focus-within:border-stone-500 focus-within:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.12)] focus-within:ring-2 focus-within:ring-stone-900/10 ${dropTarget === index18 ? "border-stone-900 ring-2 ring-stone-900/15" : ""}`)}>`);
+      if (dropTarget === index18) $$renderer2.push(`<!--[0--><div class="pointer-events-none relative h-0"><span class="absolute -top-2 right-0 rounded-full bg-stone-900 px-2.5 py-1 text-[11px] font-bold text-white">Drop to attach</span></div>`);
+      else $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]--> <textarea${attr("data-segment-index", index18)}${attr("data-testid", `segment-input-${stringify3(index18)}`)}${attr("readonly", editLocked(), true)}${attr("placeholder", index18 === 0 ? "What's happening?" : "Add another post...")}${attr("aria-label", index18 === 0 ? "Post text" : `Post ${index18 + 1} text`)} class="w-full resize-none bg-transparent text-[15px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none pointer-coarse:text-base" rows="1">`);
       const $$body = escape_html(hiddenQuote(index18)?.visible ?? segment);
       if ($$body) $$renderer2.push(`${$$body}`);
       $$renderer2.push(`</textarea> `);
@@ -50830,12 +50903,12 @@ function Editor($$renderer, $$props) {
           let toolbar2 = function($$renderer3, m) {
             const hasAlt = Boolean((m.altText || "").trim());
             const kind = isVideoItem(m) ? "video" : "image";
-            $$renderer3.push(`<button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`min-h-7 rounded-full px-2.5 text-[11px] font-bold tracking-wide shadow-sm backdrop-blur-sm ${hasAlt ? "bg-black/60 text-white hover:bg-black/75" : "bg-amber-400 text-black hover:bg-amber-300"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", `${hasAlt ? "Edit" : "Add"} alt text for ${kind} ${index18 + 1}`)}>ALT</button> `);
-            if (!editLocked() && isVideoItem(m)) $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `video-cover-${stringify3(m.id)}`)} class="min-h-7 rounded-full bg-black/60 px-2.5 text-[11px] font-bold tracking-wide text-white shadow-sm backdrop-blur-sm hover:bg-black/75" title="Choose the cover"${attr("aria-label", `Choose the cover for video ${index18 + 1}`)}>COVER</button>`);
+            $$renderer3.push(`<button type="button"${attr("data-testid", `alt-toggle-${stringify3(m.id)}`)}${attr_class(`relative min-h-7 rounded-full px-2.5 text-[11px] font-bold tracking-wide shadow-sm backdrop-blur-sm pointer-coarse:after:absolute pointer-coarse:after:-inset-1.5 pointer-coarse:after:content-[''] ${hasAlt ? "bg-black/60 text-white hover:bg-black/75" : "bg-amber-400 text-black hover:bg-amber-300"}`)}${attr("title", hasAlt ? "Edit alt text" : "Add alt text (accessibility)")}${attr("aria-label", `${hasAlt ? "Edit" : "Add"} alt text for ${kind} ${index18 + 1}`)}>ALT</button> `);
+            if (!editLocked() && isVideoItem(m)) $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `video-cover-${stringify3(m.id)}`)} class="relative min-h-7 rounded-full bg-black/60 px-2.5 text-[11px] font-bold tracking-wide text-white shadow-sm backdrop-blur-sm hover:bg-black/75 pointer-coarse:after:absolute pointer-coarse:after:-inset-1.5 pointer-coarse:after:content-['']" title="Choose the cover"${attr("aria-label", `Choose the cover for video ${index18 + 1}`)}>COVER</button>`);
             else $$renderer3.push("<!--[-1-->");
             $$renderer3.push(`<!--]--> `);
             if (!editLocked()) {
-              $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm backdrop-blur-sm hover:bg-black/75"${attr("title", `Remove ${kind} ${index18 + 1}`)}${attr("aria-label", `Remove ${kind} ${index18 + 1}`)}>`);
+              $$renderer3.push(`<!--[0--><button type="button"${attr("data-testid", `remove-media-${stringify3(m.id)}`)} class="relative flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm backdrop-blur-sm hover:bg-black/75 pointer-coarse:after:absolute pointer-coarse:after:-inset-1.5 pointer-coarse:after:content-['']"${attr("title", `Remove ${kind} ${index18 + 1}`)}${attr("aria-label", `Remove ${kind} ${index18 + 1}`)}>`);
               X($$renderer3, { class: "h-3.5 w-3.5" });
               $$renderer3.push(`<!----></button>`);
             } else $$renderer3.push("<!--[-1-->");
@@ -50951,9 +51024,9 @@ function Editor($$renderer, $$props) {
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> `);
       if (!editLocked()) {
-        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index18)}`)}${attr("disabled", uploadingSegment === index18, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index18 ? `Uploading to post ${index18 + 1}` : `Add image to post ${index18 + 1}`)}${attr("title", uploadingSegment === index18 ? "Uploading\u2026" : "Add Image")}>`);
+        $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index18)}`)}${attr("disabled", uploadingSegment === index18, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:p-2.5 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index18 ? `Uploading to post ${index18 + 1}` : `Add image to post ${index18 + 1}`)}${attr("title", uploadingSegment === index18 ? "Uploading\u2026" : "Add Image")}>`);
         Image($$renderer2, { class: "h-4 w-4" });
-        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA)} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index18)}`)}/> <button type="button"${attr("data-testid", `library-${stringify3(index18)}`)}${attr("disabled", uploadingSegment === index18, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", `Choose from your media for post ${index18 + 1}`)} title="Your media">`);
+        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA)} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index18)}`)}/> <button type="button"${attr("data-testid", `library-${stringify3(index18)}`)}${attr("disabled", uploadingSegment === index18, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:p-2.5 pointer-coarse:opacity-100"${attr("aria-label", `Choose from your media for post ${index18 + 1}`)} title="Your media">`);
         Images($$renderer2, { class: "h-4 w-4" });
         $$renderer2.push(`<!----></button>`);
       } else $$renderer2.push("<!--[-1-->");
@@ -51387,7 +51460,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.DV5W34w2.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/CLya6AOR.js", "_app/immutable/chunks/DtpI6-TY.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/BVH4e0hY.js", "_app/immutable/chunks/C9uq04a2.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/zdsxJrRT.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/BHSIC6qJ.js"];
+    imports6 = ["_app/immutable/nodes/5.DWfIiG53.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/chunks/D_8DNKJO.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/Cg0Wahbt.js", "_app/immutable/chunks/B_ffQkn9.js", "_app/immutable/chunks/Rpy6H-VI.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/_-EIn4Id.js", "_app/immutable/chunks/C4yFpAq0.js", "_app/immutable/chunks/DKQfRg2-.js", "_app/immutable/chunks/0H2dYM6X.js", "_app/immutable/chunks/DuREBlSJ.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/cgX5krTP.js", "_app/immutable/chunks/ghwa7ed6.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/D0BmsR3m.js", "_app/immutable/chunks/DQ8k0Nin.js", "_app/immutable/chunks/Cq_ZiuY4.js", "_app/immutable/chunks/PhuaCUZ2.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BGtA1vg1.js", "_app/immutable/chunks/CiBQmfy8.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -52176,7 +52249,7 @@ var init__9 = __esm({
     index10 = 8;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
     server_id7 = "src/routes/insights/+page.server.ts";
-    imports9 = ["_app/immutable/nodes/8.rzfHms3E.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/D9PKfT4g.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports9 = ["_app/immutable/nodes/8.DwoqbqdM.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/-lEAv-dx.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/C4yFpAq0.js", "_app/immutable/chunks/BGtA1vg1.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BRkMptyU.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets9 = [];
     fonts9 = [];
   }
@@ -52261,7 +52334,7 @@ var init__10 = __esm({
     index11 = 9;
     component8 = /* @__PURE__ */ __name(async () => component_cache8 ??= (await Promise.resolve().then(() => (init_page_svelte5(), page_svelte_exports5))).default, "component");
     server_id8 = "src/routes/login/+page.server.ts";
-    imports10 = ["_app/immutable/nodes/9.DVmiMRgp.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/CL0Rsr0s.js"];
+    imports10 = ["_app/immutable/nodes/9.Cud24aTe.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/chunks/CL0Rsr0s.js"];
     stylesheets10 = [];
     fonts10 = [];
   }
@@ -52326,7 +52399,7 @@ var init__11 = __esm({
     index12 = 10;
     component9 = /* @__PURE__ */ __name(async () => component_cache9 ??= (await Promise.resolve().then(() => (init_page_svelte6(), page_svelte_exports6))).default, "component");
     server_id9 = "src/routes/login/setup-2fa/+page.server.ts";
-    imports11 = ["_app/immutable/nodes/10.DBGnFvwQ.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js"];
+    imports11 = ["_app/immutable/nodes/10.B4L_kzXN.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js"];
     stylesheets11 = [];
     fonts11 = [];
   }
@@ -52393,7 +52466,7 @@ var init__12 = __esm({
     index13 = 11;
     component10 = /* @__PURE__ */ __name(async () => component_cache10 ??= (await Promise.resolve().then(() => (init_page_svelte7(), page_svelte_exports7))).default, "component");
     server_id10 = "src/routes/login/verify/+page.server.ts";
-    imports12 = ["_app/immutable/nodes/11.DhXz3z4c.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js"];
+    imports12 = ["_app/immutable/nodes/11.cjHIKpAM.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js"];
     stylesheets12 = [];
     fonts12 = [];
   }
@@ -52678,7 +52751,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id12 = "src/routes/p/[token]/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.CCA2OpVB.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/zdsxJrRT.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports14 = ["_app/immutable/nodes/13.CBFnPNDZ.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D0BmsR3m.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/ghwa7ed6.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/Rpy6H-VI.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/C4yFpAq0.js", "_app/immutable/chunks/cgX5krTP.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -53073,6 +53146,14 @@ function _page9($$renderer, $$props) {
       return [...list ?? []].sort((a, b) => (a.segmentIndex ?? 0) - (b.segmentIndex ?? 0) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     }
     __name(sortPostMedia, "sortPostMedia");
+    function cardMedia(body, list) {
+      const media = sortPostMedia(list);
+      return {
+        media,
+        posts: threadPosts(body, media)
+      };
+    }
+    __name(cardMedia, "cardMedia");
     function isProcessing(error64) {
       return (error64 ?? "").includes(PROCESSING_MARK);
     }
@@ -53093,14 +53174,6 @@ function _page9($$renderer, $$props) {
       };
     }
     __name(whenDisplay, "whenDisplay");
-    function threadSegmentCount(body) {
-      try {
-        return Math.max(1, splitThreadSegments(body ?? "").length);
-      } catch {
-        return 1;
-      }
-    }
-    __name(threadSegmentCount, "threadSegmentCount");
     function draftCards() {
       return drafts2.filter((d) => d.status === "draft").map((d) => {
         const body = d.baseBody || d.title || "";
@@ -53133,8 +53206,7 @@ function _page9($$renderer, $$props) {
           targetId: null,
           whenText: whenDisplay(d.updatedAt).text,
           whenTitle: whenDisplay(d.updatedAt).title,
-          media: sortPostMedia(d.media),
-          segmentCount: threadSegmentCount(body)
+          ...cardMedia(body, d.media)
         };
       });
     }
@@ -53195,8 +53267,7 @@ function _page9($$renderer, $$props) {
           targetId: primary.id,
           whenText: whenShown.text,
           whenTitle: whenShown.title,
-          media: sortPostMedia(primary.draft.media),
-          segmentCount: threadSegmentCount(body)
+          ...cardMedia(body, primary.draft.media)
         };
       });
     }
@@ -53263,6 +53334,16 @@ function _page9($$renderer, $$props) {
       list.sort((a, b) => b.sortKey - a.sortKey);
       return list;
     });
+    const threadOpen = new SvelteMap();
+    function isThreadOpen(card) {
+      const chosen = threadOpen.get(card.key);
+      if (chosen !== void 0) return chosen;
+      const q = debouncedQuery.trim().toLowerCase();
+      if (!q) return false;
+      const [lead, ...rest] = card.posts;
+      return !lead.text.toLowerCase().includes(q) && rest.some((p) => p.text.toLowerCase().includes(q));
+    }
+    __name(isThreadOpen, "isThreadOpen");
     function countFor(tab) {
       if (tab === "scheduled") return upcomingCards().length;
       if (tab === "published") return historyCards().length;
@@ -53466,8 +53547,8 @@ function _page9($$renderer, $$props) {
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> <!--[-->`);
     const each_array_3 = ensure_array_like(visible());
-    for (let $$index_6 = 0, $$length = each_array_3.length; $$index_6 < $$length; $$index_6++) {
-      let card = each_array_3[$$index_6];
+    for (let $$index_7 = 0, $$length = each_array_3.length; $$index_7 < $$length; $$index_7++) {
+      let card = each_array_3[$$index_7];
       const badge = statusBadge(card.status);
       $$renderer2.push(`<div class="flex flex-col rounded-[2rem] border border-stone-200/80 bg-white p-5 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] transition-all hover:border-stone-300 hover:shadow-[0_8px_30px_-12px_rgb(28_25_23/0.1)] sm:p-6" data-testid="post-card"${attr("data-status", card.status)}><div class="mb-4 flex items-start justify-between"><div class="flex items-center gap-2"><!--[-->`);
       const each_array_4 = ensure_array_like(card.platforms);
@@ -53526,30 +53607,78 @@ function _page9($$renderer, $$props) {
         Pencil($$renderer2, { class: "h-3 w-3" });
         $$renderer2.push(`<!----> Draft</span>`);
       }
-      $$renderer2.push(`<!--]--></div></div> <p class="mb-5 text-[14px] leading-relaxed font-medium break-words whitespace-pre-wrap text-stone-800">${escape_html(draftExcerpt(card.body, 500))}</p> `);
-      if (card.media.length > 0) {
-        $$renderer2.push("<!--[0-->");
-        const allValid = card.media.filter((m) => m.storageKey);
-        if (allValid.length > 0) {
-          $$renderer2.push(`<!--[0--><div class="mb-5"${attr("data-testid", `post-media-${stringify3(card.key)}`)}>`);
-          MediaPreview($$renderer2, {
-            items: allValid,
-            maxHeight: 280,
-            extra: Math.max(0, allValid.length - 4)
-          });
-          $$renderer2.push(`<!----> `);
-          if (card.segmentCount > 1) $$renderer2.push(`<!--[0--><p class="mt-2 text-[11px] font-bold text-stone-500">Thread \xB7 ${escape_html(card.segmentCount)} posts \xB7 images combined</p>`);
-          else $$renderer2.push("<!--[-1-->");
-          $$renderer2.push(`<!--]--></div>`);
+      $$renderer2.push(`<!--]--></div></div> `);
+      if (card.posts.length < 2) {
+        $$renderer2.push(`<!--[0--><p class="mb-5 text-[14px] leading-relaxed font-medium break-words whitespace-pre-wrap text-stone-800">${escape_html(cardExcerpt(card.posts[0].text))}</p> `);
+        if (card.media.length > 0) {
+          $$renderer2.push("<!--[0-->");
+          const allValid = card.media.filter((m) => m.storageKey);
+          if (allValid.length > 0) {
+            $$renderer2.push(`<!--[0--><div class="mb-5"${attr("data-testid", `post-media-${stringify3(card.key)}`)}>`);
+            MediaPreview($$renderer2, {
+              items: allValid,
+              maxHeight: 280,
+              extra: Math.max(0, allValid.length - 4)
+            });
+            $$renderer2.push(`<!----></div>`);
+          } else $$renderer2.push("<!--[-1-->");
+          $$renderer2.push(`<!--]-->`);
         } else $$renderer2.push("<!--[-1-->");
         $$renderer2.push(`<!--]-->`);
-      } else $$renderer2.push("<!--[-1-->");
+      } else {
+        $$renderer2.push("<!--[-1-->");
+        const [lead, ...rest] = card.posts;
+        const open2 = isThreadOpen(card);
+        const leadMedia = lead.media.filter((m) => m.storageKey);
+        if (lead.text) $$renderer2.push(`<!--[0--><p class="mb-5 text-[14px] leading-relaxed font-medium break-words whitespace-pre-wrap text-stone-800">${escape_html(cardExcerpt(lead.text))}</p>`);
+        else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> `);
+        if (leadMedia.length > 0) {
+          $$renderer2.push(`<!--[0--><div class="mb-5"${attr("data-testid", `post-media-${stringify3(card.key)}`)}>`);
+          MediaPreview($$renderer2, {
+            items: leadMedia,
+            maxHeight: 280,
+            extra: Math.max(0, leadMedia.length - 4)
+          });
+          $$renderer2.push(`<!----></div>`);
+        } else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> `);
+        if (open2) {
+          $$renderer2.push(`<!--[0--><ol${attr("id", `thread-${stringify3(card.key)}`)} class="mb-4 ml-1 flex flex-col gap-4 border-l-2 border-stone-200 pl-4" data-testid="thread-posts"><!--[-->`);
+          const each_array_5 = ensure_array_like(rest);
+          for (let i = 0, $$length2 = each_array_5.length; i < $$length2; i++) {
+            let post = each_array_5[i];
+            const postMedia = post.media.filter((m) => m.storageKey);
+            $$renderer2.push(`<li data-testid="thread-post"><p class="mb-1 text-[11px] font-bold text-stone-400 tabular-nums">${escape_html(i + 2)}/${escape_html(card.posts.length)}</p> `);
+            if (post.text) $$renderer2.push(`<!--[0--><p class="text-[14px] leading-relaxed font-medium break-words whitespace-pre-wrap text-stone-800">${escape_html(cardExcerpt(post.text))}</p>`);
+            else $$renderer2.push("<!--[-1-->");
+            $$renderer2.push(`<!--]--> `);
+            if (postMedia.length > 0) {
+              $$renderer2.push(`<!--[0--><div class="mt-2">`);
+              MediaPreview($$renderer2, {
+                items: postMedia,
+                maxHeight: 160,
+                extra: Math.max(0, postMedia.length - 4)
+              });
+              $$renderer2.push(`<!----></div>`);
+            } else $$renderer2.push("<!--[-1-->");
+            $$renderer2.push(`<!--]--></li>`);
+          }
+          $$renderer2.push(`<!--]--></ol>`);
+        } else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--> <button type="button" class="-mx-1 mb-5 flex items-center gap-1 self-start rounded-lg px-1 py-1 text-xs font-bold text-stone-500 transition-colors hover:text-stone-900 focus-visible:ring-2 focus-visible:ring-stone-900/20 focus-visible:outline-none pointer-coarse:py-2"${attr("aria-expanded", open2)}${attr("aria-controls", `thread-${stringify3(card.key)}`)} data-testid="thread-toggle">`);
+        Chevron_down($$renderer2, {
+          class: `h-3.5 w-3.5 transition-transform ${open2 ? "rotate-180" : ""}`,
+          "aria-hidden": "true"
+        });
+        $$renderer2.push(`<!----> ${escape_html(open2 ? "Show less" : `${rest.length} more ${rest.length === 1 ? "post" : "posts"} in this thread`)}</button>`);
+      }
       $$renderer2.push(`<!--]--> `);
       if (failedOf(card).length > 0) {
         $$renderer2.push(`<!--[0--><div class="mb-4 flex flex-col gap-2 rounded-2xl border border-red-100 bg-red-50/50 p-3"><!--[-->`);
-        const each_array_5 = ensure_array_like(failedOf(card));
-        for (let $$index_4 = 0, $$length2 = each_array_5.length; $$index_4 < $$length2; $$index_4++) {
-          let platform2 = each_array_5[$$index_4];
+        const each_array_6 = ensure_array_like(failedOf(card));
+        for (let $$index_5 = 0, $$length2 = each_array_6.length; $$index_5 < $$length2; $$index_5++) {
+          let platform2 = each_array_6[$$index_5];
           const reconnect = needsReconnect(platform2);
           $$renderer2.push(`<div class="flex items-start justify-between gap-3"><p class="text-xs leading-relaxed text-red-700"><span class="font-bold">${escape_html(platformName(platform2.name))}</span> `);
           if (platform2.handle) $$renderer2.push(`<!--[0--><span class="font-medium opacity-70">\xB7 ${escape_html(displayHandle(platform2.handle))}</span>`);
@@ -53567,9 +53696,9 @@ function _page9($$renderer, $$props) {
         $$renderer2.push(`<!--]--></div>`);
       } else if (retryingOf(card).length > 0) {
         $$renderer2.push(`<!--[1--><div class="mb-4 flex flex-col gap-2 rounded-2xl border border-amber-100 bg-amber-50/60 p-3"><p class="text-xs font-bold text-amber-800">${escape_html(retryingOf(card).every((p) => isProcessing(p.error)) ? "Processing the video \u2014 it publishes on its own." : "Retrying automatically \u2014 no action needed, or retry now.")}</p> <!--[-->`);
-        const each_array_6 = ensure_array_like(retryingOf(card));
-        for (let $$index_5 = 0, $$length2 = each_array_6.length; $$index_5 < $$length2; $$index_5++) {
-          let platform2 = each_array_6[$$index_5];
+        const each_array_7 = ensure_array_like(retryingOf(card));
+        for (let $$index_6 = 0, $$length2 = each_array_7.length; $$index_6 < $$length2; $$index_6++) {
+          let platform2 = each_array_7[$$index_6];
           $$renderer2.push(`<div class="flex items-start justify-between gap-3"><p class="text-xs leading-relaxed text-amber-800"><span class="font-bold">${escape_html(platformName(platform2.name))}</span> <span class="font-medium">\u2014 ${escape_html(humanizeError(platform2.error))}</span></p> `);
           if (platform2.targetId && !isProcessing(platform2.error)) $$renderer2.push(`<!--[0--><div class="flex shrink-0 items-center gap-3"><button type="button"${attr("disabled", busyTarget === platform2.targetId || busy === card.key, true)} class="-my-3 inline-flex min-h-11 items-center text-[12px] font-bold text-stone-900 underline-offset-2 transition-colors hover:underline disabled:opacity-50">${escape_html(busyTarget === platform2.targetId ? "Retrying\u2026" : "Retry now")}</button> <button type="button"${attr("disabled", busyTarget === platform2.targetId || busy === card.key, true)} class="-my-3 inline-flex min-h-11 items-center text-[12px] font-bold text-red-500 underline-offset-2 transition-colors hover:text-red-700 hover:underline disabled:opacity-50">Discard</button></div>`);
           else $$renderer2.push("<!--[-1-->");
@@ -53678,7 +53807,7 @@ function _page9($$renderer, $$props) {
     bind_props($$props, { snapshot });
   });
 }
-var __iconData$32, __iconData$23, __iconData$14, __iconData16, pending, AUTH_ERROR_PATTERN;
+var __iconData$32, __iconData$23, __iconData$14, __iconData16, pending, SvelteMap, AUTH_ERROR_PATTERN;
 var init_page_svelte9 = __esm({
   ".svelte-kit/output/server/entries/pages/posts/_page.svelte.js"() {
     "use strict";
@@ -53766,6 +53895,11 @@ var init_page_svelte9 = __esm({
     __name(Users, "Users");
     pending = null;
     __name(takePostsNotice, "takePostsNotice");
+    globalThis.Date;
+    globalThis.Set;
+    SvelteMap = globalThis.Map;
+    globalThis.URL;
+    globalThis.URLSearchParams;
     AUTH_ERROR_PATTERN = /401|unauthorized|invalid credentials|createsession failed|reconnect|expired|forbidden|403/i;
     __name(isAuthError, "isAuthError");
     __name(needsReconnect, "needsReconnect");
@@ -53796,7 +53930,7 @@ var init__15 = __esm({
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id13 = "src/routes/posts/+page.server.ts";
-    imports15 = ["_app/immutable/nodes/14.D-D-rO2M.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/DtpI6-TY.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/By61rDl3.js", "_app/immutable/chunks/CDL-WMvG.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/MO2eXnrz.js", "_app/immutable/chunks/BHSIC6qJ.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/zdsxJrRT.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BTpSoDTa.js"];
+    imports15 = ["_app/immutable/nodes/14.xQG86Y76.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/chunks/D_8DNKJO.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/B_ffQkn9.js", "_app/immutable/chunks/Rpy6H-VI.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/C4yFpAq0.js", "_app/immutable/chunks/B0KXhste.js", "_app/immutable/chunks/Bv8yLDMg.js", "_app/immutable/chunks/BcuYANAt.js", "_app/immutable/chunks/_-EIn4Id.js", "_app/immutable/chunks/BHis19o9.js", "_app/immutable/chunks/CiBQmfy8.js", "_app/immutable/chunks/cgX5krTP.js", "_app/immutable/chunks/D0BmsR3m.js", "_app/immutable/chunks/ghwa7ed6.js", "_app/immutable/chunks/Cq_ZiuY4.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/PhuaCUZ2.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BRkMptyU.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -57294,7 +57428,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.30.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.30.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57418,7 +57552,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.CEbTVWIS.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/CDL-WMvG.js", "_app/immutable/chunks/C9uq04a2.js", "_app/immutable/chunks/DmxIf2bR.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BHSIC6qJ.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/lyktyNIf.js"];
+    imports16 = ["_app/immutable/nodes/15.BupueMvz.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/chunks/_-EIn4Id.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/DQ8k0Nin.js", "_app/immutable/chunks/Bv8yLDMg.js", "_app/immutable/chunks/0H2dYM6X.js", "_app/immutable/chunks/BPQY0Eon.js", "_app/immutable/chunks/BGtA1vg1.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/CiBQmfy8.js", "_app/immutable/chunks/cgX5krTP.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BRkMptyU.js", "_app/immutable/chunks/lyktyNIf.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -61705,7 +61839,7 @@ var init_server_ts43 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.30.0",
+          version: "1.30.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -72870,7 +73004,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.30.0";
+  const current = options2.current ?? "1.30.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73726,7 +73860,7 @@ var init_server_ts64 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.30.0",
+          version: "1.30.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73935,7 +74069,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.30.0"
+    currentVersion: "1.30.1"
   };
 }
 async function download(ctx, url3) {
@@ -74486,7 +74620,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.i6R8d0nY.js", app: "_app/immutable/entry/app.ra3Yfj1q.js", imports: ["_app/immutable/entry/start.i6R8d0nY.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/C8NUa1si.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/app.ra3Yfj1q.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.BdJIDf6i.js", app: "_app/immutable/entry/app.BY6u5EUr.js", imports: ["_app/immutable/entry/start.BdJIDf6i.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/D-iofGQa.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/entry/app.BY6u5EUr.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
