@@ -39241,7 +39241,7 @@ function visit(schema, fnOrHandlers) {
     return h ? h(node2, rewritten) : node2;
   };
   const cache2 = /* @__PURE__ */ new Map();
-  function run2(s2) {
+  function run3(s2) {
     const cached3 = cache2.get(s2);
     if (cached3 === RESOLVING) {
       return new $ZodLazy({
@@ -39257,7 +39257,7 @@ function visit(schema, fnOrHandlers) {
     cache2.set(s2, mapped);
     return mapped;
   }
-  __name(run2, "run");
+  __name(run3, "run");
   function mapInner(s2) {
     const def = s2._zod.def;
     const kind = def.type;
@@ -39268,21 +39268,21 @@ function visit(schema, fnOrHandlers) {
         let changed = false;
         const newShape = {};
         for (const k of keys) {
-          const mapped = run2(oldShape[k]);
+          const mapped = run3(oldShape[k]);
           if (mapped !== oldShape[k])
             changed = true;
           newShape[k] = mapped;
         }
         let newCatchall = def.catchall;
         if (def.catchall) {
-          newCatchall = run2(def.catchall);
+          newCatchall = run3(def.catchall);
           if (newCatchall !== def.catchall)
             changed = true;
         }
         return changed ? clone(s2, { ...def, shape: newShape, catchall: newCatchall }) : s2;
       }
       case "array": {
-        const mapped = run2(def.element);
+        const mapped = run3(def.element);
         return mapped === def.element ? s2 : clone(s2, { ...def, element: mapped });
       }
       case "tuple": {
@@ -39290,14 +39290,14 @@ function visit(schema, fnOrHandlers) {
         let changed = false;
         const newItems = [];
         for (const item of oldItems) {
-          const mapped = run2(item);
+          const mapped = run3(item);
           if (mapped !== item)
             changed = true;
           newItems.push(mapped);
         }
         let newRest = def.rest;
         if (def.rest) {
-          newRest = run2(def.rest);
+          newRest = run3(def.rest);
           if (newRest !== def.rest)
             changed = true;
         }
@@ -39305,12 +39305,12 @@ function visit(schema, fnOrHandlers) {
       }
       case "record":
       case "map": {
-        const newKey = run2(def.keyType);
-        const newVal = run2(def.valueType);
+        const newKey = run3(def.keyType);
+        const newVal = run3(def.valueType);
         return newKey === def.keyType && newVal === def.valueType ? s2 : clone(s2, { ...def, keyType: newKey, valueType: newVal });
       }
       case "set": {
-        const newVal = run2(def.valueType);
+        const newVal = run3(def.valueType);
         return newVal === def.valueType ? s2 : clone(s2, { ...def, valueType: newVal });
       }
       case "union": {
@@ -39318,7 +39318,7 @@ function visit(schema, fnOrHandlers) {
         let changed = false;
         const newOptions = [];
         for (const opt of oldOptions) {
-          const mapped = run2(opt);
+          const mapped = run3(opt);
           if (mapped !== opt)
             changed = true;
           newOptions.push(mapped);
@@ -39326,8 +39326,8 @@ function visit(schema, fnOrHandlers) {
         return changed ? clone(s2, { ...def, options: newOptions }) : s2;
       }
       case "intersection": {
-        const newLeft = run2(def.left);
-        const newRight = run2(def.right);
+        const newLeft = run3(def.left);
+        const newRight = run3(def.right);
         return newLeft === def.left && newRight === def.right ? s2 : clone(s2, { ...def, left: newLeft, right: newRight });
       }
       case "optional":
@@ -39339,23 +39339,23 @@ function visit(schema, fnOrHandlers) {
       case "nonoptional":
       case "promise":
       case "success": {
-        const newInner = run2(def.innerType);
+        const newInner = run3(def.innerType);
         return newInner === def.innerType ? s2 : clone(s2, { ...def, innerType: newInner });
       }
       case "pipe": {
-        const newIn = run2(def.in);
-        const newOut = run2(def.out);
+        const newIn = run3(def.in);
+        const newOut = run3(def.out);
         return newIn === def.in && newOut === def.out ? s2 : clone(s2, { ...def, in: newIn, out: newOut });
       }
       case "function": {
-        const newInput = run2(def.input);
-        const newOutput = run2(def.output);
+        const newInput = run3(def.input);
+        const newOutput = run3(def.output);
         return newInput === def.input && newOutput === def.output ? s2 : clone(s2, { ...def, input: newInput, output: newOutput });
       }
       case "lazy": {
         const original = def.getter;
         const { _cachedInner, ...rest } = def;
-        return clone(s2, { ...rest, getter: /* @__PURE__ */ __name(() => run2(original()), "getter") });
+        return clone(s2, { ...rest, getter: /* @__PURE__ */ __name(() => run3(original()), "getter") });
       }
       // A leaf by choice: `parts` are regex fragments, not data positions.
       case "template_literal":
@@ -39387,7 +39387,7 @@ function visit(schema, fnOrHandlers) {
     }
   }
   __name(mapInner, "mapInner");
-  return run2(schema);
+  return run3(schema);
 }
 var RESOLVING;
 var init_visit = __esm({
@@ -39813,12 +39813,12 @@ function ensureSchemaOnce(d1) {
   const key = rawBinding(d1);
   const existing = ensuredBindings.get(key);
   if (existing) return existing;
-  const run2 = ensureSchema(d1).catch((err) => {
+  const run3 = ensureSchema(d1).catch((err) => {
     ensuredBindings.delete(key);
     throw err;
   });
-  ensuredBindings.set(key, run2);
-  return run2;
+  ensuredBindings.set(key, run3);
+  return run3;
 }
 async function schemaIsCurrent(d1) {
   try {
@@ -41301,7 +41301,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1794150319496");
+  response.headers.set("x-sveltekit-version", "1794225036347");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -42321,6 +42321,9 @@ function escape_html(value, is_attr) {
   }
   return escaped2 + str.substring(last);
 }
+function run2(fn) {
+  return fn();
+}
 function deferred() {
   var resolve3;
   var reject;
@@ -42700,6 +42703,7 @@ var init_server3 = __esm({
     has_own_property = Object.prototype.hasOwnProperty;
     noop2 = /* @__PURE__ */ __name(() => {
     }, "noop");
+    __name(run2, "run");
     __name(deferred, "deferred");
     __name(fallback, "fallback");
     __name(to_array, "to_array");
@@ -44004,7 +44008,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1paismy";
+  const global = "__sveltekit_79b9z2";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44748,7 +44752,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1paismy";
+  const global = "__sveltekit_79b9z2";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44773,7 +44777,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1794150319496")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1794225036347")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47327,8 +47331,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.BcbfKs4M.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/CLya6AOR.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/MO2eXnrz.js", "_app/immutable/chunks/D9PKfT4g.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/DmxIf2bR.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/BzqdfMN8.js"];
-    stylesheets = ["_app/immutable/assets/0.BoLPfCW_.css"];
+    imports = ["_app/immutable/nodes/0.CbQgUXE3.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/CLya6AOR.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/MO2eXnrz.js", "_app/immutable/chunks/D9PKfT4g.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/DmxIf2bR.js", "_app/immutable/chunks/CL0Rsr0s.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/BzqdfMN8.js"];
+    stylesheets = ["_app/immutable/assets/0.BkuFMySJ.css"];
     fonts = [];
   }
 });
@@ -48093,6 +48097,14 @@ var init_plus = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/dialog-focus.js
+var init_dialog_focus = __esm({
+  ".svelte-kit/output/server/chunks/dialog-focus.js"() {
+    "use strict";
+    init_index_server();
+  }
+});
+
 // .svelte-kit/output/server/chunks/ConfirmDialog.js
 function ConfirmDialog($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
@@ -48119,7 +48131,7 @@ var init_ConfirmDialog = __esm({
   ".svelte-kit/output/server/chunks/ConfirmDialog.js"() {
     "use strict";
     init_server3();
-    init_index_server();
+    init_dialog_focus();
     __name(ConfirmDialog, "ConfirmDialog");
   }
 });
@@ -48475,6 +48487,7 @@ var init_page_svelte2 = __esm({
     init_human_error();
     init_platform_setup();
     init_session_expired();
+    init_dialog_focus();
     init_x_limits();
     __name(_page2, "_page");
   }
@@ -48499,7 +48512,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
     server_id3 = "src/routes/accounts/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.Cb4EGNJ_.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/BVH4e0hY.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/D0u_0LSN.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js"];
+    imports5 = ["_app/immutable/nodes/4.BB4xpgex.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/BVH4e0hY.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/BHSIC6qJ.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -48922,6 +48935,14 @@ var init_user = __esm({
 });
 
 // .svelte-kit/output/server/chunks/MediaPreview.js
+function Chevron_left($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData$2 }]));
+}
+function Chevron_right($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData$12 }]));
+}
 function Play($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData12 }]));
@@ -49003,9 +49024,38 @@ function imageUrl(m, base = MEDIA_BASE) {
   const v = m.meta?.preview?.v;
   return v ? `${mediaUrl(m, base)}?preview=${v}` : mediaUrl(m, base);
 }
+function thumbUrl(m, base = MEDIA_BASE) {
+  const v = m.meta?.thumb?.v;
+  return v ? `${mediaUrl(m, base)}?thumb=${v}` : imageUrl(m, base);
+}
 function coverUrl(m, base = MEDIA_BASE) {
   const v = m.meta?.cover?.v;
   return v ? `${mediaUrl(m, base)}?cover=${v}` : null;
+}
+function MediaViewer($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { items, start = 0, mediaBase = MEDIA_BASE, onClose } = $$props;
+    let index18 = run2(() => start);
+    const item = derived2(() => items[Math.min(index18, items.length - 1)]);
+    const many = derived2(() => items.length > 1);
+    $$renderer2.push(`<div role="presentation" class="fixed inset-0 z-50 touch-pan-y bg-black/95 select-none"><div role="dialog" aria-modal="true"${attr("aria-label", many() ? `Image ${index18 + 1} of ${items.length}` : "Image")} data-testid="media-viewer" class="pointer-events-none absolute inset-0 flex items-center justify-center px-4 py-14 sm:px-16"><button type="button" data-testid="media-viewer-close" class="pointer-events-auto absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20" aria-label="Close">`);
+    X($$renderer2, { class: "h-5 w-5" });
+    $$renderer2.push(`<!----></button> `);
+    if (many()) $$renderer2.push(`<!--[0--><p class="absolute top-5 left-4 text-xs font-bold text-white/70" data-testid="media-viewer-count" aria-hidden="true">${escape_html(index18 + 1)} / ${escape_html(items.length)}</p>`);
+    else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> <figure class="flex w-full flex-col items-center gap-3"><img${attr("src", item().previewUrl || imageUrl(item(), mediaBase))}${attr("alt", item().altText || "")} draggable="false"${attr_class(`pointer-events-auto h-auto max-w-full rounded-lg ${item().altText ? "max-h-[calc(100dvh-13rem)]" : "max-h-[calc(100dvh-7rem)]"}`)}/> `);
+    if (item().altText) $$renderer2.push(`<!--[0--><figcaption class="pointer-events-auto line-clamp-4 max-w-xl text-center text-[13px] leading-relaxed text-white/80" data-testid="media-viewer-alt">${escape_html(item().altText)}</figcaption>`);
+    else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--></figure> `);
+    if (many()) {
+      $$renderer2.push(`<!--[0--><button type="button" data-testid="media-viewer-prev" class="pointer-events-auto absolute top-1/2 left-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-4" aria-label="Previous image">`);
+      Chevron_left($$renderer2, { class: "h-5 w-5" });
+      $$renderer2.push(`<!----></button> <button type="button" data-testid="media-viewer-next" class="pointer-events-auto absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-4" aria-label="Next image">`);
+      Chevron_right($$renderer2, { class: "h-5 w-5" });
+      $$renderer2.push(`<!----></button>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--></div></div>`);
+  });
 }
 function MediaPreview($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
@@ -49013,6 +49063,8 @@ function MediaPreview($$renderer, $$props) {
     let natural = {};
     let playing = null;
     const shown = derived2(() => items.slice(0, 4));
+    const images = derived2(() => items.filter((m) => !isVideoMedia2(m)));
+    let viewing = null;
     const grid = derived2(() => gridFor(shown().length));
     const single = derived2(() => shown().length === 1 ? shown()[0] : null);
     const frame = derived2(() => single() ? frameFor(aspectOf(single()) ?? natural[single().id] ?? null, maxHeight) : frameFor(progress ? null : 16 / 9, maxHeight));
@@ -49046,7 +49098,7 @@ function MediaPreview($$renderer, $$props) {
           $$renderer3.push(`<!--]--></button>`);
         }
         $$renderer3.push(`<!--]-->`);
-      } else $$renderer3.push(`<!--[-1--><img${attr("src", m.previewUrl || imageUrl(m, mediaBase))}${attr("alt", label(m, i))} loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/>`);
+      } else $$renderer3.push(`<!--[-1--><button type="button"${attr("data-testid", `media-view-${stringify3(m.id)}`)} class="block h-full w-full cursor-zoom-in"${attr("aria-label", `View ${label(m, i)}`)}><img${attr("src", m.previewUrl || imageUrl(m, mediaBase))}${attr("alt", label(m, i))} loading="lazy" decoding="async"${attr_class(`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`)} onload="this.__e=event"/></button>`);
       $$renderer3.push(`<!--]--> `);
       if (toolbar) {
         $$renderer3.push(`<!--[0--><div class="absolute top-2 right-2 z-10 flex items-center gap-1.5">`);
@@ -49076,16 +49128,44 @@ function MediaPreview($$renderer, $$props) {
       }
       $$renderer2.push(`<!--]--></div>`);
     }
-    $$renderer2.push(`<!--]--></div>`);
+    $$renderer2.push(`<!--]--></div> `);
+    if (viewing !== null && viewing >= 0 && images().length) {
+      $$renderer2.push(`<!--[0--><div class="contents">`);
+      MediaViewer($$renderer2, {
+        items: images(),
+        start: viewing,
+        mediaBase,
+        onClose: /* @__PURE__ */ __name(() => viewing = null, "onClose")
+      });
+      $$renderer2.push(`<!----></div>`);
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]-->`);
   });
 }
-var __iconData12, MIN_ASPECT, MAX_ASPECT, MEDIA_BASE;
+var __iconData$2, __iconData$12, __iconData12, MIN_ASPECT, MAX_ASPECT, MEDIA_BASE;
 var init_MediaPreview = __esm({
   ".svelte-kit/output/server/chunks/MediaPreview.js"() {
     "use strict";
     init_server3();
     init_Icon();
     init_video_rules();
+    init_index_server();
+    init_x();
+    init_dialog_focus();
+    __iconData$2 = {
+      "name": "chevron-left",
+      "size": 24,
+      "node": [["path", { "d": "m15 18-6-6 6-6" }]]
+    };
+    __iconData$2.node;
+    __name(Chevron_left, "Chevron_left");
+    __iconData$12 = {
+      "name": "chevron-right",
+      "size": 24,
+      "node": [["path", { "d": "m9 18 6-6-6-6" }]]
+    };
+    __iconData$12.node;
+    __name(Chevron_right, "Chevron_right");
     __iconData12 = {
       "name": "play",
       "size": 24,
@@ -49102,7 +49182,9 @@ var init_MediaPreview = __esm({
     MEDIA_BASE = "/api/media";
     __name(mediaUrl, "mediaUrl");
     __name(imageUrl, "imageUrl");
+    __name(thumbUrl, "thumbUrl");
     __name(coverUrl, "coverUrl");
+    __name(MediaViewer, "MediaViewer");
     __name(MediaPreview, "MediaPreview");
   }
 });
@@ -49250,17 +49332,25 @@ __export(page_svelte_exports3, {
 });
 function Calendar($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$8 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$10 }]));
 }
 function Chevron_up($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$7 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$9 }]));
 }
 function Circle_exclamation_point($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$6 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$8 }]));
+}
+function Image_off($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData$7 }]));
 }
 function Image($$renderer, $$props) {
+  let { $$slots, $$events, ...props } = $$props;
+  Icon($$renderer, spread_props([props, { icon: __iconData$6 }]));
+}
+function Images($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData$5 }]));
 }
@@ -49274,11 +49364,11 @@ function Link_2($$renderer, $$props) {
 }
 function Quote($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$2 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$22 }]));
 }
 function Settings($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$12 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$13 }]));
 }
 function Trash($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
@@ -49331,6 +49421,77 @@ function MediaFit($$renderer, $$props) {
       $$renderer2.push(`<!--]--></ul>`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]-->`);
+  });
+}
+function MediaLibrary($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { card, busy = false, onAttach, onClose } = $$props;
+    let files = [];
+    let picked = [];
+    let broken = [];
+    const isVideo2 = /* @__PURE__ */ __name((f) => f.mime.toLowerCase().startsWith("video/"), "isVideo");
+    const isAnimated = /* @__PURE__ */ __name((f) => f.mime.toLowerCase() === "image/gif" || Boolean(f.meta?.animated), "isAnimated");
+    const pickedFiles = derived2(() => picked.flatMap((key) => files.filter((f) => f.storageKey === key).slice(0, 1)));
+    const pickedVideo = derived2(() => pickedFiles().some(isVideo2));
+    function blocked(f) {
+      if (picked.includes(f.storageKey)) return null;
+      if (broken.includes(f.storageKey)) return "This file could not be loaded";
+      if (card.video) return "This post has a video, which goes on its own";
+      if (isVideo2(f)) {
+        if (card.images > 0) return "A video needs a post of its own";
+        if (picked.length) return "A video goes on its own";
+        return null;
+      }
+      if (pickedVideo()) return "A video goes on its own";
+      if (picked.length >= card.room) return card.room > 0 ? `A post takes at most 4 images` : "This post is full";
+      return null;
+    }
+    __name(blocked, "blocked");
+    const describe3 = /* @__PURE__ */ __name((f) => f.altText || (isVideo2(f) ? "Video without a description" : "Image without alt text"), "describe");
+    const attachLabel = derived2(() => busy ? "Attaching\u2026" : picked.length > 1 ? `Attach ${picked.length}` : pickedVideo() ? "Attach video" : "Attach");
+    $$renderer2.push(`<div role="presentation" class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"><div role="dialog" aria-modal="true" aria-labelledby="media-library-title" aria-describedby="media-library-body" data-testid="media-library" class="flex max-h-[90dvh] w-full max-w-lg flex-col rounded-[1.5rem] border border-stone-200/80 bg-white/95 p-5 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl"><h2 id="media-library-title" class="text-sm font-semibold">Your media</h2> <p id="media-library-body" class="mt-1 text-xs text-[var(--muted)]">Images and videos used in your posts. Attaching one stores nothing new, and you can change its
+			alt text in this post without changing the others.</p> <div class="mt-3 min-h-0 flex-1 overflow-y-auto">`);
+    {
+      $$renderer2.push(`<!--[-1--><ul class="grid grid-cols-3 gap-2 sm:grid-cols-4" aria-label="Your media"><!--[-->`);
+      const each_array = ensure_array_like(files);
+      for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+        let f = each_array[$$index];
+        const reason = blocked(f);
+        const on = picked.includes(f.storageKey);
+        const cover = isVideo2(f) ? coverUrl(f) : null;
+        $$renderer2.push(`<li><button type="button" data-testid="media-library-file"${attr("data-key", f.storageKey)}${attr("aria-pressed", on)}${attr("aria-label", reason ? `${describe3(f)}. ${reason}` : describe3(f))}${attr("title", reason ?? f.altText ?? void 0)}${attr("disabled", Boolean(reason) || busy, true)} class="relative block aspect-square w-full overflow-hidden rounded-xl border border-stone-200/80 bg-stone-100 transition hover:border-stone-400 disabled:cursor-not-allowed disabled:opacity-40">`);
+        if (broken.includes(f.storageKey)) {
+          $$renderer2.push(`<!--[0--><span class="flex h-full w-full items-center justify-center text-stone-400">`);
+          Image_off($$renderer2, { class: "h-5 w-5" });
+          $$renderer2.push(`<!----></span>`);
+        } else if (isVideo2(f)) {
+          $$renderer2.push("<!--[1-->");
+          if (cover) $$renderer2.push(`<!--[0--><img${attr("src", cover)} alt="" loading="lazy" class="h-full w-full object-cover" onerror="this.__e=event"/>`);
+          else $$renderer2.push(`<!--[-1--><span class="block h-full w-full bg-stone-800"></span>`);
+          $$renderer2.push(`<!--]--> <span class="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">`);
+          Play($$renderer2, { class: "h-2.5 w-2.5 fill-current" });
+          $$renderer2.push(`<!----> ${escape_html(f.meta?.durationMs ? formatDuration(f.meta.durationMs) : "Video")}</span>`);
+        } else {
+          $$renderer2.push(`<!--[-1--><img${attr("src", thumbUrl(f))} alt="" loading="lazy" class="h-full w-full object-cover" onerror="this.__e=event"/> `);
+          if (isAnimated(f)) $$renderer2.push(`<!--[0--><span class="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">GIF</span>`);
+          else $$renderer2.push("<!--[-1-->");
+          $$renderer2.push(`<!--]-->`);
+        }
+        $$renderer2.push(`<!--]--> `);
+        if (on) {
+          $$renderer2.push(`<!--[0--><span class="pointer-events-none absolute inset-0 rounded-xl ring-3 ring-stone-900 ring-inset"></span> <span class="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-stone-900 text-white">`);
+          Check2($$renderer2, { class: "h-3 w-3" });
+          $$renderer2.push(`<!----></span>`);
+        } else $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<!--]--></button></li>`);
+      }
+      $$renderer2.push(`<!--]--></ul> `);
+      $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<!--]-->`);
+    }
+    $$renderer2.push(`<!--]--> `);
+    $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--></div> <div class="mt-4 flex items-center justify-end gap-2"><button type="button"${attr("disabled", busy, true)} class="rounded-full border border-stone-200 px-4 py-1.5 text-sm font-bold text-stone-500 hover:border-stone-300 hover:text-stone-900 disabled:opacity-50">Cancel</button> <button type="button" data-testid="media-library-attach"${attr("disabled", !picked.length || busy, true)} class="rounded-full bg-stone-900 px-4 py-1.5 text-sm font-bold text-white hover:bg-stone-800 disabled:opacity-50">${escape_html(attachLabel())}</button></div></div></div>`);
   });
 }
 function SharePreview($$renderer, $$props) {
@@ -49569,6 +49730,8 @@ function Editor($$renderer, $$props) {
     let videoJobs = [];
     let coverFor = null;
     let coverBusy = false;
+    let libraryFor = null;
+    let libraryBusy = false;
     let dirty = false;
     let loadFailedId = null;
     let mediaSync = Promise.resolve();
@@ -50188,6 +50351,59 @@ function Editor($$renderer, $$props) {
     const minSchedDate = derived2(() => {
       return minScheduleDatetime(/* @__PURE__ */ new Date()).slice(0, 10);
     });
+    function libraryCard(segmentIndex) {
+      const onCard = mediaBySegment().get(segmentIndex) ?? [];
+      const video = onCard.some(isVideoItem) || videoJobs.some((job) => job.segmentIndex === segmentIndex);
+      return {
+        images: onCard.filter((m) => !isVideoItem(m)).length,
+        video,
+        room: video ? 0 : Math.max(0, 4 - onCard.length)
+      };
+    }
+    __name(libraryCard, "libraryCard");
+    async function attachFromLibrary(segmentIndex, files) {
+      if (editLocked() || !files.length || libraryBusy) return;
+      libraryBusy = true;
+      uploadingSegment = segmentIndex;
+      const generation = editorGeneration;
+      const added = [];
+      let failure3 = null;
+      try {
+        const id2 = await persistAll(true);
+        if (!id2) throw new Error("Could not create draft for upload");
+        for (const file2 of files) {
+          const res = await fetch(`/api/drafts/${id2}/media/reuse`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              storageKey: file2.storageKey,
+              segmentIndex
+            })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "Could not attach that file");
+          added.push(data.media);
+        }
+      } catch (e) {
+        failure3 = humanizeError(e instanceof Error ? e.message : "Could not attach that file");
+      } finally {
+        libraryBusy = false;
+        libraryFor = null;
+        uploadingSegment = null;
+      }
+      if (generation !== editorGeneration) return;
+      if (added.length) media = [...media, ...added.map((it) => ({
+        ...it,
+        segmentIndex: it.segmentIndex ?? segmentIndex
+      }))];
+      if (failure3) {
+        showToast(failure3, "error");
+        return;
+      }
+      const video = added.some(isVideoItem);
+      showToast(video ? "Video attached" : added.length === 1 ? "Image attached" : `${added.length} images attached`, "success");
+    }
+    __name(attachFromLibrary, "attachFromLibrary");
     async function saveCover(mediaId, jpeg, atMs) {
       if (!draftId) return;
       const query = new URLSearchParams({ mediaId });
@@ -50737,7 +50953,9 @@ function Editor($$renderer, $$props) {
       if (!editLocked()) {
         $$renderer2.push(`<!--[0--><button type="button"${attr("data-testid", `attach-image-${stringify3(index18)}`)}${attr("disabled", uploadingSegment === index18, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", uploadingSegment === index18 ? `Uploading to post ${index18 + 1}` : `Add image to post ${index18 + 1}`)}${attr("title", uploadingSegment === index18 ? "Uploading\u2026" : "Add Image")}>`);
         Image($$renderer2, { class: "h-4 w-4" });
-        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA)} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index18)}`)}/>`);
+        $$renderer2.push(`<!----></button> <input type="file"${attr("accept", ACCEPTED_MEDIA)} multiple="" class="hidden"${attr("data-testid", `file-input-${stringify3(index18)}`)}/> <button type="button"${attr("data-testid", `library-${stringify3(index18)}`)}${attr("disabled", uploadingSegment === index18, true)} class="flex items-center justify-center rounded-lg p-1.5 text-stone-500 opacity-0 transition-all group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-40 pointer-coarse:opacity-100"${attr("aria-label", `Choose from your media for post ${index18 + 1}`)} title="Your media">`);
+        Images($$renderer2, { class: "h-4 w-4" });
+        $$renderer2.push(`<!----></button>`);
       } else $$renderer2.push("<!--[-1-->");
       $$renderer2.push(`<!--]--> <div${attr("data-testid", `segment-count-${stringify3(index18)}`)}${attr_class(`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider transition-colors ${isOver ? "border border-red-100 bg-red-50 text-red-600" : "border border-stone-100 bg-stone-50 text-stone-500"}`)}>${escape_html(segLen)}/${escape_html(maxChars())}</div></div></div></div></div>`);
     }
@@ -50850,6 +51068,19 @@ function Editor($$renderer, $$props) {
       $$renderer2.push(`<!--]-->`);
     } else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--> `);
+    if (libraryFor !== null && !editLocked()) {
+      $$renderer2.push("<!--[0-->");
+      const card = libraryFor;
+      MediaLibrary($$renderer2, {
+        card: libraryCard(card),
+        busy: libraryBusy,
+        onAttach: /* @__PURE__ */ __name((files) => void attachFromLibrary(card, files), "onAttach"),
+        onClose: /* @__PURE__ */ __name(() => {
+          if (!libraryBusy) libraryFor = null;
+        }, "onClose")
+      });
+    } else $$renderer2.push("<!--[-1-->");
+    $$renderer2.push(`<!--]--> `);
     ConfirmDialog($$renderer2, {
       open: isDiscardOpen,
       idPrefix: "discard-draft-dialog",
@@ -50882,7 +51113,7 @@ function _page3($$renderer, $$props) {
     });
   });
 }
-var __iconData$8, __iconData$7, __iconData$6, __iconData$5, __iconData$4, __iconData$3, __iconData$2, __iconData$12, __iconData13, PLATFORM_LIMITS;
+var __iconData$10, __iconData$9, __iconData$8, __iconData$7, __iconData$6, __iconData$5, __iconData$4, __iconData$3, __iconData$22, __iconData$13, __iconData13, PLATFORM_LIMITS;
 var init_page_svelte3 = __esm({
   ".svelte-kit/output/server/entries/pages/compose/_page.svelte.js"() {
     "use strict";
@@ -50898,7 +51129,7 @@ var init_page_svelte3 = __esm({
     init_user();
     init_x_limits();
     init_human_error();
-    init_ConfirmDialog();
+    init_dialog_focus();
     init_initials();
     init_media_limits();
     init_video_rules();
@@ -50919,7 +51150,8 @@ var init_page_svelte3 = __esm({
     init_SocialIcon();
     init_links();
     init_AccountAvatar();
-    __iconData$8 = {
+    init_ConfirmDialog();
+    __iconData$10 = {
       "name": "calendar",
       "size": 24,
       "node": [
@@ -50935,16 +51167,16 @@ var init_page_svelte3 = __esm({
         ["path", { "d": "M3 9h18" }]
       ]
     };
-    __iconData$8.node;
+    __iconData$10.node;
     __name(Calendar, "Calendar");
-    __iconData$7 = {
+    __iconData$9 = {
       "name": "chevron-up",
       "size": 24,
       "node": [["path", { "d": "m18 15-6-6-6 6" }]]
     };
-    __iconData$7.node;
+    __iconData$9.node;
     __name(Chevron_up, "Chevron_up");
-    __iconData$6 = {
+    __iconData$8 = {
       "name": "circle-exclamation-point",
       "size": 24,
       "node": [
@@ -50968,9 +51200,38 @@ var init_page_svelte3 = __esm({
       ],
       "aliases": ["alert-circle", "circle-alert"]
     };
-    __iconData$6.node;
+    __iconData$8.node;
     __name(Circle_exclamation_point, "Circle_exclamation_point");
-    __iconData$5 = {
+    __iconData$7 = {
+      "name": "image-off",
+      "size": 24,
+      "node": [
+        ["line", {
+          "x1": "2",
+          "x2": "22",
+          "y1": "2",
+          "y2": "22"
+        }],
+        ["path", { "d": "M10.41 10.41a2 2 0 1 1-2.83-2.83" }],
+        ["line", {
+          "x1": "13.5",
+          "x2": "6",
+          "y1": "13.5",
+          "y2": "21"
+        }],
+        ["line", {
+          "x1": "18",
+          "x2": "21",
+          "y1": "12",
+          "y2": "15"
+        }],
+        ["path", { "d": "M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59" }],
+        ["path", { "d": "M21 15V5a2 2 0 0 0-2-2H9" }]
+      ]
+    };
+    __iconData$7.node;
+    __name(Image_off, "Image_off");
+    __iconData$6 = {
       "name": "image",
       "size": 24,
       "node": [
@@ -50990,8 +51251,31 @@ var init_page_svelte3 = __esm({
         ["path", { "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" }]
       ]
     };
-    __iconData$5.node;
+    __iconData$6.node;
     __name(Image, "Image");
+    __iconData$5 = {
+      "name": "images",
+      "size": 24,
+      "node": [
+        ["path", { "d": "m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16" }],
+        ["path", { "d": "M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2" }],
+        ["circle", {
+          "cx": "13",
+          "cy": "7",
+          "r": "1",
+          "fill": "currentColor"
+        }],
+        ["rect", {
+          "x": "8",
+          "y": "2",
+          "width": "14",
+          "height": "14",
+          "rx": "2"
+        }]
+      ]
+    };
+    __iconData$5.node;
+    __name(Images, "Images");
     __iconData$4 = {
       "name": "link-2-off",
       "size": 24,
@@ -51030,14 +51314,14 @@ var init_page_svelte3 = __esm({
     };
     __iconData$3.node;
     __name(Link_2, "Link_2");
-    __iconData$2 = {
+    __iconData$22 = {
       "name": "quote",
       "size": 24,
       "node": [["path", { "d": "M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z" }], ["path", { "d": "M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z" }]]
     };
-    __iconData$2.node;
+    __iconData$22.node;
     __name(Quote, "Quote");
-    __iconData$12 = {
+    __iconData$13 = {
       "name": "settings",
       "size": 24,
       "node": [["path", { "d": "M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" }], ["circle", {
@@ -51046,7 +51330,7 @@ var init_page_svelte3 = __esm({
         "r": "3"
       }]]
     };
-    __iconData$12.node;
+    __iconData$13.node;
     __name(Settings, "Settings");
     __iconData13 = {
       "name": "trash",
@@ -51073,6 +51357,7 @@ var init_page_svelte3 = __esm({
     __name(platformLimit, "platformLimit");
     __name(isOverSelectedPlatformLimit, "isOverSelectedPlatformLimit");
     __name(MediaFit, "MediaFit");
+    __name(MediaLibrary, "MediaLibrary");
     __name(SharePreview, "SharePreview");
     __name(VideoCover, "VideoCover");
     __name(LinkPreview, "LinkPreview");
@@ -51102,7 +51387,7 @@ var init__6 = __esm({
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports6 = ["_app/immutable/nodes/5.CmY2ANcE.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/CLya6AOR.js", "_app/immutable/chunks/DtpI6-TY.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/BVH4e0hY.js", "_app/immutable/chunks/C9uq04a2.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/D0u_0LSN.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/RYJgHCdq.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DuMNcp0T.js"];
+    imports6 = ["_app/immutable/nodes/5.DV5W34w2.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/CLya6AOR.js", "_app/immutable/chunks/DtpI6-TY.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/BVH4e0hY.js", "_app/immutable/chunks/C9uq04a2.js", "_app/immutable/chunks/lkPls6Xs.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/zdsxJrRT.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/BHSIC6qJ.js"];
     stylesheets6 = [];
     fonts6 = [];
   }
@@ -52393,7 +52678,7 @@ var init__14 = __esm({
     index15 = 13;
     component11 = /* @__PURE__ */ __name(async () => component_cache11 ??= (await Promise.resolve().then(() => (init_page_svelte8(), page_svelte_exports8))).default, "component");
     server_id12 = "src/routes/p/[token]/+page.server.ts";
-    imports14 = ["_app/immutable/nodes/13.CTfapDl4.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/RYJgHCdq.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/B3an5izS.js"];
+    imports14 = ["_app/immutable/nodes/13.CCA2OpVB.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/zdsxJrRT.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/B3an5izS.js"];
     stylesheets14 = [];
     fonts14 = [];
   }
@@ -52632,11 +52917,11 @@ function Calendar_clock($$renderer, $$props) {
 }
 function Refresh_cw($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$22 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$23 }]));
 }
 function Search($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
-  Icon($$renderer, spread_props([props, { icon: __iconData$13 }]));
+  Icon($$renderer, spread_props([props, { icon: __iconData$14 }]));
 }
 function Users($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
@@ -53393,7 +53678,7 @@ function _page9($$renderer, $$props) {
     bind_props($$props, { snapshot });
   });
 }
-var __iconData$32, __iconData$22, __iconData$13, __iconData16, pending, AUTH_ERROR_PATTERN;
+var __iconData$32, __iconData$23, __iconData$14, __iconData16, pending, AUTH_ERROR_PATTERN;
 var init_page_svelte9 = __esm({
   ".svelte-kit/output/server/entries/pages/posts/_page.svelte.js"() {
     "use strict";
@@ -53440,7 +53725,7 @@ var init_page_svelte9 = __esm({
     };
     __iconData$32.node;
     __name(Calendar_clock, "Calendar_clock");
-    __iconData$22 = {
+    __iconData$23 = {
       "name": "refresh-cw",
       "size": 24,
       "node": [
@@ -53450,9 +53735,9 @@ var init_page_svelte9 = __esm({
         ["path", { "d": "M8 16H3v5" }]
       ]
     };
-    __iconData$22.node;
+    __iconData$23.node;
     __name(Refresh_cw, "Refresh_cw");
-    __iconData$13 = {
+    __iconData$14 = {
       "name": "search",
       "size": 24,
       "node": [["path", { "d": "m21 21-4.34-4.34" }], ["circle", {
@@ -53461,7 +53746,7 @@ var init_page_svelte9 = __esm({
         "r": "8"
       }]]
     };
-    __iconData$13.node;
+    __iconData$14.node;
     __name(Search, "Search");
     __iconData16 = {
       "name": "users",
@@ -53511,7 +53796,7 @@ var init__15 = __esm({
     index16 = 14;
     component12 = /* @__PURE__ */ __name(async () => component_cache12 ??= (await Promise.resolve().then(() => (init_page_svelte9(), page_svelte_exports9))).default, "component");
     server_id13 = "src/routes/posts/+page.server.ts";
-    imports15 = ["_app/immutable/nodes/14.B9QLQ0Qk.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/DtpI6-TY.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/By61rDl3.js", "_app/immutable/chunks/CDL-WMvG.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/MO2eXnrz.js", "_app/immutable/chunks/D0u_0LSN.js", "_app/immutable/chunks/RYJgHCdq.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BTpSoDTa.js"];
+    imports15 = ["_app/immutable/nodes/14.D-D-rO2M.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/B4ZfKWh4.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/DtpI6-TY.js", "_app/immutable/chunks/DR2njzuZ.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/B3an5izS.js", "_app/immutable/chunks/BzqdfMN8.js", "_app/immutable/chunks/By61rDl3.js", "_app/immutable/chunks/CDL-WMvG.js", "_app/immutable/chunks/VEpHhVgw.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/MO2eXnrz.js", "_app/immutable/chunks/BHSIC6qJ.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/zdsxJrRT.js", "_app/immutable/chunks/CSUlloSj.js", "_app/immutable/chunks/BQEYSuV9.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/P91-4P_l.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BTpSoDTa.js"];
     stylesheets15 = [];
     fonts15 = [];
   }
@@ -57009,7 +57294,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.29.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.30.0")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57133,7 +57418,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.zePdnpAp.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/CDL-WMvG.js", "_app/immutable/chunks/C9uq04a2.js", "_app/immutable/chunks/DmxIf2bR.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/D0u_0LSN.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/lyktyNIf.js"];
+    imports16 = ["_app/immutable/nodes/15.CEbTVWIS.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/chunks/COctbDdp.js", "_app/immutable/chunks/DzQNyL5Q.js", "_app/immutable/chunks/C09IOqmE.js", "_app/immutable/chunks/CDL-WMvG.js", "_app/immutable/chunks/C9uq04a2.js", "_app/immutable/chunks/DmxIf2bR.js", "_app/immutable/chunks/DuMNcp0T.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/BHSIC6qJ.js", "_app/immutable/chunks/DbF3o91P.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BTpSoDTa.js", "_app/immutable/chunks/lyktyNIf.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -59621,17 +59906,24 @@ async function overUserFileCap(db, userId, adding) {
   }
   return keys.size + adding > MAX_FILES_PER_USER;
 }
-async function videoSlotProblem(locals, draft, segmentIndex) {
+async function cardRoomProblem(locals, draft, segmentIndex, adding) {
   const problem = await segmentProblem(locals, draft, segmentIndex);
   if (problem) return fail(problem, 400);
   const existing = await locals.db.select().from(draftMedia).where(eq(draftMedia.draftId, draft.id));
   if (existing.length + 1 > 32) return fail(`Max 32 files per draft`, 413);
-  if (await overUserFileCap(locals.db, draft.userId, 1)) return fail(`Max ${MAX_FILES_PER_USER} files per account`, 413);
+  if (adding.storesFile && await overUserFileCap(locals.db, draft.userId, 1)) return fail(`Max ${MAX_FILES_PER_USER} files per account`, 413);
   const onSegment = existing.filter((m) => (m.segmentIndex ?? 0) === segmentIndex);
   if (onSegment.length >= 4) return fail(`Max 4 images per post`);
   const videos = onSegment.filter(isVideoRow).length;
-  const mix = videoMixProblem(videos + 1, onSegment.length - videos);
+  const images = onSegment.length - videos;
+  const mix = adding.video ? videoMixProblem(videos + 1, images) : videoMixProblem(videos, images + 1);
   return mix ? fail(mix) : null;
+}
+function videoSlotProblem(locals, draft, segmentIndex) {
+  return cardRoomProblem(locals, draft, segmentIndex, {
+    video: true,
+    storesFile: true
+  });
 }
 var MAX_SEGMENT_INDEX, MAX_ALT_LENGTH, MAX_FILES_PER_USER, isVideoRow;
 var init_draft_media = __esm({
@@ -59654,6 +59946,7 @@ var init_draft_media = __esm({
     __name(segmentProblem, "segmentProblem");
     __name(overUserFileCap, "overUserFileCap");
     isVideoRow = /* @__PURE__ */ __name((m) => (m.mime || "").toLowerCase().startsWith("video/"), "isVideoRow");
+    __name(cardRoomProblem, "cardRoomProblem");
     __name(videoSlotProblem, "videoSlotProblem");
   }
 });
@@ -60554,6 +60847,7 @@ var init_server_ts33 = __esm({
         const files = [];
         const previews = [];
         const jpegs = [];
+        const thumbs = [];
         const fileField = /* @__PURE__ */ __name((name) => {
           const value = form.get(name);
           return value instanceof File && value.size > 0 ? value : null;
@@ -60563,6 +60857,7 @@ var init_server_ts33 = __esm({
           files.push(entry);
           previews.push(fileField(`preview-${n}`));
           jpegs.push(fileField(`jpeg-${n}`));
+          thumbs.push(fileField(`thumb-${n}`));
         });
         if (!files.length) return fail("file required");
         for (const f of files) {
@@ -60600,6 +60895,7 @@ var init_server_ts33 = __esm({
             if (saved.mime === "image/webp" && isAnimatedWebpBytes(bytes)) imageMeta.animated = true;
             if (await saveJpegVariant(locals, previewKey(key), previews[i], 1e6)) imageMeta.preview = { v };
             if (saved.mime !== "image/jpeg" && await saveJpegVariant(locals, jpegKey(key), jpegs[i], 8e6)) imageMeta.jpeg = { v };
+            if (await saveJpegVariant(locals, thumbCacheKey(key), thumbs[i], 2e5)) imageMeta.thumb = { v };
           }
           let media;
           try {
@@ -60804,6 +61100,158 @@ var init_server_ts34 = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/media-library.js
+function isSafeKey(key) {
+  try {
+    assertSafeStorageKey(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function parseLibraryCursor(raw) {
+  if (!raw) return null;
+  const at = raw.indexOf(":");
+  const ms = Number(raw.slice(0, at));
+  const key = raw.slice(at + 1);
+  if (at <= 0 || !Number.isSafeInteger(ms) || !key || key.length > 256) throw Object.assign(/* @__PURE__ */ new Error("Invalid cursor"), { status: 400 });
+  return {
+    ms,
+    key
+  };
+}
+async function listMediaLibrary(db, userId, opts) {
+  const { before } = opts;
+  const keyRows = await db.select({
+    storageKey: draftMedia.storageKey,
+    lastUsed
+  }).from(draftMedia).innerJoin(drafts, eq(drafts.id, draftMedia.draftId)).where(eq(drafts.userId, userId)).groupBy(draftMedia.storageKey).having(before ? sql`${lastUsed} < ${before.ms} or (${lastUsed} = ${before.ms} and ${draftMedia.storageKey} < ${before.key})` : void 0).orderBy(desc(lastUsed), desc(draftMedia.storageKey)).limit(opts.limit + 1);
+  const page2 = keyRows.slice(0, opts.limit);
+  const last = page2.at(-1);
+  const next = keyRows.length > opts.limit && last ? `${last.lastUsed}:${last.storageKey}` : null;
+  const keys = page2.map((r2) => r2.storageKey).filter(isSafeKey);
+  const newest = /* @__PURE__ */ new Map();
+  for (const chunk of chunkIds(keys, 90)) {
+    const rows = await db.select(getTableColumns(draftMedia)).from(draftMedia).innerJoin(drafts, eq(drafts.id, draftMedia.draftId)).where(and(eq(drafts.userId, userId), inArray(draftMedia.storageKey, chunk)));
+    for (const row of rows) {
+      const seen = newest.get(row.storageKey);
+      if (!seen || newer(row, seen) > 0) newest.set(row.storageKey, row);
+    }
+  }
+  return {
+    items: keys.flatMap((key) => {
+      const row = newest.get(key);
+      if (!row) return [];
+      return [{
+        storageKey: row.storageKey,
+        mime: row.mime,
+        size: row.size,
+        width: row.width,
+        height: row.height,
+        altText: row.altText,
+        meta: row.metaJson ? parseJson(row.metaJson, {}) : null,
+        lastUsedAt: row.createdAt
+      }];
+    }),
+    next
+  };
+}
+async function newestUseOf(db, userId, storageKey) {
+  return first(db.select(getTableColumns(draftMedia)).from(draftMedia).innerJoin(drafts, eq(drafts.id, draftMedia.draftId)).where(and(eq(drafts.userId, userId), eq(draftMedia.storageKey, storageKey))).orderBy(desc(draftMedia.createdAt), desc(draftMedia.id)).limit(1));
+}
+var lastUsed, newer;
+var init_media_library = __esm({
+  ".svelte-kit/output/server/chunks/media-library.js"() {
+    "use strict";
+    init_client();
+    init_media();
+    init_drizzle_orm();
+    lastUsed = sql`max(${draftMedia.createdAt})`.mapWith(Number);
+    __name(isSafeKey, "isSafeKey");
+    __name(parseLibraryCursor, "parseLibraryCursor");
+    newer = /* @__PURE__ */ __name((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id > b.id ? 1 : -1), "newer");
+    __name(listMediaLibrary, "listMediaLibrary");
+    __name(newestUseOf, "newestUseOf");
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/reuse/_server.ts.js
+var server_ts_exports35 = {};
+__export(server_ts_exports35, {
+  POST: () => POST21
+});
+var NOT_FOUND, POST21;
+var init_server_ts35 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/reuse/_server.ts.js"() {
+    "use strict";
+    init_client();
+    init_draft_media();
+    init_http();
+    init_media();
+    init_media_library();
+    init_require();
+    init_serialize();
+    init_drizzle_orm();
+    NOT_FOUND = "File not found in your posts";
+    POST21 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+      try {
+        const user = requireUser(locals.user);
+        requireScope(locals, "write");
+        let body;
+        try {
+          body = await request2.json();
+        } catch {
+          return fail("Invalid JSON");
+        }
+        if (!body || typeof body !== "object" || Array.isArray(body)) return fail("Invalid JSON");
+        if (typeof body.storageKey !== "string" || !body.storageKey) return fail("storageKey required");
+        const draft = await ownDraft(locals, params.id, user.id);
+        if (!draft) return fail("Not found", 404);
+        const busy = await rejectIfNotEditable(locals.db, params.id);
+        if (busy) return busy;
+        const source = await newestUseOf(locals.db, user.id, body.storageKey);
+        if (!source) return fail(NOT_FOUND, 404);
+        try {
+          assertSafeStorageKey(source.storageKey);
+        } catch {
+          return fail(NOT_FOUND, 404);
+        }
+        const segmentIndex = parseSegmentIndex(body.segmentIndex);
+        const video = (source.mime || "").toLowerCase().startsWith("video/");
+        const problem = await cardRoomProblem(locals, draft, segmentIndex, {
+          video,
+          storesFile: false
+        });
+        if (problem) return problem;
+        const stored = /* @__PURE__ */ __name(async () => !locals.media.size || await locals.media.size(source.storageKey) !== null, "stored");
+        if (!await stored()) return fail("This file is no longer stored", 404);
+        const siblings = await locals.db.select({ id: draftMedia.id }).from(draftMedia).where(and(eq(draftMedia.draftId, params.id), eq(draftMedia.segmentIndex, segmentIndex)));
+        const [media] = await locals.db.insert(draftMedia).values({
+          id: newId(),
+          draftId: params.id,
+          storageKey: source.storageKey,
+          mime: source.mime,
+          size: source.size,
+          width: source.width,
+          height: source.height,
+          metaJson: source.metaJson,
+          altText: body.altText === void 0 ? source.altText : cleanAltText(body.altText),
+          sortOrder: siblings.length,
+          segmentIndex,
+          createdAt: /* @__PURE__ */ new Date()
+        }).returning();
+        if (!await stored()) {
+          await locals.db.delete(draftMedia).where(eq(draftMedia.id, media.id));
+          return fail("This file was deleted while it was being attached", 409);
+        }
+        return ok({ media: serializeMedia(media) }, 201);
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "POST");
+  }
+});
+
 // .svelte-kit/output/server/chunks/media-uploads.js
 async function signingKey2(secret) {
   return hmacHex(secret, "subkey:media-upload:v1");
@@ -60872,10 +61320,10 @@ var init_media_uploads = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js
-var server_ts_exports35 = {};
-__export(server_ts_exports35, {
+var server_ts_exports36 = {};
+__export(server_ts_exports36, {
   DELETE: () => DELETE6,
-  POST: () => POST21
+  POST: () => POST22
 });
 async function readJson(request2) {
   try {
@@ -60885,8 +61333,8 @@ async function readJson(request2) {
     return null;
   }
 }
-var POST21, DELETE6;
-var init_server_ts35 = __esm({
+var POST22, DELETE6;
+var init_server_ts36 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/_server.ts.js"() {
     "use strict";
     init_media_limits();
@@ -60895,7 +61343,7 @@ var init_server_ts35 = __esm({
     init_media_uploads();
     init_require();
     __name(readJson, "readJson");
-    POST21 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST22 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -60953,9 +61401,9 @@ var init_server_ts35 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js
-var server_ts_exports36 = {};
-__export(server_ts_exports36, {
-  POST: () => POST22
+var server_ts_exports37 = {};
+__export(server_ts_exports37, {
+  POST: () => POST23
 });
 function readParts(value, count2) {
   if (!Array.isArray(value) || value.length !== count2) return null;
@@ -60973,8 +61421,8 @@ function readParts(value, count2) {
 async function keyInUse(db, key) {
   return (await db.select({ id: draftMedia.id }).from(draftMedia).where(eq(draftMedia.storageKey, key)).limit(1)).length > 0;
 }
-var POST22;
-var init_server_ts36 = __esm({
+var POST23;
+var init_server_ts37 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/complete/_server.ts.js"() {
     "use strict";
     init_client();
@@ -60987,7 +61435,7 @@ var init_server_ts36 = __esm({
     init_drizzle_orm();
     __name(readParts, "readParts");
     __name(keyInUse, "keyInUse");
-    POST22 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST23 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -61043,12 +61491,12 @@ var init_server_ts36 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js
-var server_ts_exports37 = {};
-__export(server_ts_exports37, {
+var server_ts_exports38 = {};
+__export(server_ts_exports38, {
   PUT: () => PUT2
 });
 var PUT2;
-var init_server_ts37 = __esm({
+var init_server_ts38 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/media/uploads/part/_server.ts.js"() {
     "use strict";
     init_draft_media();
@@ -61080,18 +61528,18 @@ var init_server_ts37 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js
-var server_ts_exports38 = {};
-__export(server_ts_exports38, {
-  POST: () => POST23
+var server_ts_exports39 = {};
+__export(server_ts_exports39, {
+  POST: () => POST24
 });
-var POST23;
-var init_server_ts38 = __esm({
+var POST24;
+var init_server_ts39 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/publish/_server.ts.js"() {
     "use strict";
     init_http();
     init_operations3();
     init_require();
-    POST23 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST24 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -61105,18 +61553,18 @@ var init_server_ts38 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/schedule/_server.ts.js
-var server_ts_exports39 = {};
-__export(server_ts_exports39, {
-  POST: () => POST24
+var server_ts_exports40 = {};
+__export(server_ts_exports40, {
+  POST: () => POST25
 });
-var POST24;
-var init_server_ts39 = __esm({
+var POST25;
+var init_server_ts40 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/schedule/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST24 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST25 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -61130,11 +61578,11 @@ var init_server_ts39 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/share/_server.ts.js
-var server_ts_exports40 = {};
-__export(server_ts_exports40, {
+var server_ts_exports41 = {};
+__export(server_ts_exports41, {
   DELETE: () => DELETE7,
   GET: () => GET14,
-  POST: () => POST25
+  POST: () => POST26
 });
 async function ownsDraft(db, draftId, userId) {
   const row = await first(db.select({ id: drafts.id }).from(drafts).where(and(eq(drafts.id, draftId), eq(drafts.userId, userId))));
@@ -61147,8 +61595,8 @@ function present(appUrl, link) {
     expiresAt: link.expiresAt
   } };
 }
-var GET14, POST25, DELETE7;
-var init_server_ts40 = __esm({
+var GET14, POST26, DELETE7;
+var init_server_ts41 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/share/_server.ts.js"() {
     "use strict";
     init_platform_sync();
@@ -61170,7 +61618,7 @@ var init_server_ts40 = __esm({
         return handleError(err);
       }
     }, "GET");
-    POST25 = /* @__PURE__ */ __name(async ({ params, locals, request: request2 }) => {
+    POST26 = /* @__PURE__ */ __name(async ({ params, locals, request: request2 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -61204,13 +61652,13 @@ var init_server_ts40 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js
-var server_ts_exports41 = {};
-__export(server_ts_exports41, {
+var server_ts_exports42 = {};
+__export(server_ts_exports42, {
   DELETE: () => DELETE8,
   PUT: () => PUT3
 });
 var PUT3, DELETE8;
-var init_server_ts41 = __esm({
+var init_server_ts42 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/drafts/_id_/variants/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61239,12 +61687,12 @@ var init_server_ts41 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/health/_server.ts.js
-var server_ts_exports42 = {};
-__export(server_ts_exports42, {
+var server_ts_exports43 = {};
+__export(server_ts_exports43, {
   GET: () => GET15
 });
 var GET15;
-var init_server_ts42 = __esm({
+var init_server_ts43 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/health/_server.ts.js"() {
     "use strict";
     init_client();
@@ -61257,7 +61705,7 @@ var init_server_ts42 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.29.1",
+          version: "1.30.0",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -61273,12 +61721,12 @@ var init_server_ts42 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js
-var server_ts_exports43 = {};
-__export(server_ts_exports43, {
+var server_ts_exports44 = {};
+__export(server_ts_exports44, {
   GET: () => GET16
 });
 var GET16;
-var init_server_ts43 = __esm({
+var init_server_ts44 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/insights/_server.ts.js"() {
     "use strict";
     init_http();
@@ -61299,18 +61747,18 @@ var init_server_ts43 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/internal/publish/_server.ts.js
-var server_ts_exports44 = {};
-__export(server_ts_exports44, {
-  POST: () => POST26
+var server_ts_exports45 = {};
+__export(server_ts_exports45, {
+  POST: () => POST27
 });
-var POST26;
-var init_server_ts44 = __esm({
+var POST27;
+var init_server_ts45 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/internal/publish/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST26 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST27 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         assertScheduler(request2, locals.env);
         const body = await request2.json().catch(() => null);
@@ -61327,18 +61775,18 @@ var init_server_ts44 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/internal/tick/_server.ts.js
-var server_ts_exports45 = {};
-__export(server_ts_exports45, {
-  POST: () => POST27
+var server_ts_exports46 = {};
+__export(server_ts_exports46, {
+  POST: () => POST28
 });
-var POST27;
-var init_server_ts45 = __esm({
+var POST28;
+var init_server_ts46 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/internal/tick/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST27 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST28 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         await assertSchedulerOrTickToken(request2, locals.env, locals.db);
         const task = runSchedulerTick(locals.db, locals.env, {
@@ -61357,11 +61805,11 @@ var init_server_ts45 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js
-var server_ts_exports46 = {};
-__export(server_ts_exports46, {
+var server_ts_exports47 = {};
+__export(server_ts_exports47, {
   DELETE: () => DELETE9,
   GET: () => GET17,
-  POST: () => POST28
+  POST: () => POST29
 });
 function metadataOf(active) {
   if (!active) return null;
@@ -61372,8 +61820,8 @@ function metadataOf(active) {
     scopes: parseApiScopes(Array.isArray(active.scopes) ? JSON.stringify(active.scopes) : active.scopes)
   };
 }
-var GET17, POST28, DELETE9;
-var init_server_ts46 = __esm({
+var GET17, POST29, DELETE9;
+var init_server_ts47 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/key/_server.ts.js"() {
     "use strict";
     init_tick_token();
@@ -61390,7 +61838,7 @@ var init_server_ts46 = __esm({
         return handleError(err);
       }
     }, "GET");
-    POST28 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST29 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireSession(locals.user, locals.authMethod);
         const text3 = await request2?.text().catch(() => "") ?? "";
@@ -61432,12 +61880,12 @@ var init_server_ts46 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js
-var server_ts_exports47 = {};
-__export(server_ts_exports47, {
+var server_ts_exports48 = {};
+__export(server_ts_exports48, {
   GET: () => GET18
 });
 var GET18;
-var init_server_ts47 = __esm({
+var init_server_ts48 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/link-preview/_server.ts.js"() {
     "use strict";
     init_links();
@@ -71734,11 +72182,11 @@ data:
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js
-var server_ts_exports48 = {};
-__export(server_ts_exports48, {
+var server_ts_exports49 = {};
+__export(server_ts_exports49, {
   DELETE: () => DELETE10,
   GET: () => GET19,
-  POST: () => POST29
+  POST: () => POST30
 });
 function concise(name, result) {
   const draft = result.draft;
@@ -71954,8 +72402,8 @@ function createServer(event) {
   }).strict(), (input2, ctx, uid) => rescheduleDelivery(ctx, uid, input2.targetId, { runAt: input2.runAt }));
   return server2;
 }
-var id, boundedLimit, platform, runAt, connectionIds, draftFields, variantOptions, annotations, dateTime, validationCheck, validationIssue, connectionSchema, connectionSummarySchema, variantSchema, mediaSchema, targetSchema, draftSchema, queueDraftSchema, queueTargetSchema, mcpOutputSchemas, eventByRequest, handler, POST29, GET19, DELETE10;
-var init_server_ts48 = __esm({
+var id, boundedLimit, platform, runAt, connectionIds, draftFields, variantOptions, annotations, dateTime, validationCheck, validationIssue, connectionSchema, connectionSummarySchema, variantSchema, mediaSchema, targetSchema, draftSchema, queueDraftSchema, queueTargetSchema, mcpOutputSchemas, eventByRequest, handler, POST30, GET19, DELETE10;
+var init_server_ts49 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/mcp/_server.ts.js"() {
     "use strict";
     init_human_error();
@@ -72220,7 +72668,7 @@ var init_server_ts48 = __esm({
       legacy: "reject",
       responseMode: "json"
     });
-    POST29 = /* @__PURE__ */ __name(async (event) => {
+    POST30 = /* @__PURE__ */ __name(async (event) => {
       const parsedBody = isJsonContentType(event.request.headers.get("content-type")) ? await event.request.json().catch(() => void 0) : void 0;
       if (parsedBody && typeof parsedBody === "object" && "method" in parsedBody && parsedBody.method === "subscriptions/listen") {
         const requestId = "id" in parsedBody ? parsedBody.id : void 0;
@@ -72253,13 +72701,43 @@ var init_server_ts48 = __esm({
   }
 });
 
-// .svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js
-var server_ts_exports49 = {};
-__export(server_ts_exports49, {
+// .svelte-kit/output/server/entries/endpoints/api/media/_server.ts.js
+var server_ts_exports50 = {};
+__export(server_ts_exports50, {
   GET: () => GET20
 });
 var GET20;
-var init_server_ts49 = __esm({
+var init_server_ts50 = __esm({
+  ".svelte-kit/output/server/entries/endpoints/api/media/_server.ts.js"() {
+    "use strict";
+    init_http();
+    init_media_library();
+    init_post_list();
+    init_require();
+    GET20 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+      try {
+        const user = requireUser(locals.user);
+        requireScope(locals, "read");
+        const limit = parseListLimit(url3.searchParams.get("limit"), 60, 100);
+        const before = parseLibraryCursor(url3.searchParams.get("before"));
+        return ok(await listMediaLibrary(locals.db, user.id, {
+          limit,
+          before
+        }));
+      } catch (err) {
+        return handleError(err);
+      }
+    }, "GET");
+  }
+});
+
+// .svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js
+var server_ts_exports51 = {};
+__export(server_ts_exports51, {
+  GET: () => GET21
+});
+var GET21;
+var init_server_ts51 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/media/public/_key_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -72267,7 +72745,7 @@ var init_server_ts49 = __esm({
     init_media();
     init_public_media();
     init_drizzle_orm();
-    GET20 = /* @__PURE__ */ __name(async ({ params, url: url3, locals, request: request2 }) => {
+    GET21 = /* @__PURE__ */ __name(async ({ params, url: url3, locals, request: request2 }) => {
       try {
         const key = assertSafeStorageKey(params.key);
         const exp = Number(url3.searchParams.get("exp"));
@@ -72298,12 +72776,12 @@ var init_server_ts49 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/media/_key_/_server.ts.js
-var server_ts_exports50 = {};
-__export(server_ts_exports50, {
-  GET: () => GET21
+var server_ts_exports52 = {};
+__export(server_ts_exports52, {
+  GET: () => GET22
 });
-var GET21;
-var init_server_ts50 = __esm({
+var GET22;
+var init_server_ts52 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/media/_key_/_server.ts.js"() {
     "use strict";
     init_client();
@@ -72311,7 +72789,7 @@ var init_server_ts50 = __esm({
     init_media();
     init_require();
     init_drizzle_orm();
-    GET21 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
+    GET22 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -72328,9 +72806,9 @@ var init_server_ts50 = __esm({
           const preview = await locals.media.get(previewKey(key));
           if (preview) return jpegResponse(preview, PRIVATE_MEDIA_CACHE);
         }
-        const images = locals.bindings.IMAGES ?? null;
-        if (images && url3.searchParams.get("thumb") === "1" && thumbCandidate(media.mime, media.width, media.height)) {
-          const thumb = await storedThumbnail(locals.media, key, images);
+        if (url3.searchParams.has("thumb") && !(media.mime || "").startsWith("video/")) {
+          const images = locals.bindings.IMAGES ?? null;
+          const thumb = await storedThumbnail(locals.media, key, images && thumbCandidate(media.mime, media.width, media.height) ? images : null);
           if (thumb) return jpegResponse(thumb, PRIVATE_MEDIA_CACHE);
         }
         return await serveMediaBytes(locals.media, key, request2, {
@@ -72345,18 +72823,18 @@ var init_server_ts50 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js
-var server_ts_exports51 = {};
-__export(server_ts_exports51, {
-  GET: () => GET22
+var server_ts_exports53 = {};
+__export(server_ts_exports53, {
+  GET: () => GET23
 });
-var GET22;
-var init_server_ts51 = __esm({
+var GET23;
+var init_server_ts53 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/queue/_server.ts.js"() {
     "use strict";
     init_http();
     init_post_list();
     init_require();
-    GET22 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET23 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -72392,7 +72870,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.29.1";
+  const current = options2.current ?? "1.30.0";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -72490,18 +72968,18 @@ var init_release = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js
-var server_ts_exports52 = {};
-__export(server_ts_exports52, {
-  GET: () => GET23
+var server_ts_exports54 = {};
+__export(server_ts_exports54, {
+  GET: () => GET24
 });
-var GET23;
-var init_server_ts52 = __esm({
+var GET24;
+var init_server_ts54 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/release/_server.ts.js"() {
     "use strict";
     init_http();
     init_release();
     init_require();
-    GET23 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
+    GET24 = /* @__PURE__ */ __name(async ({ locals, url: url3 }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -72515,12 +72993,12 @@ var init_server_ts52 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js
-var server_ts_exports53 = {};
-__export(server_ts_exports53, {
-  GET: () => GET24
+var server_ts_exports55 = {};
+__export(server_ts_exports55, {
+  GET: () => GET25
 });
-var GET24;
-var init_server_ts53 = __esm({
+var GET25;
+var init_server_ts55 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/health/_server.ts.js"() {
     "use strict";
     init_app_settings();
@@ -72528,7 +73006,7 @@ var init_server_ts53 = __esm({
     init_http();
     init_require();
     init_scheduler();
-    GET24 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET25 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -72552,18 +73030,18 @@ var init_server_ts53 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/test/_server.ts.js
-var server_ts_exports54 = {};
-__export(server_ts_exports54, {
-  POST: () => POST30
+var server_ts_exports56 = {};
+__export(server_ts_exports56, {
+  POST: () => POST31
 });
-var POST30;
-var init_server_ts54 = __esm({
+var POST31;
+var init_server_ts56 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/test/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_scheduler();
-    POST30 = /* @__PURE__ */ __name(async ({ locals }) => {
+    POST31 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "write");
@@ -72585,20 +73063,20 @@ var init_server_ts54 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js
-var server_ts_exports55 = {};
-__export(server_ts_exports55, {
+var server_ts_exports57 = {};
+__export(server_ts_exports57, {
   DELETE: () => DELETE11,
-  GET: () => GET25,
-  POST: () => POST31
+  GET: () => GET26,
+  POST: () => POST32
 });
-var GET25, POST31, DELETE11;
-var init_server_ts55 = __esm({
+var GET26, POST32, DELETE11;
+var init_server_ts57 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/scheduler/tick-token/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_tick_token();
-    GET25 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET26 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const status = await readTickToken(locals.db);
@@ -72607,7 +73085,7 @@ var init_server_ts55 = __esm({
         return handleError(err);
       }
     }, "GET");
-    POST31 = /* @__PURE__ */ __name(async ({ locals }) => {
+    POST32 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const { token, prefix, createdAt } = await rotateTickToken(locals.db);
@@ -72662,9 +73140,9 @@ var init_instance_name = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js
-var server_ts_exports56 = {};
-__export(server_ts_exports56, {
-  GET: () => GET26,
+var server_ts_exports58 = {};
+__export(server_ts_exports58, {
+  GET: () => GET27,
   PATCH: () => PATCH5
 });
 function normalizeDisplayName(input2) {
@@ -72684,8 +73162,8 @@ function normalizeDisplayName(input2) {
     name
   };
 }
-var GET26, SETTINGS_KEYS, PATCH5;
-var init_server_ts56 = __esm({
+var GET27, SETTINGS_KEYS, PATCH5;
+var init_server_ts58 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/_server.ts.js"() {
     "use strict";
     init_profile_settings();
@@ -72697,7 +73175,7 @@ var init_server_ts56 = __esm({
     init_app_settings();
     init_release();
     init_drizzle_orm();
-    GET26 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET27 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "read");
@@ -72766,8 +73244,8 @@ var init_server_ts56 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js
-var server_ts_exports57 = {};
-__export(server_ts_exports57, {
+var server_ts_exports59 = {};
+__export(server_ts_exports59, {
   DELETE: () => DELETE12,
   PUT: () => PUT4
 });
@@ -72785,7 +73263,7 @@ function platformFrom(param) {
   return param && isOAuthPlatform(param) ? param : null;
 }
 var PUT4, DELETE12;
-var init_server_ts57 = __esm({
+var init_server_ts59 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/settings/platform-apps/_platform_/_server.ts.js"() {
     "use strict";
     init_platform_setup();
@@ -72829,12 +73307,12 @@ var init_server_ts57 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js
-var server_ts_exports58 = {};
-__export(server_ts_exports58, {
-  POST: () => POST32
+var server_ts_exports60 = {};
+__export(server_ts_exports60, {
+  POST: () => POST33
 });
-var POST32;
-var init_server_ts58 = __esm({
+var POST33;
+var init_server_ts60 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/bulk/_server.ts.js"() {
     "use strict";
     init_due_jobs();
@@ -72845,7 +73323,7 @@ var init_server_ts58 = __esm({
     init_publish_plan();
     init_require();
     init_drizzle_orm();
-    POST32 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST33 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -73149,18 +73627,18 @@ var init_server_ts58 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/cancel/_server.ts.js
-var server_ts_exports59 = {};
-__export(server_ts_exports59, {
-  POST: () => POST33
+var server_ts_exports61 = {};
+__export(server_ts_exports61, {
+  POST: () => POST34
 });
-var POST33;
-var init_server_ts59 = __esm({
+var POST34;
+var init_server_ts61 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/cancel/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST33 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    POST34 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -73173,18 +73651,18 @@ var init_server_ts59 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/reschedule/_server.ts.js
-var server_ts_exports60 = {};
-__export(server_ts_exports60, {
-  POST: () => POST34
+var server_ts_exports62 = {};
+__export(server_ts_exports62, {
+  POST: () => POST35
 });
-var POST34;
-var init_server_ts60 = __esm({
+var POST35;
+var init_server_ts62 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/reschedule/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST34 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
+    POST35 = /* @__PURE__ */ __name(async ({ params, request: request2, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -73198,18 +73676,18 @@ var init_server_ts60 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/targets/_id_/retry/_server.ts.js
-var server_ts_exports61 = {};
-__export(server_ts_exports61, {
-  POST: () => POST35
+var server_ts_exports63 = {};
+__export(server_ts_exports63, {
+  POST: () => POST36
 });
-var POST35;
-var init_server_ts61 = __esm({
+var POST36;
+var init_server_ts63 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/targets/_id_/retry/_server.ts.js"() {
     "use strict";
     init_http();
     init_require();
     init_operations3();
-    POST35 = /* @__PURE__ */ __name(async ({ params, locals }) => {
+    POST36 = /* @__PURE__ */ __name(async ({ params, locals }) => {
       try {
         const user = requireUser(locals.user);
         requireScope(locals, "write");
@@ -73222,19 +73700,19 @@ var init_server_ts61 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js
-var server_ts_exports62 = {};
-__export(server_ts_exports62, {
-  GET: () => GET27
+var server_ts_exports64 = {};
+__export(server_ts_exports64, {
+  GET: () => GET28
 });
-var GET27;
-var init_server_ts62 = __esm({
+var GET28;
+var init_server_ts64 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_server.ts.js"() {
     "use strict";
     init_github_update();
     init_http();
     init_require();
     init_saved_token();
-    GET27 = /* @__PURE__ */ __name(async ({ locals }) => {
+    GET28 = /* @__PURE__ */ __name(async ({ locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const [job, previous, target, savedToken] = await Promise.all([
@@ -73248,7 +73726,7 @@ var init_server_ts62 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.29.1",
+          version: "1.30.0",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -73273,13 +73751,13 @@ var init_server_ts62 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js
-var server_ts_exports63 = {};
-__export(server_ts_exports63, {
+var server_ts_exports65 = {};
+__export(server_ts_exports65, {
   DELETE: () => DELETE13,
-  POST: () => POST36
+  POST: () => POST37
 });
-var POST36, DELETE13;
-var init_server_ts63 = __esm({
+var POST37, DELETE13;
+var init_server_ts65 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/remember/_server.ts.js"() {
     "use strict";
     init_auth_gate();
@@ -73288,7 +73766,7 @@ var init_server_ts63 = __esm({
     init_rate_limit();
     init_require();
     init_saved_token();
-    POST36 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST37 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => null);
@@ -73318,12 +73796,12 @@ var init_server_ts63 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js
-var server_ts_exports64 = {};
-__export(server_ts_exports64, {
-  POST: () => POST37
+var server_ts_exports66 = {};
+__export(server_ts_exports66, {
+  POST: () => POST38
 });
-var POST37;
-var init_server_ts64 = __esm({
+var POST38;
+var init_server_ts66 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/unlock/_server.ts.js"() {
     "use strict";
     init_auth_gate();
@@ -73332,7 +73810,7 @@ var init_server_ts64 = __esm({
     init_rate_limit();
     init_require();
     init_saved_token();
-    POST37 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST38 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireSession(locals.user, locals.authMethod);
         const body = await request2.json().catch(() => null);
@@ -73352,9 +73830,9 @@ var init_server_ts64 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js
-var server_ts_exports65 = {};
-__export(server_ts_exports65, {
-  POST: () => POST38
+var server_ts_exports67 = {};
+__export(server_ts_exports67, {
+  POST: () => POST39
 });
 function cloudflareApi(token, { fetchImpl = fetch, budget } = {}) {
   const scrub = /* @__PURE__ */ __name((text3) => token ? text3.split(token).join("[token]") : text3, "scrub");
@@ -73457,7 +73935,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.29.1"
+    currentVersion: "1.30.0"
   };
 }
 async function download(ctx, url3) {
@@ -73800,8 +74278,8 @@ async function dropJob(ctx, job) {
   await ctx.store.delete(stagedKeys(job.version)).catch(() => void 0);
   await clearJob(ctx.db);
 }
-var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST38;
-var init_server_ts65 = __esm({
+var API_BASE, CloudflareApiError, UpdateError, TAG, decodeBase64, stagedKey, stagedKeys, STEPS, POST39;
+var init_server_ts67 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/update/_step_/_server.ts.js"() {
     "use strict";
     init_http();
@@ -73875,15 +74353,15 @@ var init_server_ts65 = __esm({
       rollback: /* @__PURE__ */ __name((ctx) => stepRollback(ctx), "rollback"),
       abort: /* @__PURE__ */ __name((ctx) => stepAbort(ctx), "abort")
     };
-    POST38 = /* @__PURE__ */ __name(async (event) => {
+    POST39 = /* @__PURE__ */ __name(async (event) => {
       try {
         requireSession(event.locals.user, event.locals.authMethod);
-        const run2 = Object.hasOwn(STEPS, event.params.step) ? STEPS[event.params.step] : null;
-        if (!run2) return fail("Unknown update step", 404);
+        const run3 = Object.hasOwn(STEPS, event.params.step) ? STEPS[event.params.step] : null;
+        if (!run3) return fail("Unknown update step", 404);
         const body = await event.request.json().catch(() => null);
         const token = typeof body?.unlockKey === "string" ? await tokenFromUnlockKey(event.locals.db, body.unlockKey) : typeof body?.token === "string" ? body.token.trim() : "";
         if (!token) return fail("Paste a Cloudflare API token to continue", 400);
-        return ok(await run2(updaterContext(event, token), body ?? {}));
+        return ok(await run3(updaterContext(event, token), body ?? {}));
       } catch (err) {
         if (err instanceof UpdateError) return fail(err.message, err.status);
         if (err instanceof SavedTokenError) return fail(err.message, err.status);
@@ -73899,18 +74377,18 @@ var init_server_ts65 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js
-var server_ts_exports66 = {};
-__export(server_ts_exports66, {
-  POST: () => POST39
+var server_ts_exports68 = {};
+__export(server_ts_exports68, {
+  POST: () => POST40
 });
-var POST39;
-var init_server_ts66 = __esm({
+var POST40;
+var init_server_ts68 = __esm({
   ".svelte-kit/output/server/entries/endpoints/api/validate/_server.ts.js"() {
     "use strict";
     init_http();
     init_operations3();
     init_require();
-    POST39 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
+    POST40 = /* @__PURE__ */ __name(async ({ request: request2, locals }) => {
       try {
         requireUser(locals.user);
         requireScope(locals, "read");
@@ -73925,19 +74403,19 @@ var init_server_ts66 = __esm({
 });
 
 // .svelte-kit/output/server/entries/endpoints/p/_token_/media/_key_/_server.ts.js
-var server_ts_exports67 = {};
-__export(server_ts_exports67, {
-  GET: () => GET28
+var server_ts_exports69 = {};
+__export(server_ts_exports69, {
+  GET: () => GET29
 });
-var SHARED_MEDIA_CACHE, GET28;
-var init_server_ts67 = __esm({
+var SHARED_MEDIA_CACHE, GET29;
+var init_server_ts69 = __esm({
   ".svelte-kit/output/server/entries/endpoints/p/_token_/media/_key_/_server.ts.js"() {
     "use strict";
     init_draft_shares();
     init_http();
     init_media();
     SHARED_MEDIA_CACHE = "private, max-age=300";
-    GET28 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
+    GET29 = /* @__PURE__ */ __name(async ({ params, locals, request: request2, url: url3 }) => {
       try {
         const key = assertSafeStorageKey(params.key);
         const media = await resolveSharedMedia(locals.db, locals.env.APP_ENCRYPTION_KEY, params.token, key);
@@ -74008,7 +74486,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.i6R8d0nY.js", app: "_app/immutable/entry/app.p4RKCSnB.js", imports: ["_app/immutable/entry/start.i6R8d0nY.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/C8NUa1si.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/app.p4RKCSnB.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.i6R8d0nY.js", app: "_app/immutable/entry/app.ra3Yfj1q.js", imports: ["_app/immutable/entry/start.i6R8d0nY.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/C8NUa1si.js", "_app/immutable/chunks/ClnqGThc.js", "_app/immutable/chunks/CDzMtwSd.js", "_app/immutable/chunks/DWORvtZb.js", "_app/immutable/entry/app.ra3Yfj1q.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -74282,228 +74760,242 @@ var manifest2 = (() => {
         endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts34(), server_ts_exports34)))
       },
       {
+        id: "/api/drafts/[id]/media/reuse",
+        pattern: /^\/api\/drafts\/([^/]+?)\/media\/reuse\/?$/,
+        params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
+        page: null,
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts35(), server_ts_exports35)))
+      },
+      {
         id: "/api/drafts/[id]/media/uploads",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts35(), server_ts_exports35)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts36(), server_ts_exports36)))
       },
       {
         id: "/api/drafts/[id]/media/uploads/complete",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/complete\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts36(), server_ts_exports36)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts37(), server_ts_exports37)))
       },
       {
         id: "/api/drafts/[id]/media/uploads/part",
         pattern: /^\/api\/drafts\/([^/]+?)\/media\/uploads\/part\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts37(), server_ts_exports37)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts38(), server_ts_exports38)))
       },
       {
         id: "/api/drafts/[id]/publish",
         pattern: /^\/api\/drafts\/([^/]+?)\/publish\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts38(), server_ts_exports38)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts39(), server_ts_exports39)))
       },
       {
         id: "/api/drafts/[id]/schedule",
         pattern: /^\/api\/drafts\/([^/]+?)\/schedule\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts39(), server_ts_exports39)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts40(), server_ts_exports40)))
       },
       {
         id: "/api/drafts/[id]/share",
         pattern: /^\/api\/drafts\/([^/]+?)\/share\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts40(), server_ts_exports40)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts41(), server_ts_exports41)))
       },
       {
         id: "/api/drafts/[id]/variants",
         pattern: /^\/api\/drafts\/([^/]+?)\/variants\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts41(), server_ts_exports41)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts42(), server_ts_exports42)))
       },
       {
         id: "/api/health",
         pattern: /^\/api\/health\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts42(), server_ts_exports42)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts43(), server_ts_exports43)))
       },
       {
         id: "/api/insights",
         pattern: /^\/api\/insights\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts43(), server_ts_exports43)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts44(), server_ts_exports44)))
       },
       {
         id: "/api/internal/publish",
         pattern: /^\/api\/internal\/publish\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts44(), server_ts_exports44)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts45(), server_ts_exports45)))
       },
       {
         id: "/api/internal/tick",
         pattern: /^\/api\/internal\/tick\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts45(), server_ts_exports45)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts46(), server_ts_exports46)))
       },
       {
         id: "/api/key",
         pattern: /^\/api\/key\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts46(), server_ts_exports46)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts47(), server_ts_exports47)))
       },
       {
         id: "/api/link-preview",
         pattern: /^\/api\/link-preview\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts47(), server_ts_exports47)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts48(), server_ts_exports48)))
       },
       {
         id: "/api/mcp",
         pattern: /^\/api\/mcp\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts48(), server_ts_exports48)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts49(), server_ts_exports49)))
+      },
+      {
+        id: "/api/media",
+        pattern: /^\/api\/media\/?$/,
+        params: [],
+        page: null,
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts50(), server_ts_exports50)))
       },
       {
         id: "/api/media/public/[key]",
         pattern: /^\/api\/media\/public\/([^/]+?)\/?$/,
         params: [{ "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts49(), server_ts_exports49)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts51(), server_ts_exports51)))
       },
       {
         id: "/api/media/[key]",
         pattern: /^\/api\/media\/([^/]+?)\/?$/,
         params: [{ "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts50(), server_ts_exports50)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts52(), server_ts_exports52)))
       },
       {
         id: "/api/queue",
         pattern: /^\/api\/queue\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts51(), server_ts_exports51)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts53(), server_ts_exports53)))
       },
       {
         id: "/api/release",
         pattern: /^\/api\/release\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts52(), server_ts_exports52)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
       },
       {
         id: "/api/scheduler/health",
         pattern: /^\/api\/scheduler\/health\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts53(), server_ts_exports53)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
       },
       {
         id: "/api/scheduler/test",
         pattern: /^\/api\/scheduler\/test\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts54(), server_ts_exports54)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
       },
       {
         id: "/api/scheduler/tick-token",
         pattern: /^\/api\/scheduler\/tick-token\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts55(), server_ts_exports55)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
       },
       {
         id: "/api/settings",
         pattern: /^\/api\/settings\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts56(), server_ts_exports56)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
       },
       {
         id: "/api/settings/platform-apps/[platform]",
         pattern: /^\/api\/settings\/platform-apps\/([^/]+?)\/?$/,
         params: [{ "name": "platform", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts57(), server_ts_exports57)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts59(), server_ts_exports59)))
       },
       {
         id: "/api/targets/bulk",
         pattern: /^\/api\/targets\/bulk\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts58(), server_ts_exports58)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts60(), server_ts_exports60)))
       },
       {
         id: "/api/targets/[id]/cancel",
         pattern: /^\/api\/targets\/([^/]+?)\/cancel\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts59(), server_ts_exports59)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts61(), server_ts_exports61)))
       },
       {
         id: "/api/targets/[id]/reschedule",
         pattern: /^\/api\/targets\/([^/]+?)\/reschedule\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts60(), server_ts_exports60)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts62(), server_ts_exports62)))
       },
       {
         id: "/api/targets/[id]/retry",
         pattern: /^\/api\/targets\/([^/]+?)\/retry\/?$/,
         params: [{ "name": "id", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts61(), server_ts_exports61)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts63(), server_ts_exports63)))
       },
       {
         id: "/api/update",
         pattern: /^\/api\/update\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts62(), server_ts_exports62)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts64(), server_ts_exports64)))
       },
       {
         id: "/api/update/remember",
         pattern: /^\/api\/update\/remember\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts63(), server_ts_exports63)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts65(), server_ts_exports65)))
       },
       {
         id: "/api/update/unlock",
         pattern: /^\/api\/update\/unlock\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts64(), server_ts_exports64)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts66(), server_ts_exports66)))
       },
       {
         id: "/api/update/[step]",
         pattern: /^\/api\/update\/([^/]+?)\/?$/,
         params: [{ "name": "step", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts65(), server_ts_exports65)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts67(), server_ts_exports67)))
       },
       {
         id: "/api/validate",
         pattern: /^\/api\/validate\/?$/,
         params: [],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts66(), server_ts_exports66)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts68(), server_ts_exports68)))
       },
       {
         id: "/compose",
@@ -74580,7 +75072,7 @@ var manifest2 = (() => {
         pattern: /^\/p\/([^/]+?)\/media\/([^/]+?)\/?$/,
         params: [{ "name": "token", "optional": false, "rest": false, "chained": false }, { "name": "key", "optional": false, "rest": false, "chained": false }],
         page: null,
-        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts67(), server_ts_exports67)))
+        endpoint: __memo(() => Promise.resolve().then(() => (init_server_ts69(), server_ts_exports69)))
       },
       {
         id: "/settings",
