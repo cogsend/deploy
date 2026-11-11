@@ -1,0 +1,1 @@
+var e=[`public`,`unlisted`,`private`,`direct`],t={public:`Public`,unlisted:`Unlisted`,private:`Followers`,direct:`Direct`},n=2e3;function r(e){if(typeof e!=`string`)return!1;let t=e.trim();if(!t||t.length>2e3)return!1;try{return new URL(t).protocol===`https:`}catch{return!1}}export{r as i,t as n,n as r,e as t};

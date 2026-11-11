@@ -1,0 +1,1 @@
+var e=`https://cogsend.com/docs/`,t={home:e,api:`${e}api/`,mcp:`${e}mcp/`,login:`${e}configuration/#the-login`};export{t};

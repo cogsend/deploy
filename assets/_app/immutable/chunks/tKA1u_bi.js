@@ -1,0 +1,2 @@
+import"./D20gE_Xc.js";function e(e,t){let n=URL.createObjectURL(new Blob([t],{type:`text/plain;charset=utf-8`})),r=document.createElement(`a`);r.href=n,r.download=e,document.body.append(r),r.click(),r.remove(),setTimeout(()=>URL.revokeObjectURL(n),0)}new Map([...`ABCDEFGHIJKLMNOPQRSTUVWXYZ234567`].map((e,t)=>[e,t]));function t(e,t){return[`Backup codes for ${t}`,`Each code signs in once, in place of the authenticator.`,``,...e,``].join(`
+`)}export{e as n,t};
