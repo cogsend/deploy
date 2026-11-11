@@ -41352,7 +41352,7 @@ function redirect_response(status, location2) {
   });
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1794236726159");
+  response.headers.set("x-sveltekit-version", "1794387893110");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -44059,7 +44059,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_1wm6xj";
+  const global = "__sveltekit_mwyyls";
   function get_replacer(index18) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -44803,7 +44803,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_1wm6xj";
+  const global = "__sveltekit_mwyyls";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, !!(state2.prerendering || state2.prerender_default === true))).join("\n			")}`;
@@ -44828,7 +44828,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1794236726159")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1794387893110")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -52856,7 +52856,7 @@ async function loadQueueList(db, userId, limit = 100) {
   const connById = new Map(allConns.map((c) => [c.id, c]));
   const queuedDraftIds = [...new Set(targetRows.map((t) => t.draftId))];
   const draftRows = [];
-  for (const chunk of chunkIds(queuedDraftIds)) draftRows.push(...await db.select({
+  for (const chunk of chunkIds(queuedDraftIds, 90)) draftRows.push(...await db.select({
     id: drafts.id,
     title: drafts.title,
     baseBody: drafts.baseBody,
@@ -57428,7 +57428,7 @@ function _page10($$renderer, $$props) {
   -H "Authorization: Bearer &lt;tick token>"</pre> <p>In cron-job.org: create a job, method <strong>POST</strong>, schedule every minute, and
 						add the header <code>Authorization: Bearer &lt;tick token></code>. UptimeRobot's free
 						plan can do the same every five minutes; the repository also ships a GitHub Actions
-						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.30.1")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
+						workflow for it. Ticks are idempotent, so a slow or duplicated caller is harmless.</p></div></details></div> <div id="instance" class="scroll-mt-24 rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-[0_8px_30px_-12px_rgb(28_25_23/0.06)] sm:p-8"><h2 class="mb-2 text-[17px] font-extrabold tracking-tight text-stone-900">Instance</h2> <p class="mb-6 max-w-md text-[13px] leading-relaxed font-medium text-stone-500">Shown in the page title, the header and the login screen. Leave it empty for the default.</p> <form class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"><input type="text"${attr("value", instanceName)}${attr("maxlength", 60)} placeholder="CogSend" aria-label="Instance name" class="w-full flex-1 rounded-xl border border-stone-200/80 bg-stone-50 px-4 py-2.5 text-[13px] font-bold text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-none pointer-coarse:text-base"/> <button type="submit"${attr("disabled", instanceName.trim() === savedInstanceName, true)} class="w-full shrink-0 rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-stone-800 disabled:opacity-50 sm:w-auto">Save</button></form> <p class="mb-2 text-[12px] font-medium text-stone-500">Version ${escape_html("1.30.2")}${escape_html(schedulerMessage2 ? ` \xB7 ${schedulerMessage2}` : "")}</p> <p class="mb-5 text-[12px] font-medium text-stone-500" data-testid="version-line">`);
     if (release?.updateAvailable && release.latest) $$renderer2.push(`<!--[0--><a${attr("href", release.latest.url)} class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Version ${escape_html(release.latest.version)} is available</a> <span class="text-stone-500">\u2014 you run ${escape_html(release.current)}. Update from here below, or from a checkout (<a href="https://github.com/cogsend/cogsend/blob/main/docs/updates.md" class="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700">Updating</a>)</span>`);
     else {
       $$renderer2.push(`<!--[-1--><button type="button"${attr("disabled", releaseBusy, true)} class="font-bold underline underline-offset-2 hover:text-stone-700 disabled:opacity-50">Check for updates</button> `);
@@ -57552,7 +57552,7 @@ var init__16 = __esm({
     "use strict";
     index17 = 15;
     component13 = /* @__PURE__ */ __name(async () => component_cache13 ??= (await Promise.resolve().then(() => (init_page_svelte10(), page_svelte_exports10))).default, "component");
-    imports16 = ["_app/immutable/nodes/15.BupueMvz.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/chunks/_-EIn4Id.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/DQ8k0Nin.js", "_app/immutable/chunks/Bv8yLDMg.js", "_app/immutable/chunks/0H2dYM6X.js", "_app/immutable/chunks/BPQY0Eon.js", "_app/immutable/chunks/BGtA1vg1.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/CiBQmfy8.js", "_app/immutable/chunks/cgX5krTP.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BRkMptyU.js", "_app/immutable/chunks/lyktyNIf.js"];
+    imports16 = ["_app/immutable/nodes/15.nniwQoaW.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/chunks/_-EIn4Id.js", "_app/immutable/chunks/CnQD4MoP.js", "_app/immutable/chunks/DQ8k0Nin.js", "_app/immutable/chunks/Bv8yLDMg.js", "_app/immutable/chunks/0H2dYM6X.js", "_app/immutable/chunks/BPQY0Eon.js", "_app/immutable/chunks/BGtA1vg1.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/CiBQmfy8.js", "_app/immutable/chunks/cgX5krTP.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/C_EvdWcP.js", "_app/immutable/chunks/BRkMptyU.js", "_app/immutable/chunks/lyktyNIf.js"];
     stylesheets16 = [];
     fonts16 = [];
   }
@@ -61839,7 +61839,7 @@ var init_server_ts43 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.30.1",
+          version: "1.30.2",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -73004,7 +73004,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.30.1";
+  const current = options2.current ?? "1.30.2";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -73860,7 +73860,7 @@ var init_server_ts64 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.30.1",
+          version: "1.30.2",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -74069,7 +74069,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.30.1"
+    currentVersion: "1.30.2"
   };
 }
 async function download(ctx, url3) {
@@ -74620,7 +74620,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.BdJIDf6i.js", app: "_app/immutable/entry/app.BY6u5EUr.js", imports: ["_app/immutable/entry/start.BdJIDf6i.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/D-iofGQa.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/entry/app.BY6u5EUr.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.BdJIDf6i.js", app: "_app/immutable/entry/app.ZhIOnR8z.js", imports: ["_app/immutable/entry/start.BdJIDf6i.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/D-iofGQa.js", "_app/immutable/chunks/D6dlFbPd.js", "_app/immutable/chunks/17JovRp1.js", "_app/immutable/chunks/NTN9XeQC.js", "_app/immutable/entry/app.ZhIOnR8z.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
