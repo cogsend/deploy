@@ -11758,17 +11758,6 @@ var init_media = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/plural.js
-function plural(n, one, many) {
-  return `${n} ${n === 1 ? one : many}`;
-}
-var init_plural = __esm({
-  ".svelte-kit/output/server/chunks/plural.js"() {
-    "use strict";
-    __name(plural, "plural");
-  }
-});
-
 // .svelte-kit/output/server/chunks/poll.js
 function limitOf(platform2) {
   return ALT_LIMITS[platform2];
@@ -11776,8 +11765,6 @@ function limitOf(platform2) {
 function altReaches(destination, kind) {
   if (destination.viaZernio) return true;
   switch (destination.platform) {
-    case "threads":
-      return kind === "video";
     case "linkedin":
     case "instagram":
       return kind === "image";
@@ -11805,35 +11792,6 @@ function altLimitFor(kind, destinations) {
     least = least === null ? limit : Math.min(least, limit);
   }
   return least;
-}
-function missingAlt(items, destinations) {
-  const missing = [];
-  const seen = /* @__PURE__ */ new Map();
-  const ordered = items.map((item, at) => ({
-    item,
-    at
-  })).sort((a, b) => a.item.segmentIndex - b.item.segmentIndex || a.at - b.at);
-  for (const { item } of ordered) {
-    const position = (seen.get(item.segmentIndex) ?? 0) + 1;
-    seen.set(item.segmentIndex, position);
-    if ((item.altText ?? "").trim()) continue;
-    if (!destinations.some((d) => altReaches(d, item.kind))) continue;
-    missing.push({
-      ...item,
-      position
-    });
-  }
-  return missing;
-}
-function missingAltMessage(missing, posts) {
-  if (!missing.length) return null;
-  if (missing.length === 1) {
-    const [m] = missing;
-    return `${`${m.kind === "video" ? "The video" : `Image ${m.position}`}`}${posts > 1 ? ` in post ${m.segmentIndex + 1}` : ""} has no alt text`;
-  }
-  const images = missing.filter((m) => m.kind === "image").length;
-  const videos = missing.length - images;
-  return `${[images ? plural(images, "image", "images") : "", videos ? plural(videos, "video", "videos") : ""].filter(Boolean).join(" and ")} have no alt text`;
 }
 function validatePollConfig(input2) {
   if (!input2 || typeof input2 !== "object") return {
@@ -11881,18 +11839,16 @@ var init_poll = __esm({
   ".svelte-kit/output/server/chunks/poll.js"() {
     "use strict";
     init_platforms();
-    init_plural();
     MAX_ALT_LENGTH = 1500;
     ALT_LIMITS = {
       x: 1e3,
-      instagram: 1e3
+      instagram: 1e3,
+      threads: 1e3
     };
     __name(limitOf, "limitOf");
     __name(altReaches, "altReaches");
     __name(altCutNote, "altCutNote");
     __name(altLimitFor, "altLimitFor");
-    __name(missingAlt, "missingAlt");
-    __name(missingAltMessage, "missingAltMessage");
     __name(validatePollConfig, "validatePollConfig");
     __name(parsePollConfig, "parsePollConfig");
   }
@@ -14354,6 +14310,10 @@ async function readInstanceLimits(base, guarded) {
 async function mastodonInstanceLimits(instanceUrl, fetchImpl = providerFetch, allowLocal = false) {
   return readInstanceLimits(normalizeInstance(instanceUrl, allowLocal), guardRedirects(fetchImpl, allowLocal));
 }
+function altParam(m) {
+  const alt = m.alt?.trim();
+  return alt ? { alt_text: alt.slice(0, ALT_LIMITS.threads) } : {};
+}
 function sleep$2(ms) {
   return new Promise((r2) => setTimeout(r2, ms));
 }
@@ -16015,6 +15975,7 @@ var init_providers = __esm({
     PERMALINK_ATTEMPTS = 3;
     PERMALINK_RETRY_DELAYS_MS = [400, 1200];
     META_TRANSIENT_CODES = [1, 2];
+    __name(altParam, "altParam");
     __name(sleep$2, "sleep$2");
     __name(threadsUserId, "threadsUserId");
     __name(normalizeSegment, "normalizeSegment");
@@ -16195,7 +16156,8 @@ var init_providers = __esm({
                 ids[i] = await createContainer({
                   media_type: "IMAGE",
                   image_url: await opts.mediaUrlFor(m.storageKey),
-                  is_carousel_item: "true"
+                  is_carousel_item: "true",
+                  ...altParam(m)
                 });
                 retryNextRound = true;
                 continue;
@@ -16242,16 +16204,18 @@ var init_providers = __esm({
             const params2 = {
               media_type: "IMAGE",
               image_url: urls[0],
+              ...altParam(media[0]),
               ...postParams
             };
             if (text3) params2.text = text3;
             return createContainer(params2);
           }
           const children2 = [];
-          for (const imageUrl2 of urls) children2.push(await createContainer({
+          for (const [i, imageUrl2] of urls.entries()) children2.push(await createContainer({
             media_type: "IMAGE",
             image_url: imageUrl2,
-            is_carousel_item: "true"
+            is_carousel_item: "true",
+            ...altParam(media[i])
           }));
           const params = {
             media_type: "CAROUSEL",
@@ -16274,7 +16238,7 @@ var init_providers = __esm({
               ...postParams
             };
             if (text3) params.text = text3;
-            if (video.alt) params.alt_text = video.alt;
+            Object.assign(params, altParam(video));
             containerId = await createContainer(params);
           }
           const id2 = containerId;
@@ -38983,7 +38947,7 @@ function containsRef(value) {
     return Object.values(sub).some(containsRef);
   });
 }
-function plural2(n) {
+function plural(n) {
   return n === 1 ? "element" : "elements";
 }
 function checkArrayGuards(arraySchema, guards) {
@@ -39022,7 +38986,7 @@ function checkArrayGuards(arraySchema, guards) {
       if (matches < minContains) {
         payload2.issues.push({
           code: "custom",
-          message: `Array must contain at least ${minContains} matching ${plural2(minContains)}; found ${matches}`,
+          message: `Array must contain at least ${minContains} matching ${plural(minContains)}; found ${matches}`,
           input: items,
           continue: true
         });
@@ -39030,7 +38994,7 @@ function checkArrayGuards(arraySchema, guards) {
       if (guards.maxContains !== void 0 && matches > guards.maxContains) {
         payload2.issues.push({
           code: "custom",
-          message: `Array must contain at most ${guards.maxContains} matching ${plural2(guards.maxContains)}`,
+          message: `Array must contain at most ${guards.maxContains} matching ${plural(guards.maxContains)}`,
           input: items,
           continue: true
         });
@@ -39591,7 +39555,7 @@ var init_from_json_schema = __esm({
       "definitions"
     ]);
     __name(containsRef, "containsRef");
-    __name(plural2, "plural");
+    __name(plural, "plural");
     __name(checkArrayGuards, "checkArrayGuards");
     __name(getTupleRest, "getTupleRest");
     fullTime = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
@@ -41688,7 +41652,7 @@ function is_prerendering(state2) {
   return !!state2.prerendering || state2.prerender_default === true;
 }
 function with_version_header(response) {
-  response.headers.set("x-sveltekit-version", "1794624920933");
+  response.headers.set("x-sveltekit-version", "1795003602168");
   return response;
 }
 function throw_devalue_error(event, error63) {
@@ -44426,7 +44390,7 @@ function server_data_serializer(event, state2) {
   let promise_id = 1;
   let max_nodes = -1;
   const iterator = create_async_iterator();
-  const global = "__sveltekit_43j27w";
+  const global = "__sveltekit_fiwxjr";
   function get_replacer(index23) {
     return /* @__PURE__ */ __name(function replacer(thing) {
       if (typeof thing?.then === "function") {
@@ -45169,7 +45133,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       "crossorigin"
     ]);
   }
-  const global = "__sveltekit_43j27w";
+  const global = "__sveltekit_fiwxjr";
   const { data, chunks } = data_serializer.get_data(csp);
   if (page_config.ssr && page_config.csr) body += `
 			${fetched.map((item) => serialize_data(item, resolve_opts.filterSerializedResponseHeaders, is_prerendering(state2))).join("\n			")}`;
@@ -45194,7 +45158,7 @@ async function render_response({ branch, fetched, page_config, status, error: er
       }
     }
     const blocks = [];
-    const properties = [`base: ${base_expression}`, `version: ${s("1794624920933")}`];
+    const properties = [`base: ${base_expression}`, `version: ${s("1795003602168")}`];
     if (assets) properties.push(`assets: ${s(assets)}`);
     if (client.uses_env_dynamic_public) properties.push(`env: ${load_env_eagerly ? "null" : uneval(rendered_env)}`);
     if (chunks) {
@@ -47805,8 +47769,8 @@ var init__ = __esm({
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     universal_id = "src/routes/+layout.ts";
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.BUMGu4sM.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/c0sNYjpe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CY8Zu225.js", "_app/immutable/chunks/w6cIr1dZ.js", "_app/immutable/chunks/D7xHsHZT.js", "_app/immutable/chunks/Dqq3XDBp.js", "_app/immutable/chunks/CtleI417.js", "_app/immutable/chunks/BnAv-e6m.js", "_app/immutable/chunks/BnsnDa7U.js", "_app/immutable/chunks/od6B7d8m.js", "_app/immutable/chunks/BOHjVxIc.js", "_app/immutable/chunks/l38u_O18.js", "_app/immutable/chunks/DDbcasBn.js", "_app/immutable/chunks/BzgMV-4R.js", "_app/immutable/chunks/RThujouB.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/x2sejOuv.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/BgYBQX1k.js", "_app/immutable/chunks/Dd2Gdvce.js", "_app/immutable/chunks/dkqABqXI.js", "_app/immutable/chunks/BZdsXLkI.js"];
-    stylesheets = ["_app/immutable/assets/0.ydQk95UZ.css"];
+    imports = ["_app/immutable/nodes/0.BbbjoCfR.js", "_app/immutable/chunks/XKyaHtl9.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/c0sNYjpe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CY8Zu225.js", "_app/immutable/chunks/w6cIr1dZ.js", "_app/immutable/chunks/D7xHsHZT.js", "_app/immutable/chunks/Dqq3XDBp.js", "_app/immutable/chunks/CtleI417.js", "_app/immutable/chunks/BnAv-e6m.js", "_app/immutable/chunks/BnsnDa7U.js", "_app/immutable/chunks/od6B7d8m.js", "_app/immutable/chunks/BOHjVxIc.js", "_app/immutable/chunks/l38u_O18.js", "_app/immutable/chunks/DDbcasBn.js", "_app/immutable/chunks/BzgMV-4R.js", "_app/immutable/chunks/RThujouB.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/x2sejOuv.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/BgYBQX1k.js", "_app/immutable/chunks/Dd2Gdvce.js", "_app/immutable/chunks/dkqABqXI.js", "_app/immutable/chunks/BZdsXLkI.js"];
+    stylesheets = ["_app/immutable/assets/0.Bh_tLQBM.css"];
     fonts = [];
   }
 });
@@ -51002,6 +50966,9 @@ function User_plus($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData7 }]));
 }
+function plural2(n, one, many) {
+  return `${n} ${n === 1 ? one : many}`;
+}
 function _page($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;
@@ -51036,7 +51003,7 @@ function _page($$renderer, $$props) {
         label: "All systems operational"
       };
     });
-    $$renderer2.push(`<div class="-mt-10 flex min-h-[60vh] w-full flex-1 flex-col items-center justify-center text-center"><a href="/settings/scheduling" data-testid="scheduler-health" class="mb-6 inline-flex items-center gap-2 rounded-full border border-stone-200/50 bg-stone-100/80 px-3 py-1.5 shadow-sm transition-colors hover:border-stone-300 hover:bg-stone-100"><span aria-hidden="true"${attr_class(`flex h-2 w-2 rounded-full ${health().tone === "ok" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : health().tone === "bad" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"}`)}></span> <span${attr_class(`text-[11px] font-bold tracking-widest uppercase ${health().tone === "ok" ? "text-stone-500" : health().tone === "bad" ? "text-red-600" : "text-amber-700"}`)}${attr("title", data.schedulerError ?? void 0)}>${escape_html(health().label)}</span> <span class="sr-only">\u2014 open scheduled publishing settings</span></a> <h1 class="mb-4 text-5xl leading-[1.05] font-extrabold tracking-tight text-stone-900 sm:text-6xl">Welcome back, <br/><span class="text-stone-500">${escape_html(firstName())}</span></h1> <p class="mt-2 max-w-sm text-[15px] leading-relaxed font-medium text-stone-500" data-testid="home-counts">You currently have <a href="/posts?tab=scheduled" class="font-bold text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-stone-900">${escape_html(plural(data.scheduledCount, "scheduled post", "scheduled posts"))}</a> and <a href="/posts?tab=drafts" class="font-bold text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-stone-900">${escape_html(plural(data.draftCount, "draft", "drafts"))}</a>. `);
+    $$renderer2.push(`<div class="-mt-10 flex min-h-[60vh] w-full flex-1 flex-col items-center justify-center text-center"><a href="/settings/scheduling" data-testid="scheduler-health" class="mb-6 inline-flex items-center gap-2 rounded-full border border-stone-200/50 bg-stone-100/80 px-3 py-1.5 shadow-sm transition-colors hover:border-stone-300 hover:bg-stone-100"><span aria-hidden="true"${attr_class(`flex h-2 w-2 rounded-full ${health().tone === "ok" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : health().tone === "bad" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"}`)}></span> <span${attr_class(`text-[11px] font-bold tracking-widest uppercase ${health().tone === "ok" ? "text-stone-500" : health().tone === "bad" ? "text-red-600" : "text-amber-700"}`)}${attr("title", data.schedulerError ?? void 0)}>${escape_html(health().label)}</span> <span class="sr-only">\u2014 open scheduled publishing settings</span></a> <h1 class="mb-4 text-5xl leading-[1.05] font-extrabold tracking-tight text-stone-900 sm:text-6xl">Welcome back, <br/><span class="text-stone-500">${escape_html(firstName())}</span></h1> <p class="mt-2 max-w-sm text-[15px] leading-relaxed font-medium text-stone-500" data-testid="home-counts">You currently have <a href="/posts?tab=scheduled" class="font-bold text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-stone-900">${escape_html(plural2(data.scheduledCount, "scheduled post", "scheduled posts"))}</a> and <a href="/posts?tab=drafts" class="font-bold text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-stone-900">${escape_html(plural2(data.draftCount, "draft", "drafts"))}</a>. `);
     if (nextPost()) $$renderer2.push(`<!--[0--><span class="mt-1 block text-[13px]" data-testid="home-next-post">Next post ${escape_html(nextPost())}.</span>`);
     else $$renderer2.push("<!--[-1-->");
     $$renderer2.push(`<!--]--></p> `);
@@ -51063,7 +51030,6 @@ var init_page_svelte = __esm({
     init_server3();
     init_Icon();
     init_circle_x();
-    init_plural();
     init_relative_time();
     __iconData$1 = {
       "name": "square-pen",
@@ -51103,6 +51069,7 @@ var init_page_svelte = __esm({
     };
     __iconData7.node;
     __name(User_plus, "User_plus");
+    __name(plural2, "plural");
     __name(_page, "_page");
   }
 });
@@ -51126,7 +51093,7 @@ var init__5 = __esm({
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte(), page_svelte_exports))).default, "component");
     server_id2 = "src/routes/+page.server.ts";
-    imports5 = ["_app/immutable/nodes/4.pSwYtAro.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/Dqq3XDBp.js", "_app/immutable/chunks/CQRCtEnv.js", "_app/immutable/chunks/BI52Ye1g.js", "_app/immutable/chunks/BPD3TFi8.js"];
+    imports5 = ["_app/immutable/nodes/4.DWy8rKnr.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/Dqq3XDBp.js", "_app/immutable/chunks/CQRCtEnv.js", "_app/immutable/chunks/BPD3TFi8.js"];
     stylesheets5 = [];
     fonts5 = [];
   }
@@ -52635,7 +52602,7 @@ function assert2(x) {
     throw new Error("Assertion failed.");
   }
 }
-var DEG_TO_RAD, RAD_TO_DEG, normalizeRotation, IDENTITY_MATRIX, centeredTransformationMatrix, extractRotationFromMatrix, matrixIsFlipped, rotationMatrix, translationMatrix, scaleMatrix, multiplyMatrices, composeRotationAndFlip, last, isU32, isI32, readExpGolomb, writeExpGolomb, readSignedExpGolomb, writeBits, toUint8Array, toDataView, TextEncoder2, TextDecoder2, textDecoder2, textEncoder, isIso88591Compatible, invertObject, COLOR_PRIMARIES_MAP, COLOR_PRIMARIES_MAP_INVERSE, TRANSFER_CHARACTERISTICS_MAP, TRANSFER_CHARACTERISTICS_MAP_INVERSE, MATRIX_COEFFICIENTS_MAP, MATRIX_COEFFICIENTS_MAP_INVERSE, colorSpaceIsComplete, colorSpaceIsEmpty, EMPTY_COLOR_SPACE, isAllowSharedBufferSource, AsyncMutex, HEX_STRING_REGEX, bytesToHexString, hexStringToBytes, reverseBitsU32, binarySearchExact, binarySearchLessOrEqual, insertSorted, promiseWithResolvers, removeItem, findLast, findLastIndex, toAsyncIterator, validateAnyIterable, assertNever2, getUint24, getInt24, setUint24, setInt24, setInt64, mapAsyncGenerator, clamp, lerp, modEuclid, UNDETERMINED_LANGUAGE, roundIfAlmostInteger, roundToMultiple, roundToDivisor, floorToMultiple, floorToDivisor, ilog, popcount, ISO_639_2_REGEX, isIso639Dash2LanguageCode, SECOND_TO_MICROSECOND_FACTOR, mergeRequestInit, normalizeHeaders, retriedFetch, computeRationalApproximation, CallSerializer, isWebKitCache, isWebKit, isFirefoxCache, isFirefox, isChromiumCache, isChromium, chromiumVersionCache, getChromiumVersion, isAndroidCache, isAndroid, missingWebCodecsClassMessage, isCodecReclaimedError, NativePromiseConstructor, isThenable, coalesceIndex, closedIntervalsOverlap, keyValueIterator, imageMimeTypeToExtension, base64ToBytes2, bytesToBase642, uint8ArraysAreEqual, polyfillSymbolDispose, isNumber, joinPaths, getQueryParameter, arrayCount, arrayArgmin, arrayArgmax, simplifyRational, validateRectangle, unthrottledTimerWorker, nextUnthrottledTimerId, unthrottledTimeoutCallbacks, unthrottledIntervalCallbacks, shouldUseNativeTimers, unthrottledTimerWorkerMain, getUnthrottledTimerWorker, setIntervalUnthrottled, clearIntervalUnthrottled, wait, toArray, EventEmitter, ceilToMultipleOfTwo, ConcurrentRunner, isRecordStringString;
+var DEG_TO_RAD, RAD_TO_DEG, normalizeRotation, IDENTITY_MATRIX, centeredTransformationMatrix, extractRotationFromMatrix, matrixIsFlipped, rotationMatrix, translationMatrix, scaleMatrix, multiplyMatrices, composeRotationAndFlip, last, isU32, isI32, readExpGolomb, writeExpGolomb, readSignedExpGolomb, toUint8Array, toDataView, TextEncoder2, TextDecoder2, textDecoder2, strictTextDecoder, textEncoder, isIso88591Compatible, invertObject, COLOR_PRIMARIES_MAP, COLOR_PRIMARIES_MAP_INVERSE, TRANSFER_CHARACTERISTICS_MAP, TRANSFER_CHARACTERISTICS_MAP_INVERSE, MATRIX_COEFFICIENTS_MAP, MATRIX_COEFFICIENTS_MAP_INVERSE, colorSpaceIsComplete, colorSpaceIsEmpty, EMPTY_COLOR_SPACE, isAllowSharedBufferSource, AsyncMutex, HEX_STRING_REGEX, bytesToHexString, hexStringToBytes, reverseBitsU32, binarySearchExact, binarySearchLessOrEqual, insertSorted, promiseWithResolvers, removeItem, findLast, findLastIndex, toAsyncIterator, validateAnyIterable, assertNever2, getUint24, getInt24, setUint24, setInt24, setInt64, mapAsyncGenerator, clamp, lerp, modEuclid, UNDETERMINED_LANGUAGE, roundIfAlmostInteger, roundToMultiple, roundToDivisor, floorToMultiple, floorToDivisor, ilog, popcount, ISO_639_2_REGEX, isIso639Dash2LanguageCode, SECOND_TO_MICROSECOND_FACTOR, mergeRequestInit, normalizeHeaders, retriedFetch, computeRationalApproximation, CallSerializer, isWebKitCache, isWebKit, isFirefoxCache, isFirefox, isChromiumCache, isChromium, chromiumVersionCache, getChromiumVersion, isAndroidCache, isAndroid, missingWebCodecsClassMessage, isCodecReclaimedError, NativePromiseConstructor, isThenable, coalesceIndex, closedIntervalsOverlap, keyValueIterator, imageMimeTypeToExtension, base64ToBytes2, bytesToBase642, uint8ArraysAreEqual, polyfillSymbolDispose, isNumber, joinPaths, getQueryParameter, arrayCount, arrayArgmin, arrayArgmax, simplifyRational, validateRectangle, unthrottledTimerWorker, nextUnthrottledTimerId, unthrottledTimeoutCallbacks, unthrottledIntervalCallbacks, shouldUseNativeTimers, unthrottledTimerWorkerMain, getUnthrottledTimerWorker, setIntervalUnthrottled, clearIntervalUnthrottled, wait, toArray, EventEmitter, ceilToMultipleOfTwo, ConcurrentRunner, isRecordStringString, createUtcDate, ISO_SUFFIX_REGEX, parseIsoSuffix;
 var init_misc = __esm({
   "node_modules/mediabunny/dist/modules/src/misc.js"() {
     init_logging();
@@ -52755,16 +52722,6 @@ var init_misc = __esm({
       const codeNum = readExpGolomb(bitstream);
       return codeNum % 2 === 0 ? -(codeNum / 2) : (codeNum + 1) / 2;
     }, "readSignedExpGolomb");
-    writeBits = /* @__PURE__ */ __name((bytes2, start, end, value) => {
-      for (let i = start; i < end; i++) {
-        const byteIndex = Math.floor(i / 8);
-        let byte = bytes2[byteIndex];
-        const bitIndex = 7 - (i & 7);
-        byte &= ~(1 << bitIndex);
-        byte |= (value & 1 << end - i - 1) >> end - i - 1 << bitIndex;
-        bytes2[byteIndex] = byte;
-      }
-    }, "writeBits");
     toUint8Array = /* @__PURE__ */ __name((source) => {
       if (source.constructor === Uint8Array) {
         return source;
@@ -52783,7 +52740,7 @@ var init_misc = __esm({
         return new DataView(source);
       }
     }, "toDataView");
-    TextEncoder2 = typeof globalThis.TextEncoder !== "undefined" ? globalThis.TextEncoder : class TextEncoder3 {
+    TextEncoder2 = /* @__PURE__ */ (() => typeof globalThis.TextEncoder !== "undefined" ? globalThis.TextEncoder : class TextEncoder {
       static {
         __name(this, "TextEncoder");
       }
@@ -52822,8 +52779,8 @@ var init_misc = __esm({
         }
         return bytes2.slice(0, n);
       }
-    };
-    TextDecoder2 = typeof globalThis.TextDecoder !== "undefined" ? globalThis.TextDecoder : class TextDecoder3 {
+    })();
+    TextDecoder2 = /* @__PURE__ */ (() => typeof globalThis.TextDecoder !== "undefined" ? globalThis.TextDecoder : class TextDecoder {
       static {
         __name(this, "TextDecoder");
       }
@@ -52904,6 +52861,9 @@ var init_misc = __esm({
                 i += 2;
               } else {
                 units.push(65533);
+                if (i + 1 === bytes2.length) {
+                  i++;
+                }
               }
             } else if (unit >= 56320 && unit <= 57343) {
               units.push(65533);
@@ -52921,8 +52881,9 @@ var init_misc = __esm({
         }
         return result;
       }
-    };
+    })();
     textDecoder2 = /* @__PURE__ */ new TextDecoder2();
+    strictTextDecoder = /* @__PURE__ */ new TextDecoder2("utf-8", { fatal: true });
     textEncoder = /* @__PURE__ */ new TextEncoder2();
     isIso88591Compatible = /* @__PURE__ */ __name((text3) => {
       for (let i = 0; i < text3.length; i++) {
@@ -52978,7 +52939,7 @@ var init_misc = __esm({
     };
     MATRIX_COEFFICIENTS_MAP_INVERSE = /* @__PURE__ */ invertObject(MATRIX_COEFFICIENTS_MAP);
     colorSpaceIsComplete = /* @__PURE__ */ __name((colorSpace) => {
-      return !!colorSpace && !!colorSpace.primaries && !!colorSpace.transfer && !!colorSpace.matrix && colorSpace.fullRange !== void 0;
+      return !!colorSpace && !!colorSpace.primaries && !!colorSpace.transfer && !!colorSpace.matrix && colorSpace.fullRange != null;
     }, "colorSpaceIsComplete");
     colorSpaceIsEmpty = /* @__PURE__ */ __name((colorSpace) => {
       return !colorSpace || colorSpace.primaries == null && colorSpace.transfer == null && colorSpace.matrix == null && colorSpace.fullRange == null;
@@ -53158,12 +53119,13 @@ var init_misc = __esm({
       setUint24(view2, byteOffset, value, littleEndian);
     }, "setInt24");
     setInt64 = /* @__PURE__ */ __name((view2, byteOffset, value, littleEndian) => {
+      value = Math.trunc(value);
       if (littleEndian) {
         view2.setUint32(byteOffset + 0, value, true);
         view2.setInt32(byteOffset + 4, Math.floor(value / 2 ** 32), true);
       } else {
-        view2.setInt32(byteOffset + 0, Math.floor(value / 2 ** 32), true);
-        view2.setUint32(byteOffset + 4, value, true);
+        view2.setInt32(byteOffset + 0, Math.floor(value / 2 ** 32), false);
+        view2.setUint32(byteOffset + 4, value, false);
       }
     }, "setInt64");
     mapAsyncGenerator = /* @__PURE__ */ __name((generator, map2) => {
@@ -53172,8 +53134,12 @@ var init_misc = __esm({
           const result = await generator.next();
           if (result.done) {
             return { value: void 0, done: true };
-          } else {
+          }
+          try {
             return { value: map2(result.value), done: false };
+          } catch (error63) {
+            await generator.return();
+            throw error63;
           }
         },
         return() {
@@ -53337,7 +53303,10 @@ var init_misc = __esm({
         this.currentPromise = Promise.resolve();
       }
       call(fn) {
-        return this.currentPromise = this.currentPromise.then(fn);
+        const result = this.currentPromise.then(fn);
+        this.currentPromise = result.catch(() => {
+        });
+        return result;
       }
     };
     isWebKitCache = null;
@@ -53392,8 +53361,8 @@ var init_misc = __esm({
     isCodecReclaimedError = /* @__PURE__ */ __name((error63) => {
       return error63 instanceof DOMException && error63.name === "QuotaExceededError" && /reclaimed/i.test(error63.message);
     }, "isCodecReclaimedError");
-    NativePromiseConstructor = (async () => {
-    })().constructor;
+    NativePromiseConstructor = /* @__PURE__ */ (() => (async () => {
+    })().constructor)();
     isThenable = /* @__PURE__ */ __name((value) => {
       if (value instanceof NativePromiseConstructor || value instanceof Promise) {
         return true;
@@ -53479,20 +53448,29 @@ var init_misc = __esm({
       return typeof x === "number" && !Number.isNaN(x);
     }, "isNumber");
     joinPaths = /* @__PURE__ */ __name((basePath, relativePath) => {
-      if (relativePath.includes("://")) {
+      if (/^(?:[a-z][a-z0-9+.-]*:\/\/|(?:data|blob):)/i.test(relativePath)) {
         return relativePath;
       }
       if (basePath.includes("://")) {
-        const queryIndex = basePath.indexOf("?");
+        const queryIndex = basePath.search(/[?#]/);
         if (queryIndex !== -1) {
           basePath = basePath.slice(0, queryIndex);
         }
       }
+      const suffixIndex = relativePath.search(/[?#]/);
+      const suffix = suffixIndex === -1 ? "" : relativePath.slice(suffixIndex);
+      if (suffixIndex !== -1) {
+        relativePath = relativePath.slice(0, suffixIndex);
+      }
       let result;
-      if (relativePath.startsWith("/")) {
+      if (relativePath === "") {
+        result = basePath;
+      } else if (relativePath.startsWith("/")) {
         const protocolIndex2 = basePath.indexOf("://");
         if (protocolIndex2 === -1) {
           result = relativePath;
+        } else if (relativePath.startsWith("//")) {
+          result = basePath.slice(0, protocolIndex2 + 1) + relativePath;
         } else {
           const pathStart = basePath.indexOf("/", protocolIndex2 + 3);
           if (pathStart === -1) {
@@ -53502,8 +53480,11 @@ var init_misc = __esm({
           }
         }
       } else {
+        const protocolIndex2 = basePath.indexOf("://");
         const lastSlash = basePath.lastIndexOf("/");
-        if (lastSlash === -1) {
+        if (protocolIndex2 !== -1 && lastSlash === protocolIndex2 + 2) {
+          result = basePath + "/" + relativePath;
+        } else if (lastSlash === -1) {
           result = relativePath;
         } else {
           result = basePath.slice(0, lastSlash + 1) + relativePath;
@@ -53522,32 +53503,25 @@ var init_misc = __esm({
       const normalized = [];
       for (const segment of segments) {
         if (segment === "..") {
-          normalized.pop();
+          if (normalized.length === 0 || normalized[normalized.length - 1] === "..") {
+            normalized.push("..");
+          } else if (normalized.length !== 1 || normalized[0] !== "") {
+            normalized.pop();
+          }
         } else if (segment !== ".") {
           normalized.push(segment);
         }
       }
-      return prefix + normalized.join("/");
+      return prefix + normalized.join("/") + suffix;
     }, "joinPaths");
     getQueryParameter = /* @__PURE__ */ __name((path3, name) => {
-      const queryIndex = path3.indexOf("?");
+      const fragmentIndex = path3.indexOf("#");
+      const pathWithoutFragment = fragmentIndex === -1 ? path3 : path3.slice(0, fragmentIndex);
+      const queryIndex = pathWithoutFragment.indexOf("?");
       if (queryIndex === -1) {
         return null;
       }
-      const fragmentIndex = path3.indexOf("#", queryIndex);
-      const query = path3.slice(queryIndex + 1, fragmentIndex === -1 ? void 0 : fragmentIndex);
-      for (const parameter of query.split("&")) {
-        const equalsIndex = parameter.indexOf("=");
-        const encodedName = equalsIndex === -1 ? parameter : parameter.slice(0, equalsIndex);
-        const encodedValue = equalsIndex === -1 ? "" : parameter.slice(equalsIndex + 1);
-        try {
-          if (decodeURIComponent(encodedName) === name) {
-            return decodeURIComponent(encodedValue);
-          }
-        } catch {
-        }
-      }
-      return null;
+      return new URLSearchParams(pathWithoutFragment.slice(queryIndex + 1)).get(name);
     }, "getQueryParameter");
     arrayCount = /* @__PURE__ */ __name((array3, predicate) => {
       let count2 = 0;
@@ -53755,14 +53729,17 @@ var init_misc = __esm({
         if (!listeners) {
           return;
         }
-        for (const entry of listeners) {
+        for (const entry of [...listeners]) {
+          if (!listeners.has(entry)) {
+            continue;
+          }
+          if (entry.once) {
+            listeners.delete(entry);
+          }
           try {
             entry.fn(data);
           } catch (error63) {
             console.error(error63);
-          }
-          if (entry.once) {
-            listeners.delete(entry);
           }
         }
       }
@@ -53811,6 +53788,27 @@ var init_misc = __esm({
     isRecordStringString = /* @__PURE__ */ __name((value) => {
       return value !== null && typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype && Object.values(value).every((x) => typeof x === "string");
     }, "isRecordStringString");
+    createUtcDate = /* @__PURE__ */ __name((year, monthIndex = 0, day = 1) => {
+      const date6 = /* @__PURE__ */ new Date(0);
+      date6.setUTCFullYear(year, monthIndex, day);
+      return date6;
+    }, "createUtcDate");
+    ISO_SUFFIX_REGEX = /^(\d{4})(?:-(\d{2})(?:-(\d{2})(?:[T ](\d{2})(?::(\d{2})(?::(\d{2})(?:\.(\d+))?)?)?)?)?)?(?:Z|([+-])(\d{2})(?::?(\d{2}))?)?$/;
+    parseIsoSuffix = /* @__PURE__ */ __name((text3) => {
+      const match2 = ISO_SUFFIX_REGEX.exec(text3);
+      if (!match2) {
+        return null;
+      }
+      const [, year, month = "01", day = "01", hours = "00", minutes = "00", seconds = "00", fraction = "", offsetSign = "+", offsetHours = "00", offsetMinutes = "00"] = match2;
+      const isoString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+      const date6 = /* @__PURE__ */ new Date(`${isoString}.${fraction.padEnd(3, "0").slice(0, 3)}Z`);
+      if (Number.isNaN(date6.getTime()) || !date6.toISOString().startsWith(isoString) || Number(offsetHours) > 23 || Number(offsetMinutes) > 59) {
+        return null;
+      }
+      const offsetInMinutes = (offsetSign === "-" ? -1 : 1) * (60 * Number(offsetHours) + Number(offsetMinutes));
+      date6.setTime(date6.getTime() - 6e4 * offsetInMinutes);
+      return date6;
+    }, "parseIsoSuffix");
   }
 });
 
@@ -53984,6 +53982,12 @@ var init_metadata = __esm({
           if (!["coverFront", "coverBack", "unknown"].includes(image.kind)) {
             throw new TypeError("Each image.kind must be 'coverFront', 'coverBack', or 'unknown'.");
           }
+          if (image.name !== void 0 && typeof image.name !== "string") {
+            throw new TypeError("Each image.name, when provided, must be a string.");
+          }
+          if (image.description !== void 0 && typeof image.description !== "string") {
+            throw new TypeError("Each image.description, when provided, must be a string.");
+          }
         }
       }
       if (tags.comment !== void 0 && typeof tags.comment !== "string") {
@@ -54070,8 +54074,7 @@ var init_bitstream = __esm({
         }
         let result = 0;
         for (let i = 0; i < n; i++) {
-          result <<= 1;
-          result |= this.readBit();
+          result = 2 * result + this.readBit();
         }
         return result;
       }
@@ -54081,8 +54084,9 @@ var init_bitstream = __esm({
           const byteIndex = Math.floor(i / 8);
           let byte = this.bytes[byteIndex];
           const bitIndex = 7 - (i & 7);
+          const bit = Math.floor(value / 2 ** (end - i - 1)) & 1;
           byte &= ~(1 << bitIndex);
-          byte |= (value & 1 << end - i - 1) >> end - i - 1 << bitIndex;
+          byte |= bit << bitIndex;
           this.bytes[byteIndex] = byte;
         }
         this.pos = end;
@@ -54122,7 +54126,7 @@ var init_bitstream = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/shared/aac-misc.js
-var aacFrequencyTable, aacChannelMap, generalAudioObjectTypes, parseAacAudioSpecificConfig, readAacObjectType, readAacSamplingFrequency, buildAacAudioSpecificConfig, writeAacObjectType, writeAacSamplingFrequency, findAacFrequencyIndex, buildAdtsHeaderTemplate, writeAdtsFrameLength;
+var aacFrequencyTable, aacChannelMap, generalAudioObjectTypes, parseAacAudioSpecificConfig, readAacObjectType, readAacSamplingFrequency, buildAacAudioSpecificConfig, writeAacObjectType, writeAacSamplingFrequency, findAacFrequencyIndex, buildAdtsHeaderTemplate, getMaxPceByteLength, writeAacProgramConfigElement, writeAdtsFrameLength, readAdtsProgramConfigElement, readAacProgramConfigElement, getAacProgramConfigElementChannelCount;
 var init_aac_misc = __esm({
   "node_modules/mediabunny/dist/modules/shared/aac-misc.js"() {
     init_bitstream();
@@ -54167,8 +54171,17 @@ var init_aac_misc = __esm({
         }
       }
       let frameLength = 1024;
+      let programConfigElement = null;
       if (generalAudioObjectTypes.includes(coreObjectType)) {
         frameLength = bitstream.readBits(1) ? 960 : 1024;
+        if (channelConfiguration === 0) {
+          if (bitstream.readBits(1)) {
+            bitstream.skipBits(14);
+          }
+          bitstream.skipBits(1);
+          programConfigElement = readAacProgramConfigElement(bitstream);
+          numberOfChannels = getAacProgramConfigElementChannelCount(programConfigElement);
+        }
       }
       if (objectType !== 5 && objectType !== 29) {
         while (bitstream.getBitsLeft() > 15) {
@@ -54197,7 +54210,8 @@ var init_aac_misc = __esm({
         coreSampleRate: sampleRate,
         outputSampleRate,
         outputNumberOfChannels: psPresent && numberOfChannels === 1 ? 2 : numberOfChannels,
-        frameLength
+        frameLength,
+        programConfigElement
       };
     }, "parseAacAudioSpecificConfig");
     readAacObjectType = /* @__PURE__ */ __name((bitstream) => {
@@ -54222,7 +54236,7 @@ var init_aac_misc = __esm({
       const usesPs = config2.objectType === 29;
       const coreSampleRate = usesSbr ? config2.outputSampleRate / 2 : config2.outputSampleRate;
       const coreNumberOfChannels = usesPs ? 1 : config2.outputNumberOfChannels;
-      const channelConfiguration = aacChannelMap.indexOf(coreNumberOfChannels);
+      const channelConfiguration = config2.programConfigElement ? 0 : aacChannelMap.indexOf(coreNumberOfChannels);
       if (channelConfiguration === -1) {
         throw new TypeError(`Unsupported number of channels: ${config2.outputNumberOfChannels}`);
       }
@@ -54239,7 +54253,7 @@ var init_aac_misc = __esm({
           bitCount += 24;
         }
       }
-      const byteCount = Math.ceil(bitCount / 8);
+      const byteCount = Math.ceil(bitCount / 8) + (config2.programConfigElement ? getMaxPceByteLength(config2.programConfigElement) : 0);
       const bytes2 = new Uint8Array(byteCount);
       const bitstream = new Bitstream(bytes2);
       writeAacObjectType(bitstream, config2.objectType);
@@ -54250,7 +54264,10 @@ var init_aac_misc = __esm({
         writeAacObjectType(bitstream, 2);
       }
       bitstream.writeBits(3, 0);
-      return bytes2;
+      if (config2.programConfigElement) {
+        writeAacProgramConfigElement(bitstream, config2.programConfigElement);
+      }
+      return bytes2.subarray(0, Math.ceil(bitstream.pos / 8));
     }, "buildAacAudioSpecificConfig");
     writeAacObjectType = /* @__PURE__ */ __name((bitstream, objectType) => {
       if (objectType < 32) {
@@ -54272,9 +54289,62 @@ var init_aac_misc = __esm({
       return index23 === -1 ? 15 : index23;
     }, "findAacFrequencyIndex");
     buildAdtsHeaderTemplate = /* @__PURE__ */ __name((config2) => {
-      const header = new Uint8Array(7);
+      const { coreObjectType, frequencyIndex, frameLength } = config2;
+      let { channelConfiguration, programConfigElement } = config2;
+      if (coreObjectType < 1 || coreObjectType > 4) {
+        throw new Error(`AAC object type ${coreObjectType} can't be stored in ADTS.`);
+      }
+      if (frequencyIndex >= aacFrequencyTable.length) {
+        throw new Error(`AAC sampling frequency index ${frequencyIndex} can't be stored in ADTS.`);
+      }
+      if (channelConfiguration === 11 || channelConfiguration === 12) {
+        const surroundPair = {
+          isCpe: true,
+          tagSelect: 1
+        };
+        programConfigElement = {
+          elementInstanceTag: 0,
+          objectType: coreObjectType - 1,
+          samplingFrequencyIndex: frequencyIndex,
+          frontElements: [
+            {
+              isCpe: false,
+              tagSelect: 0
+            },
+            {
+              isCpe: true,
+              tagSelect: 0
+            }
+          ],
+          sideElements: channelConfiguration === 12 ? [surroundPair] : [],
+          backElements: channelConfiguration === 11 ? [
+            surroundPair,
+            {
+              isCpe: false,
+              tagSelect: 1
+            }
+          ] : [{
+            isCpe: true,
+            tagSelect: 2
+          }],
+          lfeElementTags: [0],
+          assocDataElementTags: [],
+          ccElements: [],
+          monoMixdownElementNumber: null,
+          stereoMixdownElementNumber: null,
+          matrixMixdown: null,
+          comment: new Uint8Array(0)
+        };
+        channelConfiguration = 0;
+      }
+      if (channelConfiguration > 7) {
+        throw new Error(`AAC channel configuration ${channelConfiguration} can't be stored in ADTS.`);
+      }
+      if (frameLength !== 1024) {
+        throw new Error(`AAC frame length ${frameLength} can't be stored in ADTS.`);
+      }
+      let header = new Uint8Array(7 + (programConfigElement ? getMaxPceByteLength(programConfigElement) : 0));
       const bitstream = new Bitstream(header);
-      const { coreObjectType, frequencyIndex, channelConfiguration } = config2;
       const profile = coreObjectType - 1;
       bitstream.writeBits(12, 4095);
       bitstream.writeBits(1, 0);
@@ -54291,17 +54361,137 @@ var init_aac_misc = __esm({
       bitstream.skipBits(13);
       bitstream.writeBits(11, 2047);
       bitstream.writeBits(2, 0);
+      if (programConfigElement) {
+        bitstream.pos = 8 * 7;
+        bitstream.writeBits(3, 5);
+        writeAacProgramConfigElement(bitstream, programConfigElement);
+        header = header.subarray(0, bitstream.pos / 8);
+      }
       return { header, bitstream };
     }, "buildAdtsHeaderTemplate");
+    getMaxPceByteLength = /* @__PURE__ */ __name((programConfigElement) => {
+      return 64 + programConfigElement.comment.byteLength;
+    }, "getMaxPceByteLength");
+    writeAacProgramConfigElement = /* @__PURE__ */ __name((bitstream, pce) => {
+      bitstream.writeBits(4, pce.elementInstanceTag);
+      bitstream.writeBits(2, pce.objectType);
+      bitstream.writeBits(4, pce.samplingFrequencyIndex);
+      bitstream.writeBits(4, pce.frontElements.length);
+      bitstream.writeBits(4, pce.sideElements.length);
+      bitstream.writeBits(4, pce.backElements.length);
+      bitstream.writeBits(2, pce.lfeElementTags.length);
+      bitstream.writeBits(3, pce.assocDataElementTags.length);
+      bitstream.writeBits(4, pce.ccElements.length);
+      bitstream.writeBits(1, +(pce.monoMixdownElementNumber !== null));
+      if (pce.monoMixdownElementNumber !== null) {
+        bitstream.writeBits(4, pce.monoMixdownElementNumber);
+      }
+      bitstream.writeBits(1, +(pce.stereoMixdownElementNumber !== null));
+      if (pce.stereoMixdownElementNumber !== null) {
+        bitstream.writeBits(4, pce.stereoMixdownElementNumber);
+      }
+      bitstream.writeBits(1, +(pce.matrixMixdown !== null));
+      if (pce.matrixMixdown) {
+        bitstream.writeBits(2, pce.matrixMixdown.index);
+        bitstream.writeBits(1, +pce.matrixMixdown.pseudoSurroundEnabled);
+      }
+      for (const element2 of [...pce.frontElements, ...pce.sideElements, ...pce.backElements]) {
+        bitstream.writeBits(1, +element2.isCpe);
+        bitstream.writeBits(4, element2.tagSelect);
+      }
+      for (const tag of [...pce.lfeElementTags, ...pce.assocDataElementTags]) {
+        bitstream.writeBits(4, tag);
+      }
+      for (const element2 of pce.ccElements) {
+        bitstream.writeBits(1, +element2.isIndependentlySwitched);
+        bitstream.writeBits(4, element2.tagSelect);
+      }
+      bitstream.pos = 8 * Math.ceil(bitstream.pos / 8);
+      bitstream.writeBits(8, pce.comment.byteLength);
+      bitstream.bytes.set(pce.comment, bitstream.pos / 8);
+      bitstream.pos += 8 * pce.comment.byteLength;
+    }, "writeAacProgramConfigElement");
     writeAdtsFrameLength = /* @__PURE__ */ __name((bitstream, frameLength) => {
+      if (frameLength >= 2 ** 13) {
+        throw new Error(`AAC frame too large for ADTS (${frameLength} bytes, at most ${2 ** 13 - 1} allowed).`);
+      }
       bitstream.pos = 30;
       bitstream.writeBits(13, frameLength);
     }, "writeAdtsFrameLength");
+    readAdtsProgramConfigElement = /* @__PURE__ */ __name((rawDataBlock) => {
+      const bitstream = new Bitstream(rawDataBlock);
+      if (bitstream.readBits(3) !== 5) {
+        return null;
+      }
+      const programConfigElement = readAacProgramConfigElement(bitstream);
+      const size = bitstream.pos / 8;
+      if (size > rawDataBlock.byteLength) {
+        throw new Error("Invalid ADTS frame: its program config element extends past the end of the frame.");
+      }
+      return {
+        programConfigElement,
+        size
+        // In bytes, within the raw data block
+      };
+    }, "readAdtsProgramConfigElement");
+    readAacProgramConfigElement = /* @__PURE__ */ __name((bitstream) => {
+      const elementInstanceTag = bitstream.readBits(4);
+      const objectType = bitstream.readBits(2);
+      const samplingFrequencyIndex = bitstream.readBits(4);
+      const frontElementCount = bitstream.readBits(4);
+      const sideElementCount = bitstream.readBits(4);
+      const backElementCount = bitstream.readBits(4);
+      const lfeElementCount = bitstream.readBits(2);
+      const assocDataElementCount = bitstream.readBits(3);
+      const ccElementCount = bitstream.readBits(4);
+      const monoMixdownElementNumber = bitstream.readBits(1) ? bitstream.readBits(4) : null;
+      const stereoMixdownElementNumber = bitstream.readBits(1) ? bitstream.readBits(4) : null;
+      const matrixMixdown = bitstream.readBits(1) ? {
+        index: bitstream.readBits(2),
+        pseudoSurroundEnabled: !!bitstream.readBits(1)
+      } : null;
+      const readChannelElements = /* @__PURE__ */ __name((count2) => Array.from({ length: count2 }, () => ({
+        isCpe: !!bitstream.readBits(1),
+        tagSelect: bitstream.readBits(4)
+      })), "readChannelElements");
+      const frontElements = readChannelElements(frontElementCount);
+      const sideElements = readChannelElements(sideElementCount);
+      const backElements = readChannelElements(backElementCount);
+      const lfeElementTags = Array.from({ length: lfeElementCount }, () => bitstream.readBits(4));
+      const assocDataElementTags = Array.from({ length: assocDataElementCount }, () => bitstream.readBits(4));
+      const ccElements = Array.from({ length: ccElementCount }, () => ({
+        isIndependentlySwitched: !!bitstream.readBits(1),
+        tagSelect: bitstream.readBits(4)
+      }));
+      bitstream.pos = 8 * Math.ceil(bitstream.pos / 8);
+      const commentLength = bitstream.readBits(8);
+      const comment = bitstream.bytes.slice(bitstream.pos / 8, bitstream.pos / 8 + commentLength);
+      bitstream.pos += 8 * commentLength;
+      return {
+        elementInstanceTag,
+        objectType,
+        samplingFrequencyIndex,
+        frontElements,
+        sideElements,
+        backElements,
+        lfeElementTags,
+        assocDataElementTags,
+        ccElements,
+        monoMixdownElementNumber,
+        stereoMixdownElementNumber,
+        matrixMixdown,
+        comment
+      };
+    }, "readAacProgramConfigElement");
+    getAacProgramConfigElementChannelCount = /* @__PURE__ */ __name((pce) => {
+      const elements = [...pce.frontElements, ...pce.sideElements, ...pce.backElements];
+      return elements.reduce((count2, element2) => count2 + (element2.isCpe ? 2 : 1), pce.lfeElementTags.length);
+    }, "getAacProgramConfigElementChannelCount");
   }
 });
 
 // node_modules/mediabunny/dist/modules/shared/mp3-misc.js
-var MP3_FRAME_HEADER_SIZE, MP3_DECODER_DELAY, SAMPLING_RATES, KILOBIT_RATES, XING, INFO, computeMp3FrameSize, computeAverageMp3FrameSize, getXingOffset, readMp3FrameHeader, encodeSynchsafe, decodeSynchsafe, XingFlags, getMp3ChannelCount;
+var MP3_FRAME_HEADER_SIZE, MP3_DECODER_DELAY, SAMPLING_RATES, KILOBIT_RATES, XING, INFO, VBRI, computeMp3FrameSize, computeAverageMp3FrameSize, getXingOffset, readMp3FrameHeader, encodeSynchsafe, decodeSynchsafe, XingFlags, getMp3ChannelCount;
 var init_mp3_misc = __esm({
   "node_modules/mediabunny/dist/modules/shared/mp3-misc.js"() {
     MP3_FRAME_HEADER_SIZE = 4;
@@ -54449,6 +54639,7 @@ var init_mp3_misc = __esm({
     ];
     XING = 1483304551;
     INFO = 1231971951;
+    VBRI = 1447187017;
     computeMp3FrameSize = /* @__PURE__ */ __name((lowSamplingFrequency, layer, bitrate, sampleRate, padding) => {
       if (layer === 0) {
         return 0;
@@ -54502,7 +54693,10 @@ var init_mp3_misc = __esm({
       const mpegVersionId = secondByte >> 3 & 3;
       const layer = secondByte >> 1 & 3;
       const bitrateIndex = thirdByte >> 4 & 15;
-      const frequencyIndex = (thirdByte >> 2 & 3) % 3;
+      const frequencyIndex = thirdByte >> 2 & 3;
+      if (mpegVersionId === 1 || frequencyIndex === 3) {
+        return { header: null, bytesAdvanced: 1 };
+      }
       const padding = thirdByte >> 1 & 1;
       const channel = fourthByte >> 6 & 3;
       const modeExtension = fourthByte >> 4 & 3;
@@ -54606,13 +54800,13 @@ var init_truehd_misc = __esm({
 var VERSION2, VERSIONED_NAME;
 var init_version3 = __esm({
   "node_modules/mediabunny/dist/modules/src/version.js"() {
-    VERSION2 = "1.65.2";
+    VERSION2 = "1.66.0";
     VERSIONED_NAME = `Mediabunny v${VERSION2}`;
   }
 });
 
 // node_modules/mediabunny/dist/modules/src/codec-data.js
-var AvcNalUnitType, HevcNalUnitType, iterateNalUnitsInAnnexB, iterateNalUnitsInLengthPrefixed, iterateAvcNalUnits, extractNalUnitTypeForAvc, removeEmulationPreventionBytes, addEmulationPreventionBytes, ANNEX_B_START_CODE, concatNalUnitsInAnnexB, concatNalUnitsInLengthPrefixed, concatAvcNalUnits, extractAvcDecoderConfigurationRecord, serializeAvcDecoderConfigurationRecord, deserializeAvcDecoderConfigurationRecord, AVC_HEVC_ASPECT_RATIO_IDC_TABLE, parseAvcSps, skipAvcHrdParameters, addAvcBitstreamRestriction, concatHevcNalUnits, iterateHevcNalUnits, extractNalUnitTypeForHevc, parseHevcSps, extractHevcDecoderConfigurationRecord, parseProfileTierLevel, skipScalingListData, skipAllStRefPicSets, skipStRefPicSet, parseHevcVui, skipHevcHrdParameters, skipSubLayerHrdParameters, serializeHevcDecoderConfigurationRecord, deserializeHevcDecoderConfigurationRecord, HevcNaluOrderState, sanitizeHevcPacketForChromium, VP9_COLOR_SPACE_TABLE, extractVp9CodecInfoFromPacket, vp9CodecInfoHasColorInfo, iterateAv1PacketObus, extractAv1CodecInfoFromPacket, av1CodecInfoHasColorInfo, extractProresCodecInfoFromPacket, parseOpusIdentificationHeader, OPUS_FRAME_DURATION_TABLE, parseOpusTocByte, parseModesFromVorbisSetupPacket, determineVideoPacketType, determineAudioPacketType, FlacBlockType, readVorbisComments, createVorbisComments, AC3_ACMOD_CHANNEL_COUNTS, parseAc3SyncFrame, AC3_FRAME_SIZES, AC3_SAMPLES_PER_FRAME, AC3_REGISTRATION_DESCRIPTOR, EAC3_REGISTRATION_DESCRIPTOR, EAC3_NUMBLKS_TABLE, parseEac3SyncFrame, parseEac3Config, getEac3SampleRate, getEac3ChannelCount, DTS_EXSS_SYNC_WORD, DTS_CORE_FRAME_HEADER_SIZE, DTS_EXSS_HEADER_PREFIX_SIZE, DTS_EXSS_MAX_HEADER_SIZE, DTS_PCM_BLOCK_SAMPLES, DTS_SPECIFIC_BOX_SIZE, DTS_SUBBAND_SAMPLES, DTS_CORE_SAMPLE_RATES, DTS_CORE_BIT_RATES, DTS_PCM_RESOLUTIONS, DTS_AMODE_CHANNEL_COUNTS, DTS_AMODE_CHANNEL_LAYOUTS, DTS_CHANNEL_LAYOUT_LFE1, DTS_CHANNEL_LAYOUT_PAIR_MASK, DTS_EXSS_REF_CLOCKS, DTS_EXSS_SAMPLE_RATES, DTS_SPECIFIC_BOX_FRAME_DURATIONS, parseDtsFrame, extractDtsFourCcFromPacket, parseDtsCoreFrameHeader, parseDtsExssHeader, parseDtsSpecificBox, buildDtsSpecificBox, getDtsChannelCount;
+var AvcNalUnitType, HevcNalUnitType, iterateNalUnitsInAnnexB, iterateNalUnitsInLengthPrefixed, iterateAvcNalUnits, extractNalUnitTypeForAvc, removeEmulationPreventionBytes, addEmulationPreventionBytes, ANNEX_B_START_CODE, concatNalUnitsInAnnexB, concatNalUnitsInLengthPrefixed, concatAvcNalUnits, extractAvcDecoderConfigurationRecord, serializeAvcDecoderConfigurationRecord, deserializeAvcDecoderConfigurationRecord, avcProfileHasExtendedConfigurationData, AVC_HEVC_ASPECT_RATIO_IDC_TABLE, parseAvcSps, skipAvcHrdParameters, addAvcBitstreamRestriction, concatHevcNalUnits, iterateHevcNalUnits, extractNalUnitTypeForHevc, parseHevcSps, extractHevcDecoderConfigurationRecord, parseProfileTierLevel, skipScalingListData, skipAllStRefPicSets, skipStRefPicSet, parseHevcVui, skipHevcHrdParameters, skipSubLayerHrdParameters, serializeHevcDecoderConfigurationRecord, deserializeHevcDecoderConfigurationRecord, HevcNaluOrderState, sanitizeHevcPacketForChromium, VP9_COLOR_SPACE_TABLE, extractVp9CodecInfoFromPacket, vp9CodecInfoHasColorInfo, iterateAv1PacketObus, extractAv1CodecInfoFromPacket, av1CodecInfoHasColorInfo, extractProresCodecInfoFromPacket, parseOpusIdentificationHeader, OPUS_FRAME_DURATION_TABLE, parseOpusTocByte, parseModesFromVorbisSetupPacket, determineVideoPacketType, countShownVideoFrames, determineAudioPacketType, FlacBlockType, readVorbisComments, createVorbisComments, AC3_ACMOD_CHANNEL_COUNTS, parseAc3SyncFrame, AC3_FRAME_SIZES, AC3_SAMPLES_PER_FRAME, AC3_REGISTRATION_DESCRIPTOR, EAC3_REGISTRATION_DESCRIPTOR, EAC3_NUMBLKS_TABLE, parseEac3SyncFrame, splitEac3AudioFrames, parseEac3Config, getEac3SampleRate, getEac3ChannelCount, DTS_EXSS_SYNC_WORD, DTS_CORE_FRAME_HEADER_SIZE, DTS_EXSS_HEADER_PREFIX_SIZE, DTS_EXSS_MAX_HEADER_SIZE, DTS_PCM_BLOCK_SAMPLES, DTS_SPECIFIC_BOX_SIZE, DTS_SUBBAND_SAMPLES, DTS_CORE_SAMPLE_RATES, DTS_CORE_BIT_RATES, DTS_PCM_RESOLUTIONS, DTS_AMODE_CHANNEL_COUNTS, DTS_AMODE_CHANNEL_LAYOUTS, DTS_CHANNEL_LAYOUT_LFE1, DTS_CHANNEL_LAYOUT_PAIR_MASK, DTS_EXSS_REF_CLOCKS, DTS_EXSS_SAMPLE_RATES, DTS_SPECIFIC_BOX_FRAME_DURATIONS, parseDtsFrame, extractDtsFourCcFromPacket, parseDtsCoreFrameHeader, parseDtsExssHeader, parseDtsSpecificBox, DTS_CORE_EXTENSION_STREAM_CONSTRUCTIONS, buildDtsSpecificBox, getDtsChannelCount;
 var init_codec_data = __esm({
   "node_modules/mediabunny/dist/modules/src/codec-data.js"() {
     init_codec();
@@ -54821,7 +55015,7 @@ var init_codec_data = __esm({
         if (!spsInfo) {
           return null;
         }
-        const hasExtendedData = spsInfo.profileIdc === 100 || spsInfo.profileIdc === 110 || spsInfo.profileIdc === 122 || spsInfo.profileIdc === 144;
+        const hasExtendedData = avcProfileHasExtendedConfigurationData(spsInfo.profileIdc);
         return {
           configurationVersion: 1,
           avcProfileIndication: spsInfo.profileIdc,
@@ -54866,7 +55060,7 @@ var init_codec_data = __esm({
           bytes2.push(pps[i]);
         }
       }
-      if ((record2.avcProfileIndication === 100 || record2.avcProfileIndication === 110 || record2.avcProfileIndication === 122 || record2.avcProfileIndication === 144) && record2.chromaFormat !== null) {
+      if (avcProfileHasExtendedConfigurationData(record2.avcProfileIndication) && record2.chromaFormat !== null) {
         assert2(record2.bitDepthLumaMinus8 !== null);
         assert2(record2.bitDepthChromaMinus8 !== null);
         assert2(record2.sequenceParameterSetExt !== null);
@@ -54923,7 +55117,7 @@ var init_codec_data = __esm({
           bitDepthChromaMinus8: null,
           sequenceParameterSetExt: null
         };
-        if ((avcProfileIndication === 100 || avcProfileIndication === 110 || avcProfileIndication === 122 || avcProfileIndication === 144) && offset + 4 <= data.length) {
+        if (avcProfileHasExtendedConfigurationData(avcProfileIndication) && offset + 4 <= data.length) {
           const chromaFormat = view2.getUint8(offset++) & 3;
           const bitDepthLumaMinus8 = view2.getUint8(offset++) & 7;
           const bitDepthChromaMinus8 = view2.getUint8(offset++) & 7;
@@ -54946,6 +55140,9 @@ var init_codec_data = __esm({
         return null;
       }
     }, "deserializeAvcDecoderConfigurationRecord");
+    avcProfileHasExtendedConfigurationData = /* @__PURE__ */ __name((profileIdc) => {
+      return profileIdc !== 66 && profileIdc !== 77 && profileIdc !== 88;
+    }, "avcProfileHasExtendedConfigurationData");
     AVC_HEVC_ASPECT_RATIO_IDC_TABLE = {
       1: { num: 1, den: 1 },
       2: { num: 12, den: 11 },
@@ -54982,7 +55179,7 @@ var init_codec_data = __esm({
         let bitDepthLumaMinus8 = 0;
         let bitDepthChromaMinus8 = 0;
         let separateColourPlaneFlag = 0;
-        if (profileIdc === 100 || profileIdc === 110 || profileIdc === 122 || profileIdc === 244 || profileIdc === 44 || profileIdc === 83 || profileIdc === 86 || profileIdc === 118 || profileIdc === 128) {
+        if (profileIdc === 100 || profileIdc === 110 || profileIdc === 122 || profileIdc === 244 || profileIdc === 44 || profileIdc === 83 || profileIdc === 86 || profileIdc === 118 || profileIdc === 128 || profileIdc === 138 || profileIdc === 139 || profileIdc === 134 || profileIdc === 135 || profileIdc === 144) {
           chromaFormatIdc = readExpGolomb(bitstream);
           if (chromaFormatIdc === 3) {
             separateColourPlaneFlag = bitstream.readBits(1);
@@ -55022,18 +55219,18 @@ var init_codec_data = __esm({
             readSignedExpGolomb(bitstream);
           }
         }
-        readExpGolomb(bitstream);
+        const maxNumRefFrames = readExpGolomb(bitstream);
         bitstream.skipBits(1);
         const picWidthInMbsMinus1 = readExpGolomb(bitstream);
         const picHeightInMapUnitsMinus1 = readExpGolomb(bitstream);
-        const codedWidth = 16 * (picWidthInMbsMinus1 + 1);
-        const codedHeight = 16 * (picHeightInMapUnitsMinus1 + 1);
-        let displayWidth = codedWidth;
-        let displayHeight = codedHeight;
         const frameMbsOnlyFlag = bitstream.readBits(1);
         if (!frameMbsOnlyFlag) {
           bitstream.skipBits(1);
         }
+        const codedWidth = 16 * (picWidthInMbsMinus1 + 1);
+        const codedHeight = 16 * (2 - frameMbsOnlyFlag) * (picHeightInMapUnitsMinus1 + 1);
+        let displayWidth = codedWidth;
+        let displayHeight = codedHeight;
         bitstream.skipBits(1);
         const frameCroppingFlag = bitstream.readBits(1);
         if (frameCroppingFlag) {
@@ -55146,10 +55343,11 @@ var init_codec_data = __esm({
             const picWidthInMbs = picWidthInMbsMinus1 + 1;
             const picHeightInMapUnits = picHeightInMapUnitsMinus1 + 1;
             const frameHeightInMbs = (2 - frameMbsOnlyFlag) * picHeightInMapUnits;
-            const levelInfo = AVC_LEVEL_TABLE.find((x) => x.level >= levelIdc) ?? last(AVC_LEVEL_TABLE);
+            const isLevel1b = levelIdc === 11 && constraintSet3Flag && (profileIdc === 66 || profileIdc === 77 || profileIdc === 88);
+            const levelInfo = AVC_LEVEL_TABLE.find((x) => x.level >= (isLevel1b ? 10 : levelIdc)) ?? last(AVC_LEVEL_TABLE);
             const maxDpbFrames = Math.min(Math.floor(levelInfo.maxDpbMbs / (picWidthInMbs * frameHeightInMbs)), 16);
             numReorderFrames = maxDpbFrames;
-            maxDecFrameBuffering = maxDpbFrames;
+            maxDecFrameBuffering = Math.min(Math.max(maxDpbFrames, maxNumRefFrames), 16);
           }
         }
         assert2(maxDecFrameBuffering !== null);
@@ -55294,7 +55492,7 @@ var init_codec_data = __esm({
         }
         const bitDepthLumaMinus8 = readExpGolomb(bitstream);
         const bitDepthChromaMinus8 = readExpGolomb(bitstream);
-        readExpGolomb(bitstream);
+        const log2MaxPicOrderCntLsbMinus4 = readExpGolomb(bitstream);
         const spsSubLayerOrderingInfoPresentFlag = bitstream.readBits(1);
         const startI = spsSubLayerOrderingInfoPresentFlag ? 0 : spsMaxSubLayersMinus1;
         let spsMaxNumReorderPics = 0;
@@ -55328,7 +55526,7 @@ var init_codec_data = __esm({
         if (bitstream.readBits(1)) {
           const numLongTermRefPicsSps = readExpGolomb(bitstream);
           for (let i = 0; i < numLongTermRefPicsSps; i++) {
-            readExpGolomb(bitstream);
+            bitstream.skipBits(log2MaxPicOrderCntLsbMinus4 + 4);
             bitstream.skipBits(1);
           }
         }
@@ -55383,7 +55581,8 @@ var init_codec_data = __esm({
         const vpsUnits = [];
         const spsUnits = [];
         const ppsUnits = [];
-        const seiUnits = [];
+        const prefixSeiUnits = [];
+        const suffixSeiUnits = [];
         const MAX_NAL_UNITS_PER_ARRAY = 65535;
         for (const loc of iterateNalUnitsInAnnexB(packetData)) {
           const nalUnit = packetData.subarray(loc.offset, loc.offset + loc.length);
@@ -55394,8 +55593,10 @@ var init_codec_data = __esm({
             spsUnits.push(nalUnit);
           } else if (type === HevcNalUnitType.PPS_NUT && ppsUnits.length < MAX_NAL_UNITS_PER_ARRAY) {
             ppsUnits.push(nalUnit);
-          } else if ((type === HevcNalUnitType.PREFIX_SEI_NUT || type === HevcNalUnitType.SUFFIX_SEI_NUT) && seiUnits.length < MAX_NAL_UNITS_PER_ARRAY) {
-            seiUnits.push(nalUnit);
+          } else if (type === HevcNalUnitType.PREFIX_SEI_NUT && prefixSeiUnits.length < MAX_NAL_UNITS_PER_ARRAY) {
+            prefixSeiUnits.push(nalUnit);
+          } else if (type === HevcNalUnitType.SUFFIX_SEI_NUT && suffixSeiUnits.length < MAX_NAL_UNITS_PER_ARRAY) {
+            suffixSeiUnits.push(nalUnit);
           }
         }
         if (spsUnits.length === 0 || ppsUnits.length === 0)
@@ -55462,11 +55663,19 @@ var init_codec_data = __esm({
               nalUnits: ppsUnits
             }
           ] : [],
-          ...seiUnits.length ? [
+          // "array_completeness is 1 for arrays of all types of parameter sets, and 0 for all other arrays"
+          ...prefixSeiUnits.length ? [
             {
-              arrayCompleteness: 1,
-              nalUnitType: extractNalUnitTypeForHevc(seiUnits[0][0]),
-              nalUnits: seiUnits
+              arrayCompleteness: 0,
+              nalUnitType: HevcNalUnitType.PREFIX_SEI_NUT,
+              nalUnits: prefixSeiUnits
+            }
+          ] : [],
+          ...suffixSeiUnits.length ? [
+            {
+              arrayCompleteness: 0,
+              nalUnitType: HevcNalUnitType.SUFFIX_SEI_NUT,
+              nalUnits: suffixSeiUnits
             }
           ] : []
         ];
@@ -55578,11 +55787,11 @@ var init_codec_data = __esm({
         const numDelta = NumDeltaPocs[RefRpsIdx] ?? 0;
         for (let j = 0; j <= numDelta; j++) {
           const used_by_curr_pic_flag = bitstream.readBits(1);
-          if (!used_by_curr_pic_flag) {
-            bitstream.readBits(1);
+          const use_delta_flag = used_by_curr_pic_flag || bitstream.readBits(1);
+          if (use_delta_flag) {
+            NumDeltaPocsThis++;
           }
         }
-        NumDeltaPocsThis = NumDeltaPocs[RefRpsIdx];
       } else {
         const num_negative_pics = readExpGolomb(bitstream);
         const num_positive_pics = readExpGolomb(bitstream);
@@ -55972,6 +56181,9 @@ var init_codec_data = __esm({
       } else {
         chromaSubsampling = 3;
         videoFullRangeFlag = 1;
+        if (profile === 1 || profile === 3) {
+          bitstream.skipBits(1);
+        }
       }
       const widthMinusOne = bitstream.readBits(16);
       const heightMinusOne = bitstream.readBits(16);
@@ -56240,7 +56452,7 @@ var init_codec_data = __esm({
     }, "av1CodecInfoHasColorInfo");
     extractProresCodecInfoFromPacket = /* @__PURE__ */ __name((packet) => {
       const frameHeaderStart = 8;
-      if (packet.length < frameHeaderStart + 28) {
+      if (packet.length < frameHeaderStart + 20) {
         return null;
       }
       const view2 = toDataView(packet);
@@ -56248,7 +56460,7 @@ var init_codec_data = __esm({
         return null;
       }
       const headerSize = view2.getUint16(frameHeaderStart);
-      if (headerSize < 28) {
+      if (headerSize < 20) {
         return null;
       }
       return {
@@ -56271,7 +56483,7 @@ var init_codec_data = __esm({
       const channelMappingFamily = view2.getUint8(18);
       let channelMappingTable = null;
       if (channelMappingFamily) {
-        channelMappingTable = bytes2.subarray(19, 19 + 2 + outputChannelCount);
+        channelMappingTable = bytes2.subarray(19);
       }
       return {
         outputChannelCount,
@@ -56516,7 +56728,8 @@ var init_codec_data = __esm({
                   return null;
                 }
                 const frameType = bitstream.readBits(2);
-                return frameType === 0 ? "key" : "delta";
+                const showFrame = bitstream.readBits(1);
+                return frameType === 0 && showFrame === 1 ? "key" : "delta";
               }
             }
             return null;
@@ -56535,6 +56748,51 @@ var init_codec_data = __esm({
           ;
       }
     }, "determineVideoPacketType");
+    countShownVideoFrames = /* @__PURE__ */ __name((codec2, packetData) => {
+      if (codec2 === "vp8") {
+        return packetData[0] >> 4 & 1;
+      } else if (codec2 === "vp9") {
+        const isShown = /* @__PURE__ */ __name((frameData) => {
+          const bitstream = new Bitstream(frameData);
+          bitstream.skipBits(2);
+          const profileLowBit = bitstream.readBits(1);
+          const profileHighBit = bitstream.readBits(1);
+          if (profileLowBit === 1 && profileHighBit === 1) {
+            bitstream.skipBits(1);
+          }
+          const showExistingFrame = bitstream.readBits(1);
+          if (showExistingFrame === 1) {
+            return true;
+          }
+          bitstream.skipBits(1);
+          const showFrame = bitstream.readBits(1);
+          return showFrame === 1;
+        }, "isShown");
+        const lastByte = packetData[packetData.length - 1];
+        if ((lastByte & 224) === 192) {
+          const frameCount = (lastByte & 7) + 1;
+          const frameSizeLength = (lastByte >> 3 & 3) + 1;
+          const indexStart = packetData.length - (2 + frameCount * frameSizeLength);
+          if (packetData[indexStart] === lastByte) {
+            let shownFrameCount = 0;
+            let frameStart = 0;
+            for (let i = 0; i < frameCount; i++) {
+              let frameSize = 0;
+              for (let j = 0; j < frameSizeLength; j++) {
+                frameSize += packetData[indexStart + 1 + i * frameSizeLength + j] * 2 ** (8 * j);
+              }
+              if (isShown(packetData.subarray(frameStart, frameStart + frameSize))) {
+                shownFrameCount++;
+              }
+              frameStart += frameSize;
+            }
+            return shownFrameCount;
+          }
+        }
+        return isShown(packetData) ? 1 : 0;
+      }
+      return 1;
+    }, "countShownVideoFrames");
     determineAudioPacketType = /* @__PURE__ */ __name((codec2, packetData) => {
       if (codec2 === "truehd") {
         const syncWord = packetData.byteLength >= 8 ? toDataView(packetData).getUint32(4) : null;
@@ -56680,8 +56938,8 @@ var init_codec_data = __esm({
             break;
           case "DATE":
             {
-              const date6 = new Date(value);
-              if (!Number.isNaN(date6.getTime())) {
+              const date6 = parseIsoSuffix(value);
+              if (date6) {
                 metadataTags.date ??= date6;
               }
             }
@@ -56882,6 +57140,9 @@ var init_codec_data = __esm({
         for (const key in tags.raw) {
           const value = tags.raw[key] ?? tags.raw[key.toLowerCase()];
           if (key === "vendor" || value == null || writtenTags.includes(key)) {
+            continue;
+          }
+          if (key === "METADATA_BLOCK_PICTURE" && !writeImages && (tags.images?.length ?? 0) > 0) {
             continue;
           }
           if (typeof value === "string") {
@@ -57103,8 +57364,42 @@ var init_codec_data = __esm({
       }
       const dataRate = Math.round((frmsiz + 1) * fs2 / (numblks * 16));
       const bsmod = 0;
-      const numDepSub = 0;
-      const chanLoc = 0;
+      let numDepSub = 0;
+      let chanLoc = 0;
+      let offset = 2 * (frmsiz + 1);
+      while (offset + 2 <= data.length) {
+        bitstream.seekToByte(offset);
+        if (bitstream.readBits(16) !== 2935 || bitstream.readBits(2) !== 1) {
+          break;
+        }
+        bitstream.skipBits(3);
+        const dependentFrmsiz = bitstream.readBits(11);
+        bitstream.skipBits(2 + 2);
+        const dependentAcmod = bitstream.readBits(3);
+        bitstream.skipBits(1 + 5 + 5);
+        if (bitstream.readBits(1)) {
+          bitstream.skipBits(8);
+        }
+        if (dependentAcmod === 0) {
+          bitstream.skipBits(5);
+          if (bitstream.readBits(1)) {
+            bitstream.skipBits(8);
+          }
+        }
+        if (bitstream.readBits(1)) {
+          const chanmap = bitstream.readBits(16);
+          for (let i = 0; i < 8; i++) {
+            if (chanmap & 1 << 10 - i) {
+              chanLoc |= 1 << i;
+            }
+          }
+          if (chanmap & 2) {
+            chanLoc |= 1 << 8;
+          }
+        }
+        numDepSub++;
+        offset += 2 * (dependentFrmsiz + 1);
+      }
       const substream = {
         fscod,
         fscod2,
@@ -57120,6 +57415,39 @@ var init_codec_data = __esm({
         substreams: [substream]
       };
     }, "parseEac3SyncFrame");
+    splitEac3AudioFrames = /* @__PURE__ */ __name((data) => {
+      const frames = [];
+      let offset = 0;
+      while (offset < data.length) {
+        if (offset + 6 > data.length || data[offset] !== 11 || data[offset + 1] !== 119) {
+          return null;
+        }
+        const strmtyp = data[offset + 2] >> 6;
+        const frmsiz = (data[offset + 2] & 7) << 8 | data[offset + 3];
+        const fscod = data[offset + 4] >> 6;
+        const numblkscod = fscod === 3 ? 3 : data[offset + 4] >> 4 & 3;
+        const bsid = data[offset + 5] >> 3;
+        const size = 2 * (frmsiz + 1);
+        if (bsid <= 10 || offset + size > data.length) {
+          return null;
+        }
+        if (strmtyp === 1) {
+          const lastFrame = last(frames);
+          if (!lastFrame) {
+            return null;
+          }
+          lastFrame.size += size;
+        } else {
+          frames.push({
+            offset,
+            size,
+            blockCount: EAC3_NUMBLKS_TABLE[numblkscod]
+          });
+        }
+        offset += size;
+      }
+      return frames;
+    }, "splitEac3AudioFrames");
     parseEac3Config = /* @__PURE__ */ __name((data) => {
       if (data.length < 2) {
         return null;
@@ -57180,7 +57508,7 @@ var init_codec_data = __esm({
       if (sub.numDepSub > 0) {
         const CHAN_LOC_COUNTS = [2, 2, 1, 1, 2, 2, 2, 1, 1];
         for (let bit = 0; bit < 9; bit++) {
-          if (sub.chanLoc & 1 << 8 - bit) {
+          if (sub.chanLoc & 1 << bit) {
             channels += CHAN_LOC_COUNTS[bit];
           }
         }
@@ -57372,7 +57700,9 @@ var init_codec_data = __esm({
         return null;
       }
       bitstream.skipBits(1 + 1 + 1 + 1);
-      bitstream.skipBits(3 + 1 + 1);
+      const extAudioId = bitstream.readBits(3);
+      const extAudio = bitstream.readBits(1);
+      bitstream.skipBits(1);
       const lff = bitstream.readBits(2);
       if (lff === 3) {
         return null;
@@ -57396,7 +57726,8 @@ var init_codec_data = __esm({
         amode,
         lfePresent,
         bitRate,
-        pcmResolution
+        pcmResolution,
+        extAudioId: extAudio ? extAudioId : null
       };
     }, "parseDtsCoreFrameHeader");
     parseDtsExssHeader = /* @__PURE__ */ __name((data) => {
@@ -57518,6 +57849,11 @@ var init_codec_data = __esm({
         numberOfChannels
       };
     }, "parseDtsSpecificBox");
+    DTS_CORE_EXTENSION_STREAM_CONSTRUCTIONS = {
+      0: 2,
+      2: 4,
+      6: 3
+    };
     buildDtsSpecificBox = /* @__PURE__ */ __name((frameInfo) => {
       const bytes2 = new Uint8Array(DTS_SPECIFIC_BOX_SIZE);
       const view2 = toDataView(bytes2);
@@ -57525,7 +57861,11 @@ var init_codec_data = __esm({
       view2.setUint32(4, frameInfo.bitRate);
       view2.setUint32(8, frameInfo.bitRate);
       bytes2[12] = frameInfo.pcmResolution;
-      const streamConstruction = frameInfo.core && !frameInfo.hasExtensions ? 1 : 0;
+      let streamConstruction = 0;
+      if (frameInfo.core && !frameInfo.hasExtensions) {
+        const { extAudioId } = frameInfo.core;
+        streamConstruction = extAudioId === null ? 1 : DTS_CORE_EXTENSION_STREAM_CONSTRUCTIONS[extAudioId] ?? 0;
+      }
       const bitstream = new Bitstream(bytes2);
       bitstream.seekToByte(13);
       bitstream.writeBits(2, Math.max(DTS_SPECIFIC_BOX_FRAME_DURATIONS.indexOf(frameInfo.sampleCount), 0));
@@ -57552,9 +57892,9 @@ var init_codec_data = __esm({
 var cueBlockHeaderRegex, preambleStartRegex, inlineTimestampRegex, SubtitleParser, timestampRegex, parseSubtitleTimestamp, formatSubtitleTimestamp;
 var init_subtitles = __esm({
   "node_modules/mediabunny/dist/modules/src/subtitles.js"() {
-    cueBlockHeaderRegex = /(?:(.+?)\n)?((?:\d{2}:)?\d{2}:\d{2}.\d{3})\s+-->\s+((?:\d{2}:)?\d{2}:\d{2}.\d{3})/g;
+    cueBlockHeaderRegex = /(?:(.+?)\n)?((?:\d{2,}:)?\d{2}:\d{2}.\d{3})\s+-->\s+((?:\d{2,}:)?\d{2}:\d{2}.\d{3})/g;
     preambleStartRegex = /^WEBVTT(.|\n)*?\n{2}/;
-    inlineTimestampRegex = /<(?:(\d{2}):)?(\d{2}):(\d{2}).(\d{3})>/g;
+    inlineTimestampRegex = /<(?:(\d{2,}):)?(\d{2}):(\d{2}).(\d{3})>/g;
     SubtitleParser = class {
       static {
         __name(this, "SubtitleParser");
@@ -57569,6 +57909,9 @@ var init_subtitles = __esm({
         cueBlockHeaderRegex.lastIndex = 0;
         let match2;
         if (!this.preambleText) {
+          if (text3.charCodeAt(0) === 65279) {
+            text3 = text3.slice(1);
+          }
           if (!preambleStartRegex.test(text3)) {
             throw new Error("WebVTT preamble incorrect.");
           }
@@ -57587,7 +57930,8 @@ var init_subtitles = __esm({
           const notes = text3.slice(0, match2.index);
           const cueIdentifier = match2[1];
           const matchEnd = match2.index + match2[0].length;
-          const bodyStart = text3.indexOf("\n", matchEnd) + 1;
+          const lineEnd = text3.indexOf("\n", matchEnd);
+          const bodyStart = lineEnd === -1 ? text3.length : lineEnd + 1;
           const cueSettings = text3.slice(matchEnd, bodyStart).trim();
           let bodyEnd = text3.indexOf("\n\n", matchEnd);
           if (bodyEnd === -1)
@@ -57617,18 +57961,19 @@ var init_subtitles = __esm({
         }
       }
     };
-    timestampRegex = /(?:(\d{2}):)?(\d{2}):(\d{2}).(\d{3})/;
+    timestampRegex = /(?:(\d{2,}):)?(\d{2}):(\d{2}).(\d{3})/;
     parseSubtitleTimestamp = /* @__PURE__ */ __name((string4) => {
       const match2 = timestampRegex.exec(string4);
       if (!match2)
         throw new Error("Expected match.");
       return 60 * 60 * 1e3 * Number(match2[1] || "0") + 60 * 1e3 * Number(match2[2]) + 1e3 * Number(match2[3]) + Number(match2[4]);
     }, "parseSubtitleTimestamp");
-    formatSubtitleTimestamp = /* @__PURE__ */ __name((timestamp) => {
-      const hours = Math.floor(timestamp / (60 * 60 * 1e3));
-      const minutes = Math.floor(timestamp % (60 * 60 * 1e3) / (60 * 1e3));
-      const seconds = Math.floor(timestamp % (60 * 1e3) / 1e3);
-      const milliseconds = timestamp % 1e3;
+    formatSubtitleTimestamp = /* @__PURE__ */ __name((timeInSeconds) => {
+      const totalMilliseconds = Math.round(1e3 * timeInSeconds);
+      const hours = Math.floor(totalMilliseconds / (60 * 60 * 1e3));
+      const minutes = Math.floor(totalMilliseconds % (60 * 60 * 1e3) / (60 * 1e3));
+      const seconds = Math.floor(totalMilliseconds % (60 * 1e3) / 1e3);
+      const milliseconds = totalMilliseconds % 1e3;
       return hours.toString().padStart(2, "0") + ":" + minutes.toString().padStart(2, "0") + ":" + seconds.toString().padStart(2, "0") + "." + milliseconds.toString().padStart(3, "0");
     }, "formatSubtitleTimestamp");
   }
@@ -57717,7 +58062,7 @@ var init_pcm = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/decode.js
-var canDecodeVideoMemo, canDecodeAudioMemo, validateVideoDecodingConfig, validateAudioDecodingConfig, canDecode, canDecodeVideo, canDecodeAudio, getDecodableCodecs, getDecodableVideoCodecs, getDecodableAudioCodecs;
+var canDecodeVideoMemo, canDecodeAudioMemo, validateVideoDecodingConfig, validateAudioDecodingConfig, canDecode, canDecodeVideo, canDecodeAudio, getDecoderConfigMemoKey, getDecodableCodecs, getDecodableVideoCodecs, getDecodableAudioCodecs;
 var init_decode = __esm({
   "node_modules/mediabunny/dist/modules/src/decode.js"() {
     init_codec();
@@ -57777,7 +58122,7 @@ var init_decode = __esm({
         throw new TypeError("options.description, when provided, must be a buffer source.");
       }
     }, "validateAudioDecodingConfig");
-    canDecode = /* @__PURE__ */ __name((codec2) => {
+    canDecode = /* @__PURE__ */ __name(async (codec2) => {
       if (VIDEO_CODECS2.includes(codec2)) {
         return canDecodeVideo(codec2);
       } else if (AUDIO_CODECS2.includes(codec2)) {
@@ -57790,14 +58135,16 @@ var init_decode = __esm({
         return false;
       }
       validateVideoDecodingConfig(codec2, options2);
+      const codedWidth = options2.codedWidth ?? 1280;
+      const codedHeight = options2.codedHeight ?? 720;
       const resolvedOptions = {
         ...options2,
-        codedWidth: options2.codedWidth ?? 1280,
-        codedHeight: options2.codedHeight ?? 720,
-        codec: options2.codec ?? buildVideoCodecString(codec2, 1280, 720, 1e6, false)
+        codedWidth,
+        codedHeight,
+        codec: options2.codec ?? buildVideoCodecString(codec2, codedWidth, codedHeight, 1e6, false)
       };
       resolvedOptions.description ??= guessDescriptionForVideo(resolvedOptions);
-      const key = JSON.stringify(resolvedOptions);
+      const key = getDecoderConfigMemoKey(resolvedOptions);
       const memoized = canDecodeVideoMemo.get(key);
       if (memoized) {
         return memoized;
@@ -57824,7 +58171,7 @@ var init_decode = __esm({
         ...options2,
         numberOfChannels: options2.numberOfChannels ?? 2,
         sampleRate: options2.sampleRate ?? 48e3,
-        codec: options2.codec ?? buildAudioCodecString(codec2, 2, 48e3)
+        codec: options2.codec ?? buildAudioCodecString(codec2)
       };
       if (resolvedOptions.description === void 0) {
         const generatedDescription = guessDescriptionForAudio(resolvedOptions);
@@ -57833,7 +58180,7 @@ var init_decode = __esm({
         }
         resolvedOptions.description = generatedDescription;
       }
-      const key = JSON.stringify(resolvedOptions);
+      const key = getDecoderConfigMemoKey(resolvedOptions);
       const memoized = canDecodeAudioMemo.get(key);
       if (memoized) {
         return memoized;
@@ -57854,6 +58201,11 @@ var init_decode = __esm({
       canDecodeAudioMemo.set(key, promise2);
       return promise2;
     }, "canDecodeAudio");
+    getDecoderConfigMemoKey = /* @__PURE__ */ __name((config2) => JSON.stringify({
+      ...config2,
+      description: config2.description && [...toUint8Array(config2.description)]
+      // So it gets serialized properly
+    }), "getDecoderConfigMemoKey");
     getDecodableCodecs = /* @__PURE__ */ __name(async () => {
       const [videoCodecs, audioCodecs] = await Promise.all([
         getDecodableVideoCodecs(),
@@ -57873,7 +58225,7 @@ var init_decode = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/sample.js
-var __addDisposableResource, __disposeResources, lastVideoGcErrorLog, lastAudioGcErrorLog, finalizationRegistry, VideoSampleResource, VIDEO_SAMPLE_PIXEL_FORMATS, VIDEO_SAMPLE_PIXEL_FORMATS_SET, VideoSample, registeredVideoSampleTransformers, registerVideoSampleTransformer, TRANSFORMATION_CANVAS_CACHE_MAX_SIZE, transformationCanvasCache, transformationCanvasCacheNextAge, getTransformationCanvas, VideoSampleColorSpace, isVideoFrame, clampCropRectangle, validateCropRectangle, validateVideoFrameCopyToOptions, createDefaultPlaneLayout, getPlaneConfigs, ParseVideoFrameCopyToOptions, ParseVisibleRect, VerifyRectOffsetAlignment, ComputeLayoutAndAllocationSize, AUDIO_SAMPLE_FORMATS, AudioSampleResource, AudioSample, getBytesPerSample, formatIsPlanar, getReadFunction, getWriteFunction, isAudioData, toInterleavedAudioFormat, doAudioDataCopyToWebKitWorkaround, audioSampleToInterleavedFormat;
+var __addDisposableResource, __disposeResources, lastVideoGcErrorLog, lastAudioGcErrorLog, finalizationRegistry, VideoSampleResource, VIDEO_SAMPLE_PIXEL_FORMATS, VIDEO_SAMPLE_PIXEL_FORMATS_SET, VideoSample, registeredVideoSampleTransformers, registerVideoSampleTransformer, TRANSFORMATION_CANVAS_CACHE_MAX_SIZE, transformationCanvasCache, transformationCanvasCacheNextAge, getTransformationCanvas, VideoSampleColorSpace, isVideoFrame, clampCropRectangle, validateCropRectangle, validateVisibleRect, validateVideoFrameCopyToOptions, createDefaultPlaneLayout, getPlaneConfigs, ParseVideoFrameCopyToOptions, ParseVisibleRect, VerifyRectOffsetAlignment, ComputeLayoutAndAllocationSize, AUDIO_SAMPLE_FORMATS, AudioSampleResource, AudioSample, getBytesPerSample, formatIsPlanar, getReadFunction, getWriteFunction, isAudioData, toInterleavedAudioFormat, doAudioDataCopyToWebKitWorkaround, audioSampleToInterleavedFormat;
 var init_sample = __esm({
   "node_modules/mediabunny/dist/modules/src/sample.js"() {
     init_misc();
@@ -58087,9 +58439,13 @@ var init_sample = __esm({
                 throw new TypeError("plane.stride must be a non-negative integer.");
               }
             }
+            const planeCount = getPlaneConfigs(init2.format).length;
+            if (init2.layout.length !== planeCount) {
+              throw new TypeError(`init.layout must have ${planeCount} entries for format ${init2.format}.`);
+            }
           }
           if (init2.visibleRect !== void 0) {
-            validateRectangle(init2.visibleRect, "init.visibleRect");
+            validateVisibleRect(init2.visibleRect);
           }
           if (init2.displayWidth !== void 0 && (!Number.isInteger(init2.displayWidth) || init2.displayWidth <= 0)) {
             throw new TypeError("init.displayWidth, when provided, must be a positive integer.");
@@ -58141,6 +58497,9 @@ var init_sample = __esm({
           this._layout = layout;
           this.colorSpace = new VideoSampleColorSpace(colorSpaceInit);
         } else if (typeof VideoFrame !== "undefined" && data instanceof VideoFrame) {
+          if (data.codedWidth === 0) {
+            throw new TypeError("data must not be a closed VideoFrame.");
+          }
           if (init2?.rotation !== void 0 && ![0, 90, 180, 270].includes(init2.rotation)) {
             throw new TypeError("init.rotation, when provided, must be 0, 90, 180, or 270.");
           }
@@ -58154,7 +58513,7 @@ var init_sample = __esm({
             throw new TypeError("init.duration, when provided, must be a non-negative number.");
           }
           if (init2?.visibleRect !== void 0) {
-            validateRectangle(init2.visibleRect, "init.visibleRect");
+            validateVisibleRect(init2.visibleRect);
           }
           this._data = data;
           this._layout = null;
@@ -58195,7 +58554,7 @@ var init_sample = __esm({
             throw new TypeError("init.duration, when provided, must be a non-negative number.");
           }
           if (init2.visibleRect !== void 0) {
-            validateRectangle(init2.visibleRect, "init.visibleRect");
+            validateVisibleRect(init2.visibleRect);
           }
           if (typeof VideoFrame !== "undefined") {
             return new _VideoSample(new VideoFrame(data, {
@@ -58269,8 +58628,6 @@ var init_sample = __esm({
           if (init2.duration !== void 0 && (!Number.isFinite(init2.duration) || init2.duration < 0)) {
             throw new TypeError("init.duration, when provided, must be a non-negative number.");
           }
-          this._data = data;
-          data._referenceCount++;
           this.format = data.getFormat();
           if (this.format !== null && !VIDEO_SAMPLE_PIXEL_FORMATS.includes(this.format)) {
             throw new TypeError("getFormat() must return a VideoSamplePixelFormat or null.");
@@ -58300,6 +58657,8 @@ var init_sample = __esm({
           this.timestamp = init2.timestamp;
           this.duration = init2.duration ?? 0;
           this.colorSpace = data.getColorSpace();
+          this._data = data;
+          data._referenceCount++;
         } else {
           throw new TypeError("Invalid data type: Must be a BufferSource, CanvasImageSource, or VideoSampleResource.");
         }
@@ -58453,9 +58812,11 @@ var init_sample = __esm({
               throw new Error("For this sample, converting from a non-RGB to an RGB format requires VideoFrame to be defined.");
             }
             const tempFrame = this.toVideoFrame();
-            const result = await tempFrame.copyTo(destination, options2);
-            tempFrame.close();
-            return result;
+            try {
+              return await tempFrame.copyTo(destination, options2);
+            } finally {
+              tempFrame.close();
+            }
           }
         }
         const combinedLayout = ParseVideoFrameCopyToOptions(this, options2);
@@ -58478,7 +58839,7 @@ var init_sample = __esm({
           assert2(this._layout);
           assert2(this._layout.length === planeConfigs.length);
           dataPlanes = this._layout.map((planeLayout, i) => {
-            const height = Math.ceil(this.codedHeight / planeConfigs[i].heightDivisor);
+            const height = Math.ceil((this.visibleRect.top + this.visibleRect.height) / planeConfigs[i].heightDivisor);
             return {
               data: this._data.subarray(planeLayout.offset, planeLayout.offset + planeLayout.stride * height),
               stride: planeLayout.stride
@@ -58526,15 +58887,20 @@ var init_sample = __esm({
           const needsRgbConversion = this.format.startsWith("RGB") !== options2.format.startsWith("RGB");
           const needsAlphaConversion = this.format.includes("X") && options2.format.includes("A");
           if (needsRgbConversion || needsAlphaConversion) {
-            for (let i = 0; i < combinedLayout.allocationSize; i += 4) {
-              if (needsRgbConversion) {
-                const r2 = destBytes[i];
-                const b = destBytes[i + 2];
-                destBytes[i] = b;
-                destBytes[i + 2] = r2;
-              }
-              if (needsAlphaConversion) {
-                destBytes[i + 3] = 255;
+            const computedLayout = combinedLayout.computedLayouts[0];
+            for (let row = 0; row < computedLayout.sourceHeight; row++) {
+              const rowStart = computedLayout.destinationOffset + row * computedLayout.destinationStride;
+              const rowEnd = rowStart + computedLayout.sourceWidthBytes;
+              for (let i = rowStart; i < rowEnd; i += 4) {
+                if (needsRgbConversion) {
+                  const r2 = destBytes[i];
+                  const b = destBytes[i + 2];
+                  destBytes[i] = b;
+                  destBytes[i + 2] = r2;
+                }
+                if (needsAlphaConversion) {
+                  destBytes[i + 3] = 255;
+                }
               }
             }
           }
@@ -58576,7 +58942,8 @@ var init_sample = __esm({
             codedWidth: this.codedWidth,
             codedHeight: this.codedHeight,
             timestamp: this.microsecondTimestamp,
-            duration: this.microsecondDuration,
+            duration: this.microsecondDuration || void 0,
+            // Drag 0 duration to undefined, glitches some codecs
             colorSpace: this.colorSpace,
             visibleRect: this.visibleRect,
             displayWidth: this.squarePixelWidth,
@@ -58593,15 +58960,20 @@ var init_sample = __esm({
           assert2(this._layout);
           return new VideoFrame(this._data, {
             format: this.format,
-            codedWidth: this.codedWidth,
-            // This is technically wrong! codedWidth is a lie technically. But, since
-            codedHeight: this.codedHeight,
-            // we pass the layout (which contains the true coded width), we're good.
+            // The true coded size isn't known, but since we pass the layout (which contains the true strides), the
+            // smallest size containing the visible rect is good enough
+            codedWidth: this.visibleRect.left + this.visibleRect.width,
+            codedHeight: this.visibleRect.top + this.visibleRect.height,
             layout: this._layout,
             timestamp: this.microsecondTimestamp,
             duration: this.microsecondDuration || void 0,
             colorSpace: this.colorSpace,
-            visibleRect: this.visibleRect,
+            visibleRect: {
+              x: this.visibleRect.left,
+              y: this.visibleRect.top,
+              width: this.visibleRect.width,
+              height: this.visibleRect.height
+            },
             displayWidth: this.squarePixelWidth,
             // Not display* since we're not passing rotation
             displayHeight: this.squarePixelHeight
@@ -58724,20 +59096,21 @@ var init_sample = __esm({
         let dy;
         let newWidth;
         let newHeight;
-        const { sx, sy, sWidth, sHeight } = this._unmapSourceRegion(options2.crop?.left ?? 0, options2.crop?.top ?? 0, options2.crop?.width ?? rotatedWidth, options2.crop?.height ?? rotatedHeight, rotation, flip);
+        const { sx, sy, sWidth, sHeight } = this._unmapSourceRegion(finalCrop?.left ?? 0, finalCrop?.top ?? 0, finalCrop?.width ?? rotatedWidth, finalCrop?.height ?? rotatedHeight, rotation, flip);
         if (options2.fit === "fill") {
           dx = 0;
           dy = 0;
           newWidth = canvasWidth;
           newHeight = canvasHeight;
         } else {
-          const [sampleWidth, sampleHeight] = options2.crop ? [options2.crop.width, options2.crop.height] : [rotatedWidth, rotatedHeight];
+          const [sampleWidth, sampleHeight] = finalCrop ? [finalCrop.width, finalCrop.height] : [rotatedWidth, rotatedHeight];
           const scale = options2.fit === "contain" ? Math.min(canvasWidth / sampleWidth, canvasHeight / sampleHeight) : Math.max(canvasWidth / sampleWidth, canvasHeight / sampleHeight);
           newWidth = sampleWidth * scale;
           newHeight = sampleHeight * scale;
           dx = (canvasWidth - newWidth) / 2;
           dy = (canvasHeight - newHeight) / 2;
         }
+        const source = this.toCanvasImageSource();
         context3.save();
         const aspectRatioChange = rotation % 180 === 0 ? 1 : newWidth / newHeight;
         context3.translate(canvasWidth / 2, canvasHeight / 2);
@@ -58747,7 +59120,7 @@ var init_sample = __esm({
         context3.rotate(rotation * Math.PI / 180);
         context3.scale(1 / aspectRatioChange, aspectRatioChange);
         context3.translate(-canvasWidth / 2, -canvasHeight / 2);
-        context3.drawImage(this.toCanvasImageSource(), sx, sy, sWidth, sHeight, dx, dy, newWidth, newHeight);
+        context3.drawImage(source, sx, sy, sWidth, sHeight, dx, dy, newWidth, newHeight);
         context3.restore();
       }
       /** @internal */
@@ -58942,7 +59315,8 @@ var init_sample = __esm({
           duration: this.duration,
           // Any previous rotation and flip are now baked in
           rotation: 0,
-          flip: false
+          flip: false,
+          encodeOptions: this.encodeOptions
         });
       }
       /** Sets the rotation metadata of this video sample. */
@@ -59100,6 +59474,12 @@ var init_sample = __esm({
         throw new TypeError(prefix + "crop.height must be a non-negative integer.");
       }
     }, "validateCropRectangle");
+    validateVisibleRect = /* @__PURE__ */ __name((visibleRect) => {
+      validateRectangle(visibleRect, "init.visibleRect");
+      if (visibleRect.width === 0 || visibleRect.height === 0) {
+        throw new TypeError("init.visibleRect must not be empty.");
+      }
+    }, "validateVisibleRect");
     validateVideoFrameCopyToOptions = /* @__PURE__ */ __name((options2) => {
       if (!options2 || typeof options2 !== "object") {
         throw new TypeError("options must be an object.");
@@ -59224,13 +59604,20 @@ var init_sample = __esm({
     }, "getPlaneConfigs");
     ParseVideoFrameCopyToOptions = /* @__PURE__ */ __name((sample, options2) => {
       const defaultRect = {
-        left: 0,
-        top: 0,
-        width: sample.codedWidth,
-        height: sample.codedHeight
+        x: sample.visibleRect.left,
+        y: sample.visibleRect.top,
+        width: sample.visibleRect.width,
+        height: sample.visibleRect.height
       };
       const overrideRect = options2.rect;
-      const parsedRect = ParseVisibleRect(defaultRect, overrideRect, sample.codedWidth, sample.codedHeight, sample.format);
+      const parsedRect = ParseVisibleRect(
+        defaultRect,
+        overrideRect,
+        // The true coded size isn't known, but it's at least large enough to contain the visible rect
+        sample.visibleRect.left + sample.visibleRect.width,
+        sample.visibleRect.top + sample.visibleRect.height,
+        sample.format
+      );
       const optLayout = options2.layout;
       let format2;
       if (!options2.format || options2.format === sample.format) {
@@ -59245,7 +59632,7 @@ var init_sample = __esm({
     ParseVisibleRect = /* @__PURE__ */ __name((defaultRect, overrideRect, codedWidth, codedHeight, format2) => {
       const sourceRect = { ...defaultRect };
       if (overrideRect !== void 0) {
-        if (overrideRect.width === 0 || overrideRect.height === 0) {
+        if (!overrideRect.width || !overrideRect.height) {
           throw new TypeError("visibleRect dimensions cannot be zero.");
         }
         if ((overrideRect.x || 0) + (overrideRect.width || 0) > codedWidth) {
@@ -59305,7 +59692,7 @@ var init_sample = __esm({
         computedLayout.sourceTop = Math.ceil(Math.trunc(parsedRect.y || 0) / sampleHeight);
         computedLayout.sourceHeight = Math.ceil(Math.trunc(parsedRect.height || 0) / sampleHeight);
         computedLayout.sourceLeftBytes = Math.floor(Math.trunc(parsedRect.x || 0) / sampleWidth) * sampleBytes;
-        computedLayout.sourceWidthBytes = Math.floor(Math.trunc(parsedRect.width || 0) / sampleWidth) * sampleBytes;
+        computedLayout.sourceWidthBytes = Math.ceil(Math.trunc(parsedRect.width || 0) / sampleWidth) * sampleBytes;
         if (layout !== void 0) {
           const planeLayout = layout[planeIndex];
           if (planeLayout.stride < computedLayout.sourceWidthBytes) {
@@ -59373,8 +59760,6 @@ var init_sample = __esm({
           this.timestamp = init2.timestamp / 1e6;
           this.duration = init2.numberOfFrames / init2.sampleRate;
         } else if (init2 instanceof AudioSampleResource) {
-          this._data = init2;
-          init2._referenceCount++;
           this.format = init2.getFormat();
           if (!AUDIO_SAMPLE_FORMATS.has(this.format)) {
             throw new TypeError("getFormat() must return an AudioSampleFormat.");
@@ -59396,6 +59781,8 @@ var init_sample = __esm({
             throw new TypeError("getTimestamp() must return a finite number.");
           }
           this.duration = this.numberOfFrames / this.sampleRate;
+          this._data = init2;
+          init2._referenceCount++;
         } else {
           if (!init2 || typeof init2 !== "object") {
             throw new TypeError("Invalid AudioDataInit: must be an object.");
@@ -59406,7 +59793,7 @@ var init_sample = __esm({
           if (!Number.isFinite(init2.sampleRate) || init2.sampleRate <= 0) {
             throw new TypeError("Invalid AudioDataInit: sampleRate must be > 0.");
           }
-          if (!Number.isInteger(init2.numberOfChannels) || init2.numberOfChannels === 0) {
+          if (!Number.isInteger(init2.numberOfChannels) || init2.numberOfChannels <= 0) {
             throw new TypeError("Invalid AudioDataInit: numberOfChannels must be an integer > 0.");
           }
           if (!Number.isFinite(init2?.timestamp)) {
@@ -59423,7 +59810,7 @@ var init_sample = __esm({
           this.timestamp = init2.timestamp;
           this.duration = numberOfFrames / init2.sampleRate;
           let dataBuffer;
-          if (init2.data instanceof ArrayBuffer) {
+          if (init2.data instanceof ArrayBuffer || typeof SharedArrayBuffer !== "undefined" && init2.data instanceof SharedArrayBuffer) {
             dataBuffer = new Uint8Array(init2.data);
           } else if (ArrayBuffer.isView(init2.data)) {
             dataBuffer = new Uint8Array(init2.data.buffer, init2.data.byteOffset, init2.data.byteLength);
@@ -59434,7 +59821,7 @@ var init_sample = __esm({
           if (dataBuffer.byteLength < expectedSize) {
             throw new TypeError("Invalid AudioDataInit: insufficient data size.");
           }
-          this._data = dataBuffer;
+          this._data = init2._doNotCopy ? dataBuffer : dataBuffer.slice();
         }
         finalizationRegistry?.register(this, { type: "audio", data: this._data }, this);
       }
@@ -59460,7 +59847,7 @@ var init_sample = __esm({
         }
         const destFormat = options2.format ?? this.format;
         const frameOffset = options2.frameOffset ?? 0;
-        if (frameOffset >= this.numberOfFrames) {
+        if (frameOffset > 0 && frameOffset >= this.numberOfFrames) {
           throw new RangeError("frameOffset out of range");
         }
         const copyFrameCount = options2.frameCount !== void 0 ? options2.frameCount : this.numberOfFrames - frameOffset;
@@ -59510,7 +59897,7 @@ var init_sample = __esm({
         const numFrames = this.numberOfFrames;
         const numChannels = this.numberOfChannels;
         const frameOffset = optFrameOffset ?? 0;
-        if (frameOffset >= numFrames) {
+        if (frameOffset > 0 && frameOffset >= numFrames) {
           throw new RangeError("frameOffset out of range");
         }
         const copyFrameCount = optFrameCount !== void 0 ? optFrameCount : numFrames - frameOffset;
@@ -59658,7 +60045,9 @@ var init_sample = __esm({
             numberOfFrames: this.numberOfFrames,
             numberOfChannels: this.numberOfChannels,
             timestamp: this.timestamp,
-            data: this._data
+            data: this._data,
+            // It's already been copied, if we copy it again we make the clone unnecessarily expensive
+            _doNotCopy: true
           });
         }
       }
@@ -59718,7 +60107,8 @@ var init_sample = __esm({
           format: this.format,
           sampleRate: this.sampleRate,
           numberOfChannels: this.numberOfChannels,
-          timestamp: this.timestamp + startFrame / this.sampleRate
+          timestamp: this.timestamp + startFrame / this.sampleRate,
+          _doNotCopy: true
         });
       }
       /**
@@ -59851,7 +60241,8 @@ var init_sample = __esm({
             numberOfFrames: framesToCopy,
             numberOfChannels,
             timestamp: timestamp + currentRelativeFrame / sampleRate,
-            data: chunkData
+            data: chunkData,
+            _doNotCopy: true
           });
           currentRelativeFrame += framesToCopy;
           remainingFrames -= framesToCopy;
@@ -59885,7 +60276,8 @@ var init_sample = __esm({
             numberOfFrames: framesToCopy,
             numberOfChannels,
             timestamp: timestamp + currentRelativeFrame / sampleRate,
-            data: chunkData
+            data: chunkData,
+            _doNotCopy: true
           });
           result.push(audioSample);
           currentRelativeFrame += framesToCopy;
@@ -60061,7 +60453,8 @@ var init_sample = __esm({
         numberOfChannels: sample.numberOfChannels,
         sampleRate: sample.sampleRate,
         timestamp: sample.timestamp,
-        duration: sample.duration
+        duration: sample.duration,
+        _doNotCopy: true
       });
     }, "audioSampleToInterleavedFormat");
   }
@@ -60130,6 +60523,9 @@ var init_encode = __esm({
         }
         if (config2.transform.crop !== void 0) {
           validateCropRectangle(config2.transform.crop, "config.transform.");
+        }
+        if (config2.transform.alpha !== void 0 && !["keep", "discard"].includes(config2.transform.alpha)) {
+          throw new TypeError("config.transform.alpha, when provided, must be 'keep' or 'discard'.");
         }
         if (config2.transform.process !== void 0 && typeof config2.transform.process !== "function") {
           throw new TypeError("config.transform.process, when provided, must be a function.");
@@ -60283,10 +60679,10 @@ var init_encode = __esm({
     buildAudioEncoderConfig = /* @__PURE__ */ __name((options2) => {
       const fallbackBitrateMode = options2.bitrateMode;
       return {
-        codec: options2.fullCodecString ?? buildAudioCodecString(options2.codec, options2.numberOfChannels, options2.sampleRate),
+        codec: options2.fullCodecString ?? buildAudioCodecString(options2.codec),
         numberOfChannels: options2.numberOfChannels,
         sampleRate: options2.sampleRate,
-        bitrate: options2.quality?._toAudioBitrate(options2.codec),
+        bitrate: options2.quality?._toAudioBitrate(options2.codec, options2.numberOfChannels),
         bitrateMode: options2.quality?._bitrateMode ?? fallbackBitrateMode,
         ...getAudioEncoderConfigExtension(options2.codec)
       };
@@ -60306,7 +60702,7 @@ var init_encode = __esm({
           throw new TypeError("options.bitrateMode, when provided, must be 'constant' or 'variable'.");
         }
         if ("quality" in options2) {
-          if (typeof options2.quality === "string" ? !(options2.quality in QUALITY_LEVELS) : typeof options2.quality !== "number" || Number.isNaN(options2.quality)) {
+          if (typeof options2.quality === "string" ? !Object.prototype.hasOwnProperty.call(QUALITY_LEVELS, options2.quality) : typeof options2.quality !== "number" || Number.isNaN(options2.quality)) {
             throw new TypeError("options.quality must be a number, or one of 'very-low', 'low', 'medium', 'high' or 'very-high'.");
           }
           if (options2.preferBitrate !== void 0 && typeof options2.preferBitrate !== "boolean") {
@@ -60388,7 +60784,7 @@ var init_encode = __esm({
         return computeVideoBitrate(codec2, width, height, qualityToBitrateFactor(this._quality));
       }
       /** @internal */
-      _toAudioBitrate(codec2) {
+      _toAudioBitrate(codec2, numberOfChannels) {
         if (PCM_AUDIO_CODECS.includes(codec2) || codec2 === "flac" || codec2 === "truehd") {
           return void 0;
         }
@@ -60420,6 +60816,9 @@ var init_encode = __esm({
           throw new Error(`Unhandled codec: ${codec2}`);
         }
         let finalBitrate = baseBitrate * factor;
+        if (codec2 === "opus" || codec2 === "vorbis") {
+          finalBitrate *= numberOfChannels / 2;
+        }
         if (codec2 === "aac") {
           const validRates = [96e3, 128e3, 16e4, 192e3];
           finalBitrate = validRates.reduce((prev, curr) => Math.abs(curr - finalBitrate) < Math.abs(prev - finalBitrate) ? curr : prev);
@@ -60594,12 +60993,12 @@ var init_encode = __esm({
             return true;
           }
           const success2 = await new Promise(async (resolve3) => {
+            const encoder2 = new VideoEncoder({
+              output: /* @__PURE__ */ __name(() => {
+              }, "output"),
+              error: /* @__PURE__ */ __name(() => resolve3(false), "error")
+            });
             try {
-              const encoder2 = new VideoEncoder({
-                output: /* @__PURE__ */ __name(() => {
-                }, "output"),
-                error: /* @__PURE__ */ __name(() => resolve3(false), "error")
-              });
               encoder2.configure(config2);
               const frameData = new Uint8Array(width * height * 4);
               const frame = new VideoFrame(frameData, {
@@ -60614,6 +61013,10 @@ var init_encode = __esm({
               resolve3(true);
             } catch {
               resolve3(false);
+            } finally {
+              if (encoder2.state !== "closed") {
+                encoder2.close();
+              }
             }
           });
           if (success2) {
@@ -61008,7 +61411,7 @@ var init_packet = __esm({
         if (options2?.sideData !== void 0 && (typeof options2.sideData !== "object" || options2.sideData === null)) {
           throw new TypeError("options.sideData, when provided, must be an object.");
         }
-        return new _EncodedPacket(options2?.data ?? this.data, options2?.type ?? this.type, options2?.timestamp ?? this.timestamp, options2?.duration ?? this.duration, options2?.sequenceNumber ?? this.sequenceNumber, this.byteLength, options2?.sideData ?? this.sideData);
+        return new _EncodedPacket(options2?.data ?? this.data, options2?.type ?? this.type, options2?.timestamp ?? this.timestamp, options2?.duration ?? this.duration, options2?.sequenceNumber ?? this.sequenceNumber, options2?.data?.byteLength ?? this.byteLength, options2?.sideData ?? this.sideData);
       }
     };
   }
@@ -61190,7 +61593,8 @@ var init_resample = __esm({
           sampleRate: this.targetSampleRate,
           numberOfChannels: this.targetNumberOfChannels,
           timestamp: this.startTime + this.bufferStartFrame / this.targetSampleRate,
-          data: outputData
+          data: outputData,
+          _doNotCopy: true
         });
         await this.onSample(audioSample);
         this.outputBuffer.copyWithin(0, this.bufferSizeInSamples);
@@ -61273,7 +61677,17 @@ var init_isobmff_misc = __esm({
         data: contents.slice(pos, pos + dataSize)
       };
     }, "parsePsshBoxContents");
-    psshBoxesAreEqual = /* @__PURE__ */ __name((a, b) => a.systemId === b.systemId && uint8ArraysAreEqual(a.data, b.data), "psshBoxesAreEqual");
+    psshBoxesAreEqual = /* @__PURE__ */ __name((a, b) => {
+      if (a.systemId !== b.systemId || !uint8ArraysAreEqual(a.data, b.data)) {
+        return false;
+      }
+      const aKeyIds = a.keyIds;
+      const bKeyIds = b.keyIds;
+      if (!aKeyIds || !bKeyIds) {
+        return aKeyIds === bKeyIds;
+      }
+      return aKeyIds.length === bKeyIds.length && aKeyIds.every((keyId, i) => keyId === bKeyIds[i]);
+    }, "psshBoxesAreEqual");
   }
 });
 
@@ -61481,7 +61895,7 @@ var init_aes = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/isobmff/isobmff-demuxer.js
-var TRUEHD_CHANNEL_ASSIGNMENT_COUNTS, MAX_BOX_NESTING_DEPTH, IsobmffDemuxer, IsobmffTrackBacking, IsobmffVideoTrackBacking, IsobmffAudioTrackBacking, getSampleIndexForTimestamp, getKeyframeSampleIndexForTimestamp, getSampleInfo, performPresentationTimeLookup, getNextPresentationTimestamp, findFirstSampleInEntry, getDecodeTimestamp, getNextKeyframeIndexForSample, offsetFragmentTrackDataByTimestamp, readMatrix, applySpsPixelAspectRatio, sampleTableIsEmpty, capEntryCounts, getOrCreateEncryptionAuxInfo, resolveEncryptionAuxInfo, getDefaultSampleEncryption, decryptSample, decryptCtr, decryptCbcs, collectCryptRanges;
+var TRUEHD_CHANNEL_ASSIGNMENT_COUNTS, MAX_BOX_NESTING_DEPTH, IsobmffDemuxer, IsobmffTrackBacking, IsobmffVideoTrackBacking, IsobmffAudioTrackBacking, getSampleIndexForTimestamp, getKeyframeSampleIndexForTimestamp, getSampleInfo, performPresentationTimeLookup, getNextPresentationTimestamp, findFirstSampleInEntry, getDecodeTimestamp, getNextKeyframeIndexForSample, offsetFragmentTrackDataByTimestamp, readMatrix, applySpsPixelAspectRatio, capEntryCounts, getOrCreateEncryptionAuxInfo, resolveEncryptionAuxInfo, getDefaultSampleEncryption, decryptSample, decryptCtr, decryptCbcs, collectCryptRanges;
 var init_isobmff_demuxer = __esm({
   "node_modules/mediabunny/dist/modules/src/isobmff/isobmff-demuxer.js"() {
     init_aac_misc();
@@ -61522,6 +61936,7 @@ var init_isobmff_demuxer = __esm({
         this.psshBoxes = [];
         this.currentFragment = null;
         this.isReadingTraf = false;
+        this.currentFragmentTrackState = null;
         this.lastReadFragment = null;
         this.fragmentSummaries = /* @__PURE__ */ new Map();
         this.decryptionKeyCache = /* @__PURE__ */ new Map();
@@ -61665,7 +62080,6 @@ var init_isobmff_demuxer = __esm({
             sampleTableByteOffset: null,
             sampleTable: null,
             fragmentLookupTable: [],
-            currentFragmentState: null,
             fragmentPositionCache: [],
             editListPreviousSegmentDurations: foreignTrack.editListPreviousSegmentDurations,
             editListOffset: foreignTrack.editListOffset,
@@ -61761,7 +62175,8 @@ var init_isobmff_demuxer = __esm({
                   delta
                 });
               }
-              const chunkSize = chunkEntry.samplesPerChunk * pcmInfo.sampleSize * internalTrack.info.numberOfChannels;
+              const frameCount = Math.round(delta * internalTrack.info.sampleRate / internalTrack.timescale);
+              const chunkSize = frameCount * pcmInfo.sampleSize * internalTrack.info.numberOfChannels;
               newSampleSizes.push(chunkSize);
             }
             chunkEntry.startSampleIndex = newStartSampleIndex;
@@ -61817,75 +62232,93 @@ var init_isobmff_demuxer = __esm({
         }
         return sampleTable;
       }
-      async readFragment(startPos) {
+      readFragment(startPos) {
         if (this.lastReadFragment?.moofOffset === startPos) {
-          return this.lastReadFragment;
+          return this.lastReadFragment.promise;
         }
-        let headerSlice = this.reader.requestSliceRange(startPos, MIN_BOX_HEADER_SIZE, MAX_BOX_HEADER_SIZE);
-        if (isThenable(headerSlice))
-          headerSlice = await headerSlice;
-        assert2(headerSlice);
-        const moofBoxInfo = readBoxHeader(headerSlice);
-        assert2(moofBoxInfo?.name === "moof");
-        let entireSlice = this.reader.requestSlice(startPos, moofBoxInfo.totalSize);
-        if (isThenable(entireSlice))
-          entireSlice = await entireSlice;
-        if (!entireSlice)
-          return null;
-        this.traverseBox(entireSlice);
-        const fragment = this.lastReadFragment;
-        assert2(fragment && fragment.moofOffset === startPos);
-        this.fragmentSummaries.set(startPos, {
-          moofSize: fragment.moofSize,
-          trackIds: new Set(fragment.trackData.keys())
-        });
-        for (const [, trackData] of fragment.trackData) {
-          const track = trackData.track;
-          const { fragmentPositionCache } = track;
-          if (!trackData.startTimestampIsFinal) {
-            const lookupEntryIndex = binarySearchExact(track.fragmentLookupTable, fragment.moofOffset, (x) => x.moofOffset);
-            const lookupEntry = track.fragmentLookupTable[lookupEntryIndex];
-            const lookupEntryIsValid = lookupEntry && trackData.trunSampleCounts.length >= lookupEntry.trunNumber && trackData.trunSampleCounts[lookupEntry.trunNumber - 1] >= lookupEntry.sampleNumber;
-            if (lookupEntryIsValid) {
-              let sampleIndex = 0;
-              for (let i = 1; i < lookupEntry.trunNumber; i++) {
-                sampleIndex += trackData.trunSampleCounts[i - 1];
-              }
-              sampleIndex += lookupEntry.sampleNumber - 1;
-              const sample = trackData.samples[sampleIndex];
-              assert2(sample);
-              const timestampOffset = lookupEntry.timestamp - sample.presentationTimestamp;
-              offsetFragmentTrackDataByTimestamp(trackData, timestampOffset);
-            } else {
-              const lastCacheIndex = binarySearchLessOrEqual(fragmentPositionCache, fragment.moofOffset - 1, (x) => x.moofOffset);
-              if (lastCacheIndex !== -1) {
-                const lastCache = fragmentPositionCache[lastCacheIndex];
-                offsetFragmentTrackDataByTimestamp(trackData, lastCache.endTimestamp);
+        const promise2 = (async () => {
+          let headerSlice = this.reader.requestSliceRange(startPos, MIN_BOX_HEADER_SIZE, MAX_BOX_HEADER_SIZE);
+          if (isThenable(headerSlice))
+            headerSlice = await headerSlice;
+          assert2(headerSlice);
+          const moofBoxInfo = readBoxHeader(headerSlice);
+          assert2(moofBoxInfo?.name === "moof");
+          let entireSlice = this.reader.requestSlice(startPos, moofBoxInfo.totalSize);
+          if (isThenable(entireSlice))
+            entireSlice = await entireSlice;
+          if (!entireSlice)
+            return null;
+          this.traverseBox(entireSlice);
+          const fragment = this.currentFragment;
+          assert2(fragment && fragment.moofOffset === startPos);
+          this.currentFragment = null;
+          this.fragmentSummaries.set(startPos, {
+            moofSize: fragment.moofSize,
+            trackIds: new Set(fragment.trackData.keys())
+          });
+          for (const [, trackData] of fragment.trackData) {
+            const track = trackData.track;
+            const { fragmentPositionCache } = track;
+            if (!trackData.startTimestampIsFinal) {
+              const lookupEntryIndex = binarySearchExact(track.fragmentLookupTable, fragment.moofOffset, (x) => x.moofOffset);
+              const lookupEntry = track.fragmentLookupTable[lookupEntryIndex];
+              const lookupEntryIsValid = lookupEntry && trackData.trunSampleCounts.length >= lookupEntry.trunNumber && trackData.trunSampleCounts[lookupEntry.trunNumber - 1] >= lookupEntry.sampleNumber;
+              if (lookupEntryIsValid) {
+                let sampleIndex = 0;
+                for (let i = 1; i < lookupEntry.trunNumber; i++) {
+                  sampleIndex += trackData.trunSampleCounts[i - 1];
+                }
+                sampleIndex += lookupEntry.sampleNumber - 1;
+                const sample = trackData.samples[sampleIndex];
+                assert2(sample);
+                const timestampOffset = lookupEntry.timestamp - sample.presentationTimestamp;
+                offsetFragmentTrackDataByTimestamp(trackData, timestampOffset);
               } else {
+                const lastCacheIndex = binarySearchLessOrEqual(fragmentPositionCache, fragment.moofOffset - 1, (x) => x.moofOffset);
+                if (lastCacheIndex !== -1) {
+                  const lastCache = fragmentPositionCache[lastCacheIndex];
+                  offsetFragmentTrackDataByTimestamp(trackData, lastCache.endDecodeTimestamp);
+                } else {
+                  const lastTimingEntry = last(this.getSampleTableForTrack(track).sampleTimingEntries);
+                  if (lastTimingEntry) {
+                    const { startDecodeTimestamp, count: count2, delta } = lastTimingEntry;
+                    offsetFragmentTrackDataByTimestamp(trackData, startDecodeTimestamp + count2 * delta);
+                  }
+                }
+              }
+              trackData.startTimestampIsFinal = true;
+            }
+            const insertionIndex = binarySearchLessOrEqual(fragmentPositionCache, trackData.startTimestamp, (x) => x.startTimestamp);
+            const previousEntry = fragmentPositionCache[insertionIndex];
+            const nextEntry = fragmentPositionCache[insertionIndex + 1];
+            if ((!previousEntry || previousEntry.moofOffset < fragment.moofOffset) && (!nextEntry || nextEntry.moofOffset > fragment.moofOffset)) {
+              fragmentPositionCache.splice(insertionIndex + 1, 0, {
+                moofOffset: fragment.moofOffset,
+                startTimestamp: trackData.startTimestamp,
+                endDecodeTimestamp: trackData.endDecodeTimestamp,
+                hasKeyFrame: trackData.firstKeyFrameTimestamp !== null
+              });
+            }
+            if (trackData.encryptionAuxInfo && track.encryptionInfo) {
+              const entries = await resolveEncryptionAuxInfo(this.reader, track.encryptionInfo, trackData.encryptionAuxInfo);
+              for (let i = 0; i < Math.min(trackData.samples.length, entries.length); i++) {
+                const entry = entries[i];
+                trackData.samples[i].encryption = entry;
               }
             }
-            trackData.startTimestampIsFinal = true;
           }
-          const insertionIndex = binarySearchLessOrEqual(fragmentPositionCache, trackData.startTimestamp, (x) => x.startTimestamp);
-          const previousEntry = fragmentPositionCache[insertionIndex];
-          const nextEntry = fragmentPositionCache[insertionIndex + 1];
-          if ((!previousEntry || previousEntry.moofOffset < fragment.moofOffset) && (!nextEntry || nextEntry.moofOffset > fragment.moofOffset)) {
-            fragmentPositionCache.splice(insertionIndex + 1, 0, {
-              moofOffset: fragment.moofOffset,
-              startTimestamp: trackData.startTimestamp,
-              endTimestamp: trackData.endTimestamp,
-              hasKeyFrame: trackData.firstKeyFrameTimestamp !== null
-            });
+          return fragment;
+        })();
+        this.lastReadFragment = {
+          moofOffset: startPos,
+          promise: promise2
+        };
+        promise2.catch(() => {
+          if (this.lastReadFragment?.promise === promise2) {
+            this.lastReadFragment = null;
           }
-          if (trackData.encryptionAuxInfo && track.encryptionInfo) {
-            const entries = await resolveEncryptionAuxInfo(this.reader, track.encryptionInfo, trackData.encryptionAuxInfo);
-            for (let i = 0; i < Math.min(trackData.samples.length, entries.length); i++) {
-              const entry = entries[i];
-              trackData.samples[i].encryption = entry;
-            }
-          }
-        }
-        return fragment;
+        });
+        return promise2;
       }
       readContiguousBoxes(slice) {
         if (this.boxNestingDepth === MAX_BOX_NESTING_DEPTH) {
@@ -61990,7 +62423,6 @@ var init_isobmff_demuxer = __esm({
                 sampleTableByteOffset: -1,
                 sampleTable: null,
                 fragmentLookupTable: [],
-                currentFragmentState: null,
                 fragmentPositionCache: [],
                 editListPreviousSegmentDurations: 0,
                 editListOffset: 0,
@@ -62099,6 +62531,9 @@ var init_isobmff_demuxer = __esm({
                 track.timescale = readU32Be(slice);
                 track.durationInMediaTimescale = readU64Be(slice);
               }
+              if (track.durationInMediaTimescale === 2 ** (version4 === 1 ? 64 : 32) - 1) {
+                track.durationInMediaTimescale = -1;
+              }
               if (track.timescale === 0) {
                 throw new Error("Invalid mdhd box: timescale must not be 0.");
               }
@@ -62136,6 +62571,7 @@ var init_isobmff_demuxer = __esm({
                   colorSpace: { ...EMPTY_COLOR_SPACE },
                   avcType: null,
                   avcCodecInfo: null,
+                  hevcType: null,
                   hevcCodecInfo: null,
                   vp9CodecInfo: null,
                   av1CodecInfo: null,
@@ -62205,6 +62641,7 @@ var init_isobmff_demuxer = __esm({
                     track.info.avcType = codecName2 === "avc1" ? 1 : 3;
                   } else if (codecName2 === "hvc1" || codecName2 === "hev1") {
                     track.info.codec = "hevc";
+                    track.info.hevcType = codecName2;
                   } else if (codecName2 === "vp08") {
                     track.info.codec = "vp8";
                   } else if (codecName2 === "vp09") {
@@ -62244,12 +62681,14 @@ var init_isobmff_demuxer = __esm({
                     }
                   }
                   track.info.numberOfChannels = channelCount;
-                  track.info.sampleRate = sampleRate;
+                  track.info.sampleRate = sampleRate || track.timescale;
                   track.frmaCodecString = null;
                   this.readContiguousBoxes(slice.slice(slice.filePos, sampleBoxStartPos + sampleBoxInfo.totalSize - slice.filePos));
                   const codecName2 = lowercaseBoxName === "enca" ? track.frmaCodecString : lowercaseBoxName;
                   track.frmaCodecString = null;
                   if (codecName2 === "mp4a") {
+                  } else if (codecName2 === ".mp3") {
+                    track.info.codec = "mp3";
                   } else if (codecName2 === "opus") {
                     track.info.codec = "opus";
                     track.info.sampleRate = OPUS_SAMPLE_RATE;
@@ -62351,6 +62790,8 @@ var init_isobmff_demuxer = __esm({
                       if (isFloat) {
                         if (sampleSize === 32) {
                           track.info.codec = isBigEndian ? "pcm-f32be" : "pcm-f32";
+                        } else if (sampleSize === 64) {
+                          track.info.codec = isBigEndian ? "pcm-f64be" : "pcm-f64";
                         }
                       } else {
                         if (sFlags & 1 << bytesPerSample - 1) {
@@ -62686,6 +63127,17 @@ var init_isobmff_demuxer = __esm({
             }
             ;
             break;
+          case "srat":
+            {
+              const track = this.currentTrack;
+              if (!track || track.info?.type !== "audio") {
+                break;
+              }
+              slice.skip(4);
+              track.info.sampleRate = readU32Be(slice);
+            }
+            ;
+            break;
           case "dOps":
             {
               const track = this.currentTrack;
@@ -62698,12 +63150,7 @@ var init_isobmff_demuxer = __esm({
               const inputSampleRate = readU32Be(slice);
               const outputGain = readI16Be(slice);
               const channelMappingFamily = readU8(slice);
-              let channelMappingTable;
-              if (channelMappingFamily !== 0) {
-                channelMappingTable = readBytes(slice, 2 + outputChannelCount);
-              } else {
-                channelMappingTable = new Uint8Array(0);
-              }
+              const channelMappingTable = channelMappingFamily !== 0 ? readBytes(slice, boxInfo.contentSize - 11) : new Uint8Array(0);
               const description = new Uint8Array(8 + 1 + 1 + 2 + 4 + 2 + 1 + channelMappingTable.byteLength);
               const view2 = new DataView(description.buffer);
               view2.setUint32(0, 1332770163, false);
@@ -63138,10 +63585,12 @@ var init_isobmff_demuxer = __esm({
               };
               try {
                 this.readContiguousBoxes(slice.slice(contentStartPos, boxInfo.contentSize));
-                this.lastReadFragment = this.currentFragment;
-              } finally {
+              } catch (error63) {
                 this.currentFragment = null;
+                throw error63;
+              } finally {
                 this.currentTrack = null;
+                this.currentFragmentTrackState = null;
               }
             }
             ;
@@ -63157,7 +63606,10 @@ var init_isobmff_demuxer = __esm({
               } finally {
                 this.isReadingTraf = false;
               }
+              const fragmentTrackState = this.currentFragmentTrackState;
+              this.currentFragmentTrackState = null;
               if (this.currentTrack) {
+                assert2(fragmentTrackState);
                 const trackData = this.currentFragment.trackData.get(this.currentTrack.id);
                 cond: if (trackData) {
                   if (trackData.samples.length === 0) {
@@ -63181,17 +63633,15 @@ var init_isobmff_demuxer = __esm({
                   const lastSample = trackData.samples[last(trackData.presentationTimestamps).sampleIndex];
                   trackData.startTimestamp = firstSample.presentationTimestamp;
                   trackData.endTimestamp = lastSample.presentationTimestamp + lastSample.duration;
-                  const { currentFragmentState } = this.currentTrack;
-                  assert2(currentFragmentState);
-                  if (currentFragmentState.startTimestamp !== null) {
-                    offsetFragmentTrackDataByTimestamp(trackData, currentFragmentState.startTimestamp);
+                  trackData.endDecodeTimestamp = fragmentTrackState.currentTimestamp;
+                  if (fragmentTrackState.startTimestamp !== null) {
+                    offsetFragmentTrackDataByTimestamp(trackData, fragmentTrackState.startTimestamp);
                     trackData.startTimestampIsFinal = true;
                   }
-                  if (currentFragmentState.encryptionAuxInfo && !trackData.samples[0].encryption) {
-                    trackData.encryptionAuxInfo = currentFragmentState.encryptionAuxInfo;
+                  if (fragmentTrackState.encryptionAuxInfo && !trackData.samples[0].encryption) {
+                    trackData.encryptionAuxInfo = fragmentTrackState.encryptionAuxInfo;
                   }
                 }
-                this.currentTrack.currentFragmentState = null;
                 this.currentTrack = null;
               }
             }
@@ -63213,7 +63663,7 @@ var init_isobmff_demuxer = __esm({
             break;
           case "tfhd":
             {
-              if (!this.currentFragment || !this.isReadingTraf || this.currentTrack) {
+              if (!this.currentFragment || !this.isReadingTraf || this.currentFragmentTrackState) {
                 break;
               }
               slice.skip(1);
@@ -63226,67 +63676,70 @@ var init_isobmff_demuxer = __esm({
               const durationIsEmpty = Boolean(flags & 65536);
               const defaultBaseIsMoof = Boolean(flags & 131072);
               const trackId = readU32Be(slice);
-              const track = this.idToTrack.get(trackId);
-              if (!track) {
-                break;
-              }
-              if (this.currentFragment.trackData.has(trackId)) {
-                Logging._warn(`Multiple traf boxes for track ${trackId} in the same moof box; skipping.`);
-                break;
-              }
               const defaults = this.fragmentTrackDefaults.get(trackId);
-              this.currentTrack = track;
-              track.currentFragmentState = {
+              const fragmentTrackState = {
                 baseDataOffset: this.currentFragment.implicitBaseDataOffset,
                 sampleDescriptionIndex: defaults?.defaultSampleDescriptionIndex ?? null,
                 defaultSampleDuration: defaults?.defaultSampleDuration ?? null,
                 defaultSampleSize: defaults?.defaultSampleSize ?? null,
                 defaultSampleFlags: defaults?.defaultSampleFlags ?? null,
                 startTimestamp: null,
-                encryptionAuxInfo: null
+                encryptionAuxInfo: null,
+                currentOffset: null,
+                currentTimestamp: 0
               };
+              this.currentFragmentTrackState = fragmentTrackState;
               if (baseDataOffsetPresent) {
-                track.currentFragmentState.baseDataOffset = readU64Be(slice);
+                fragmentTrackState.baseDataOffset = readU64Be(slice);
               } else if (defaultBaseIsMoof) {
-                track.currentFragmentState.baseDataOffset = this.currentFragment.moofOffset;
+                fragmentTrackState.baseDataOffset = this.currentFragment.moofOffset;
               }
               if (sampleDescriptionIndexPresent) {
-                track.currentFragmentState.sampleDescriptionIndex = readU32Be(slice);
+                fragmentTrackState.sampleDescriptionIndex = readU32Be(slice);
               }
               if (defaultSampleDurationPresent) {
-                track.currentFragmentState.defaultSampleDuration = readU32Be(slice);
+                fragmentTrackState.defaultSampleDuration = readU32Be(slice);
               }
               if (defaultSampleSizePresent) {
-                track.currentFragmentState.defaultSampleSize = readU32Be(slice);
+                fragmentTrackState.defaultSampleSize = readU32Be(slice);
               }
               if (defaultSampleFlagsPresent) {
-                track.currentFragmentState.defaultSampleFlags = readU32Be(slice);
+                fragmentTrackState.defaultSampleFlags = readU32Be(slice);
               }
               if (durationIsEmpty) {
-                track.currentFragmentState.defaultSampleDuration = 0;
+                fragmentTrackState.defaultSampleDuration = 0;
               }
+              const track = this.idToTrack.get(trackId);
+              if (!track) {
+                break;
+              }
+              if (this.currentFragment.trackData.has(trackId)) {
+                Logging._warn(`Multiple traf boxes for track ${trackId} in the same moof box; ignoring the samples of all but the first.`);
+                break;
+              }
+              this.currentTrack = track;
             }
             ;
             break;
           case "tfdt":
             {
-              const track = this.currentTrack;
-              if (!track?.currentFragmentState) {
+              if (!this.currentFragmentTrackState) {
                 break;
               }
               const version4 = readU8(slice);
               slice.skip(3);
               const baseMediaDecodeTime = version4 === 0 ? readU32Be(slice) : readU64Be(slice);
-              track.currentFragmentState.startTimestamp = baseMediaDecodeTime;
+              this.currentFragmentTrackState.startTimestamp = baseMediaDecodeTime;
             }
             ;
             break;
           case "trun":
             {
-              const track = this.currentTrack;
-              if (!track?.currentFragmentState || !this.currentFragment) {
+              const fragmentTrackState = this.currentFragmentTrackState;
+              if (!fragmentTrackState || !this.currentFragment) {
                 break;
               }
+              const track = this.currentTrack;
               slice.skip(1);
               const flags = readU24Be(slice);
               const dataOffsetPresent = Boolean(flags & 1);
@@ -63296,7 +63749,7 @@ var init_isobmff_demuxer = __esm({
               const sampleFlagsPresent = Boolean(flags & 1024);
               const sampleCompositionTimeOffsetsPresent = Boolean(flags & 2048);
               const sampleCount = readU32Be(slice);
-              const { defaultSampleDuration, defaultSampleSize, defaultSampleFlags } = track.currentFragmentState;
+              const { defaultSampleDuration, defaultSampleSize, defaultSampleFlags } = fragmentTrackState;
               if (sampleCount > 0 && (!sampleDurationPresent && defaultSampleDuration === null || !sampleSizePresent && defaultSampleSize === null || !sampleFlagsPresent && defaultSampleFlags === null)) {
                 throw new Error("Invalid trun box: sample values are missing and there are no defaults.");
               }
@@ -63312,30 +63765,27 @@ var init_isobmff_demuxer = __esm({
               if (firstSampleFlagsPresent) {
                 firstSampleFlags = readU32Be(slice);
               }
-              let trackData;
-              if (this.currentFragment.trackData.has(track.id)) {
-                trackData = this.currentFragment.trackData.get(track.id);
-                if (dataOffset !== null) {
-                  trackData.currentOffset = track.currentFragmentState.baseDataOffset + dataOffset;
-                } else {
+              let currentOffset = dataOffset !== null ? fragmentTrackState.baseDataOffset + dataOffset : fragmentTrackState.currentOffset ?? fragmentTrackState.baseDataOffset;
+              let trackData = null;
+              if (track) {
+                trackData = this.currentFragment.trackData.get(track.id) ?? null;
+                if (!trackData) {
+                  trackData = {
+                    track,
+                    startTimestamp: 0,
+                    endTimestamp: 0,
+                    endDecodeTimestamp: 0,
+                    firstKeyFrameTimestamp: null,
+                    samples: [],
+                    presentationTimestamps: [],
+                    startTimestampIsFinal: false,
+                    trunSampleCounts: [],
+                    encryptionAuxInfo: null
+                  };
+                  this.currentFragment.trackData.set(track.id, trackData);
                 }
-              } else {
-                trackData = {
-                  track,
-                  currentTimestamp: 0,
-                  currentOffset: track.currentFragmentState.baseDataOffset + (dataOffset ?? 0),
-                  startTimestamp: 0,
-                  endTimestamp: 0,
-                  firstKeyFrameTimestamp: null,
-                  samples: [],
-                  presentationTimestamps: [],
-                  startTimestampIsFinal: false,
-                  trunSampleCounts: [],
-                  encryptionAuxInfo: null
-                };
-                this.currentFragment.trackData.set(track.id, trackData);
+                trackData.trunSampleCounts.push(sampleCount);
               }
-              trackData.trunSampleCounts.push(sampleCount);
               for (let i = 0; i < sampleCount; i++) {
                 let sampleDuration;
                 if (sampleDurationPresent) {
@@ -63362,19 +63812,19 @@ var init_isobmff_demuxer = __esm({
                 if (sampleCompositionTimeOffsetsPresent) {
                   sampleCompositionTimeOffset = readI32Be(slice);
                 }
-                const isKeyFrame = !(sampleFlags & 65536);
-                trackData.samples.push({
-                  presentationTimestamp: trackData.currentTimestamp + sampleCompositionTimeOffset,
+                trackData?.samples.push({
+                  presentationTimestamp: fragmentTrackState.currentTimestamp + sampleCompositionTimeOffset,
                   duration: sampleDuration,
-                  byteOffset: trackData.currentOffset,
+                  byteOffset: currentOffset,
                   byteSize: sampleSize,
-                  isKeyFrame,
+                  isKeyFrame: !(sampleFlags & 65536),
                   encryption: null
                 });
-                trackData.currentOffset += sampleSize;
-                trackData.currentTimestamp += sampleDuration;
+                currentOffset += sampleSize;
+                fragmentTrackState.currentTimestamp += sampleDuration;
               }
-              this.currentFragment.implicitBaseDataOffset = trackData.currentOffset;
+              fragmentTrackState.currentOffset = currentOffset;
+              this.currentFragment.implicitBaseDataOffset = currentOffset;
             }
             ;
             break;
@@ -63399,7 +63849,7 @@ var init_isobmff_demuxer = __esm({
               if (defaultSampleInfoSize === 0 && sampleCount > 0) {
                 sampleSizes = readBytes(slice, sampleCount);
               }
-              const aux = getOrCreateEncryptionAuxInfo(track);
+              const aux = getOrCreateEncryptionAuxInfo(track, this.currentFragmentTrackState);
               aux.defaultSampleInfoSize = defaultSampleInfoSize;
               aux.sampleSizes = sampleSizes;
               aux.sampleCount = sampleCount;
@@ -63430,9 +63880,10 @@ var init_isobmff_demuxer = __esm({
               }
               let offset = version4 === 0 ? readU32Be(slice) : Number(readU64Be(slice));
               if (this.currentFragment) {
-                offset += this.currentFragment.moofOffset;
+                assert2(this.currentFragmentTrackState);
+                offset += this.currentFragmentTrackState.baseDataOffset;
               }
-              const aux = getOrCreateEncryptionAuxInfo(track);
+              const aux = getOrCreateEncryptionAuxInfo(track, this.currentFragmentTrackState);
               aux.offset = offset;
             }
             ;
@@ -63506,6 +63957,15 @@ var init_isobmff_demuxer = __esm({
                     ;
                     break;
                   case "\xA9nam":
+                    {
+                      if (this.currentTrack) {
+                        this.currentTrack.name = readMetadataStringShort(slice2);
+                      } else {
+                        this.metadataTags.title ??= readMetadataStringShort(slice2);
+                      }
+                    }
+                    ;
+                    break;
                   case "name":
                     {
                       if (this.currentTrack) {
@@ -63559,8 +64019,8 @@ var init_isobmff_demuxer = __esm({
                   case "\xA9day":
                     {
                       if (!this.currentTrack) {
-                        const date6 = new Date(readMetadataStringShort(slice2));
-                        if (!Number.isNaN(date6.getTime())) {
+                        const date6 = parseIsoSuffix(readMetadataStringShort(slice2));
+                        if (date6) {
                           this.metadataTags.date ??= date6;
                         }
                       }
@@ -63729,8 +64189,8 @@ var init_isobmff_demuxer = __esm({
                   case "date":
                     {
                       if (typeof data === "string") {
-                        const date6 = new Date(data);
-                        if (!Number.isNaN(date6.getTime())) {
+                        const date6 = parseIsoSuffix(data);
+                        if (date6) {
                           this.metadataTags.date ??= date6;
                         }
                       }
@@ -63836,9 +64296,7 @@ var init_isobmff_demuxer = __esm({
         this.internalTrack = internalTrack;
         this.packetToSampleIndex = /* @__PURE__ */ new WeakMap();
         this.packetToFragmentLocation = /* @__PURE__ */ new WeakMap();
-      }
-      getId() {
-        return this.internalTrack.id;
+        this.nextEac3Frames = /* @__PURE__ */ new WeakMap();
       }
       getNumber() {
         const demuxer = this.internalTrack.demuxer;
@@ -63892,6 +64350,9 @@ var init_isobmff_demuxer = __esm({
         if (track.durationInMediaTimescale <= 0) {
           return null;
         }
+        if (track.demuxer.isFragmented && track.demuxer.getSampleTableForTrack(track).sampleCount > 0) {
+          return null;
+        }
         assert2(track.trackBacking);
         const firstPacket = await track.trackBacking.getFirstPacket({ metadataOnly: true });
         return (firstPacket?.timestamp ?? 0) + track.durationInMediaTimescale / track.timescale;
@@ -63904,26 +64365,7 @@ var init_isobmff_demuxer = __esm({
         if (regularPacket || !this.internalTrack.demuxer.isFragmented) {
           return regularPacket;
         }
-        return this.performFragmentedLookup(
-          null,
-          (fragment) => {
-            const trackData = fragment.trackData.get(this.internalTrack.id);
-            if (trackData) {
-              return {
-                sampleIndex: 0,
-                correctSampleFound: true
-              };
-            }
-            return {
-              sampleIndex: -1,
-              correctSampleFound: false
-            };
-          },
-          -Infinity,
-          // Use -Infinity as a search timestamp to avoid using the lookup entries
-          Infinity,
-          options2
-        );
+        return this.fetchFirstFragmentedPacket(false, options2);
       }
       mapTimestampIntoTimescale(timestamp) {
         return roundIfAlmostInteger(timestamp * this.internalTrack.timescale) + this.internalTrack.editListOffset;
@@ -63932,11 +64374,11 @@ var init_isobmff_demuxer = __esm({
         const timestampInTimescale = this.mapTimestampIntoTimescale(timestamp);
         const sampleTable = this.internalTrack.demuxer.getSampleTableForTrack(this.internalTrack);
         const sampleIndex = getSampleIndexForTimestamp(sampleTable, timestampInTimescale);
-        const regularPacket = await this.fetchPacketForSampleIndex(sampleIndex, options2);
-        if (!sampleTableIsEmpty(sampleTable) || !this.internalTrack.demuxer.isFragmented) {
+        const regularPacket = await this.fetchPacketForSampleIndex(sampleIndex, options2, timestampInTimescale);
+        if (!this.internalTrack.demuxer.isFragmented) {
           return regularPacket;
         }
-        return this.performFragmentedLookup(null, (fragment) => {
+        const fragmentedPacket = await this.performFragmentedLookup(null, (fragment) => {
           const trackData = fragment.trackData.get(this.internalTrack.id);
           if (!trackData) {
             return { sampleIndex: -1, correctSampleFound: false };
@@ -63946,11 +64388,23 @@ var init_isobmff_demuxer = __esm({
           const correctSampleFound = index23 !== -1 && timestampInTimescale < trackData.endTimestamp;
           return { sampleIndex: sampleIndex2, correctSampleFound };
         }, timestampInTimescale, timestampInTimescale, options2);
+        if (!regularPacket || !fragmentedPacket) {
+          return regularPacket ?? fragmentedPacket;
+        }
+        return regularPacket.timestamp > fragmentedPacket.timestamp ? regularPacket : fragmentedPacket;
       }
       async getNextPacket(packet, options2) {
+        const nextEac3Frame = this.nextEac3Frames.get(packet);
+        if (nextEac3Frame) {
+          return nextEac3Frame;
+        }
         const regularSampleIndex = this.packetToSampleIndex.get(packet);
         if (regularSampleIndex !== void 0) {
-          return this.fetchPacketForSampleIndex(regularSampleIndex + 1, options2);
+          const regularPacket = await this.fetchPacketForSampleIndex(regularSampleIndex + 1, options2);
+          if (regularPacket || !this.internalTrack.demuxer.isFragmented) {
+            return regularPacket;
+          }
+          return this.fetchFirstFragmentedPacket(false, options2);
         }
         const locationInFragment = this.packetToFragmentLocation.get(packet);
         if (locationInFragment === void 0) {
@@ -63991,11 +64445,11 @@ var init_isobmff_demuxer = __esm({
         const timestampInTimescale = this.mapTimestampIntoTimescale(timestamp);
         const sampleTable = this.internalTrack.demuxer.getSampleTableForTrack(this.internalTrack);
         const sampleIndex = getKeyframeSampleIndexForTimestamp(sampleTable, timestampInTimescale);
-        const regularPacket = await this.fetchPacketForSampleIndex(sampleIndex, options2);
-        if (!sampleTableIsEmpty(sampleTable) || !this.internalTrack.demuxer.isFragmented) {
+        const regularPacket = await this.fetchPacketForSampleIndex(sampleIndex, options2, timestampInTimescale);
+        if (!this.internalTrack.demuxer.isFragmented) {
           return regularPacket;
         }
-        return this.performFragmentedLookup(null, (fragment) => {
+        const fragmentedPacket = await this.performFragmentedLookup(null, (fragment) => {
           const trackData = fragment.trackData.get(this.internalTrack.id);
           if (!trackData) {
             return { sampleIndex: -1, correctSampleFound: false };
@@ -64008,13 +64462,25 @@ var init_isobmff_demuxer = __esm({
           const correctSampleFound = index23 !== -1 && timestampInTimescale < trackData.endTimestamp;
           return { sampleIndex: sampleIndex2, correctSampleFound };
         }, timestampInTimescale, timestampInTimescale, options2, true);
+        if (!regularPacket || !fragmentedPacket) {
+          return regularPacket ?? fragmentedPacket;
+        }
+        return regularPacket.timestamp > fragmentedPacket.timestamp ? regularPacket : fragmentedPacket;
       }
       async getNextKeyPacket(packet, options2) {
+        const nextEac3Frame = this.nextEac3Frames.get(packet);
+        if (nextEac3Frame) {
+          return nextEac3Frame;
+        }
         const regularSampleIndex = this.packetToSampleIndex.get(packet);
         if (regularSampleIndex !== void 0) {
           const sampleTable = this.internalTrack.demuxer.getSampleTableForTrack(this.internalTrack);
           const nextKeyFrameSampleIndex = getNextKeyframeIndexForSample(sampleTable, regularSampleIndex);
-          return this.fetchPacketForSampleIndex(nextKeyFrameSampleIndex, options2);
+          const regularPacket = await this.fetchPacketForSampleIndex(nextKeyFrameSampleIndex, options2);
+          if (regularPacket || !this.internalTrack.demuxer.isFragmented) {
+            return regularPacket;
+          }
+          return this.fetchFirstFragmentedPacket(true, options2);
         }
         const locationInFragment = this.packetToFragmentLocation.get(packet);
         if (locationInFragment === void 0) {
@@ -64055,7 +64521,24 @@ var init_isobmff_demuxer = __esm({
           options2
         );
       }
-      async fetchPacketForSampleIndex(sampleIndex, options2) {
+      fetchFirstFragmentedPacket(keyPacketsOnly, options2) {
+        return this.performFragmentedLookup(
+          null,
+          (fragment) => {
+            const trackData = fragment.trackData.get(this.internalTrack.id);
+            const sampleIndex = trackData?.samples.findIndex((x) => !keyPacketsOnly || x.isKeyFrame) ?? -1;
+            return {
+              sampleIndex,
+              correctSampleFound: sampleIndex !== -1
+            };
+          },
+          -Infinity,
+          // Use -Infinity as a search timestamp to avoid using the lookup entries
+          Infinity,
+          options2
+        );
+      }
+      async fetchPacketForSampleIndex(sampleIndex, options2, searchTimestamp = -Infinity) {
         if (sampleIndex === -1) {
           return null;
         }
@@ -64065,7 +64548,7 @@ var init_isobmff_demuxer = __esm({
           return null;
         }
         let data;
-        if (options2.metadataOnly) {
+        if (options2.metadataOnly && this.internalTrack.info?.codec !== "eac3") {
           data = PLACEHOLDER_DATA;
         } else {
           let slice = this.internalTrack.demuxer.reader.requestSlice(sampleInfo.sampleOffset, sampleInfo.sampleSize);
@@ -64092,10 +64575,13 @@ var init_isobmff_demuxer = __esm({
         const timestamp = (sampleInfo.presentationTimestamp - this.internalTrack.editListOffset) / this.internalTrack.timescale;
         const duration3 = sampleInfo.duration / this.internalTrack.timescale;
         const packet = new EncodedPacket(data, sampleInfo.isKeyFrame ? "key" : "delta", timestamp, duration3, sampleIndex, sampleInfo.sampleSize);
+        if (this.internalTrack.info?.codec === "eac3") {
+          return this.splitEac3Sample(packet, options2, searchTimestamp, this.packetToSampleIndex, sampleIndex);
+        }
         this.packetToSampleIndex.set(packet, sampleIndex);
         return packet;
       }
-      async fetchPacketInFragment(fragment, sampleIndex, options2) {
+      async fetchPacketInFragment(fragment, sampleIndex, options2, searchTimestamp) {
         if (sampleIndex === -1) {
           return null;
         }
@@ -64103,7 +64589,7 @@ var init_isobmff_demuxer = __esm({
         const fragmentSample = trackData.samples[sampleIndex];
         assert2(fragmentSample);
         let data;
-        if (options2.metadataOnly) {
+        if (options2.metadataOnly && this.internalTrack.info?.codec !== "eac3") {
           data = PLACEHOLDER_DATA;
         } else {
           let slice = this.internalTrack.demuxer.reader.requestSlice(fragmentSample.byteOffset, fragmentSample.byteSize);
@@ -64123,6 +64609,12 @@ var init_isobmff_demuxer = __esm({
         const timestamp = (fragmentSample.presentationTimestamp - this.internalTrack.editListOffset) / this.internalTrack.timescale;
         const duration3 = fragmentSample.duration / this.internalTrack.timescale;
         const packet = new EncodedPacket(data, fragmentSample.isKeyFrame ? "key" : "delta", timestamp, duration3, fragment.moofOffset + sampleIndex, fragmentSample.byteSize);
+        if (this.internalTrack.info?.codec === "eac3") {
+          return this.splitEac3Sample(packet, options2, searchTimestamp, this.packetToFragmentLocation, {
+            fragment,
+            sampleIndex
+          });
+        }
         this.packetToFragmentLocation.set(packet, { fragment, sampleIndex });
         return packet;
       }
@@ -64134,7 +64626,7 @@ var init_isobmff_demuxer = __esm({
         if (startFragment) {
           const { sampleIndex, correctSampleFound } = getMatchInFragment(startFragment);
           if (correctSampleFound) {
-            return this.fetchPacketInFragment(startFragment, sampleIndex, options2);
+            return this.fetchPacketInFragment(startFragment, sampleIndex, options2, searchTimestamp);
           }
           if (sampleIndex !== -1) {
             bestFragment = startFragment;
@@ -64195,7 +64687,7 @@ var init_isobmff_demuxer = __esm({
               }
               const { sampleIndex, correctSampleFound } = getMatchInFragment(currentFragment);
               if (correctSampleFound) {
-                return this.fetchPacketInFragment(currentFragment, sampleIndex, options2);
+                return this.fetchPacketInFragment(currentFragment, sampleIndex, options2, searchTimestamp);
               }
               if (sampleIndex !== -1) {
                 bestFragment = currentFragment;
@@ -64211,9 +64703,39 @@ var init_isobmff_demuxer = __esm({
           startFragment = null;
         }
         if (bestFragment) {
-          return this.fetchPacketInFragment(bestFragment, bestSampleIndex, options2);
+          return this.fetchPacketInFragment(bestFragment, bestSampleIndex, options2, searchTimestamp);
         }
         return null;
+      }
+      splitEac3Sample(samplePacket, options2, searchTimestamp, locations, location2) {
+        const info = this.internalTrack.info;
+        assert2(info?.type === "audio");
+        const frames = splitEac3AudioFrames(samplePacket.data) ?? [{
+          offset: 0,
+          size: samplePacket.data.byteLength,
+          blockCount: 6
+        }];
+        const searchTimestampInSeconds = (searchTimestamp - this.internalTrack.editListOffset) / this.internalTrack.timescale;
+        let match2 = null;
+        let previousPacket = null;
+        let blocksBefore = 0;
+        for (let i = 0; i < frames.length; i++) {
+          const frame = frames[i];
+          const timestamp = samplePacket.timestamp + 256 * blocksBefore / info.sampleRate;
+          const duration3 = frames.length === 1 ? samplePacket.duration : 256 * frame.blockCount / info.sampleRate;
+          const packet = new EncodedPacket(options2.metadataOnly ? PLACEHOLDER_DATA : samplePacket.data.subarray(frame.offset, frame.offset + frame.size), "key", timestamp, duration3, 8 * samplePacket.sequenceNumber + i, frame.size);
+          locations.set(packet, location2);
+          if (previousPacket) {
+            this.nextEac3Frames.set(previousPacket, packet);
+          }
+          if (i === 0 || timestamp <= searchTimestampInSeconds) {
+            match2 = packet;
+          }
+          previousPacket = packet;
+          blocksBefore += frame.blockCount;
+        }
+        assert2(match2);
+        return match2;
       }
     };
     IsobmffVideoTrackBacking = class extends IsobmffTrackBacking {
@@ -64495,6 +65017,7 @@ var init_isobmff_demuxer = __esm({
     offsetFragmentTrackDataByTimestamp = /* @__PURE__ */ __name((trackData, timestamp) => {
       trackData.startTimestamp += timestamp;
       trackData.endTimestamp += timestamp;
+      trackData.endDecodeTimestamp += timestamp;
       for (const sample of trackData.samples) {
         sample.presentationTimestamp += timestamp;
       }
@@ -64532,9 +65055,6 @@ var init_isobmff_demuxer = __esm({
         info.squarePixelHeight = Math.round(info.height * den / num2);
       }
     }, "applySpsPixelAspectRatio");
-    sampleTableIsEmpty = /* @__PURE__ */ __name((sampleTable) => {
-      return sampleTable.sampleSizes.length === 0;
-    }, "sampleTableIsEmpty");
     capEntryCounts = /* @__PURE__ */ __name((entries, sampleCount) => {
       while (entries.length > 0 && last(entries).startIndex >= sampleCount) {
         entries.pop();
@@ -64544,9 +65064,9 @@ var init_isobmff_demuxer = __esm({
         lastEntry.count = Math.min(lastEntry.count, sampleCount - lastEntry.startIndex);
       }
     }, "capEntryCounts");
-    getOrCreateEncryptionAuxInfo = /* @__PURE__ */ __name((track) => {
-      if (track.currentFragmentState) {
-        return track.currentFragmentState.encryptionAuxInfo ??= {
+    getOrCreateEncryptionAuxInfo = /* @__PURE__ */ __name((track, fragmentTrackState) => {
+      if (fragmentTrackState) {
+        return fragmentTrackState.encryptionAuxInfo ??= {
           defaultSampleInfoSize: 0,
           sampleSizes: null,
           sampleCount: 0,
@@ -64793,7 +65313,7 @@ function assertDefinedSize(size) {
     throw new Error("Undefined element size is used in a place where it is not supported.");
   }
 }
-var EBMLFloat32, EBMLFloat64, EBMLSignedInt, EBMLUnicodeString, EBMLId, LEVEL_0_EBML_IDS, LEVEL_1_EBML_IDS, LEVEL_0_AND_1_EBML_IDS, measureUnsignedInt, measureUnsignedBigInt, measureSignedInt, measureVarInt, EBMLWriter, EBML_DATE_EPOCH, MAX_VAR_INT_SIZE, MIN_HEADER_SIZE, MAX_HEADER_SIZE, readVarIntSize, readVarInt, readUnsignedInt, readUnsignedBigInt, readSignedBigInt, readElementId, readElementSize, readElementHeader, readAsciiString, readUnicodeString, readFloat, searchForNextElementId, resync, CODEC_STRING_MAP;
+var EBMLFloat32, EBMLFloat64, EBMLSignedInt, EBMLUnicodeString, EBMLId, LEVEL_0_EBML_IDS, LEVEL_1_EBML_IDS, LEVEL_0_AND_1_EBML_IDS, measureUnsignedInt, measureUnsignedBigInt, measureSignedInt, measureVarInt, EBMLWriter, measureEBML, EBML_DATE_EPOCH, MAX_VAR_INT_SIZE, MIN_HEADER_SIZE, MAX_HEADER_SIZE, readVarIntSize, readVarInt, readUnsignedInt, readUnsignedBigInt, readSignedBigInt, readElementId, readElementSize, readElementHeader, readAsciiString, readUnicodeString, readFloat, searchForNextElementId, resync, CODEC_STRING_MAP;
 var init_ebml = __esm({
   "node_modules/mediabunny/dist/modules/src/matroska/ebml.js"() {
     init_misc();
@@ -64849,6 +65369,7 @@ var init_ebml = __esm({
       EBMLId2[EBMLId2["Info"] = 357149030] = "Info";
       EBMLId2[EBMLId2["TimestampScale"] = 2807729] = "TimestampScale";
       EBMLId2[EBMLId2["DateUTC"] = 17505] = "DateUTC";
+      EBMLId2[EBMLId2["Title"] = 31657] = "Title";
       EBMLId2[EBMLId2["MuxingApp"] = 19840] = "MuxingApp";
       EBMLId2[EBMLId2["WritingApp"] = 22337] = "WritingApp";
       EBMLId2[EBMLId2["Tracks"] = 374648427] = "Tracks";
@@ -64864,6 +65385,7 @@ var init_ebml = __esm({
       EBMLId2[EBMLId2["FlagVisualImpaired"] = 21932] = "FlagVisualImpaired";
       EBMLId2[EBMLId2["FlagCommentary"] = 21935] = "FlagCommentary";
       EBMLId2[EBMLId2["FlagLacing"] = 156] = "FlagLacing";
+      EBMLId2[EBMLId2["MaxBlockAdditionID"] = 21998] = "MaxBlockAdditionID";
       EBMLId2[EBMLId2["Name"] = 21358] = "Name";
       EBMLId2[EBMLId2["Language"] = 2274716] = "Language";
       EBMLId2[EBMLId2["LanguageBCP47"] = 2274717] = "LanguageBCP47";
@@ -64878,9 +65400,11 @@ var init_ebml = __esm({
       EBMLId2[EBMLId2["DisplayWidth"] = 21680] = "DisplayWidth";
       EBMLId2[EBMLId2["DisplayHeight"] = 21690] = "DisplayHeight";
       EBMLId2[EBMLId2["DisplayUnit"] = 21682] = "DisplayUnit";
+      EBMLId2[EBMLId2["StereoMode"] = 21432] = "StereoMode";
       EBMLId2[EBMLId2["AlphaMode"] = 21440] = "AlphaMode";
       EBMLId2[EBMLId2["Audio"] = 225] = "Audio";
       EBMLId2[EBMLId2["SamplingFrequency"] = 181] = "SamplingFrequency";
+      EBMLId2[EBMLId2["OutputSamplingFrequency"] = 30901] = "OutputSamplingFrequency";
       EBMLId2[EBMLId2["Channels"] = 159] = "Channels";
       EBMLId2[EBMLId2["BitDepth"] = 25188] = "BitDepth";
       EBMLId2[EBMLId2["SimpleBlock"] = 163] = "SimpleBlock";
@@ -65089,6 +65613,9 @@ var init_ebml = __esm({
         this.writeUnsignedInt(value, width);
       }
       writeVarInt(value, width = measureVarInt(value)) {
+        if (value >= 2 ** (7 * width) - 1) {
+          throw new Error(`EBML variable-size integer ${value} doesn't fit into ${width} bytes.`);
+        }
         let pos = 0;
         switch (width) {
           case 1:
@@ -65145,22 +65672,28 @@ var init_ebml = __esm({
           this.offsets.set(data, this.writer.getPos());
           this.writeUnsignedInt(data.id);
           if (Array.isArray(data.data)) {
-            const sizePos = this.writer.getPos();
-            const sizeSize = data.size === -1 ? 1 : data.size ?? 4;
-            if (data.size === -1) {
-              this.writeByte(255);
+            if (data.size === void 0) {
+              this.writeVarInt(measureEBML(data.data));
+              this.dataOffsets.set(data, this.writer.getPos());
+              this.writeEBML(data.data);
             } else {
-              this.writer.seek(this.writer.getPos() + sizeSize);
-            }
-            const startPos = this.writer.getPos();
-            this.dataOffsets.set(data, startPos);
-            this.writeEBML(data.data);
-            if (data.size !== -1) {
-              const size = this.writer.getPos() - startPos;
-              const endPos = this.writer.getPos();
-              this.writer.seek(sizePos);
-              this.writeVarInt(size, sizeSize);
-              this.writer.seek(endPos);
+              const sizePos = this.writer.getPos();
+              const sizeSize = data.size === -1 ? 1 : data.size;
+              if (data.size === -1) {
+                this.writeByte(255);
+              } else {
+                this.writer.seek(this.writer.getPos() + sizeSize);
+              }
+              const startPos = this.writer.getPos();
+              this.dataOffsets.set(data, startPos);
+              this.writeEBML(data.data);
+              if (data.size !== -1) {
+                const size = this.writer.getPos() - startPos;
+                const endPos = this.writer.getPos();
+                this.writer.seek(sizePos);
+                this.writeVarInt(size, sizeSize);
+                this.writer.seek(endPos);
+              }
             }
           } else if (typeof data.data === "number") {
             const size = data.size ?? measureUnsignedInt(data.data);
@@ -65196,6 +65729,47 @@ var init_ebml = __esm({
         }
       }
     };
+    measureEBML = /* @__PURE__ */ __name((data) => {
+      if (data === null) {
+        return 0;
+      } else if (data instanceof Uint8Array) {
+        return data.byteLength;
+      } else if (Array.isArray(data)) {
+        return data.reduce((sum, elem) => sum + measureEBML(elem), 0);
+      }
+      let contentSize;
+      let sizeSize;
+      if (Array.isArray(data.data)) {
+        contentSize = measureEBML(data.data);
+        sizeSize = data.size === void 0 ? measureVarInt(contentSize) : data.size === -1 ? 1 : data.size;
+      } else if (typeof data.data === "number") {
+        contentSize = data.size ?? measureUnsignedInt(data.data);
+        sizeSize = measureVarInt(contentSize);
+      } else if (typeof data.data === "bigint") {
+        contentSize = data.size ?? measureUnsignedBigInt(data.data);
+        sizeSize = measureVarInt(contentSize);
+      } else if (typeof data.data === "string") {
+        contentSize = data.data.length;
+        sizeSize = measureVarInt(contentSize);
+      } else if (data.data instanceof Uint8Array) {
+        contentSize = data.data.byteLength;
+        sizeSize = data.size ?? measureVarInt(contentSize);
+      } else if (data.data instanceof EBMLFloat32) {
+        contentSize = 4;
+        sizeSize = 1;
+      } else if (data.data instanceof EBMLFloat64) {
+        contentSize = 8;
+        sizeSize = 1;
+      } else if (data.data instanceof EBMLSignedInt) {
+        contentSize = data.size ?? measureSignedInt(data.data.value);
+        sizeSize = measureVarInt(contentSize);
+      } else {
+        assert2(data.data instanceof EBMLUnicodeString);
+        contentSize = textEncoder.encode(data.data.value).length;
+        sizeSize = measureVarInt(contentSize);
+      }
+      return measureUnsignedInt(data.id) + sizeSize + contentSize;
+    }, "measureEBML");
     EBML_DATE_EPOCH = Date.UTC(2001, 0, 1);
     MAX_VAR_INT_SIZE = 8;
     MIN_HEADER_SIZE = 2;
@@ -65256,7 +65830,7 @@ var init_ebml = __esm({
       return value;
     }, "readUnsignedInt");
     readUnsignedBigInt = /* @__PURE__ */ __name((slice, width) => {
-      if (width < 1 || width > 8) {
+      if (width > 8) {
         throw new Error("Bad unsigned int size " + width);
       }
       let value = 0n;
@@ -65284,19 +65858,13 @@ var init_ebml = __esm({
       return id2;
     }, "readElementId");
     readElementSize = /* @__PURE__ */ __name((slice) => {
-      if (slice.remainingLength < 1) {
-        return null;
-      }
-      const firstByte = readU8(slice);
-      if (firstByte === 255) {
-        return void 0;
-      }
-      slice.skip(-1);
+      const startPos = slice.filePos;
       const size = readVarInt(slice);
       if (size === null) {
         return null;
       }
-      if (size === 72057594037927940) {
+      const width = slice.filePos - startPos;
+      if (size === 2 ** (7 * width) - 1) {
         return void 0;
       }
       return size;
@@ -65441,6 +66009,7 @@ var init_matroska_demuxer = __esm({
     init_packet();
     init_ebml();
     init_matroska_misc();
+    init_aac_misc();
     init_reader();
     (function(BlockLacing2) {
       BlockLacing2[BlockLacing2["None"] = 0] = "None";
@@ -65482,6 +66051,7 @@ var init_matroska_demuxer = __esm({
         this.currentBlockAdditional = null;
         this.currentCueTime = null;
         this.currentDecodingInstruction = null;
+        this.currentProjection = null;
         this.currentTagTargetIsMovie = true;
         this.currentSimpleTagName = null;
         this.currentAttachedFile = null;
@@ -65776,7 +66346,7 @@ var init_matroska_demuxer = __esm({
           const nextElementPos = await searchForNextElementId(this.reader, dataStartPos, LEVEL_0_AND_1_EBML_IDS, segment.elementEndPos);
           size = nextElementPos.pos - dataStartPos;
         }
-        let dataSlice = this.reader.requestSlice(dataStartPos, size);
+        let dataSlice = this.reader.requestSliceRange(dataStartPos, 0, size);
         if (isThenable(dataSlice))
           dataSlice = await dataSlice;
         const cluster = {
@@ -65810,16 +66380,13 @@ var init_matroska_demuxer = __esm({
           for (let i = 0; i < trackData.presentationTimestamps.length; i++) {
             const currentEntry = trackData.presentationTimestamps[i];
             const currentBlock = trackData.blocks[currentEntry.blockIndex];
-            if (trackData.firstKeyFrameTimestamp === null && currentBlock.isKeyFrame) {
-              trackData.firstKeyFrameTimestamp = currentBlock.timestamp;
-            }
             if (i < trackData.presentationTimestamps.length - 1) {
               const nextEntry2 = trackData.presentationTimestamps[i + 1];
               currentBlock.duration = nextEntry2.timestamp - currentBlock.timestamp;
             } else if (currentBlock.duration === 0) {
               if (track.defaultDuration != null) {
                 if (currentBlock.lacing === BlockLacing.None) {
-                  currentBlock.duration = track.defaultDuration;
+                  currentBlock.duration = Math.round(track.defaultDuration);
                 } else {
                 }
               }
@@ -65828,6 +66395,18 @@ var init_matroska_demuxer = __esm({
           if (hasLacedBlocks) {
             trackData.blocks = this.expandLacedBlocks(trackData.blocks, track);
             trackData.presentationTimestamps = trackData.blocks.map((block, i) => ({ timestamp: block.timestamp, blockIndex: i })).sort((a, b) => a.timestamp - b.timestamp);
+          }
+          if (track.info?.type === "audio" && track.info.codec) {
+            const hasDeltaPackets = AUDIO_CODECS_WITH_DELTA_PACKETS.includes(track.info.codec);
+            for (const block of trackData.blocks) {
+              if (block.decoded || !hasDeltaPackets) {
+                block.isKeyFrame = determineAudioPacketType(track.info.codec, block.data) === "key";
+              }
+            }
+          }
+          const firstKeyEntry = trackData.presentationTimestamps.find((x) => trackData.blocks[x.blockIndex].isKeyFrame);
+          if (firstKeyEntry) {
+            trackData.firstKeyFrameTimestamp = firstKeyEntry.timestamp;
           }
           const firstBlock = trackData.blocks[trackData.presentationTimestamps[0].blockIndex];
           const lastBlock = trackData.blocks[last(trackData.presentationTimestamps).blockIndex];
@@ -65915,6 +66494,10 @@ var init_matroska_demuxer = __esm({
               break;
             case BlockLacing.Ebml:
               {
+                if (frameCount === 1) {
+                  frameSizes.push(slice.length - slice.bufferPos);
+                  break;
+                }
                 const firstResult = readVarInt(slice);
                 if (firstResult === null) {
                   throw new Error("Invalid EBML lacing: bad frame size.");
@@ -65946,15 +66529,15 @@ var init_matroska_demuxer = __esm({
           if (frameSizes.length !== frameCount || frameSizes.some((x) => x <= 0)) {
             throw new Error("Invalid block lacing: frame sizes don't match the block.");
           }
-          const blockDuration = originalBlock.duration || frameCount * (track.defaultDuration ?? 0);
+          const blockDuration = originalBlock.duration || Math.round(frameCount * (track.defaultDuration ?? 0));
           for (let i = 0; i < frameCount; i++) {
             const frameSize = frameSizes[i];
             const frameData = readBytes(slice, frameSize);
-            const frameTimestamp = originalBlock.timestamp + blockDuration * i / frameCount;
-            const frameDuration = blockDuration / frameCount;
+            const frameStart = Math.floor(blockDuration * i / frameCount);
+            const frameEnd = Math.floor(blockDuration * (i + 1) / frameCount);
             expandedBlocks.push({
-              timestamp: frameTimestamp,
-              duration: frameDuration,
+              timestamp: originalBlock.timestamp + frameStart,
+              duration: frameEnd - frameStart,
               isKeyFrame: originalBlock.isKeyFrame,
               data: frameData,
               lacing: BlockLacing.None,
@@ -66086,7 +66669,7 @@ var init_matroska_demuxer = __esm({
             {
               if (!this.currentSegment)
                 break;
-              const timestampScale = readUnsignedInt(slice, size);
+              const timestampScale = size === 0 ? 1e6 : readUnsignedInt(slice, size);
               if (timestampScale === 0) {
                 throw new Error("Invalid TimestampScale element: must not be 0.");
               }
@@ -66109,6 +66692,14 @@ var init_matroska_demuxer = __esm({
                 break;
               const nanoseconds = readSignedBigInt(slice, size);
               this.currentSegment.metadataTags.creationTime = new Date(EBML_DATE_EPOCH + Number(nanoseconds / 1000000n));
+            }
+            ;
+            break;
+          case EBMLId.Title:
+            {
+              if (!this.currentSegment)
+                break;
+              this.currentSegment.metadataTags.title ??= readUnicodeString(slice, size);
             }
             ;
             break;
@@ -66160,9 +66751,22 @@ var init_matroska_demuxer = __esm({
                 if (this.currentTrack.info.type === "video" && this.currentTrack.info.width !== -1 && this.currentTrack.info.height !== -1) {
                   this.currentTrack.info.squarePixelWidth = this.currentTrack.info.width;
                   this.currentTrack.info.squarePixelHeight = this.currentTrack.info.height;
-                  if (this.currentTrack.info.displayWidth !== null && this.currentTrack.info.displayHeight !== null) {
-                    const num2 = this.currentTrack.info.displayWidth * this.currentTrack.info.height;
-                    const den = this.currentTrack.info.displayHeight * this.currentTrack.info.width;
+                  let displayWidth = this.currentTrack.info.displayWidth;
+                  let displayHeight = this.currentTrack.info.displayHeight;
+                  const stereoMode = this.currentTrack.info.stereoMode;
+                  if (displayWidth !== null && [1, 8, 9, 11].includes(stereoMode)) {
+                    displayWidth *= 2;
+                  }
+                  if (displayHeight !== null && [2, 3, 6, 7].includes(stereoMode)) {
+                    displayHeight *= 2;
+                  }
+                  if (this.currentTrack.info.displayUnit === 0) {
+                    displayWidth ??= this.currentTrack.info.width;
+                    displayHeight ??= this.currentTrack.info.height;
+                  }
+                  if (this.currentTrack.info.displayUnit !== 4 && displayWidth !== null && displayHeight !== null) {
+                    const num2 = displayWidth * this.currentTrack.info.height;
+                    const den = displayHeight * this.currentTrack.info.width;
                     if (num2 > 0 && den > 0) {
                       if (num2 > den) {
                         this.currentTrack.info.squarePixelWidth = Math.round(this.currentTrack.info.width * num2 / den);
@@ -66196,6 +66800,9 @@ var init_matroska_demuxer = __esm({
                   this.currentSegment.tracks.push(this.currentTrack);
                   this.currentSegment.idToTrack.set(this.currentTrack.id, this.currentTrack);
                 } else if (this.currentTrack.info.type === "audio") {
+                  if (this.currentTrack.info.outputSampleRate !== null) {
+                    this.currentTrack.info.sampleRate = this.currentTrack.info.outputSampleRate;
+                  }
                   if (codecIdWithoutSuffix === CODEC_STRING_MAP.aac) {
                     this.currentTrack.info.codec = "aac";
                     this.currentTrack.info.aacCodecInfo = {
@@ -66203,6 +66810,23 @@ var init_matroska_demuxer = __esm({
                       objectType: null
                     };
                     this.currentTrack.info.codecDescription = this.currentTrack.codecPrivate;
+                    if (!this.currentTrack.codecPrivate && this.currentTrack.codecId !== CODEC_STRING_MAP.aac) {
+                      const profile = this.currentTrack.codecId.split("/")[2] ?? "";
+                      const objectType = ["MAIN", "LC", "SSR", "LTP"].indexOf(profile) + 1;
+                      if (objectType === 0) {
+                        throw new Error(`Unknown Matroska AAC codec ID '${this.currentTrack.codecId}'.`);
+                      }
+                      const usesSbr = this.currentTrack.codecId.endsWith("/SBR");
+                      if (usesSbr && this.currentTrack.info.outputSampleRate === null) {
+                        this.currentTrack.info.sampleRate *= 2;
+                      }
+                      this.currentTrack.info.codecDescription = buildAacAudioSpecificConfig({
+                        objectType: usesSbr ? 5 : objectType,
+                        outputSampleRate: this.currentTrack.info.sampleRate,
+                        outputNumberOfChannels: this.currentTrack.info.numberOfChannels,
+                        programConfigElement: null
+                      });
+                    }
                   } else if (this.currentTrack.codecId === CODEC_STRING_MAP.mp3) {
                     this.currentTrack.info.codec = "mp3";
                   } else if (codecIdWithoutSuffix === CODEC_STRING_MAP.opus) {
@@ -66287,7 +66911,10 @@ var init_matroska_demuxer = __esm({
                   height: -1,
                   displayWidth: null,
                   displayHeight: null,
-                  displayUnit: null,
+                  displayUnit: 0,
+                  // Pixels
+                  stereoMode: 0,
+                  // Mono
                   squarePixelWidth: -1,
                   squarePixelHeight: -1,
                   horizontalScale: 1,
@@ -66306,6 +66933,7 @@ var init_matroska_demuxer = __esm({
                   // Default value
                   sampleRate: 8e3,
                   // Default value
+                  outputSampleRate: null,
                   bitDepth: -1,
                   codec: null,
                   codecDescription: null,
@@ -66320,7 +66948,7 @@ var init_matroska_demuxer = __esm({
             {
               if (!this.currentTrack)
                 break;
-              const enabled = readUnsignedInt(slice, size);
+              const enabled = size === 0 ? 1 : readUnsignedInt(slice, size);
               if (!enabled) {
                 this.currentTrack = null;
               }
@@ -66331,7 +66959,7 @@ var init_matroska_demuxer = __esm({
             {
               if (!this.currentTrack)
                 break;
-              this.currentTrack.disposition.default = !!readUnsignedInt(slice, size);
+              this.currentTrack.disposition.default = size === 0 || !!readUnsignedInt(slice, size);
             }
             ;
             break;
@@ -66422,7 +67050,7 @@ var init_matroska_demuxer = __esm({
               if (this.currentTrack.hasLanguageBcp47) {
                 break;
               }
-              this.currentTrack.languageCode = readAsciiString(slice, size);
+              this.currentTrack.languageCode = size === 0 ? "eng" : readAsciiString(slice, size);
               if (!isIso639Dash2LanguageCode(this.currentTrack.languageCode)) {
                 this.currentTrack.languageCode = UNDETERMINED_LANGUAGE;
               }
@@ -66492,6 +67120,14 @@ var init_matroska_demuxer = __esm({
             }
             ;
             break;
+          case EBMLId.StereoMode:
+            {
+              if (this.currentTrack?.info?.type !== "video")
+                break;
+              this.currentTrack.info.stereoMode = readUnsignedInt(slice, size);
+            }
+            ;
+            break;
           case EBMLId.AlphaMode:
             {
               if (this.currentTrack?.info?.type !== "video")
@@ -66512,7 +67148,7 @@ var init_matroska_demuxer = __esm({
             {
               if (this.currentTrack?.info?.type !== "video")
                 break;
-              const matrixCoefficients = readUnsignedInt(slice, size);
+              const matrixCoefficients = size === 0 ? 2 : readUnsignedInt(slice, size);
               const mapped = MATRIX_COEFFICIENTS_MAP_INVERSE[matrixCoefficients];
               this.currentTrack.info.colorSpace.matrix = mapped;
             }
@@ -66531,7 +67167,7 @@ var init_matroska_demuxer = __esm({
             {
               if (this.currentTrack?.info?.type !== "video")
                 break;
-              const transferCharacteristics = readUnsignedInt(slice, size);
+              const transferCharacteristics = size === 0 ? 2 : readUnsignedInt(slice, size);
               const mapped = TRANSFER_CHARACTERISTICS_MAP_INVERSE[transferCharacteristics];
               this.currentTrack.info.colorSpace.transfer = mapped;
             }
@@ -66541,7 +67177,7 @@ var init_matroska_demuxer = __esm({
             {
               if (this.currentTrack?.info?.type !== "video")
                 break;
-              const primaries = readUnsignedInt(slice, size);
+              const primaries = size === 0 ? 2 : readUnsignedInt(slice, size);
               const mapped = COLOR_PRIMARIES_MAP_INVERSE[primaries];
               this.currentTrack.info.colorSpace.primaries = mapped;
             }
@@ -66551,48 +67187,64 @@ var init_matroska_demuxer = __esm({
             {
               if (this.currentTrack?.info?.type !== "video")
                 break;
+              const info = this.currentTrack.info;
+              const projection = {
+                type: 0,
+                // Rectangular
+                yaw: 0,
+                pitch: 0,
+                roll: 0
+              };
+              this.currentProjection = projection;
               this.readContiguousElements(slice.slice(dataStartPos, size));
+              this.currentProjection = null;
+              if (projection.type !== 0)
+                break;
+              const angleToScale = /* @__PURE__ */ __name((angle) => {
+                try {
+                  return Math.round(Math.cos(normalizeRotation(angle) * DEG_TO_RAD));
+                } catch {
+                  return 1;
+                }
+              }, "angleToScale");
+              info.horizontalScale = angleToScale(projection.yaw);
+              info.verticalScale = angleToScale(projection.pitch);
+              try {
+                info.rotation = normalizeRotation(-projection.roll);
+              } catch {
+              }
             }
             ;
             break;
-          // Yaw and pitch rotate the frame in 3D space about the vertical and horizontal axis respectively. When
-          // snapped to multiples of 90 degrees, that amounts to scaling each axis by the cosine, which models flips.
+          case EBMLId.ProjectionType:
+            {
+              if (!this.currentProjection)
+                break;
+              this.currentProjection.type = readUnsignedInt(slice, size);
+            }
+            ;
+            break;
           case EBMLId.ProjectionPoseYaw:
             {
-              if (this.currentTrack?.info?.type !== "video")
+              if (!this.currentProjection)
                 break;
-              const yaw = readFloat(slice, size);
-              try {
-                const normalized = normalizeRotation(yaw);
-                this.currentTrack.info.horizontalScale = Math.round(Math.cos(normalized * DEG_TO_RAD));
-              } catch {
-              }
+              this.currentProjection.yaw = readFloat(slice, size);
             }
             ;
             break;
           case EBMLId.ProjectionPosePitch:
             {
-              if (this.currentTrack?.info?.type !== "video")
+              if (!this.currentProjection)
                 break;
-              const pitch = readFloat(slice, size);
-              try {
-                const normalized = normalizeRotation(pitch);
-                this.currentTrack.info.verticalScale = Math.round(Math.cos(normalized * DEG_TO_RAD));
-              } catch {
-              }
+              this.currentProjection.pitch = readFloat(slice, size);
             }
             ;
             break;
           case EBMLId.ProjectionPoseRoll:
             {
-              if (this.currentTrack?.info?.type !== "video")
+              if (!this.currentProjection)
                 break;
-              const rotation = readFloat(slice, size);
-              const flippedRotation = -rotation;
-              try {
-                this.currentTrack.info.rotation = normalizeRotation(flippedRotation);
-              } catch {
-              }
+              this.currentProjection.roll = readFloat(slice, size);
             }
             ;
             break;
@@ -66608,7 +67260,7 @@ var init_matroska_demuxer = __esm({
             {
               if (this.currentTrack?.info?.type !== "audio")
                 break;
-              const sampleRate = readFloat(slice, size);
+              const sampleRate = size === 0 ? 8e3 : readFloat(slice, size);
               if (!(sampleRate > 0) || !Number.isFinite(sampleRate)) {
                 throw new Error("Invalid SamplingFrequency element: must be a positive, finite number.");
               }
@@ -66616,11 +67268,23 @@ var init_matroska_demuxer = __esm({
             }
             ;
             break;
+          case EBMLId.OutputSamplingFrequency:
+            {
+              if (this.currentTrack?.info?.type !== "audio")
+                break;
+              const outputSampleRate = readFloat(slice, size);
+              if (!(outputSampleRate > 0) || !Number.isFinite(outputSampleRate)) {
+                throw new Error("Invalid OutputSamplingFrequency element: must be a positive, finite number.");
+              }
+              this.currentTrack.info.outputSampleRate = outputSampleRate;
+            }
+            ;
+            break;
           case EBMLId.Channels:
             {
               if (this.currentTrack?.info?.type !== "audio")
                 break;
-              const numberOfChannels = readUnsignedInt(slice, size);
+              const numberOfChannels = size === 0 ? 1 : readUnsignedInt(slice, size);
               if (numberOfChannels === 0) {
                 throw new Error("Invalid Channels element: must not be 0.");
               }
@@ -66705,10 +67369,7 @@ var init_matroska_demuxer = __esm({
               const relativeTimestamp = readI16Be(blockSlice);
               const flags = readU8(blockSlice);
               const lacing = flags >> 1 & 3;
-              let isKeyFrame = !!(flags & 128);
-              if (trackData.track.info?.type === "audio" && trackData.track.info.codec && !AUDIO_CODECS_WITH_DELTA_PACKETS.includes(trackData.track.info.codec)) {
-                isKeyFrame = true;
-              }
+              const isKeyFrame = !!(flags & 128);
               const blockData = readBytes(blockSlice, blockSlice.remainingLength);
               const hasDecodingInstructions = trackData.track.decodingInstructions.length > 0;
               trackData.blocks.push({
@@ -66803,7 +67464,7 @@ var init_matroska_demuxer = __esm({
             {
               if (!this.currentBlockAdditional)
                 break;
-              this.currentBlockAdditional.addId = readUnsignedInt(slice, size);
+              this.currentBlockAdditional.addId = size === 0 ? 1 : readUnsignedInt(slice, size);
             }
             ;
             break;
@@ -66838,7 +67499,7 @@ var init_matroska_demuxer = __esm({
             break;
           case EBMLId.TargetTypeValue:
             {
-              const targetTypeValue = readUnsignedInt(slice, size);
+              const targetTypeValue = size === 0 ? 50 : readUnsignedInt(slice, size);
               if (targetTypeValue !== 50) {
                 this.currentTagTargetIsMovie = false;
               }
@@ -67009,7 +67670,7 @@ var init_matroska_demuxer = __esm({
             {
               if (!this.currentDecodingInstruction)
                 break;
-              this.currentDecodingInstruction.scope = readUnsignedInt(slice, size);
+              this.currentDecodingInstruction.scope = size === 0 ? ContentEncodingScope.Block : readUnsignedInt(slice, size);
             }
             ;
             break;
@@ -67160,8 +67821,8 @@ var init_matroska_demuxer = __esm({
               break;
             case "date":
               {
-                const date6 = new Date(value);
-                if (!Number.isNaN(date6.getTime())) {
+                const date6 = parseIsoSuffix(value);
+                if (date6) {
                   metadataTags.date ??= date6;
                 }
               }
@@ -67216,9 +67877,6 @@ var init_matroska_demuxer = __esm({
         this.internalTrack = internalTrack;
         this.packetToClusterLocation = /* @__PURE__ */ new WeakMap();
       }
-      getId() {
-        return this.internalTrack.id;
-      }
       getNumber() {
         const demuxer = this.internalTrack.demuxer;
         const trackType = this.internalTrack.trackBacking.getType();
@@ -67229,11 +67887,11 @@ var init_matroska_demuxer = __esm({
               number4++;
             }
             if (track === this.internalTrack) {
-              break;
+              return number4;
             }
           }
         }
-        return number4;
+        assert2(false);
       }
       getCodec() {
         throw new Error("Not implemented on base class.");
@@ -67504,6 +68162,10 @@ var init_matroska_demuxer = __esm({
               break;
             const elementStartPos = currentPos;
             const elementHeader = readElementHeader(slice);
+            if (segment.elementEndPos === null && elementHeader && LEVEL_0_EBML_IDS.includes(elementHeader.id)) {
+              segment.elementEndPos = elementStartPos;
+              break;
+            }
             if (!elementHeader || !LEVEL_1_EBML_IDS.includes(elementHeader.id) && elementHeader.id !== EBMLId.Void) {
               const nextPos = await resync(demuxer.reader, elementStartPos + 1, LEVEL_1_EBML_IDS, Math.min(segment.elementEndPos ?? Infinity, elementStartPos + MAX_RESYNC_LENGTH));
               if (nextPos) {
@@ -67533,20 +68195,7 @@ var init_matroska_demuxer = __esm({
               const nextElementPos = await searchForNextElementId(demuxer.reader, dataStartPos, LEVEL_0_AND_1_EBML_IDS, segment.elementEndPos);
               size = nextElementPos.pos - dataStartPos;
             }
-            const endPos = dataStartPos + size;
-            if (segment.elementEndPos === null) {
-              let slice2 = demuxer.reader.requestSliceRange(endPos, MIN_HEADER_SIZE, MAX_HEADER_SIZE);
-              if (isThenable(slice2))
-                slice2 = await slice2;
-              if (!slice2)
-                break;
-              const elementId = readElementId(slice2);
-              if (elementId === EBMLId.Segment) {
-                segment.elementEndPos = endPos;
-                break;
-              }
-            }
-            currentPos = endPos;
+            currentPos = dataStartPos + size;
           }
           if (lookupEntryPosition === null || bestCluster && bestCluster.elementStartPos >= lookupEntryPosition) {
             break;
@@ -67611,10 +68260,15 @@ var init_matroska_demuxer = __esm({
           return null;
         }
         return this.decoderConfigPromise ??= (async () => {
+          const codecPrivate = this.internalTrack.codecPrivate;
+          let av1CodecInfo = this.internalTrack.info.codec === "av1" && codecPrivate ? extractAv1CodecInfoFromPacket(codecPrivate.subarray(4)) : null;
           let firstPacket = null;
-          const needsPacketForAdditionalInfo = this.internalTrack.info.codec === "vp9" || this.internalTrack.info.codec === "av1" || this.internalTrack.info.codec === "prores" || this.internalTrack.info.codec === "avc" && !this.internalTrack.info.codecDescription || this.internalTrack.info.codec === "hevc" && !this.internalTrack.info.codecDescription;
+          const needsPacketForAdditionalInfo = this.internalTrack.info.codec === "vp9" || this.internalTrack.info.codec === "av1" && !av1CodecInfo || this.internalTrack.info.codec === "prores" || this.internalTrack.info.codec === "avc" && !this.internalTrack.info.codecDescription || this.internalTrack.info.codec === "hevc" && !this.internalTrack.info.codecDescription;
           if (needsPacketForAdditionalInfo) {
             firstPacket = await this.getFirstPacket({});
+          }
+          if (this.internalTrack.info.codec === "av1" && firstPacket) {
+            av1CodecInfo = extractAv1CodecInfoFromPacket(firstPacket.data);
           }
           const codecInfo = {
             width: this.internalTrack.info.width,
@@ -67625,9 +68279,11 @@ var init_matroska_demuxer = __esm({
             avcType: 1,
             // We don't know better (or do we?) so just assume 'avc1'
             avcCodecInfo: this.internalTrack.info.codec === "avc" && firstPacket ? extractAvcDecoderConfigurationRecord(firstPacket.data) : null,
+            hevcType: "hev1",
+            // Matroska doesn't promise that parameter sets stay out of the blocks
             hevcCodecInfo: this.internalTrack.info.codec === "hevc" && firstPacket ? extractHevcDecoderConfigurationRecord(firstPacket.data) : null,
             vp9CodecInfo: this.internalTrack.info.codec === "vp9" && firstPacket ? extractVp9CodecInfoFromPacket(firstPacket.data) : null,
-            av1CodecInfo: this.internalTrack.info.codec === "av1" && firstPacket ? extractAv1CodecInfoFromPacket(firstPacket.data) : null,
+            av1CodecInfo,
             proresCodecInfo: this.internalTrack.info.codec === "prores" && firstPacket ? extractProresCodecInfoFromPacket(firstPacket.data) : null,
             proresFormat: this.internalTrack.info.proresFormat
           };
@@ -67700,7 +68356,7 @@ var init_matroska_demuxer = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/id3.js
-var Id3V2HeaderFlags, Id3V2TextEncoding, ID3_V1_TAG_SIZE, ID3_V2_HEADER_SIZE, ID3_V1_GENRES, parseId3V1Tag, readId3V1String, readId3V2Header, parseId3V2Tag, Id3V2Reader, Id3V2Writer;
+var Id3V2HeaderFlags, Id3V2TextEncoding, ID3_V1_TAG_SIZE, ID3_V2_HEADER_SIZE, ID3_V1_GENRES, parseId3V1Tag, readId3V1String, skipId3V2Tags, readId3V2Header, parseId3V2Tag, Id3V2Reader, Id3V2Writer;
 var init_id3 = __esm({
   "node_modules/mediabunny/dist/modules/src/id3.js"() {
     init_mp3_misc();
@@ -67932,7 +68588,7 @@ var init_id3 = __esm({
       const yearText = readId3V1String(slice, 4);
       const year = Number.parseInt(yearText, 10);
       if (Number.isInteger(year) && year > 0) {
-        tags.date ??= new Date(String(year));
+        tags.date ??= createUtcDate(year);
       }
       const commentBytes = readBytes(slice, 30);
       let comment;
@@ -67965,6 +68621,22 @@ var init_id3 = __esm({
       }
       return str.trimEnd();
     }, "readId3V1String");
+    skipId3V2Tags = /* @__PURE__ */ __name(async (reader, startPos) => {
+      let currentPos = startPos;
+      while (true) {
+        let slice = reader.requestSlice(currentPos, ID3_V2_HEADER_SIZE);
+        if (isThenable(slice))
+          slice = await slice;
+        if (!slice) {
+          return currentPos;
+        }
+        const id3V2Header = readId3V2Header(slice);
+        if (!id3V2Header) {
+          return currentPos;
+        }
+        currentPos = slice.filePos + id3V2Header.size;
+      }
+    }, "skipId3V2Tags");
     readId3V2Header = /* @__PURE__ */ __name((slice) => {
       const startPos = slice.filePos;
       const tag = readAscii(slice, 3);
@@ -67977,7 +68649,7 @@ var init_id3 = __esm({
         return null;
       }
       let size = decodeSynchsafe(sizeRaw);
-      if (flags & Id3V2HeaderFlags.Footer) {
+      if (majorVersion === 4 && flags & Id3V2HeaderFlags.Footer) {
         size += ID3_V2_HEADER_SIZE;
       }
       return { majorVersion, revision, flags, size };
@@ -67987,10 +68659,14 @@ var init_id3 = __esm({
         Logging._warn(`Unsupported ID3v2 major version: ${header.majorVersion}`);
         return;
       }
-      const dataSize = header.flags & Id3V2HeaderFlags.Footer ? header.size - ID3_V2_HEADER_SIZE : header.size;
+      if (header.majorVersion === 2 && header.flags & Id3V2HeaderFlags.ExtendedHeader) {
+        Logging._warn("Skipping compressed ID3v2.2 tag");
+        return;
+      }
+      const dataSize = header.majorVersion === 4 && header.flags & Id3V2HeaderFlags.Footer ? header.size - ID3_V2_HEADER_SIZE : header.size;
       const bytes2 = readBytes(slice, dataSize);
       const reader = new Id3V2Reader(header, bytes2);
-      if (header.flags & Id3V2HeaderFlags.Unsynchronisation && header.majorVersion === 3) {
+      if (header.flags & Id3V2HeaderFlags.Unsynchronisation && header.majorVersion <= 3) {
         reader.ununsynchronizeAll();
       }
       if (header.flags & Id3V2HeaderFlags.ExtendedHeader) {
@@ -68001,27 +68677,33 @@ var init_id3 = __esm({
         if (header.majorVersion === 3) {
           reader.pos += extendedHeaderSize;
         } else {
-          reader.pos += extendedHeaderSize - 4;
+          reader.pos += decodeSynchsafe(extendedHeaderSize) - 4;
         }
       }
+      let year = null;
+      let dayAndMonth = null;
       while (reader.pos <= reader.bytes.length - reader.frameHeaderSize()) {
         const frame = reader.readId3V2Frame();
         if (!frame) {
           break;
         }
-        const frameStartPos = reader.pos;
         const nextFramePos = Math.min(reader.pos + frame.size, reader.bytes.length);
         let frameEndPos = nextFramePos;
         let frameEncrypted = false;
         let frameCompressed = false;
         let frameUnsynchronized = false;
+        let frameHasGroupingIdentity = false;
+        let frameHasDataLengthIndicator = false;
         if (header.majorVersion === 3) {
           frameEncrypted = !!(frame.flags & 1 << 6);
           frameCompressed = !!(frame.flags & 1 << 7);
+          frameHasGroupingIdentity = !!(frame.flags & 1 << 5);
         } else if (header.majorVersion === 4) {
+          frameHasGroupingIdentity = !!(frame.flags & 1 << 6);
           frameEncrypted = !!(frame.flags & 1 << 2);
           frameCompressed = !!(frame.flags & 1 << 3);
           frameUnsynchronized = !!(frame.flags & 1 << 1) || !!(header.flags & Id3V2HeaderFlags.Unsynchronisation);
+          frameHasDataLengthIndicator = !!(frame.flags & 1 << 0);
         }
         if (frameEncrypted) {
           Logging._warn(`Skipping encrypted ID3v2 frame ${frame.id}`);
@@ -68033,17 +68715,24 @@ var init_id3 = __esm({
           reader.pos = nextFramePos;
           continue;
         }
+        if (frameHasGroupingIdentity) {
+          reader.pos += 1;
+        }
+        if (frameHasDataLengthIndicator) {
+          reader.pos += 4;
+        }
         if (frameUnsynchronized) {
           frameEndPos = reader.ununsynchronizeRegion(reader.pos, frameEndPos);
         }
+        const frameStartPos = reader.pos;
         const ensureFrameHasBytes = /* @__PURE__ */ __name((byteCount) => {
           if (frameEndPos - reader.pos < byteCount) {
             throw new Error(`Invalid ID3v2 ${frame.id} frame: too short.`);
           }
         }, "ensureFrameHasBytes");
         tags.raw ??= {};
-        if (frame.id === "TXXX") {
-          const txxx = tags.raw["TXXX"] ??= {};
+        if (frame.id === "TXXX" || frame.id === "TXX") {
+          const txxx = tags.raw[frame.id] ??= {};
           ensureFrameHasBytes(1);
           const encoding = reader.readId3V2TextEncoding();
           const description = reader.readId3V2Text(encoding, frameEndPos);
@@ -68156,11 +68845,9 @@ var init_id3 = __esm({
             ;
             break;
           case "TDRC":
-          case "TDAT":
             {
-              const dateText = reader.readId3V2EncodingAndText(frameEndPos);
-              const date6 = new Date(dateText);
-              if (!Number.isNaN(date6.getTime())) {
+              const date6 = parseIsoSuffix(reader.readId3V2EncodingAndText(frameEndPos));
+              if (date6) {
                 tags.date ??= date6;
               }
             }
@@ -68170,10 +68857,17 @@ var init_id3 = __esm({
           case "TYE":
             {
               const yearText = reader.readId3V2EncodingAndText(frameEndPos);
-              const year = Number.parseInt(yearText, 10);
-              if (Number.isInteger(year)) {
-                tags.date ??= new Date(String(year));
+              const parsedYear = Number.parseInt(yearText, 10);
+              if (Number.isInteger(parsedYear)) {
+                year ??= parsedYear;
               }
+            }
+            ;
+            break;
+          case "TDAT":
+          case "TDA":
+            {
+              dayAndMonth ??= reader.readId3V2EncodingAndText(frameEndPos);
             }
             ;
             break;
@@ -68182,7 +68876,7 @@ var init_id3 = __esm({
             {
               const bpmText = reader.readId3V2EncodingAndText(frameEndPos);
               const bpm = Number.parseInt(bpmText, 10);
-              if (Number.isInteger(bpm)) {
+              if (Number.isInteger(bpm) && bpm > 0) {
                 tags.beatsPerMinute ??= bpm;
               }
             }
@@ -68192,7 +68886,7 @@ var init_id3 = __esm({
           case "ULT":
             {
               ensureFrameHasBytes(4);
-              const encoding = reader.readU8();
+              const encoding = reader.readId3V2TextEncoding();
               reader.pos += 3;
               reader.readId3V2Text(encoding, frameEndPos);
               tags.lyrics ??= reader.readId3V2Text(encoding, frameEndPos);
@@ -68203,10 +68897,13 @@ var init_id3 = __esm({
           case "COM":
             {
               ensureFrameHasBytes(4);
-              const encoding = reader.readU8();
+              const encoding = reader.readId3V2TextEncoding();
               reader.pos += 3;
-              reader.readId3V2Text(encoding, frameEndPos);
-              tags.comment ??= reader.readId3V2Text(encoding, frameEndPos);
+              const description = reader.readId3V2Text(encoding, frameEndPos);
+              if (description === "") {
+                tags.comment ??= reader.readId3V2Text(encoding, frameEndPos);
+              } else {
+              }
             }
             ;
             break;
@@ -68221,7 +68918,7 @@ var init_id3 = __esm({
                 const imageFormat = reader.readAscii(3);
                 mimeType = imageFormat === "PNG" ? "image/png" : imageFormat === "JPG" ? "image/jpeg" : "image/*";
               } else {
-                mimeType = reader.readId3V2Text(encoding, frameEndPos);
+                mimeType = reader.readId3V2Text(Id3V2TextEncoding.ISO_8859_1, frameEndPos);
               }
               ensureFrameHasBytes(1);
               const pictureType = reader.readU8();
@@ -68250,6 +68947,20 @@ var init_id3 = __esm({
         }
         reader.pos = nextFramePos;
       }
+      if (year !== null) {
+        let date6 = createUtcDate(year);
+        const dayAndMonthMatch = /^(0[1-9]|[12]\d|3[01])(0[1-9]|1[0-2])$/.exec(dayAndMonth ?? "");
+        if (dayAndMonthMatch) {
+          const day = Number(dayAndMonthMatch[1]);
+          const fullDate = createUtcDate(year, Number(dayAndMonthMatch[2]) - 1, day);
+          if (fullDate.getUTCDate() === day) {
+            date6 = fullDate;
+          }
+        }
+        if (!Number.isNaN(date6.getTime())) {
+          tags.date ??= date6;
+        }
+      }
     }, "parseId3V2Tag");
     Id3V2Reader = class {
       static {
@@ -68266,19 +68977,20 @@ var init_id3 = __esm({
         return this.header.majorVersion === 2 ? 6 : 10;
       }
       ununsynchronizeAll() {
-        const newBytes = [];
+        const newBytes = new Uint8Array(this.bytes.length);
+        let newLength = 0;
         for (let i = 0; i < this.bytes.length; i++) {
           const value1 = this.bytes[i];
-          newBytes.push(value1);
+          newBytes[newLength++] = value1;
           if (value1 === 255 && i !== this.bytes.length - 1) {
-            const value2 = this.bytes[i];
+            const value2 = this.bytes[i + 1];
             if (value2 === 0) {
               i++;
             }
           }
         }
-        this.bytes = new Uint8Array(newBytes);
-        this.view = new DataView(this.bytes.buffer);
+        this.bytes = newBytes.subarray(0, newLength);
+        this.view = toDataView(this.bytes);
       }
       ununsynchronizeRegion(start, end) {
         if (!this.ownsBytes) {
@@ -68347,16 +69059,17 @@ var init_id3 = __esm({
             return null;
           }
           const sizeRaw = this.readU32();
-          let size = this.header.majorVersion === 4 ? decodeSynchsafe(sizeRaw) : sizeRaw;
+          const canBeSynchsafe = (sizeRaw & 2155905152) === 0;
+          let size = this.header.majorVersion === 4 && canBeSynchsafe ? decodeSynchsafe(sizeRaw) : sizeRaw;
           const flags = this.readU16();
           const headerEndPos = this.pos;
           const isSizeValid = /* @__PURE__ */ __name((size2) => {
-            const nextPos = this.pos + size2;
+            const nextPos = headerEndPos + size2;
             if (nextPos > this.bytes.length) {
               return false;
             }
             if (nextPos <= this.bytes.length - this.frameHeaderSize()) {
-              this.pos += size2;
+              this.pos = nextPos;
               const nextId = this.readAscii(4);
               if (nextId !== "\0\0\0\0" && !/[0-9A-Z]{4}/.test(nextId)) {
                 return false;
@@ -68364,7 +69077,7 @@ var init_id3 = __esm({
             }
             return true;
           }, "isSizeValid");
-          if (!isSizeValid(size)) {
+          if (canBeSynchsafe && !isSizeValid(size)) {
             const otherSize = this.header.majorVersion === 4 ? sizeRaw : decodeSynchsafe(sizeRaw);
             if (isSizeValid(otherSize)) {
               size = otherSize;
@@ -68408,6 +69121,9 @@ var init_id3 = __esm({
               const endIndex2 = coalesceIndex(data.findIndex((x, i) => x === 0 && data[i + 1] === 0 && i % 2 === 0), data.length);
               this.pos = startPos + Math.min(endIndex2 + 2, data.length);
               return decoder.decode(data.subarray(2, endIndex2));
+            } else if (data[0] === 0 && data[1] === 0) {
+              this.pos = startPos + 2;
+              return "";
             } else {
               const endIndex2 = coalesceIndex(data.findIndex((x) => x === 0), data.length);
               this.pos = startPos + Math.min(endIndex2 + 1, data.length);
@@ -68549,6 +69265,7 @@ var init_id3 = __esm({
                   const description = image.description ?? "";
                   this.writeId3V2ApicFrame(image.mimeType, pictureType, description, image.data);
                 }
+                writtenTags.add("APIC");
               }
               ;
               break;
@@ -68691,8 +69408,9 @@ var init_id3 = __esm({
       }
       writeId3V2LyricsFrame(lyrics) {
         const useIso88591 = isIso88591Compatible(lyrics);
+        const textDataLength = useIso88591 ? lyrics.length : textEncoder.encode(lyrics).byteLength;
         const shortDescription = "";
-        const frameSize = 1 + 3 + shortDescription.length + 1 + lyrics.length + 1;
+        const frameSize = 1 + 3 + shortDescription.length + 1 + textDataLength + 1;
         this.writeAscii("USLT");
         this.writeSynchsafeU32(frameSize);
         this.writeU16(0);
@@ -68728,8 +69446,9 @@ var init_id3 = __esm({
       }
       writeId3V2ApicFrame(mimeType, pictureType, description, imageData) {
         const useIso88591 = isIso88591Compatible(mimeType) && isIso88591Compatible(description);
+        const mimeTypeDataLength = useIso88591 ? mimeType.length : textEncoder.encode(mimeType).byteLength;
         const descriptionDataLength = useIso88591 ? description.length : textEncoder.encode(description).byteLength;
-        const frameSize = 1 + mimeType.length + 1 + 1 + descriptionDataLength + 1 + imageData.byteLength;
+        const frameSize = 1 + mimeTypeDataLength + 1 + 1 + descriptionDataLength + 1 + imageData.byteLength;
         this.writeAscii("APIC");
         this.writeSynchsafeU32(frameSize);
         this.writeU16(0);
@@ -68752,12 +69471,50 @@ var init_id3 = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/mp3/mp3-reader.js
-var readNextMp3FrameHeader;
+var readConfirmedMp3FrameHeader, readNextMp3FrameHeader;
 var init_mp3_reader = __esm({
   "node_modules/mediabunny/dist/modules/src/mp3/mp3-reader.js"() {
     init_mp3_misc();
+    init_id3();
     init_misc();
     init_reader();
+    readConfirmedMp3FrameHeader = /* @__PURE__ */ __name(async (reader, startPos, searchLength, ref) => {
+      let currentPos = startPos;
+      while (true) {
+        const result = await readNextMp3FrameHeader(reader, currentPos, startPos + searchLength, ref);
+        if (!result) {
+          return null;
+        }
+        const { header } = result;
+        const xingOffset = getXingOffset(header.mpegVersionId, header.channel);
+        let xingSlice = reader.requestSlice(result.startPos + xingOffset, 4);
+        if (isThenable(xingSlice))
+          xingSlice = await xingSlice;
+        if (xingSlice) {
+          const word = readU32Be(xingSlice);
+          if (word === XING || word === INFO) {
+            return result;
+          }
+        }
+        const frameEndPos = result.startPos + header.totalSize;
+        if (frameEndPos === reader.fileSize) {
+          return result;
+        }
+        if (frameEndPos + ID3_V1_TAG_SIZE === reader.fileSize) {
+          let tagSlice = reader.requestSlice(frameEndPos, 3);
+          if (isThenable(tagSlice))
+            tagSlice = await tagSlice;
+          if (tagSlice && readAscii(tagSlice, 3) === "TAG") {
+            return result;
+          }
+        }
+        const nextResult = await readNextMp3FrameHeader(reader, frameEndPos, frameEndPos + MP3_FRAME_HEADER_SIZE);
+        if (nextResult && nextResult.header.channel === header.channel && nextResult.header.sampleRate === header.sampleRate) {
+          return result;
+        }
+        currentPos = result.startPos + 1;
+      }
+    }, "readConfirmedMp3FrameHeader");
     readNextMp3FrameHeader = /* @__PURE__ */ __name(async (reader, startPos, until, ref = null) => {
       const CHUNK_SIZE = 2 ** 16;
       let currentPos = startPos;
@@ -68788,7 +69545,7 @@ var init_mp3_reader = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/mp3/mp3-demuxer.js
-var Mp3Demuxer, Mp3AudioTrackBacking;
+var APE_TAG_FOOTER_SIZE, Mp3Demuxer, Mp3AudioTrackBacking;
 var init_mp3_demuxer = __esm({
   "node_modules/mediabunny/dist/modules/src/mp3/mp3-demuxer.js"() {
     init_demuxer();
@@ -68798,7 +69555,9 @@ var init_mp3_demuxer = __esm({
     init_mp3_misc();
     init_id3();
     init_mp3_reader();
+    init_logging();
     init_reader();
+    APE_TAG_FOOTER_SIZE = 32;
     Mp3Demuxer = class extends Demuxer {
       static {
         __name(this, "Mp3Demuxer");
@@ -68837,23 +69596,33 @@ var init_mp3_demuxer = __esm({
         })();
       }
       async advanceReader() {
+        let result;
         if (this.lastLoadedPos === 0) {
-          while (true) {
-            let slice2 = this.reader.requestSlice(this.lastLoadedPos, ID3_V2_HEADER_SIZE);
-            if (isThenable(slice2))
-              slice2 = await slice2;
-            if (!slice2) {
-              this.lastSampleLoaded = true;
-              return;
+          const startPos = await skipId3V2Tags(this.reader, 0);
+          result = await readConfirmedMp3FrameHeader(this.reader, startPos, 4096, null);
+        } else {
+          result = await readNextMp3FrameHeader(this.reader, this.lastLoadedPos, this.lastLoadedPos + 2, this.firstFrameHeader);
+          if (!result) {
+            if (this.firstFrameHeader) {
+              let slice2 = this.reader.requestSlice(this.lastLoadedPos, MP3_FRAME_HEADER_SIZE + 1);
+              if (isThenable(slice2))
+                slice2 = await slice2;
+              if (slice2) {
+                for (let i = 0; i < 2; i++) {
+                  slice2.filePos = this.lastLoadedPos + i;
+                  const { header: header2 } = readMp3FrameHeader(readU32Be(slice2), null);
+                  if (header2 && header2.sampleRate !== this.firstFrameHeader.sampleRate) {
+                    Logging._warn(`The sample rate changes mid-stream (from ${this.firstFrameHeader.sampleRate} Hz to ${header2.sampleRate} Hz), which isn't properly supported or handled by Mediabunny.`);
+                    this.lastSampleLoaded = true;
+                    return;
+                  }
+                }
+              }
             }
-            const id3V2Header = readId3V2Header(slice2);
-            if (!id3V2Header) {
-              break;
-            }
-            this.lastLoadedPos = slice2.filePos + id3V2Header.size;
+            const startPos = await skipId3V2Tags(this.reader, this.lastLoadedPos + 1);
+            result = await readConfirmedMp3FrameHeader(this.reader, startPos, 2 ** 16, this.firstFrameHeader);
           }
         }
-        const result = await readNextMp3FrameHeader(this.reader, this.lastLoadedPos, this.reader.fileSize, this.firstFrameHeader);
         if (!result) {
           this.lastSampleLoaded = true;
           return;
@@ -68873,18 +69642,17 @@ var init_mp3_demuxer = __esm({
               this.xingFrameHeaderPos = result.startPos;
             }
             if (!this.xingData) {
-              let xingDataSlice = this.reader.requestSlice(result.startPos + xingOffset + 4, 12);
+              let xingDataSlice = this.reader.requestSlice(result.startPos + xingOffset + 4, 8);
               if (isThenable(xingDataSlice))
                 xingDataSlice = await xingDataSlice;
               if (xingDataSlice) {
-                const xingData = readBytes(xingDataSlice, 12);
+                const xingData = readBytes(xingDataSlice, 8);
                 const view2 = toDataView(xingData);
                 const flags = view2.getUint32(0, false);
                 this.xingData = {
                   // LAME and FFmpeg write the same header with 'Info' in place of 'Xing' for CBR streams
                   isVbr: word === XING,
-                  frameCount: flags & XingFlags.FrameCount ? view2.getUint32(4, false) : null,
-                  fileSize: flags & XingFlags.FileSize ? view2.getUint32(8, false) : null
+                  frameCount: flags & XingFlags.FrameCount ? view2.getUint32(4, false) : null
                 };
                 const lameOffset = result.startPos + xingOffset + 8 + (flags & XingFlags.FrameCount ? 4 : 0) + (flags & XingFlags.FileSize ? 4 : 0) + (flags & XingFlags.Toc ? 100 : 0) + (flags & XingFlags.Quality ? 4 : 0);
                 if (!this.firstFrameHeader && lameOffset + 24 <= result.startPos + header.totalSize) {
@@ -68901,6 +69669,28 @@ var init_mp3_demuxer = __esm({
                   }
                 }
               }
+            }
+            return;
+          }
+        }
+        let vbriSlice = header.layer === 1 ? this.reader.requestSlice(result.startPos + MP3_FRAME_HEADER_SIZE + 32, 18) : null;
+        if (isThenable(vbriSlice))
+          vbriSlice = await vbriSlice;
+        if (vbriSlice) {
+          const word = readU32Be(vbriSlice);
+          const version4 = readU16Be(vbriSlice);
+          if (word === VBRI && version4 === 1) {
+            if (!this.xingFrameHeader) {
+              this.xingFrameHeader = header;
+              this.xingFrameHeaderPos = result.startPos;
+            }
+            if (!this.xingData) {
+              vbriSlice.skip(8);
+              const frameCount = readU32Be(vbriSlice);
+              this.xingData = {
+                isVbr: true,
+                frameCount
+              };
             }
             return;
           }
@@ -68982,9 +69772,6 @@ var init_mp3_demuxer = __esm({
       getType() {
         return "audio";
       }
-      getId() {
-        return 1;
-      }
       getNumber() {
         return 1;
       }
@@ -69015,8 +69802,35 @@ var init_mp3_demuxer = __esm({
           return (demuxer.xingData.frameCount * demuxer.firstFrameHeader.audioSamplesInFrame - demuxer.primingDelay) / demuxer.firstFrameHeader.sampleRate;
         } else if (!demuxer.xingData?.isVbr) {
           if (demuxer.reader.fileSize !== null) {
+            let audioEndPos = demuxer.reader.fileSize;
+            if (audioEndPos - demuxer.firstFrameHeaderPos >= ID3_V1_TAG_SIZE) {
+              let slice = demuxer.reader.requestSlice(audioEndPos - ID3_V1_TAG_SIZE, 3);
+              if (isThenable(slice))
+                slice = await slice;
+              assert2(slice);
+              if (readAscii(slice, 3) === "TAG") {
+                audioEndPos -= ID3_V1_TAG_SIZE;
+              }
+            }
+            if (audioEndPos - demuxer.firstFrameHeaderPos >= APE_TAG_FOOTER_SIZE) {
+              let slice = demuxer.reader.requestSlice(audioEndPos - APE_TAG_FOOTER_SIZE, APE_TAG_FOOTER_SIZE);
+              if (isThenable(slice))
+                slice = await slice;
+              assert2(slice);
+              if (readAscii(slice, 8) === "APETAGEX") {
+                slice.skip(4);
+                const tagSize = readU32Le(slice);
+                slice.skip(4);
+                const flags = readU32Le(slice);
+                const hasHeader = (flags & 1 << 31) !== 0;
+                audioEndPos -= tagSize + (hasHeader ? APE_TAG_FOOTER_SIZE : 0);
+                if (audioEndPos < demuxer.firstFrameHeaderPos) {
+                  throw new Error("Invalid APE tag size.");
+                }
+              }
+            }
             const averageFrameSize = computeAverageMp3FrameSize(demuxer.firstFrameHeader.lowSamplingFrequency, demuxer.firstFrameHeader.layer, demuxer.firstFrameHeader.bitrate, demuxer.firstFrameHeader.sampleRate);
-            const frameCount = (demuxer.reader.fileSize - demuxer.firstFrameHeaderPos) / averageFrameSize;
+            const frameCount = (audioEndPos - demuxer.firstFrameHeaderPos) / averageFrameSize;
             return (Math.round(frameCount) * demuxer.firstFrameHeader.audioSamplesInFrame - demuxer.primingDelay) / demuxer.firstFrameHeader.sampleRate;
           }
         }
@@ -69102,8 +69916,10 @@ var init_mp3_demuxer = __esm({
       async getPacket(timestamp, options2) {
         const release = await this.demuxer.readingMutex.acquire();
         try {
+          const sampleRate = this.getSampleRate();
+          const snappedTimestamp = roundIfAlmostInteger(timestamp * sampleRate) / sampleRate;
           while (true) {
-            const index23 = binarySearchLessOrEqual(this.demuxer.loadedSamples, timestamp, (x) => x.timestamp);
+            const index23 = binarySearchLessOrEqual(this.demuxer.loadedSamples, snappedTimestamp, (x) => x.timestamp);
             if (index23 === -1 && this.demuxer.loadedSamples.length > 0) {
               return null;
             }
@@ -69191,7 +70007,7 @@ var init_ogg_misc = __esm({
     }, "extractSampleMetadata");
     buildOggMimeType = /* @__PURE__ */ __name((info) => {
       let string4 = "audio/ogg";
-      if (info.codecStrings) {
+      if (info.codecStrings.length > 0) {
         const uniqueCodecMimeTypes = [...new Set(info.codecStrings)];
         string4 += `; codecs="${uniqueCodecMimeTypes.join(", ")}"`;
       }
@@ -69494,7 +70310,7 @@ var init_ogg_demuxer = __esm({
         }
         const totalPacketSize = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
         if (totalPacketSize === 0) {
-          return null;
+          throw new Error("Invalid Ogg stream: empty packets are only allowed at the very end of a stream.");
         }
         const packetData = new Uint8Array(totalPacketSize);
         let offset = 0;
@@ -69510,30 +70326,41 @@ var init_ogg_demuxer = __esm({
         };
       }
       async findNextPacketStart(lastPacket) {
-        if (lastPacket.endSegmentIndex < lastPacket.endPage.lacingValues.length - 1) {
-          return { startPage: lastPacket.endPage, startSegmentIndex: lastPacket.endSegmentIndex + 1 };
+        let startPage = lastPacket.endPage;
+        let startSegmentIndex = lastPacket.endSegmentIndex + 1;
+        if (startSegmentIndex === startPage.lacingValues.length) {
+          const isEos = !!(startPage.headerType & 4);
+          if (isEos) {
+            return null;
+          }
+          let currentPos = startPage.headerStartPos + startPage.totalSize;
+          while (true) {
+            let slice = this.reader.requestSliceRange(currentPos, MIN_PAGE_HEADER_SIZE, MAX_PAGE_HEADER_SIZE);
+            if (isThenable(slice))
+              slice = await slice;
+            if (!slice) {
+              return null;
+            }
+            const nextPage = readPageHeader(slice);
+            if (!nextPage) {
+              return null;
+            }
+            if (nextPage.serialNumber === startPage.serialNumber) {
+              startPage = nextPage;
+              startSegmentIndex = 0;
+              break;
+            }
+            currentPos = nextPage.headerStartPos + nextPage.totalSize;
+          }
         }
-        const isEos = !!(lastPacket.endPage.headerType & 4);
-        if (isEos) {
+        const isFinalEmptyPacket = !!(startPage.headerType & 4) && startSegmentIndex === startPage.lacingValues.length - 1 && startPage.lacingValues[startSegmentIndex] === 0;
+        if (isFinalEmptyPacket) {
           return null;
         }
-        let currentPos = lastPacket.endPage.headerStartPos + lastPacket.endPage.totalSize;
-        while (true) {
-          let slice = this.reader.requestSliceRange(currentPos, MIN_PAGE_HEADER_SIZE, MAX_PAGE_HEADER_SIZE);
-          if (isThenable(slice))
-            slice = await slice;
-          if (!slice) {
-            return null;
-          }
-          const nextPage = readPageHeader(slice);
-          if (!nextPage) {
-            return null;
-          }
-          if (nextPage.serialNumber === lastPacket.endPage.serialNumber) {
-            return { startPage: nextPage, startSegmentIndex: 0 };
-          }
-          currentPos = nextPage.headerStartPos + nextPage.totalSize;
-        }
+        return {
+          startPage,
+          startSegmentIndex
+        };
       }
       async getMimeType() {
         await this.readMetadata();
@@ -69562,13 +70389,19 @@ var init_ogg_demuxer = __esm({
         this.sequentialScanCache = [];
         this.sequentialScanMutex = new AsyncMutex();
         this.firstTimestampInSamplesPromise = null;
-        this.internalSampleRate = bitstream.codecInfo.codec === "opus" ? OPUS_SAMPLE_RATE : bitstream.sampleRate;
+        const codec2 = bitstream.codecInfo.codec;
+        assert2(codec2);
+        if (codec2 === "vorbis") {
+          this.internalSampleRate = bitstream.sampleRate;
+        } else if (codec2 === "opus") {
+          this.internalSampleRate = OPUS_SAMPLE_RATE;
+        } else {
+          assertNever2(codec2);
+          assert2(false);
+        }
       }
       getType() {
         return "audio";
-      }
-      getId() {
-        return this.bitstream.serialNumber;
       }
       getNumber() {
         const index23 = this.demuxer.trackBackings.findIndex((x) => x.bitstream === this.bitstream);
@@ -69633,24 +70466,23 @@ var init_ogg_demuxer = __esm({
         };
       }
       granulePositionToTimestampInSamples(granulePosition) {
-        if (this.bitstream.codecInfo.codec === "opus") {
+        const codec2 = this.bitstream.codecInfo.codec;
+        assert2(codec2);
+        if (codec2 === "vorbis") {
+          return granulePosition;
+        } else if (codec2 === "opus") {
           assert2(this.bitstream.codecInfo.opusInfo);
           return granulePosition - this.bitstream.codecInfo.opusInfo.preSkip;
+        } else {
+          assertNever2(codec2);
+          assert2(false);
         }
-        return granulePosition;
       }
       createEncodedPacketFromOggPacket(packet, additional, options2) {
         if (!packet) {
           return null;
         }
-        const sampleMetadata = extractSampleMetadata(packet.data, this.bitstream.codecInfo, additional.vorbisLastBlocksize);
-        const { vorbisBlockSize } = sampleMetadata;
-        let { durationInSamples } = sampleMetadata;
-        const isEos = !!(packet.endPage.headerType & 4);
-        if (isEos && packet.endSegmentIndex === packet.endPage.lacingValues.length - 1) {
-          const endTimestampInSamples = this.granulePositionToTimestampInSamples(packet.endPage.granulePosition);
-          durationInSamples = clamp(endTimestampInSamples - additional.timestampInSamples, 0, durationInSamples);
-        }
+        const { durationInSamples, vorbisBlockSize } = extractSampleMetadata(packet.data, this.bitstream.codecInfo, additional.vorbisLastBlocksize);
         const encodedPacket = new EncodedPacket(options2.metadataOnly ? PLACEHOLDER_DATA : packet.data, "key", additional.timestampInSamples / this.internalSampleRate, durationInSamples / this.internalSampleRate, packet.endPage.headerStartPos + packet.endSegmentIndex, packet.data.byteLength);
         this.encodedPacketToMetadata.set(encodedPacket, {
           packet,
@@ -69692,8 +70524,22 @@ var init_ogg_demuxer = __esm({
             return defaultTimestampInSamples;
           }
           assert2(firstPacketDurationInSamples !== null);
-          const minStartInSamples = this.bitstream.codecInfo.codec === "vorbis" ? -firstPacketDurationInSamples : 0;
-          return defaultTimestampInSamples + Math.max(firstEndPage.granulePosition - totalDurationInSamples, minStartInSamples);
+          const startInSamples = firstEndPage.granulePosition - totalDurationInSamples;
+          if (firstEndPage.granulePosition !== -1 && !(firstEndPage.headerType & 4)) {
+            return defaultTimestampInSamples + startInSamples;
+          }
+          const codec2 = this.bitstream.codecInfo.codec;
+          assert2(codec2);
+          let minStartInSamples;
+          if (codec2 === "vorbis") {
+            minStartInSamples = -firstPacketDurationInSamples;
+          } else if (codec2 === "opus") {
+            minStartInSamples = 0;
+          } else {
+            assertNever2(codec2);
+            assert2(false);
+          }
+          return defaultTimestampInSamples + Math.max(startInSamples, minStartInSamples);
         })();
       }
       async getFirstPacket(options2) {
@@ -69775,7 +70621,7 @@ var init_ogg_demuxer = __esm({
               searchStartPos = page2.headerStartPos + page2.totalSize;
               continue;
             }
-            if (this.granulePositionToTimestampInSamples(page2.granulePosition) > timestampInSamples) {
+            if (this.granulePositionToTimestampInSamples(page2.granulePosition) > timestampInSamples || page2.headerStartPos + page2.totalSize > this.demuxer.reader.fileSize) {
               high = page2.headerStartPos;
             } else {
               lowPage = page2;
@@ -69854,6 +70700,8 @@ var init_ogg_demuxer = __esm({
             } else {
               currentPage = nextPosition.startPage;
               currentSegmentIndex = nextPosition.startSegmentIndex;
+              currentTimestampInSamples = this.granulePositionToTimestampInSamples(endPage.granulePosition);
+              currentTimestampIsCorrect = true;
             }
           } else {
             while (true) {
@@ -69893,7 +70741,7 @@ var init_ogg_demuxer = __esm({
             let encodedPacketMetadata = this.encodedPacketToMetadata.get(encodedPacket);
             assert2(encodedPacketMetadata);
             if (!currentTimestampIsCorrect && packet.endPage.headerStartPos === endPage.headerStartPos && packet.endSegmentIndex === endSegmentIndex) {
-              currentTimestampInSamples = this.granulePositionToTimestampInSamples(currentPage.granulePosition);
+              currentTimestampInSamples = this.granulePositionToTimestampInSamples(endPage.granulePosition);
               currentTimestampIsCorrect = true;
               encodedPacket = this.createEncodedPacketFromOggPacket(packet, {
                 timestampInSamples: currentTimestampInSamples - encodedPacketMetadata.durationInSamples,
@@ -70044,9 +70892,10 @@ var init_wave_demuxer = __esm({
         this.metadataPromise = null;
         this.dataStart = -1;
         this.dataSize = -1;
+        this.dataSizeCapped = false;
+        this.dataSizeIsPlaceholder = false;
         this.audioInfo = null;
         this.trackBackings = [];
-        this.lastKnownPacketIndex = 0;
         this.metadataTags = {};
         this.reader = input2._reader;
       }
@@ -70060,7 +70909,8 @@ var init_wave_demuxer = __esm({
           const littleEndian = riffType !== "RIFX";
           const isRf64 = riffType === "RF64";
           const outerChunkSize = readU32(slice, littleEndian);
-          let totalFileSize = isRf64 ? this.reader.fileSize : Math.min(outerChunkSize + 8, this.reader.fileSize ?? Infinity);
+          let sizesUnfinalized = !isRf64 && outerChunkSize === 0;
+          let totalFileSize = isRf64 || sizesUnfinalized || outerChunkSize === 4294967295 ? this.reader.fileSize : Math.min(outerChunkSize + 8, this.reader.fileSize ?? Infinity);
           const format2 = readAscii(slice, 4);
           if (format2 !== "WAVE") {
             throw new Error("Invalid WAVE file - wrong format");
@@ -70075,7 +70925,7 @@ var init_wave_demuxer = __esm({
             if (!slice2)
               break;
             const chunkId = readAscii(slice2, 4);
-            const chunkSize = readU32(slice2, littleEndian);
+            let chunkSize = readU32(slice2, littleEndian);
             const startPos = slice2.filePos;
             if (isRf64 && chunksRead === 0 && chunkId !== "ds64") {
               throw new Error('Invalid RF64 file: First chunk must be "ds64".');
@@ -70084,6 +70934,14 @@ var init_wave_demuxer = __esm({
               await this.parseFmtChunk(startPos, chunkSize, littleEndian);
             } else if (chunkId === "data") {
               dataChunkSize ??= chunkSize;
+              if (sizesUnfinalized && dataChunkSize === 0 || !isRf64 && dataChunkSize === 4294967295) {
+                dataChunkSize = Number.MAX_SAFE_INTEGER;
+                chunkSize = dataChunkSize;
+              }
+              this.dataSizeIsPlaceholder = dataChunkSize === Number.MAX_SAFE_INTEGER;
+              if (isRf64) {
+                chunkSize = dataChunkSize;
+              }
               this.dataStart = slice2.filePos;
               this.dataSize = Math.max(Math.min(dataChunkSize, (totalFileSize ?? Infinity) - this.dataStart), 0);
               if (this.reader.fileSize === null) {
@@ -70098,9 +70956,10 @@ var init_wave_demuxer = __esm({
               if (chunkSize < 16) {
                 throw new Error('Invalid RF64 file: "ds64" chunk is too small.');
               }
-              const riffChunkSize = readU64(ds64Slice, littleEndian);
-              dataChunkSize = readU64(ds64Slice, littleEndian);
-              totalFileSize = Math.min(riffChunkSize + 8, this.reader.fileSize ?? Infinity);
+              const riffChunkSize = Math.min(readU64(ds64Slice, littleEndian), Number.MAX_SAFE_INTEGER);
+              dataChunkSize = Math.min(readU64(ds64Slice, littleEndian), Number.MAX_SAFE_INTEGER);
+              sizesUnfinalized = riffChunkSize === 0;
+              totalFileSize = sizesUnfinalized ? this.reader.fileSize : Math.min(riffChunkSize + 8, this.reader.fileSize ?? Infinity);
             } else if (chunkId === "LIST") {
               await this.parseListChunk(startPos, chunkSize, littleEndian);
             } else if (chunkId === "ID3 " || chunkId === "id3 ") {
@@ -70117,6 +70976,7 @@ var init_wave_demuxer = __esm({
           }
           const blockSize = this.audioInfo.blockSizeInBytes;
           this.dataSize = Math.floor(this.dataSize / blockSize) * blockSize;
+          this.maybeCapDataSize();
           this.trackBackings.push(new WaveAudioTrackBacking(this));
         })();
       }
@@ -70194,9 +71054,16 @@ var init_wave_demuxer = __esm({
             break;
           }
           const bytes2 = readBytes(slice, chunkSize);
-          let value = "";
-          for (let i = 0; i < bytes2.length && bytes2[i] !== 0; i++) {
-            value += String.fromCharCode(bytes2[i]);
+          const nullIndex = bytes2.indexOf(0);
+          const stringBytes = bytes2.subarray(0, nullIndex === -1 ? bytes2.length : nullIndex);
+          let value;
+          try {
+            value = strictTextDecoder.decode(stringBytes);
+          } catch {
+            value = "";
+            for (const byte of stringBytes) {
+              value += String.fromCharCode(byte);
+            }
           }
           this.metadataTags.raw ??= {};
           this.metadataTags.raw[chunkName] = value;
@@ -70243,10 +71110,9 @@ var init_wave_demuxer = __esm({
               ;
               break;
             case "ICRD":
-            case "IDIT":
               {
-                const date6 = new Date(value);
-                if (!Number.isNaN(date6.getTime())) {
+                const date6 = parseIsoSuffix(value);
+                if (date6) {
                   this.metadataTags.date ??= date6;
                 }
               }
@@ -70255,8 +71121,9 @@ var init_wave_demuxer = __esm({
             case "YEAR":
               {
                 const year = Number.parseInt(value, 10);
-                if (Number.isInteger(year) && year > 0) {
-                  this.metadataTags.date ??= new Date(year, 0, 1);
+                const date6 = createUtcDate(year);
+                if (year > 0 && !Number.isNaN(date6.getTime())) {
+                  this.metadataTags.date ??= date6;
                 }
               }
               ;
@@ -70326,6 +71193,17 @@ var init_wave_demuxer = __esm({
         }
         assert2(false);
       }
+      maybeCapDataSize() {
+        assert2(this.audioInfo);
+        if (this.dataSizeCapped) {
+          return;
+        }
+        const fileSize = this.reader.fileSize;
+        if (fileSize !== null) {
+          this.dataSize = Math.min(this.dataSize, floorToMultiple(fileSize - this.dataStart, this.audioInfo.blockSizeInBytes));
+          this.dataSizeCapped = true;
+        }
+      }
       async getMimeType() {
         return "audio/wav";
       }
@@ -70348,9 +71226,6 @@ var init_wave_demuxer = __esm({
       }
       getType() {
         return "audio";
-      }
-      getId() {
-        return 1;
       }
       getNumber() {
         return 1;
@@ -70403,6 +71278,10 @@ var init_wave_demuxer = __esm({
       }
       async getDurationFromMetadata() {
         assert2(this.demuxer.dataSize !== -1);
+        this.demuxer.maybeCapDataSize();
+        if (this.demuxer.dataSizeIsPlaceholder && !this.demuxer.dataSizeCapped) {
+          return null;
+        }
         return this.demuxer.dataSize / this.demuxer.audioInfo.blockSizeInBytes / this.demuxer.audioInfo.sampleRate;
       }
       async getLiveRefreshInterval() {
@@ -70422,17 +71301,21 @@ var init_wave_demuxer = __esm({
       async getPacketAtIndex(packetIndex, options2) {
         assert2(packetIndex >= 0);
         assert2(this.demuxer.audioInfo);
-        const startOffset = packetIndex * PACKET_SIZE_IN_FRAMES * this.demuxer.audioInfo.blockSizeInBytes;
+        const blockSize = this.demuxer.audioInfo.blockSizeInBytes;
+        this.demuxer.maybeCapDataSize();
+        const fileSize = this.demuxer.reader.fileSize;
+        const startOffset = packetIndex * PACKET_SIZE_IN_FRAMES * blockSize;
         if (startOffset >= this.demuxer.dataSize) {
           return null;
         }
-        const sizeInBytes = Math.min(PACKET_SIZE_IN_FRAMES * this.demuxer.audioInfo.blockSizeInBytes, this.demuxer.dataSize - startOffset);
-        if (this.demuxer.reader.fileSize === null) {
+        const sizeInBytes = Math.min(PACKET_SIZE_IN_FRAMES * blockSize, this.demuxer.dataSize - startOffset);
+        if (fileSize === null) {
           let slice = this.demuxer.reader.requestSlice(this.demuxer.dataStart + startOffset, sizeInBytes);
           if (isThenable(slice))
             slice = await slice;
           if (!slice) {
-            return null;
+            assert2(this.demuxer.reader.fileSize !== null);
+            return this.getPacketAtIndex(packetIndex, options2);
           }
         }
         let data;
@@ -70446,8 +71329,7 @@ var init_wave_demuxer = __esm({
           data = readBytes(slice, sizeInBytes);
         }
         const timestamp = packetIndex * PACKET_SIZE_IN_FRAMES / this.demuxer.audioInfo.sampleRate;
-        const duration3 = sizeInBytes / this.demuxer.audioInfo.blockSizeInBytes / this.demuxer.audioInfo.sampleRate;
-        this.demuxer.lastKnownPacketIndex = Math.max(packetIndex, this.demuxer.lastKnownPacketIndex);
+        const duration3 = sizeInBytes / blockSize / this.demuxer.audioInfo.sampleRate;
         return new EncodedPacket(data, "key", timestamp, duration3, packetIndex, sizeInBytes);
       }
       getFirstPacket(options2) {
@@ -70455,7 +71337,7 @@ var init_wave_demuxer = __esm({
       }
       async getPacket(timestamp, options2) {
         assert2(this.demuxer.audioInfo);
-        const packetIndex = Math.floor(Math.min(timestamp * this.demuxer.audioInfo.sampleRate / PACKET_SIZE_IN_FRAMES, (this.demuxer.dataSize - 1) / (PACKET_SIZE_IN_FRAMES * this.demuxer.audioInfo.blockSizeInBytes)));
+        const packetIndex = Math.floor(Math.min(roundIfAlmostInteger(timestamp * this.demuxer.audioInfo.sampleRate) / PACKET_SIZE_IN_FRAMES, (this.demuxer.dataSize - 1) / (PACKET_SIZE_IN_FRAMES * this.demuxer.audioInfo.blockSizeInBytes)));
         if (packetIndex < 0) {
           return null;
         }
@@ -70463,19 +71345,7 @@ var init_wave_demuxer = __esm({
         if (packet) {
           return packet;
         }
-        if (packetIndex === 0) {
-          return null;
-        }
-        assert2(this.demuxer.reader.fileSize === null);
-        let currentPacket = await this.getPacketAtIndex(this.demuxer.lastKnownPacketIndex, options2);
-        while (currentPacket) {
-          const nextPacket = await this.getNextPacket(currentPacket, options2);
-          if (!nextPacket) {
-            break;
-          }
-          currentPacket = nextPacket;
-        }
-        return currentPacket;
+        return this.getPacket(timestamp, options2);
       }
       getNextPacket(packet, options2) {
         assert2(this.demuxer.audioInfo);
@@ -70493,14 +71363,47 @@ var init_wave_demuxer = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/adts/adts-reader.js
-var MIN_ADTS_FRAME_HEADER_SIZE, MAX_ADTS_FRAME_HEADER_SIZE, readAdtsFrameHeader;
+var MIN_ADTS_FRAME_HEADER_SIZE, MAX_ADTS_FRAME_HEADER_SIZE, readConfirmedAdtsFrameHeader, readAdtsFrameHeader;
 var init_adts_reader = __esm({
   "node_modules/mediabunny/dist/modules/src/adts/adts-reader.js"() {
     init_bitstream();
     init_aac_misc();
+    init_misc();
     init_reader();
     MIN_ADTS_FRAME_HEADER_SIZE = 7;
     MAX_ADTS_FRAME_HEADER_SIZE = 9;
+    readConfirmedAdtsFrameHeader = /* @__PURE__ */ __name(async (reader, startPos, searchLength, ref) => {
+      const headersMatch = /* @__PURE__ */ __name((a, b) => a.objectType === b.objectType && a.samplingFrequencyIndex === b.samplingFrequencyIndex && a.channelConfiguration === b.channelConfiguration, "headersMatch");
+      let slice = reader.requestSliceRange(startPos, MIN_ADTS_FRAME_HEADER_SIZE, searchLength + MAX_ADTS_FRAME_HEADER_SIZE);
+      if (isThenable(slice))
+        slice = await slice;
+      if (!slice) {
+        return null;
+      }
+      for (let pos = startPos; pos < Math.min(startPos + searchLength, slice.end); pos++) {
+        slice.filePos = pos;
+        if (readU8(slice) !== 255) {
+          continue;
+        }
+        slice.filePos = pos;
+        const header = readAdtsFrameHeader(slice);
+        if (!header || ref && !headersMatch(header, ref)) {
+          continue;
+        }
+        const frameEndPos = pos + header.frameLength;
+        if (frameEndPos === reader.fileSize) {
+          return header;
+        }
+        let nextSlice = reader.requestSliceRange(frameEndPos, MIN_ADTS_FRAME_HEADER_SIZE, MAX_ADTS_FRAME_HEADER_SIZE);
+        if (isThenable(nextSlice))
+          nextSlice = await nextSlice;
+        const nextHeader = nextSlice && readAdtsFrameHeader(nextSlice);
+        if (nextHeader && headersMatch(header, nextHeader)) {
+          return header;
+        }
+      }
+      return null;
+    }, "readConfirmedAdtsFrameHeader");
     readAdtsFrameHeader = /* @__PURE__ */ __name((slice) => {
       const startPos = slice.filePos;
       if (slice.remainingLength < MIN_ADTS_FRAME_HEADER_SIZE) {
@@ -70525,9 +71428,6 @@ var init_adts_reader = __esm({
       }
       bitstream.skipBits(1);
       const channelConfiguration = bitstream.readBits(3);
-      if (channelConfiguration === 0) {
-        throw new Error("ADTS frames with channel configuration 0 are not supported.");
-      }
       bitstream.skipBits(1);
       bitstream.skipBits(1);
       bitstream.skipBits(1);
@@ -70536,7 +71436,7 @@ var init_adts_reader = __esm({
       bitstream.skipBits(11);
       const numberOfAacFrames = bitstream.readBits(2) + 1;
       if (numberOfAacFrames !== 1) {
-        throw new Error("ADTS frames with more than one AAC frame are not supported.");
+        return null;
       }
       let crcCheck = null;
       if (protectionAbsence === 0) {
@@ -70572,6 +71472,7 @@ var init_adts_demuxer = __esm({
     init_misc();
     init_packet();
     init_reader();
+    init_logging();
     init_adts_reader();
     SAMPLES_PER_AAC_FRAME = 1024;
     AdtsDemuxer = class extends Demuxer {
@@ -70582,6 +71483,7 @@ var init_adts_demuxer = __esm({
         super(input2);
         this.metadataPromise = null;
         this.firstFrameHeader = null;
+        this.numberOfChannels = null;
         this.loadedSamples = [];
         this.metadataTags = null;
         this.trackBackings = [];
@@ -70596,35 +71498,43 @@ var init_adts_demuxer = __esm({
           while (!this.firstFrameHeader && !this.lastSampleLoaded) {
             await this.advanceReader();
           }
-          assert2(this.firstFrameHeader);
+          const header = this.firstFrameHeader;
+          assert2(header);
+          if (header.channelConfiguration === 0) {
+            const headerSize = header.crcCheck === null ? MIN_ADTS_FRAME_HEADER_SIZE : MAX_ADTS_FRAME_HEADER_SIZE;
+            let slice = this.reader.requestSlice(header.startPos + headerSize, header.frameLength - headerSize);
+            if (isThenable(slice))
+              slice = await slice;
+            if (!slice) {
+              throw new Error("Invalid ADTS file: the first frame is cut off.");
+            }
+            const result = readAdtsProgramConfigElement(readBytes(slice, header.frameLength - headerSize));
+            if (!result) {
+              throw new Error("Invalid ADTS file: frames with channel configuration 0 must begin with a program config element.");
+            }
+            this.numberOfChannels = getAacProgramConfigElementChannelCount(result.programConfigElement);
+          } else {
+            this.numberOfChannels = aacChannelMap[header.channelConfiguration];
+          }
           this.trackBackings = [new AdtsAudioTrackBacking(this)];
         })();
       }
       async advanceReader() {
+        let header;
         if (this.lastLoadedPos === 0) {
-          while (true) {
-            let slice2 = this.reader.requestSlice(this.lastLoadedPos, ID3_V2_HEADER_SIZE);
-            if (isThenable(slice2))
-              slice2 = await slice2;
-            if (!slice2) {
-              this.lastSampleLoaded = true;
-              return;
-            }
-            const id3V2Header = readId3V2Header(slice2);
-            if (!id3V2Header) {
-              break;
-            }
-            this.lastLoadedPos = slice2.filePos + id3V2Header.size;
+          const startPos = await skipId3V2Tags(this.reader, 0);
+          header = await readConfirmedAdtsFrameHeader(this.reader, startPos, 4096, null);
+        } else {
+          let slice = this.reader.requestSliceRange(this.lastLoadedPos, MIN_ADTS_FRAME_HEADER_SIZE, MAX_ADTS_FRAME_HEADER_SIZE);
+          if (isThenable(slice))
+            slice = await slice;
+          header = slice && readAdtsFrameHeader(slice);
+          if (!header) {
+            assert2(this.firstFrameHeader);
+            const startPos = await skipId3V2Tags(this.reader, this.lastLoadedPos);
+            header = await readConfirmedAdtsFrameHeader(this.reader, startPos, 2 ** 16, this.firstFrameHeader);
           }
         }
-        let slice = this.reader.requestSliceRange(this.lastLoadedPos, MIN_ADTS_FRAME_HEADER_SIZE, MAX_ADTS_FRAME_HEADER_SIZE);
-        if (isThenable(slice))
-          slice = await slice;
-        if (!slice) {
-          this.lastSampleLoaded = true;
-          return;
-        }
-        const header = readAdtsFrameHeader(slice);
         if (!header) {
           this.lastSampleLoaded = true;
           return;
@@ -70633,15 +71543,17 @@ var init_adts_demuxer = __esm({
           this.lastSampleLoaded = true;
           return;
         }
-        if (!this.firstFrameHeader) {
-          this.firstFrameHeader = header;
-        }
-        const sampleRate = aacFrequencyTable[header.samplingFrequencyIndex];
+        this.firstFrameHeader ??= header;
+        const sampleRate = aacFrequencyTable[this.firstFrameHeader.samplingFrequencyIndex];
         assert2(sampleRate !== void 0);
-        const sampleDuration = SAMPLES_PER_AAC_FRAME / sampleRate;
+        if (header.samplingFrequencyIndex !== this.firstFrameHeader.samplingFrequencyIndex) {
+          Logging._warn(`The sample rate changes mid-stream (from ${sampleRate} Hz to ${aacFrequencyTable[header.samplingFrequencyIndex]} Hz), which isn't properly supported or handled by Mediabunny.`);
+          this.lastSampleLoaded = true;
+          return;
+        }
         const sample = {
           timestamp: this.nextTimestampInSamples / sampleRate,
-          duration: sampleDuration,
+          duration: SAMPLES_PER_AAC_FRAME / sampleRate,
           dataStart: header.startPos,
           dataSize: header.frameLength
         };
@@ -70699,9 +71611,6 @@ var init_adts_demuxer = __esm({
       getType() {
         return "audio";
       }
-      getId() {
-        return 1;
-      }
       getNumber() {
         return 1;
       }
@@ -70743,10 +71652,8 @@ var init_adts_demuxer = __esm({
         return this.demuxer.firstFrameHeader.objectType;
       }
       getNumberOfChannels() {
-        assert2(this.demuxer.firstFrameHeader);
-        const numberOfChannels = aacChannelMap[this.demuxer.firstFrameHeader.channelConfiguration];
-        assert2(numberOfChannels !== void 0);
-        return numberOfChannels;
+        assert2(this.demuxer.numberOfChannels !== null);
+        return this.demuxer.numberOfChannels;
       }
       getSampleRate() {
         assert2(this.demuxer.firstFrameHeader);
@@ -70811,8 +71718,10 @@ var init_adts_demuxer = __esm({
       async getPacket(timestamp, options2) {
         const release = await this.demuxer.readingMutex.acquire();
         try {
+          const sampleRate = this.getSampleRate();
+          const snappedTimestamp = roundIfAlmostInteger(timestamp * sampleRate) / sampleRate;
           while (true) {
-            const index23 = binarySearchLessOrEqual(this.demuxer.loadedSamples, timestamp, (x) => x.timestamp);
+            const index23 = binarySearchLessOrEqual(this.demuxer.loadedSamples, snappedTimestamp, (x) => x.timestamp);
             if (index23 === -1 && this.demuxer.loadedSamples.length > 0) {
               return null;
             }
@@ -70924,7 +71833,7 @@ var init_flac_misc = __esm({
         }
       }
       const encoded = bitArray.reduce((acc, bit, index23) => {
-        return acc | bit << index23;
+        return acc + bit * 2 ** index23;
       }, 0);
       return encoded;
     }, "readCodedNumber");
@@ -70948,7 +71857,7 @@ var init_flac_misc = __esm({
         return readU16Be(slice) * 10;
       }
       if (sampleRateOrUncommon === "uncommon-u8") {
-        return readU8(slice);
+        return 1e3 * readU8(slice);
       }
       if (typeof sampleRateOrUncommon === "number") {
         return sampleRateOrUncommon;
@@ -71300,9 +72209,6 @@ var init_flac_demuxer = __esm({
       getType() {
         return "audio";
       }
-      getId() {
-        return 1;
-      }
       getNumber() {
         return 1;
       }
@@ -71376,8 +72282,9 @@ var init_flac_demuxer = __esm({
         }
         const release = await this.demuxer.readingMutex.acquire();
         try {
+          const timestampInSamples = roundIfAlmostInteger(timestamp * this.demuxer.audioInfo.sampleRate);
           while (true) {
-            const packetIndex = binarySearchLessOrEqual(this.demuxer.loadedSamples, timestamp, (x) => x.blockOffset / this.demuxer.audioInfo.sampleRate);
+            const packetIndex = binarySearchLessOrEqual(this.demuxer.loadedSamples, timestampInSamples, (x) => x.blockOffset);
             if (packetIndex === -1) {
               if (this.demuxer.lastSampleLoaded) {
                 return null;
@@ -71386,9 +72293,7 @@ var init_flac_demuxer = __esm({
               continue;
             }
             const packet = this.demuxer.loadedSamples[packetIndex];
-            const sampleTimestamp = packet.blockOffset / this.demuxer.audioInfo.sampleRate;
-            const sampleDuration = packet.blockSize / this.demuxer.audioInfo.sampleRate;
-            if (sampleTimestamp + sampleDuration <= timestamp) {
+            if (packet.blockOffset + packet.blockSize <= timestampInSamples) {
               if (this.demuxer.lastSampleLoaded) {
                 return this.getPacketAtIndex(this.demuxer.loadedSamples.length - 1, options2);
               }
@@ -71445,10 +72350,15 @@ var init_flac_demuxer = __esm({
         return new EncodedPacket(data, "key", timestamp, duration3, sampleIndex, rawSample.byteSize);
       }
       async getFirstPacket(options2) {
-        while (this.demuxer.loadedSamples.length === 0 && !this.demuxer.lastSampleLoaded) {
-          await this.demuxer.advanceReader();
+        const release = await this.demuxer.readingMutex.acquire();
+        try {
+          while (this.demuxer.loadedSamples.length === 0 && !this.demuxer.lastSampleLoaded) {
+            await this.demuxer.advanceReader();
+          }
+          return this.getPacketAtIndex(0, options2);
+        } finally {
+          release();
         }
-        return this.getPacketAtIndex(0, options2);
       }
     };
   }
@@ -71476,22 +72386,17 @@ var init_mpeg_ts_misc = __esm({
     createTimestampWrapInfo = /* @__PURE__ */ __name((firstTimestamp) => {
       const tolerance = 60 * MPEG_TS_TIMESCALE;
       return {
-        reference: firstTimestamp - tolerance,
-        offset: firstTimestamp >= TIMESTAMP_MODULUS - tolerance ? -TIMESTAMP_MODULUS : TIMESTAMP_MODULUS
+        reference: firstTimestamp >= TIMESTAMP_MODULUS - tolerance ? firstTimestamp - tolerance - TIMESTAMP_MODULUS : firstTimestamp - tolerance
       };
     }, "createTimestampWrapInfo");
     normalizeWrappedTimestamp = /* @__PURE__ */ __name((timestamp, wrapInfo) => {
-      const { reference, offset } = wrapInfo;
-      if (offset < 0 && timestamp >= reference || offset > 0 && timestamp < reference) {
-        return timestamp + offset;
-      }
-      return timestamp;
+      return wrapInfo.reference + modEuclid(timestamp - wrapInfo.reference, TIMESTAMP_MODULUS);
     }, "normalizeWrappedTimestamp");
   }
 });
 
 // node_modules/mediabunny/dist/modules/src/mpeg-ts/mpeg-ts-demuxer.js
-var MISSING_PTS_ERROR_MESSAGE, REGISTRATION_DESCRIPTOR_TAG, HDMV_FORMAT_IDENTIFIER, HDPR_FORMAT_IDENTIFIER, DTS_FORMAT_IDENTIFIER_PREFIX, BLU_RAY_DTS_STREAM_TYPES, ignoredStreamTypes, MpegTsDemuxer, readPesPacketHeader, readPesPacket, MpegTsTrackBacking, MpegTsVideoTrackBacking, MpegTsAudioTrackBacking, maybeInsertReferencePacket, PacketReadingContext, PacketBuffer;
+var MISSING_PTS_ERROR_MESSAGE, REGISTRATION_DESCRIPTOR_TAG, HDMV_FORMAT_IDENTIFIER, HDPR_FORMAT_IDENTIFIER, DTS_FORMAT_IDENTIFIER_PREFIX, BLU_RAY_DTS_STREAM_TYPES, ignoredStreamTypes, MpegTsDemuxer, readPesPacketHeader, MpegTsTrackBacking, MpegTsVideoTrackBacking, MpegTsAudioTrackBacking, maybeInsertReferencePacket, PacketReadingContext, PacketBuffer;
 var init_mpeg_ts_demuxer = __esm({
   "node_modules/mediabunny/dist/modules/src/mpeg-ts/mpeg-ts-demuxer.js"() {
     init_adts_demuxer();
@@ -71520,7 +72425,7 @@ var init_mpeg_ts_demuxer = __esm({
       162
     ]);
     ignoredStreamTypes = /* @__PURE__ */ new Set();
-    MpegTsDemuxer = class extends Demuxer {
+    MpegTsDemuxer = class _MpegTsDemuxer extends Demuxer {
       static {
         __name(this, "MpegTsDemuxer");
       }
@@ -71576,21 +72481,21 @@ var init_mpeg_ts_demuxer = __esm({
               currentPos += this.packetStride;
               continue;
             }
-            const section = await this.readSection(currentPos, true, !hasProgramMap);
+            const isElementaryStreamPid = this.elementaryStreams.some((x) => x.pid === packetHeader.pid);
+            const section = await this.readSection(currentPos, !isElementaryStreamPid, !hasProgramMap);
             if (!section) {
               break;
             }
-            const BYTES_BEFORE_SECTION_LENGTH = 3;
             const BITS_IN_CRC_32 = 32;
-            let isProbablyProgramMap = false;
-            if (!hasProgramMap && section.pid !== 0) {
+            let isProgramMap = false;
+            if (!hasProgramMap && section.pid !== 0 && (programMapPid === null || section.pid === programMapPid)) {
               const isPesPacket = section.payload[0] === 0 && section.payload[1] === 0 && section.payload[2] === 1;
               if (!isPesPacket) {
                 const bitstream = new Bitstream(section.payload);
                 const pointerField = bitstream.readAlignedByte();
                 bitstream.skipBits(8 * pointerField);
                 const tableId = bitstream.readBits(8);
-                isProbablyProgramMap = tableId === 2;
+                isProgramMap = tableId === 2;
               }
             }
             if (section.pid === 0 && !hasProgramAssociationTable) {
@@ -71599,8 +72504,9 @@ var init_mpeg_ts_demuxer = __esm({
               bitstream.skipBits(8 * pointerField);
               bitstream.skipBits(14);
               const sectionLength = bitstream.readBits(10);
+              const sectionEndPos = bitstream.pos + 8 * sectionLength;
               bitstream.skipBits(40);
-              while (8 * (sectionLength + BYTES_BEFORE_SECTION_LENGTH) - bitstream.pos > BITS_IN_CRC_32) {
+              while (sectionEndPos - bitstream.pos > BITS_IN_CRC_32) {
                 const programNumber = bitstream.readBits(16);
                 bitstream.skipBits(3);
                 const id2 = bitstream.readBits(13);
@@ -71616,12 +72522,13 @@ var init_mpeg_ts_demuxer = __esm({
                 throw new Error("Program Association Table must link to a Program Map Table.");
               }
               hasProgramAssociationTable = true;
-            } else if ((section.pid === programMapPid || isProbablyProgramMap) && !hasProgramMap) {
+            } else if (isProgramMap) {
               const bitstream = new Bitstream(section.payload);
               const pointerField = bitstream.readAlignedByte();
               bitstream.skipBits(8 * pointerField);
               bitstream.skipBits(12);
               const sectionLength = bitstream.readBits(12);
+              const sectionEndPos = bitstream.pos + 8 * sectionLength;
               bitstream.skipBits(43);
               const pcrPid = bitstream.readBits(13);
               bitstream.skipBits(6);
@@ -71639,7 +72546,7 @@ var init_mpeg_ts_demuxer = __esm({
                 bitstream.pos = descriptorEndPos;
               }
               bitstream.pos = programInfoEndPos;
-              while (8 * (sectionLength + BYTES_BEFORE_SECTION_LENGTH) - bitstream.pos > BITS_IN_CRC_32) {
+              while (sectionEndPos - bitstream.pos > BITS_IN_CRC_32) {
                 const streamType = bitstream.readBits(8);
                 bitstream.skipBits(3);
                 const elementaryPid = bitstream.readBits(13);
@@ -71785,14 +72692,18 @@ var init_mpeg_ts_demuxer = __esm({
             } else {
               const elementaryStream = this.elementaryStreams.find((x) => x.pid === section.pid);
               outer: if (elementaryStream && !elementaryStream.initialized) {
-                const pesPacket = readPesPacket(this, section, true);
-                if (!pesPacket) {
+                const pesPacketHeader = readPesPacketHeader(this, section, true);
+                if (!pesPacketHeader) {
                   throw new Error(`Couldn't read first PES packet for Elementary Stream with PID ${elementaryStream.pid}`);
                 }
                 elementaryStream.firstSection = section;
                 elementaryStream.canBeTrustedWithKeyPackets = section.randomAccessIndicator === 1;
                 if (this.input._initInput) {
                   const initDemuxer = await this.input._initInput._getDemuxer();
+                  if (initDemuxer.constructor !== _MpegTsDemuxer) {
+                    throw new Error("Init input must match the input's format.");
+                  }
+                  await initDemuxer.readMetadata();
                   const matchingStream = initDemuxer.elementaryStreams.find((x) => x.pid === section.pid && x.info.codec === elementaryStream.info.codec && x.initialized);
                   if (matchingStream) {
                     elementaryStream.info = matchingStream.info;
@@ -71800,7 +72711,7 @@ var init_mpeg_ts_demuxer = __esm({
                     break outer;
                   }
                 }
-                const context3 = new PacketReadingContext(elementaryStream, pesPacket);
+                const context3 = new PacketReadingContext(elementaryStream, section.startPos);
                 if (elementaryStream.info.type === "video") {
                   while (true) {
                     const contextAlias = context3;
@@ -71884,6 +72795,7 @@ var init_mpeg_ts_demuxer = __esm({
                       colorSpace: elementaryStream.info.colorSpace,
                       avcType: 1,
                       avcCodecInfo: elementaryStream.info.avcCodecInfo,
+                      hevcType: "hev1",
                       hevcCodecInfo: elementaryStream.info.hevcCodecInfo,
                       vp9CodecInfo: null,
                       av1CodecInfo: null,
@@ -71913,7 +72825,16 @@ var init_mpeg_ts_demuxer = __esm({
                       isMpeg2: false,
                       objectType: header.objectType
                     };
-                    elementaryStream.info.numberOfChannels = aacChannelMap[header.channelConfiguration];
+                    if (header.channelConfiguration === 0) {
+                      const headerSize = header.crcCheck === null ? MIN_ADTS_FRAME_HEADER_SIZE : MAX_ADTS_FRAME_HEADER_SIZE;
+                      const result = readAdtsProgramConfigElement(context3.suppliedPacket.data.subarray(headerSize, header.frameLength));
+                      if (!result) {
+                        throw new Error("Invalid AAC audio stream; ADTS frames with channel configuration 0 must begin with a program config element.");
+                      }
+                      elementaryStream.info.numberOfChannels = getAacProgramConfigElementChannelCount(result.programConfigElement);
+                    } else {
+                      elementaryStream.info.numberOfChannels = aacChannelMap[header.channelConfiguration];
+                    }
                     elementaryStream.info.sampleRate = aacFrequencyTable[header.samplingFrequencyIndex];
                   } else if (elementaryStream.info.codec === "mp3") {
                     const word = readU32Be(FileSlice.tempFromBytes(context3.suppliedPacket.data));
@@ -72022,13 +72943,12 @@ var init_mpeg_ts_demuxer = __esm({
             break;
           }
           if (!firstPacket) {
-            if (packet.payloadUnitStartIndicator === 0) {
-              break;
-            }
+            assert2(packet.payloadUnitStartIndicator === 1);
             firstPacket = packet;
           } else {
             if (packet.pid !== firstPacket.pid) {
               if (contiguous) {
+                mustAddSectionEnd = false;
                 break;
               } else {
                 continue;
@@ -72088,7 +73008,6 @@ var init_mpeg_ts_demuxer = __esm({
         }
         return {
           startPos,
-          endPos: full ? endPos : null,
           pid: firstPacket.pid,
           payload: merged,
           randomAccessIndicator
@@ -72187,39 +73106,10 @@ var init_mpeg_ts_demuxer = __esm({
       }
       return {
         sectionStartPos: section.startPos,
-        sectionEndPos: section.endPos,
         pts,
         randomAccessIndicator: section.randomAccessIndicator
       };
     }, "readPesPacketHeader");
-    readPesPacket = /* @__PURE__ */ __name((demuxer, section, expectPts) => {
-      assert2(section.endPos !== null);
-      const header = readPesPacketHeader(demuxer, section, expectPts);
-      if (!header) {
-        return null;
-      }
-      const bitstream = new Bitstream(section.payload);
-      bitstream.skipBits(32);
-      const pesPacketLength = bitstream.readBits(16);
-      const BYTES_UNTIL_END_OF_PES_PACKET_LENGTH = 6;
-      bitstream.skipBits(16);
-      const pesHeaderDataLength = bitstream.readBits(8);
-      const pesHeaderEndPos = bitstream.pos + 8 * pesHeaderDataLength;
-      bitstream.pos = pesHeaderEndPos;
-      const bytePos = pesHeaderEndPos / 8;
-      assert2(Number.isInteger(bytePos));
-      const data = section.payload.subarray(
-        bytePos,
-        // "A value of 0 indicates that the PES packet length is neither specified nor bounded and is allowed only in
-        // PES packets whose payload consists of bytes from a video elementary stream contained in
-        // transport stream packets."
-        pesPacketLength > 0 ? BYTES_UNTIL_END_OF_PES_PACKET_LENGTH + pesPacketLength : section.payload.byteLength
-      );
-      return {
-        ...header,
-        data
-      };
-    }, "readPesPacket");
     MpegTsTrackBacking = class _MpegTsTrackBacking {
       static {
         __name(this, "MpegTsTrackBacking");
@@ -72228,9 +73118,6 @@ var init_mpeg_ts_demuxer = __esm({
         this.elementaryStream = elementaryStream;
         this.packetBuffers = /* @__PURE__ */ new WeakMap();
         this.packetSectionStarts = /* @__PURE__ */ new WeakMap();
-      }
-      getId() {
-        return this.elementaryStream.pid;
       }
       getNumber() {
         const demuxer = this.elementaryStream.demuxer;
@@ -72301,9 +73188,7 @@ var init_mpeg_ts_demuxer = __esm({
       async getFirstPacket(options2) {
         const section = this.elementaryStream.firstSection;
         assert2(section);
-        const pesPacket = readPesPacket(this.elementaryStream.demuxer, section, true);
-        assert2(pesPacket);
-        const context3 = new PacketReadingContext(this.elementaryStream, pesPacket);
+        const context3 = new PacketReadingContext(this.elementaryStream, section.startPos);
         const buffer2 = new PacketBuffer(this, context3);
         const result = await buffer2.readNext();
         if (!result) {
@@ -72317,11 +73202,11 @@ var init_mpeg_ts_demuxer = __esm({
       async getNextPacket(packet, options2) {
         let buffer2 = this.packetBuffers.get(packet);
         if (buffer2) {
+          this.packetBuffers.delete(packet);
           const result = await buffer2.readNext();
           if (!result) {
             return null;
           }
-          this.packetBuffers.delete(packet);
           const newPacket = this.createEncodedPacket(result.packet, result.duration, options2);
           this.packetBuffers.set(newPacket, buffer2);
           this.packetSectionStarts.set(newPacket, result.packet.sectionStartPos);
@@ -72332,11 +73217,24 @@ var init_mpeg_ts_demuxer = __esm({
           throw new Error("Packet was not created from this track.");
         }
         const demuxer = this.elementaryStream.demuxer;
-        const section = await demuxer.readSection(sectionStartPos, true);
-        assert2(section);
-        const pesPacket = readPesPacket(demuxer, section, true);
-        assert2(pesPacket);
-        const context3 = new PacketReadingContext(this.elementaryStream, pesPacket);
+        let startPos = sectionStartPos;
+        let pesPacketsToRewind = this.getReorderSize();
+        let pos = sectionStartPos - demuxer.packetStride;
+        while (pesPacketsToRewind > 0 && pos >= demuxer.packetOffset) {
+          const packetHeader = await demuxer.readPacketHeader(pos);
+          assert2(packetHeader);
+          if (packetHeader.pid === this.elementaryStream.pid && packetHeader.payloadUnitStartIndicator === 1) {
+            const pesSection = await demuxer.readSection(pos, false);
+            assert2(pesSection);
+            const pesHeader = readPesPacketHeader(demuxer, pesSection, false);
+            if (pesHeader && pesHeader.pts !== null) {
+              startPos = pos;
+              pesPacketsToRewind--;
+            }
+          }
+          pos -= demuxer.packetStride;
+        }
+        const context3 = new PacketReadingContext(this.elementaryStream, startPos);
         buffer2 = new PacketBuffer(this, context3);
         const targetSequenceNumber = packet.sequenceNumber;
         while (true) {
@@ -72380,7 +73278,7 @@ var init_mpeg_ts_demuxer = __esm({
         const demuxer = this.elementaryStream.demuxer;
         const { reader, seekChunkSize } = demuxer;
         const pid = this.elementaryStream.pid;
-        const findFirstPesPacketHeaderInChunk = /* @__PURE__ */ __name(async (startPos, endPos, readSectionInFull) => {
+        const findFirstPesPacketHeaderInChunk = /* @__PURE__ */ __name(async (startPos, endPos) => {
           let currentPos = startPos;
           while (currentPos < endPos) {
             const packetHeader = await demuxer.readPacketHeader(currentPos);
@@ -72388,16 +73286,13 @@ var init_mpeg_ts_demuxer = __esm({
               return null;
             }
             if (packetHeader.pid === pid && packetHeader.payloadUnitStartIndicator === 1) {
-              const section = await demuxer.readSection(currentPos, readSectionInFull);
+              const section = await demuxer.readSection(currentPos, false);
               if (!section) {
                 return null;
               }
               const pesPacketHeader = readPesPacketHeader(demuxer, section, false);
               if (pesPacketHeader && pesPacketHeader.pts !== null) {
-                return {
-                  pesPacketHeader,
-                  section
-                };
+                return pesPacketHeader;
               }
             }
             currentPos += demuxer.packetStride;
@@ -72408,9 +73303,6 @@ var init_mpeg_ts_demuxer = __esm({
         assert2(firstSection);
         const firstPesPacketHeader = readPesPacketHeader(demuxer, firstSection, true);
         assert2(firstPesPacketHeader);
-        if (searchPts < firstPesPacketHeader.pts) {
-          return null;
-        }
         let scanStartPos;
         const referencePesPackets = this.elementaryStream.referencePesPackets;
         const referencePointIndex = binarySearchLessOrEqual(referencePesPackets, searchPts, (x) => x.pts);
@@ -72419,7 +73311,7 @@ var init_mpeg_ts_demuxer = __esm({
           scanStartPos = referencePoint.sectionStartPos;
         } else {
           let startChunkIndex = 0;
-          if (reader.fileSize !== null) {
+          if (reader.fileSize !== null && searchPts >= firstPesPacketHeader.pts) {
             const numChunks = Math.ceil(reader.fileSize / seekChunkSize);
             if (numChunks > 1) {
               let low = 0;
@@ -72429,12 +73321,12 @@ var init_mpeg_ts_demuxer = __esm({
                 const mid = Math.floor((low + high) / 2);
                 const chunkStartPos = floorToMultiple(mid * seekChunkSize, demuxer.packetStride) + firstPesPacketHeader.sectionStartPos;
                 const chunkEndPos = chunkStartPos + seekChunkSize;
-                const result2 = await findFirstPesPacketHeaderInChunk(chunkStartPos, chunkEndPos, false);
-                if (!result2) {
+                const pesPacketHeader = await findFirstPesPacketHeaderInChunk(chunkStartPos, chunkEndPos);
+                if (!pesPacketHeader) {
                   high = mid - 1;
                   continue;
                 }
-                if (result2.pesPacketHeader.pts <= searchPts) {
+                if (pesPacketHeader.pts <= searchPts) {
                   startChunkIndex = mid;
                   low = mid + 1;
                 } else {
@@ -72445,18 +73337,13 @@ var init_mpeg_ts_demuxer = __esm({
           }
           scanStartPos = floorToMultiple(startChunkIndex * seekChunkSize, demuxer.packetStride) + firstPesPacketHeader.sectionStartPos;
         }
-        const result = await findFirstPesPacketHeaderInChunk(scanStartPos, reader.fileSize ?? Infinity, false);
-        let currentPesHeader = result?.pesPacketHeader ?? null;
+        let currentPesHeader = await findFirstPesPacketHeaderInChunk(scanStartPos, reader.fileSize ?? Infinity);
         if (!currentPesHeader) {
           currentPesHeader = firstPesPacketHeader;
         }
         const reorderSize = this.getReorderSize();
         const retrieveEncodedPacket = /* @__PURE__ */ __name(async (sectionStartPos, predicate) => {
-          const section = await demuxer.readSection(sectionStartPos, true);
-          assert2(section);
-          const pesPacket = readPesPacket(demuxer, section, true);
-          assert2(pesPacket);
-          const context3 = new PacketReadingContext(this.elementaryStream, pesPacket);
+          const context3 = new PacketReadingContext(this.elementaryStream, sectionStartPos);
           const buffer2 = new PacketBuffer(this, context3);
           while (true) {
             const topPts = last(buffer2.presentationOrderPackets)?.pts ?? -Infinity;
@@ -72473,14 +73360,12 @@ var init_mpeg_ts_demuxer = __esm({
             return null;
           }
           const targetPacket = buffer2.presentationOrderPackets[targetIndex];
-          const lastDuration = targetIndex === 0 ? 0 : targetPacket.pts - buffer2.presentationOrderPackets[targetIndex - 1].pts;
           buffer2.decodeOrderPackets.splice(0, buffer2.decodeOrderPackets.indexOf(targetPacket));
-          buffer2.lastDuration = lastDuration;
-          const result2 = await buffer2.readNext();
-          assert2(result2);
-          const packet = this.createEncodedPacket(result2.packet, result2.duration, options2);
+          const result = await buffer2.readNext();
+          assert2(result);
+          const packet = this.createEncodedPacket(result.packet, result.duration, options2);
           this.packetBuffers.set(packet, buffer2);
-          this.packetSectionStarts.set(packet, result2.packet.sectionStartPos);
+          this.packetSectionStarts.set(packet, result.packet.sectionStartPos);
           return packet;
         }, "retrieveEncodedPacket");
         if (!keyframesOnly || this.allPacketsAreKeyPackets()) {
@@ -72510,7 +73395,7 @@ var init_mpeg_ts_demuxer = __esm({
           }
           outer: for (let i = 0; i < reorderSize + 1; i++) {
             let pos = currentPesHeader.sectionStartPos - demuxer.packetStride;
-            while (pos >= demuxer.packetOffset) {
+            while (pos >= firstPesPacketHeader.sectionStartPos) {
               const packetHeader = await demuxer.readPacketHeader(pos);
               if (!packetHeader) {
                 break outer;
@@ -72527,7 +73412,7 @@ var init_mpeg_ts_demuxer = __esm({
               }
               pos -= demuxer.packetStride;
             }
-            if (pos < demuxer.packetOffset) {
+            if (pos < firstPesPacketHeader.sectionStartPos) {
               break;
             }
           }
@@ -72535,19 +73420,14 @@ var init_mpeg_ts_demuxer = __esm({
         } else {
           let currentChunkStartPos = scanStartPos;
           let nextChunkStartPos = null;
-          const readSectionsInFull = !this.elementaryStream.canBeTrustedWithKeyPackets;
           while (true) {
             let bestKeyPesHeader = null;
             const isFirstChunk = currentChunkStartPos <= firstPesPacketHeader.sectionStartPos;
             let pesHeader;
-            let pesHeaderSection = null;
             if (isFirstChunk) {
               pesHeader = firstPesPacketHeader;
-              pesHeaderSection = firstSection;
             } else {
-              const result2 = await findFirstPesPacketHeaderInChunk(currentChunkStartPos, nextChunkStartPos ?? reader.fileSize ?? Infinity, readSectionsInFull);
-              pesHeader = result2?.pesPacketHeader ?? null;
-              pesHeaderSection = result2?.section ?? null;
+              pesHeader = await findFirstPesPacketHeaderInChunk(currentChunkStartPos, nextChunkStartPos ?? reader.fileSize ?? Infinity);
             }
             let passedSearchPts = false;
             let lookaheadCount = 0;
@@ -72561,12 +73441,7 @@ var init_mpeg_ts_demuxer = __esm({
                 if (this.elementaryStream.canBeTrustedWithKeyPackets) {
                   isKeyPacket = pesHeader.randomAccessIndicator === 1;
                 } else {
-                  if (!context3) {
-                    assert2(pesHeaderSection);
-                    const pesPacket = readPesPacket(demuxer, pesHeaderSection, true);
-                    assert2(pesPacket);
-                    context3 = new PacketReadingContext(this.elementaryStream, pesPacket);
-                  }
+                  context3 ??= new PacketReadingContext(this.elementaryStream, pesHeader.sectionStartPos);
                   while (!context3.suppliedPacket || context3.suppliedPacket.sectionStartPos < pesHeader.sectionStartPos) {
                     context3.suppliedPacket = null;
                     await context3.markNextPacket();
@@ -72596,12 +73471,11 @@ var init_mpeg_ts_demuxer = __esm({
                   break outer;
                 }
                 if (packetHeader.pid === pid && packetHeader.payloadUnitStartIndicator === 1) {
-                  const section = await demuxer.readSection(currentPos, readSectionsInFull);
+                  const section = await demuxer.readSection(currentPos, false);
                   if (section) {
                     const nextPesHeader = readPesPacketHeader(demuxer, section, false);
                     if (nextPesHeader && nextPesHeader.pts !== null) {
                       pesHeader = nextPesHeader;
-                      pesHeaderSection = section;
                       maybeInsertReferencePacket(this.elementaryStream, pesHeader);
                       break;
                     }
@@ -72613,15 +73487,15 @@ var init_mpeg_ts_demuxer = __esm({
             if (bestKeyPesHeader) {
               let startPesHeader = bestKeyPesHeader;
               if (lookaheadCount === 0) {
-                outer: for (let i = 0; i < reorderSize; i++) {
+                outer: for (let i = 0; i < reorderSize + 1; i++) {
                   let pos = startPesHeader.sectionStartPos - demuxer.packetStride;
-                  while (pos >= demuxer.packetOffset) {
+                  while (pos >= firstPesPacketHeader.sectionStartPos) {
                     const packetHeader = await demuxer.readPacketHeader(pos);
                     if (!packetHeader) {
                       break outer;
                     }
                     if (packetHeader.pid === pid && packetHeader.payloadUnitStartIndicator === 1) {
-                      const section = await demuxer.readSection(pos, readSectionsInFull);
+                      const section = await demuxer.readSection(pos, false);
                       if (section) {
                         const header = readPesPacketHeader(demuxer, section, false);
                         if (header && header.pts !== null) {
@@ -72632,7 +73506,7 @@ var init_mpeg_ts_demuxer = __esm({
                     }
                     pos -= demuxer.packetStride;
                   }
-                  if (pos < demuxer.packetOffset) {
+                  if (pos < firstPesPacketHeader.sectionStartPos) {
                     break;
                   }
                 }
@@ -72724,28 +73598,27 @@ var init_mpeg_ts_demuxer = __esm({
     maybeInsertReferencePacket = /* @__PURE__ */ __name((elementaryStream, pesPacketHeader) => {
       const referencePesPackets = elementaryStream.referencePesPackets;
       const index23 = binarySearchLessOrEqual(referencePesPackets, pesPacketHeader.sectionStartPos, (x) => x.sectionStartPos);
+      const minByteDistance = elementaryStream.demuxer.minReferencePointByteDistance;
       if (index23 >= 0) {
         const entry = referencePesPackets[index23];
         if (pesPacketHeader.pts <= entry.pts) {
           return false;
         }
-        const minByteDistance = elementaryStream.demuxer.minReferencePointByteDistance;
         if (pesPacketHeader.sectionStartPos - entry.sectionStartPos < minByteDistance) {
           return false;
         }
-        if (index23 < referencePesPackets.length - 1) {
-          const nextEntry = referencePesPackets[index23 + 1];
-          if (nextEntry.pts < pesPacketHeader.pts) {
-            return false;
-          }
-          if (nextEntry.sectionStartPos - pesPacketHeader.sectionStartPos < minByteDistance) {
-            return false;
-          }
+      }
+      if (index23 < referencePesPackets.length - 1) {
+        const nextEntry = referencePesPackets[index23 + 1];
+        if (nextEntry.pts < pesPacketHeader.pts) {
+          return false;
+        }
+        if (nextEntry.sectionStartPos - pesPacketHeader.sectionStartPos < minByteDistance) {
+          return false;
         }
       }
       referencePesPackets.splice(index23 + 1, 0, {
         sectionStartPos: pesPacketHeader.sectionStartPos,
-        sectionEndPos: pesPacketHeader.sectionEndPos,
         pts: pesPacketHeader.pts,
         randomAccessIndicator: pesPacketHeader.randomAccessIndicator
       });
@@ -72755,19 +73628,24 @@ var init_mpeg_ts_demuxer = __esm({
       static {
         __name(this, "PacketReadingContext");
       }
-      constructor(elementaryStream, startingPesPacket) {
+      constructor(elementaryStream, pesPacketStartPos) {
+        this.reachedEnd = false;
+        this.isInPesPacket = false;
+        this.pesHeaderBytesLeft = 0;
+        this.pesDataBytesLeft = 0;
         this.currentPos = 0;
-        this.pesPackets = [];
-        this.currentPesPacketIndex = 0;
-        this.currentPesPacketPos = 0;
         this.endPos = 0;
+        this.scratch = new Uint8Array(2 ** 16);
+        this.scratchStartPos = 0;
+        this.pesPackets = [];
+        this.pesPacketDataStartPositions = [];
         this.lastSuppliedPesPacket = null;
         this.nextPts = null;
         this.suppliedPacket = null;
         this.elementaryStream = elementaryStream;
         this.pid = elementaryStream.pid;
         this.demuxer = elementaryStream.demuxer;
-        this.startingPesPacket = startingPesPacket;
+        this.nextTsPacketPos = pesPacketStartPos;
       }
       ensureBuffered(length) {
         const remaining = this.endPos - this.currentPos;
@@ -72776,109 +73654,77 @@ var init_mpeg_ts_demuxer = __esm({
         }
         return this.bufferData(length - remaining).then(() => Math.min(this.endPos - this.currentPos, length));
       }
-      getCurrentPesPacket() {
-        const packet = this.pesPackets[this.currentPesPacketIndex];
-        assert2(packet);
-        return packet;
-      }
       async bufferData(length) {
         const targetEndPos = this.endPos + length;
-        while (this.endPos < targetEndPos) {
-          let pesPacket;
-          if (this.pesPackets.length === 0) {
-            pesPacket = this.startingPesPacket;
-          } else {
-            let currentPos = last(this.pesPackets).sectionEndPos;
-            assert2(currentPos !== null);
-            while (true) {
-              const packetHeader = await this.demuxer.readPacketHeader(currentPos);
-              if (!packetHeader) {
-                return;
-              }
-              if (packetHeader.pid === this.pid) {
-                const nextSection = await this.demuxer.readSection(currentPos, true);
-                if (!nextSection) {
-                  return;
-                }
-                const nextPesPacket = readPesPacket(this.demuxer, nextSection, false);
-                if (nextPesPacket) {
-                  pesPacket = nextPesPacket;
-                  break;
-                }
-              }
-              currentPos += this.demuxer.packetStride;
-            }
+        while (this.endPos < targetEndPos && !this.reachedEnd) {
+          const pos = this.nextTsPacketPos;
+          const packet = await this.demuxer.readPacket(pos);
+          if (!packet) {
+            this.reachedEnd = true;
+            break;
           }
-          this.pesPackets.push(pesPacket);
-          this.endPos += pesPacket.data.byteLength;
+          this.nextTsPacketPos += this.demuxer.packetStride;
+          if (packet.pid !== this.pid) {
+            continue;
+          }
+          if (packet.payloadUnitStartIndicator === 1) {
+            this.isInPesPacket = false;
+            const section = await this.demuxer.readSection(pos, false);
+            assert2(section);
+            const header = readPesPacketHeader(this.demuxer, section, false);
+            if (!header) {
+              continue;
+            }
+            const bitstream = new Bitstream(section.payload);
+            bitstream.skipBits(32);
+            const pesPacketLength = bitstream.readBits(16);
+            const BYTES_UNTIL_END_OF_PES_PACKET_LENGTH = 6;
+            bitstream.skipBits(16);
+            const pesHeaderDataLength = bitstream.readBits(8);
+            this.pesHeaderBytesLeft = bitstream.pos / 8 + pesHeaderDataLength;
+            this.pesDataBytesLeft = pesPacketLength > 0 ? Math.max(BYTES_UNTIL_END_OF_PES_PACKET_LENGTH + pesPacketLength - this.pesHeaderBytesLeft, 0) : Infinity;
+            this.isInPesPacket = true;
+            this.pesPackets.push(header);
+            this.pesPacketDataStartPositions.push(this.endPos);
+          }
+          if (!this.isInPesPacket || !(packet.adaptationFieldControl & 1)) {
+            continue;
+          }
+          const body = packet.body;
+          let start = packet.adaptationFieldControl & 2 ? 1 + body[0] : 0;
+          const skippedHeaderBytes = Math.min(this.pesHeaderBytesLeft, Math.max(body.byteLength - start, 0));
+          this.pesHeaderBytesLeft -= skippedHeaderBytes;
+          start += skippedHeaderBytes;
+          const end = Math.min(body.byteLength, start + this.pesDataBytesLeft);
+          if (end <= start) {
+            continue;
+          }
+          const byteCount = end - start;
+          this.pesDataBytesLeft -= byteCount;
+          const scratchLength = this.endPos - this.scratchStartPos;
+          if (scratchLength + byteCount > this.scratch.byteLength) {
+            const scratch = new Uint8Array(2 * this.scratch.byteLength);
+            scratch.set(this.scratch.subarray(0, scratchLength));
+            this.scratch = scratch;
+          }
+          this.scratch.set(body.subarray(start, end), scratchLength);
+          this.endPos += byteCount;
         }
       }
       readBytes(length) {
-        const currentPesPacket = this.getCurrentPesPacket();
-        const relativeStartOffset = this.currentPos - this.currentPesPacketPos;
-        const relativeEndOffset = relativeStartOffset + length;
+        const start = this.currentPos - this.scratchStartPos;
         this.currentPos += length;
-        if (relativeEndOffset <= currentPesPacket.data.byteLength) {
-          return currentPesPacket.data.subarray(relativeStartOffset, relativeEndOffset);
-        }
-        const result = new Uint8Array(length);
-        result.set(currentPesPacket.data.subarray(relativeStartOffset));
-        let offset = currentPesPacket.data.byteLength - relativeStartOffset;
-        while (true) {
-          this.advanceCurrentPacket();
-          const currentPesPacket2 = this.getCurrentPesPacket();
-          const relativeEndOffset2 = length - offset;
-          if (relativeEndOffset2 <= currentPesPacket2.data.byteLength) {
-            result.set(currentPesPacket2.data.subarray(0, relativeEndOffset2), offset);
-            break;
-          }
-          result.set(currentPesPacket2.data, offset);
-          offset += currentPesPacket2.data.byteLength;
-        }
-        return result;
+        return this.scratch.subarray(start, start + length);
       }
       readU8() {
-        let currentPesPacket = this.getCurrentPesPacket();
-        const relativeOffset = this.currentPos - this.currentPesPacketPos;
-        this.currentPos++;
-        if (relativeOffset < currentPesPacket.data.byteLength) {
-          return currentPesPacket.data[relativeOffset];
-        }
-        do {
-          this.advanceCurrentPacket();
-          currentPesPacket = this.getCurrentPesPacket();
-        } while (currentPesPacket.data.byteLength === 0);
-        return currentPesPacket.data[0];
+        return this.scratch[this.currentPos++ - this.scratchStartPos];
       }
       seekTo(pos) {
-        if (pos === this.currentPos) {
-          return;
-        }
-        if (pos < this.currentPos) {
-          while (pos < this.currentPesPacketPos) {
-            this.currentPesPacketIndex--;
-            const currentPacket = this.getCurrentPesPacket();
-            this.currentPesPacketPos -= currentPacket.data.byteLength;
-          }
-        } else {
-          while (true) {
-            const currentPesPacket = this.getCurrentPesPacket();
-            const currentEndPos = this.currentPesPacketPos + currentPesPacket.data.byteLength;
-            if (pos < currentEndPos) {
-              break;
-            }
-            this.currentPesPacketPos += currentPesPacket.data.byteLength;
-            this.currentPesPacketIndex++;
-          }
-        }
+        assert2(pos >= this.scratchStartPos);
         this.currentPos = pos;
       }
       skip(n) {
         this.seekTo(this.currentPos + n);
-      }
-      advanceCurrentPacket() {
-        this.currentPesPacketPos += this.getCurrentPesPacket().data.byteLength;
-        this.currentPesPacketIndex++;
       }
       async markNextPacket() {
         assert2(!this.suppliedPacket);
@@ -72932,9 +73778,7 @@ var init_mpeg_ts_demuxer = __esm({
               packetStartPos ??= startCodePos;
               const nalHeaderStart = i + startCodeLength;
               const payloadStart = nalHeaderStart + nalHeaderSize;
-              const AVC_SLICE_HEADER_PEEK_SIZE = 6;
-              const bytesNeeded = payloadStart + (codec2 === "avc" ? AVC_SLICE_HEADER_PEEK_SIZE : 1);
-              if (bytesNeeded > length) {
+              if (payloadStart + 1 > length) {
                 this.seekTo(posBeforeZero);
                 break;
               }
@@ -72956,15 +73800,24 @@ var init_mpeg_ts_demuxer = __esm({
                   continue;
                 }
                 isSlice = nalUnitType <= HevcNalUnitType.RASL_R || nalUnitType >= HevcNalUnitType.BLA_W_LP && nalUnitType <= 21;
-                isAccessUnitStart = nalUnitType >= HevcNalUnitType.VPS_NUT && nalUnitType <= 37 || nalUnitType === HevcNalUnitType.PREFIX_SEI_NUT || nalUnitType >= 41 && nalUnitType <= 44 || nalUnitType >= 48 && nalUnitType <= 55;
+                isAccessUnitStart = nalUnitType >= HevcNalUnitType.VPS_NUT && nalUnitType <= 35 || nalUnitType === HevcNalUnitType.PREFIX_SEI_NUT || nalUnitType >= 41 && nalUnitType <= 44 || nalUnitType >= 48 && nalUnitType <= 55;
                 isAccessUnitDelimiter = nalUnitType === HevcNalUnitType.AUD_NUT;
               }
               let isFrameBoundary = false;
               if (isSlice) {
                 let startsNewPicture;
                 if (codec2 === "avc") {
-                  const headerBytes = chunk.subarray(payloadStart, payloadStart + AVC_SLICE_HEADER_PEEK_SIZE);
-                  const firstMacroblockInSlice = readExpGolomb(new Bitstream(headerBytes));
+                  const bitstream = new Bitstream(chunk.subarray(payloadStart));
+                  let firstMacroblockInSlice;
+                  try {
+                    firstMacroblockInSlice = readExpGolomb(bitstream);
+                  } catch {
+                    firstMacroblockInSlice = null;
+                  }
+                  if (firstMacroblockInSlice === null || bitstream.getBitsLeft() < 0) {
+                    this.seekTo(posBeforeZero);
+                    break;
+                  }
                   startsNewPicture = !frameStartFound || firstMacroblockInSlice <= lastFirstMacroblockInSlice;
                   lastFirstMacroblockInSlice = firstMacroblockInSlice;
                 } else {
@@ -73028,7 +73881,7 @@ var init_mpeg_ts_demuxer = __esm({
                   let remaining3 = this.ensureBuffered(header.frameLength);
                   if (isThenable(remaining3))
                     remaining3 = await remaining3;
-                  return this.supplyPacket(remaining3, Math.round(SAMPLES_PER_AAC_FRAME * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate));
+                  return this.supplyPacket(remaining3, SAMPLES_PER_AAC_FRAME * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate);
                 } else {
                   this.seekTo(possibleHeaderStartPos + 1);
                 }
@@ -73053,7 +73906,7 @@ var init_mpeg_ts_demuxer = __esm({
                   if (isThenable(remaining3))
                     remaining3 = await remaining3;
                   const duration3 = result.header.audioSamplesInFrame * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate;
-                  return this.supplyPacket(remaining3, Math.round(duration3));
+                  return this.supplyPacket(remaining3, duration3);
                 } else {
                   this.seekTo(possibleHeaderStartPos + 1);
                 }
@@ -73086,7 +73939,7 @@ var init_mpeg_ts_demuxer = __esm({
                 remaining2 = this.ensureBuffered(frameSize);
                 if (isThenable(remaining2))
                   remaining2 = await remaining2;
-                const duration3 = Math.round(AC3_SAMPLES_PER_FRAME * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate);
+                const duration3 = AC3_SAMPLES_PER_FRAME * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate;
                 return this.supplyPacket(remaining2, duration3);
               } else if (codec2 === "eac3") {
                 if (byte !== 11) {
@@ -73106,16 +73959,32 @@ var init_mpeg_ts_demuxer = __esm({
                   continue;
                 }
                 const frmsiz = (headerBytes[2] & 7) << 8 | headerBytes[3];
-                const frameSize = (frmsiz + 1) * 2;
+                let frameSize = (frmsiz + 1) * 2;
                 const fscod = headerBytes[4] >> 6;
                 const numblkscod = fscod === 3 ? 3 : headerBytes[4] >> 4 & 3;
                 const numblks = EAC3_NUMBLKS_TABLE[numblkscod];
+                while (true) {
+                  this.seekTo(possibleSyncPos);
+                  const neededBytes = frameSize + 4;
+                  let remaining3 = this.ensureBuffered(neededBytes);
+                  if (isThenable(remaining3))
+                    remaining3 = await remaining3;
+                  if (remaining3 < neededBytes) {
+                    break;
+                  }
+                  this.seekTo(possibleSyncPos + frameSize);
+                  const nextHeaderBytes = this.readBytes(4);
+                  if (nextHeaderBytes[0] !== 11 || nextHeaderBytes[1] !== 119 || nextHeaderBytes[2] >> 6 !== 1) {
+                    break;
+                  }
+                  frameSize += 2 * (((nextHeaderBytes[2] & 7) << 8 | nextHeaderBytes[3]) + 1);
+                }
                 this.seekTo(possibleSyncPos);
                 remaining2 = this.ensureBuffered(frameSize);
                 if (isThenable(remaining2))
                   remaining2 = await remaining2;
                 const samplesPerFrame = numblks * 256;
-                const duration3 = Math.round(samplesPerFrame * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate);
+                const duration3 = samplesPerFrame * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate;
                 return this.supplyPacket(remaining2, duration3);
               } else if (codec2 === "dts") {
                 if (byte !== 127 && byte !== 100) {
@@ -73174,7 +74043,7 @@ var init_mpeg_ts_demuxer = __esm({
                 remaining2 = this.ensureBuffered(frameSize);
                 if (isThenable(remaining2))
                   remaining2 = await remaining2;
-                const duration3 = Math.round(sampleCount * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate);
+                const duration3 = sampleCount * MPEG_TS_TIMESCALE / elementaryStream.info.sampleRate;
                 return this.supplyPacket(remaining2, duration3);
               } else {
                 throw new Error("Unhandled.");
@@ -73188,7 +74057,10 @@ var init_mpeg_ts_demuxer = __esm({
       }
       /** Supplies the context with a new encoded packet, beginning at the current position. */
       supplyPacket(packetLength, intrinsicDuration) {
-        const currentPesPacket = this.getCurrentPesPacket();
+        const pesPacketIndex = findLastIndex(this.pesPacketDataStartPositions, (x) => x <= this.currentPos);
+        assert2(pesPacketIndex !== -1);
+        const currentPesPacket = this.pesPackets[pesPacketIndex];
+        const currentPesPacketDataStartPos = this.pesPacketDataStartPositions[pesPacketIndex];
         let pts;
         if (this.lastSuppliedPesPacket === currentPesPacket) {
           assert2(this.nextPts !== null);
@@ -73203,8 +74075,8 @@ var init_mpeg_ts_demuxer = __esm({
         this.lastSuppliedPesPacket = currentPesPacket;
         this.nextPts = pts + intrinsicDuration;
         const sectionStartPos = currentPesPacket.sectionStartPos;
-        const sequenceNumber = sectionStartPos + (this.currentPos - this.currentPesPacketPos);
-        const data = this.readBytes(packetLength);
+        const sequenceNumber = sectionStartPos + (this.currentPos - currentPesPacketDataStartPos);
+        const data = this.readBytes(packetLength).slice();
         let randomAccessIndicator = currentPesPacket.randomAccessIndicator;
         if (randomAccessIndicator === 0 && !this.elementaryStream.canBeTrustedWithKeyPackets) {
           if (this.elementaryStream.info.type === "audio") {
@@ -73217,15 +74089,21 @@ var init_mpeg_ts_demuxer = __esm({
             }
           }
         }
+        const roundedPts = Math.round(pts);
         this.suppliedPacket = {
-          pts,
+          pts: roundedPts,
+          intrinsicDuration: Math.round(pts + intrinsicDuration) - roundedPts,
           data,
           sequenceNumber,
           sectionStartPos,
           randomAccessIndicator
         };
-        this.pesPackets.splice(0, this.currentPesPacketIndex);
-        this.currentPesPacketIndex = 0;
+        const keptStart = this.currentPos - this.scratchStartPos;
+        this.scratch.copyWithin(0, keptStart, this.endPos - this.scratchStartPos);
+        this.scratchStartPos = this.currentPos;
+        const keptPesPacketIndex = findLastIndex(this.pesPacketDataStartPositions, (x) => x <= this.currentPos);
+        this.pesPackets.splice(0, keptPesPacketIndex);
+        this.pesPacketDataStartPositions.splice(0, keptPesPacketIndex);
       }
     };
     PacketBuffer = class {
@@ -73254,12 +74132,16 @@ var init_mpeg_ts_demuxer = __esm({
         const packet = this.decodeOrderPackets[0];
         const presentationIndex = this.presentationOrderPackets.indexOf(packet);
         let duration3;
-        if (presentationIndex === -1 || presentationIndex === this.presentationOrderPackets.length - 1) {
-          duration3 = this.lastDuration;
-        } else {
+        if (presentationIndex !== -1 && presentationIndex < this.presentationOrderPackets.length - 1) {
           const nextPacket = this.presentationOrderPackets[presentationIndex + 1];
           duration3 = nextPacket.pts - packet.pts;
           this.lastDuration = duration3;
+        } else if (packet.intrinsicDuration > 0) {
+          duration3 = packet.intrinsicDuration;
+        } else if (presentationIndex > 0) {
+          duration3 = packet.pts - this.presentationOrderPackets[presentationIndex - 1].pts;
+        } else {
+          duration3 = this.lastDuration;
         }
         this.decodeOrderPackets.shift();
         while (this.presentationOrderPackets.length > 0) {
@@ -73492,7 +74374,7 @@ var init_hls_misc = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/segmented-input.js
-var SegmentedInput, SegmentedInputInputTrackBacking, SegmentedInputInputVideoTrackBacking, SegmentedInputInputAudioTrackBacking;
+var SegmentedInput, getReferenceFirstTimestamp, SegmentedInputInputTrackBacking, toSegmentTimestamp, SegmentedInputInputVideoTrackBacking, SegmentedInputInputAudioTrackBacking;
 var init_segmented_input = __esm({
   "node_modules/mediabunny/dist/modules/src/segmented-input.js"() {
     init_misc();
@@ -73505,6 +74387,7 @@ var init_segmented_input = __esm({
         this.inputCache = [];
         this.trackBackingsPromise = null;
         this.firstSegment = null;
+        this.hasOnlyKeyPackets = false;
         this.learnedSegmentTimestampOffset = null;
         this.segmentMediaOffsets = /* @__PURE__ */ new WeakMap();
         this.input = input2;
@@ -73521,7 +74404,7 @@ var init_segmented_input = __esm({
         return lastSegment.timestamp + await this.getFirstSegmentTimestampOffset() + lastSegment.duration;
       }
       async getUnixTimeForTimestamp(timestamp) {
-        let segment = await this.getSegmentAt(timestamp, {});
+        let segment = await this.getSegmentAt(timestamp, { skipLiveWait: true });
         segment ??= await this.getFirstSegment({});
         if (!segment || segment.unixEpochTimestamp === null) {
           return null;
@@ -73552,16 +74435,10 @@ var init_segmented_input = __esm({
             for (const track of inputTracks) {
               if (track.type === "video") {
                 const number4 = arrayCount(backings, (x) => x.getType() === "video") + 1;
-                backings.push(new SegmentedInputInputVideoTrackBacking(this, {
-                  id: backings.length + 1,
-                  type: "video"
-                }, number4));
+                backings.push(new SegmentedInputInputVideoTrackBacking(this, { type: "video" }, number4));
               } else if (track.type === "audio") {
                 const number4 = arrayCount(backings, (x) => x.getType() === "audio") + 1;
-                backings.push(new SegmentedInputInputAudioTrackBacking(this, {
-                  id: backings.length + 1,
-                  type: "audio"
-                }, number4));
+                backings.push(new SegmentedInputInputAudioTrackBacking(this, { type: "audio" }, number4));
               }
             }
           }
@@ -73581,11 +74458,11 @@ var init_segmented_input = __esm({
           let mediaOffset = rawTimestampOffset + await this.getMediaOffsetForDiscontinuity(segment.discontinuityNumber);
           const period = this.getTimestampWrapPeriod();
           if (period < Infinity) {
-            const tracks = await input2.getTracks();
-            const track = tracks.find((x) => x.type === "video") ?? tracks[0];
-            assert2(track);
-            const mediaStart = await track.getFirstTimestamp() + mediaOffset;
-            mediaOffset += period * Math.round((segment.timestamp - mediaStart) / period);
+            const firstTimestamp = await getReferenceFirstTimestamp(input2);
+            if (firstTimestamp !== null) {
+              const mediaStart = firstTimestamp + mediaOffset;
+              mediaOffset += period * Math.round((segment.timestamp - mediaStart) / period);
+            }
           }
           return mediaOffset;
         })();
@@ -73599,6 +74476,20 @@ var init_segmented_input = __esm({
         this.inputCache.length = 0;
       }
     };
+    getReferenceFirstTimestamp = /* @__PURE__ */ __name(async (input2) => {
+      const tracks = await input2.getTracks();
+      const orderedTracks = [
+        ...tracks.filter((x) => x.type === "video"),
+        ...tracks.filter((x) => x.type !== "video")
+      ];
+      for (const track of orderedTracks) {
+        const firstTimestamp = await track.getFirstTimestampOrNull();
+        if (firstTimestamp !== null) {
+          return firstTimestamp;
+        }
+      }
+      return null;
+    }, "getReferenceFirstTimestamp");
     SegmentedInputInputTrackBacking = class {
       static {
         __name(this, "SegmentedInputInputTrackBacking");
@@ -73636,9 +74527,6 @@ var init_segmented_input = __esm({
           this.firstSegment = currentSegment;
         })();
       }
-      getId() {
-        return this.decl.id;
-      }
       getType() {
         return this.decl.type;
       }
@@ -73656,7 +74544,9 @@ var init_segmented_input = __esm({
         return this.delegate(() => this.firstInputTrack._backing.getDecoderConfig());
       }
       getHasOnlyKeyPackets() {
-        return this.delegate(() => this.firstInputTrack._backing.getHasOnlyKeyPackets?.() ?? null);
+        return this.delegate(() => {
+          return this.segmentedInput.hasOnlyKeyPackets || (this.firstInputTrack._backing.getHasOnlyKeyPackets?.() ?? null);
+        });
       }
       getPairingMask() {
         return 1n;
@@ -73793,6 +74683,7 @@ var init_segmented_input = __esm({
         let currentSegment = await this.segmentedInput.getSegmentAt(timestamp, {
           skipLiveWait: options2.skipLiveWait
         });
+        currentSegment ??= await this.segmentedInput.getFirstSegment({});
         if (!currentSegment) {
           return null;
         }
@@ -73823,7 +74714,7 @@ var init_segmented_input = __esm({
               }
             }
           }
-          const offsetTimestamp = timestamp - mediaOffset;
+          const offsetTimestamp = toSegmentTimestamp(timestamp, mediaOffset, await track.getTimeResolution());
           const packet = keyframesOnly ? await track._backing.getKeyPacket(offsetTimestamp, options2) : await track._backing.getPacket(offsetTimestamp, options2);
           if (!packet) {
             currentSegment = await this.segmentedInput.getPreviousSegment(currentSegment, {
@@ -73850,7 +74741,8 @@ var init_segmented_input = __esm({
               }
               if (nextPacket) {
                 const nextMediaOffset = await this.segmentedInput.getMediaOffset(nextSegment, nextInput);
-                if (nextPacket.timestamp + nextMediaOffset <= timestamp) {
+                const nextOffsetTimestamp = toSegmentTimestamp(timestamp, nextMediaOffset, await nextTrack.getTimeResolution());
+                if (nextPacket.timestamp <= nextOffsetTimestamp) {
                   currentSegment = nextSegment;
                   continue;
                 }
@@ -73862,6 +74754,10 @@ var init_segmented_input = __esm({
         return null;
       }
     };
+    toSegmentTimestamp = /* @__PURE__ */ __name((timestamp, mediaOffset, timeResolution) => {
+      const tick2 = Math.floor(roundIfAlmostInteger(timeResolution * timestamp));
+      return (tick2 - Math.round(timeResolution * mediaOffset)) / timeResolution;
+    }, "toSegmentTimestamp");
     SegmentedInputInputVideoTrackBacking = class extends SegmentedInputInputTrackBacking {
       static {
         __name(this, "SegmentedInputInputVideoTrackBacking");
@@ -73927,7 +74823,7 @@ var require_node = __commonJS({
 });
 
 // node_modules/mediabunny/dist/modules/src/source.js
-var nodeAlias, node2, DEFAULT_MIN_READ_POSITION, DEFAULT_MAX_READ_POSITION, sourceFinalizationRegistry, Source, SourceRef, PathedSource, sourceRequestsAreEqual, CustomPathedSource, BufferSource, blobReaderRegistry, BlobSource, URL_SOURCE_MIN_LOAD_AMOUNT, DEFAULT_RETRY_DELAY, warnedOrigins, UrlSource, BYTE_RANGE_REGEX, parseByteRangeHeader, FilePathSource, CustomSource, StreamSource, ReadableStreamSource, assembleSlice, PREFETCH_PROFILES, ReadOrchestrator, RangedSource;
+var nodeAlias, node2, DEFAULT_MIN_READ_POSITION, DEFAULT_MAX_READ_POSITION, Source, SourceRef, PathedSource, sourceRequestsAreEqual, CustomPathedSource, BufferSource, blobReaderRegistry, BlobSource, URL_SOURCE_MIN_LOAD_AMOUNT, DEFAULT_RETRY_DELAY, warnedOrigins, UrlSource, BYTE_RANGE_REGEX, parseByteRangeHeader, filePathSourceFinalizationRegistry, FilePathSource, CustomSource, StreamSource, ReadableStreamSource, assembleSlice, PREFETCH_PROFILES, ReadOrchestrator, RangedSource;
 var init_source = __esm({
   "node_modules/mediabunny/dist/modules/src/source.js"() {
     init_misc();
@@ -73938,12 +74834,6 @@ var init_source = __esm({
     node2 = typeof nodeAlias !== "undefined" ? nodeAlias : void 0;
     DEFAULT_MIN_READ_POSITION = 0;
     DEFAULT_MAX_READ_POSITION = Infinity;
-    sourceFinalizationRegistry = null;
-    if (typeof FinalizationRegistry !== "undefined") {
-      sourceFinalizationRegistry = new FinalizationRegistry((cleanup) => {
-        cleanup();
-      });
-    }
     Source = class extends EventEmitter {
       static {
         __name(this, "Source");
@@ -74132,6 +75022,7 @@ var init_source = __esm({
         super(...arguments);
         this._root = null;
         this._rootRequest = null;
+        this._removeRootReadListener = null;
       }
       /** @internal */
       _read(start, end, minReadPosition, maxReadPosition) {
@@ -74142,6 +75033,9 @@ var init_source = __esm({
               const ref = result2 instanceof Source ? result2.ref() : result2;
               this._root = ref;
               this._rootRequest = null;
+              this._removeRootReadListener = ref.source.on("read", ({ start: start2, end: end2 }) => {
+                this._dispatchRead(start2, end2);
+              });
               return ref;
             }, "handle");
             if (isThenable(result)) {
@@ -74152,10 +75046,14 @@ var init_source = __esm({
             }
           }
           if (this._rootRequest) {
-            return this._rootRequest.then((ref) => ref.source._read(start, end, minReadPosition, maxReadPosition));
+            return this._rootRequest.then(() => this._read(start, end, minReadPosition, maxReadPosition));
           }
         }
-        return this._root.source._read(start, end, minReadPosition, maxReadPosition);
+        const root = this._root.source;
+        if (end > (root._getFileSize() ?? Infinity)) {
+          return null;
+        }
+        return root._read(start, end, minReadPosition, maxReadPosition);
       }
       /** @internal */
       _getFileSize() {
@@ -74167,9 +75065,13 @@ var init_source = __esm({
       /** @internal */
       _dispose() {
         if (this._root) {
+          this._removeRootReadListener();
           this._root.free();
         } else if (this._rootRequest) {
-          void this._rootRequest.then((ref) => ref.free()).catch(() => {
+          void this._rootRequest.then((ref) => {
+            this._removeRootReadListener();
+            ref.free();
+          }).catch(() => {
           });
         }
       }
@@ -74371,7 +75273,12 @@ var init_source = __esm({
           throw new TypeError("options.handleUnhandledError, when provided, must be a function.");
         }
         const urlString = url4 instanceof Request ? url4.url : url4 instanceof URL ? url4.href : url4;
-        super(urlString, (request2) => new _UrlSource(request2.path, this._options));
+        super(urlString, (request2) => new _UrlSource(request2.path, {
+          ...this._options,
+          // Gets rid of any Range headers in the original options (since we remove them from the init). The
+          // range only made sense for the root!
+          requestInit: this._requestInit
+        }));
         this._offset = 0;
         this._length = null;
         this._fileSizeDetermined = false;
@@ -74393,13 +75300,27 @@ var init_source = __esm({
           }
         }
         if (url4 instanceof Request) {
+          let request2 = url4;
           const requestRange = url4.headers.get("Range");
           if (requestRange !== null) {
             rangeHeaderValue ??= requestRange;
-            const strippedRequest = new Request(url4);
-            strippedRequest.headers.delete("Range");
-            this._url = strippedRequest;
+            request2 = new Request(url4);
+            request2.headers.delete("Range");
+            this._url = request2;
           }
+          this._requestInit = {
+            cache: request2.cache,
+            credentials: request2.credentials,
+            integrity: request2.integrity,
+            keepalive: request2.keepalive,
+            mode: request2.mode === "navigate" ? void 0 : request2.mode,
+            // navigate makes no sense here
+            redirect: request2.redirect,
+            referrer: request2.referrer,
+            referrerPolicy: request2.referrerPolicy,
+            ...this._requestInit
+          };
+          this._requestInit.headers = mergeRequestInit({ headers: request2.headers }, this._requestInit).headers;
         }
         if (rangeHeaderValue !== null) {
           const parsed = parseByteRangeHeader(rangeHeaderValue);
@@ -74413,7 +75334,10 @@ var init_source = __esm({
           maxCacheSize: options2.maxCacheSize ?? 64 * 2 ** 20,
           maxWorkerCount: options2.parallelism ?? DEFAULT_PARALLELISM,
           runWorker: this._runWorker.bind(this),
-          onIdleWorkerRemoved: /* @__PURE__ */ __name((worker) => this._abortControllers.delete(worker), "onIdleWorkerRemoved"),
+          onIdleWorkerRemoved: /* @__PURE__ */ __name((worker) => {
+            this._abortControllers.get(worker)?.abort();
+            this._abortControllers.delete(worker);
+          }, "onIdleWorkerRemoved"),
           prefetchProfile: PREFETCH_PROFILES.network,
           handleUnhandledError: options2.handleUnhandledError
         });
@@ -74451,7 +75375,7 @@ var init_source = __esm({
       }
       /** @internal */
       async _runWorker(worker) {
-        let consecutiveEmptyResponses = 0;
+        let consecutiveReadFailures = 0;
         while (true) {
           if (worker.aborted) {
             this._orchestrator.signalWorkerStoppedRunning(worker);
@@ -74466,8 +75390,27 @@ var init_source = __esm({
             },
             signal: abortController.signal
           }), this._getRetryDelay, () => abortController.signal.aborted);
+          const unsatisfiedRangeMatch = response.status === 416 ? /^bytes \*\/(\d+)$/.exec(response.headers.get("Content-Range") ?? "") : null;
+          let unsatisfiedRangeSize = null;
+          if (unsatisfiedRangeMatch) {
+            unsatisfiedRangeSize = Number(unsatisfiedRangeMatch[1]);
+          } else if (response.status === 416 && worker.currentPos > worker.startPos) {
+            unsatisfiedRangeSize = worker.currentPos;
+          }
+          if (unsatisfiedRangeSize !== null && unsatisfiedRangeSize <= worker.currentPos) {
+            void response.body?.cancel().catch(() => {
+            });
+            if (this._orchestrator.fileSize === null) {
+              this._orchestrator.supplyFileSize(unsatisfiedRangeSize);
+            }
+            this._fileSizeDetermined = true;
+            this._orchestrator.onWorkerFinished(worker);
+            return;
+          }
           if (!response.ok) {
-            throw new Error(`Error fetching ${String(this._url)}: ${response.status} ${response.statusText}`);
+            void response.body?.cancel().catch(() => {
+            });
+            throw new Error(`Error fetching ${this.rootPath}: ${response.status} ${response.statusText}`);
           }
           if (response.redirected) {
             this.rootPath = response.url;
@@ -74498,7 +75441,7 @@ var init_source = __esm({
               return;
             }
             if (!this._usedForHls) {
-              const url4 = new URL(this._url instanceof Request ? this._url.url : this._url, typeof window !== "undefined" ? window.location.href : void 0);
+              const url4 = new URL(response.url || (this._url instanceof Request ? this._url.url : this._url), typeof window !== "undefined" ? window.location.href : void 0);
               if (url4.origin !== "null" && !(url4.pathname.endsWith(".m3u8") || url4.pathname.endsWith(".m3u"))) {
                 if (!warnedOrigins.has(url4.origin)) {
                   Logging._warn(`HTTP server (origin ${url4.origin}) did not respond to a range request with 206 Partial Content, meaning the resource will now be streamed sequentially, with old data being evicted from the cache. Reads into evicted regions will throw. To enable efficient media file streaming across a network, please make sure your server supports range requests. Alternatively, set maxCacheSize to Infinity in the UrlSource options to keep the entire resource in memory.`);
@@ -74525,7 +75468,7 @@ var init_source = __esm({
               if (abortController.signal.aborted) {
                 throw error63;
               }
-              const retryDelayInSeconds = this._getRetryDelay(1, error63, this._url);
+              const retryDelayInSeconds = this._getRetryDelay(++consecutiveReadFailures, error63, this._url);
               if (retryDelayInSeconds !== null) {
                 Logging._error("Error while reading response stream. Attempting to resume.", error63);
                 await wait(1e3 * retryDelayInSeconds);
@@ -74543,26 +75486,25 @@ var init_source = __esm({
                 this._orchestrator.onWorkerFinished(worker);
                 return;
               }
-              if (worker.strictTarget) {
-                if (worker.currentPos > responseStartPos) {
-                  consecutiveEmptyResponses = 0;
-                  break;
-                }
-                consecutiveEmptyResponses++;
-                const error63 = new Error("Range response ended without delivering any data.");
-                const retryDelayInSeconds = this._getRetryDelay(consecutiveEmptyResponses, error63, this._url);
-                if (retryDelayInSeconds === null) {
-                  throw error63;
-                }
-                Logging._error("Retrying range request that ended without delivering any data.");
-                await wait(1e3 * retryDelayInSeconds);
-                break;
-              } else {
+              if (!worker.strictTarget && (worker.currentPos === responseStartPos || response.headers.has("Content-Encoding"))) {
                 this._orchestrator.onWorkerFinished(worker);
                 return;
               }
+              if (worker.currentPos > responseStartPos) {
+                break;
+              }
+              consecutiveReadFailures++;
+              const error63 = new Error("Range response ended without delivering any data.");
+              const retryDelayInSeconds = this._getRetryDelay(consecutiveReadFailures, error63, this._url);
+              if (retryDelayInSeconds === null) {
+                throw error63;
+              }
+              Logging._error("Retrying range request that ended without delivering any data.");
+              await wait(1e3 * retryDelayInSeconds);
+              break;
             }
-            this._dispatchRead(worker.currentPos, worker.currentPos + value.length);
+            consecutiveReadFailures = 0;
+            this._dispatchResourceRead(worker.currentPos, worker.currentPos + value.length);
             this._orchestrator.supplyWorkerData(worker, value);
           }
         }
@@ -74573,6 +75515,7 @@ var init_source = __esm({
         let currentReader = body.getReader();
         let streamPosition = 0;
         let skipRemaining = 0;
+        let consecutiveReadFailures = 0;
         const wrappedStream = new ReadableStream({
           pull: /* @__PURE__ */ __name(async (controller) => {
             while (true) {
@@ -74583,7 +75526,7 @@ var init_source = __esm({
                 if (this._disposed) {
                   throw error63;
                 }
-                const retryDelayInSeconds = this._getRetryDelay(1, error63, this._url);
+                const retryDelayInSeconds = this._getRetryDelay(++consecutiveReadFailures, error63, this._url);
                 if (retryDelayInSeconds === null) {
                   throw error63;
                 }
@@ -74601,10 +75544,9 @@ var init_source = __esm({
                   signal: this._sequentialAbortController.signal
                 }), this._getRetryDelay, () => this._disposed);
                 if (!newResponse.ok) {
-                  throw new Error(
-                    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                    `Error fetching ${String(this._url)}: ${newResponse.status} ${newResponse.statusText}`
-                  );
+                  void newResponse.body?.cancel().catch(() => {
+                  });
+                  throw new Error(`Error fetching ${this.rootPath}: ${newResponse.status} ${newResponse.statusText}`);
                 }
                 if (!newResponse.body) {
                   throw new Error("Missing HTTP response body stream. The used fetch function must provide the response body as a ReadableStream.");
@@ -74622,7 +75564,11 @@ var init_source = __esm({
                 const skippedAmount = Math.min(skipRemaining, chunk.length);
                 skipRemaining -= skippedAmount;
                 chunk = chunk.subarray(skippedAmount);
+                if (chunk.length === 0) {
+                  continue;
+                }
               }
+              consecutiveReadFailures = 0;
               if (chunk.length === 0) {
                 continue;
               }
@@ -74640,7 +75586,7 @@ var init_source = __esm({
         });
         backing._endIndex = this._orchestrator.fileSize;
         backing._cacheMissErrorMessage = "Attempted to read data from an already-evicted part of the cache. Because the HTTP server did not honor the range request, data can only be read sequentially, with old data being evicted from the cache. To fix this issue, either ensure your server responds to range requests with 206 Partial Content, or set maxCacheSize to Infinity in the UrlSource options. Note that the latter will store the entire file in the cache if needed, no matter how large.";
-        backing.on("read", ({ start, end }) => this._dispatchRead(start, end));
+        backing.on("read", ({ start, end }) => this._dispatchResourceRead(start, end));
         this._sequentialBacking = backing;
         const uniqueSlices = /* @__PURE__ */ new Set();
         for (const otherWorker of this._orchestrator.workers) {
@@ -74679,6 +75625,14 @@ var init_source = __esm({
         }
       }
       /** @internal */
+      _dispatchResourceRead(start, end) {
+        const sourceStart = Math.max(start - this._offset, 0);
+        const sourceEnd = Math.min(end - this._offset, this._length ?? Infinity);
+        if (sourceStart < sourceEnd) {
+          this._dispatchRead(sourceStart, sourceEnd);
+        }
+      }
+      /** @internal */
       _dispose() {
         this._orchestrator.dispose();
         for (const [, abortController] of this._abortControllers) {
@@ -74708,6 +75662,12 @@ var init_source = __esm({
         length: end !== null ? end - offset + 1 : null
       };
     }, "parseByteRangeHeader");
+    filePathSourceFinalizationRegistry = null;
+    if (typeof FinalizationRegistry !== "undefined") {
+      filePathSourceFinalizationRegistry = new FinalizationRegistry((fileHandle) => {
+        void fileHandle.close();
+      });
+    }
     FilePathSource = class _FilePathSource extends PathedSource {
       static {
         __name(this, "FilePathSource");
@@ -74731,23 +75691,33 @@ var init_source = __esm({
         this._customSource = new CustomSource({
           getSize: /* @__PURE__ */ __name(async () => {
             const fileHandle = await node2.fs.open(filePath, "r");
-            this._fileHandle = fileHandle;
-            sourceFinalizationRegistry?.register(this, () => {
+            if (this._disposed) {
               void fileHandle.close();
-            }, this);
+              throw new InputDisposedError();
+            }
+            this._fileHandle = fileHandle;
+            filePathSourceFinalizationRegistry?.register(this, fileHandle, this);
             const stats = await fileHandle.stat();
             return stats.size;
           }, "getSize"),
           read: /* @__PURE__ */ __name(async (start, end) => {
             assert2(this._fileHandle);
             const buffer2 = new Uint8Array(end - start);
-            await this._fileHandle.read(buffer2, 0, end - start, start);
+            let bytesRead = 0;
+            while (bytesRead < buffer2.length) {
+              const result = await this._fileHandle.read(buffer2, bytesRead, buffer2.length - bytesRead, start + bytesRead);
+              if (result.bytesRead === 0) {
+                throw new Error(`File ended at byte ${start + bytesRead}, before byte ${end} was read; it was likely truncated while being read.`);
+              }
+              bytesRead += result.bytesRead;
+            }
             return buffer2;
           }, "read"),
           maxCacheSize: options2.maxCacheSize,
           prefetchProfile: "fileSystem",
           handleUnhandledError: options2.handleUnhandledError
         });
+        this._customSource.on("read", ({ start, end }) => this._dispatchRead(start, end));
       }
       /** @internal */
       _read(start, end, minReadPosition, maxReadPosition) {
@@ -74759,11 +75729,12 @@ var init_source = __esm({
       }
       /** @internal */
       _dispose() {
+        this._customSource._disposed = true;
         this._customSource._dispose();
         if (this._fileHandle) {
           void this._fileHandle.close();
           this._fileHandle = null;
-          sourceFinalizationRegistry?.unregister(this);
+          filePathSourceFinalizationRegistry?.unregister(this);
         }
       }
     };
@@ -74796,6 +75767,7 @@ var init_source = __esm({
         }
         super();
         this._readers = /* @__PURE__ */ new Set();
+        this._pendingSize = null;
         this._options = options2;
         this._orchestrator = new ReadOrchestrator({
           maxCacheSize: options2.maxCacheSize ?? 8 * 2 ** 20,
@@ -74815,8 +75787,9 @@ var init_source = __esm({
         if (this._orchestrator.fileSize !== null) {
           return this._orchestrator.read(start, end, minReadPosition, maxReadPosition);
         }
-        const result = this._options.getSize();
+        const result = this._pendingSize ?? this._options.getSize();
         if (isThenable(result)) {
+          this._pendingSize = result;
           return result.then((size) => {
             if (!Number.isInteger(size) || size < 0) {
               throw new TypeError("options.getSize must return or resolve to a non-negative integer.");
@@ -74887,6 +75860,8 @@ var init_source = __esm({
               }
             } finally {
               this._readers.delete(reader);
+              void reader.cancel().catch(() => {
+              });
               reader.releaseLock();
             }
           } else {
@@ -75074,7 +76049,7 @@ var init_source = __esm({
         }
         this._pendingSlices.length = 0;
         this._cache.length = 0;
-        void this._reader?.cancel().catch(() => {
+        void (this._reader ?? this._stream).cancel().catch(() => {
         });
       }
     };
@@ -75469,22 +76444,20 @@ var init_source = __esm({
         }
         for (let i = 0; i < this.queuedReads.length; i++) {
           const queuedRead = this.queuedReads[i];
-          if (queuedRead.hole.start >= size) {
-            for (const slice of queuedRead.pendingSlices)
+          for (let j = 0; j < queuedRead.pendingSlices.length; j++) {
+            const slice = queuedRead.pendingSlices[j];
+            if (slice.start + slice.bytes.length > size) {
               slice.resolve(null);
+              queuedRead.pendingSlices.splice(j, 1);
+              j--;
+            }
+          }
+          if (queuedRead.hole.start >= size) {
             this.queuedReads.splice(i, 1);
             i--;
-          } else if (queuedRead.hole.end > size) {
-            queuedRead.hole.end = size;
+          } else {
+            queuedRead.hole.end = Math.min(queuedRead.hole.end, size);
             queuedRead.strictTarget = true;
-            for (let j = 0; j < queuedRead.pendingSlices.length; j++) {
-              const slice = queuedRead.pendingSlices[j];
-              if (slice.start >= size) {
-                slice.resolve(null);
-                queuedRead.pendingSlices.splice(j, 1);
-                j--;
-              }
-            }
           }
         }
       }
@@ -75505,7 +76478,9 @@ var init_source = __esm({
           this.supplyFileSize(worker.currentPos);
         }
         for (const pendingSlice of worker.pendingSlices) {
-          pendingSlice.resolve(null);
+          if (pendingSlice.start + pendingSlice.bytes.length > worker.currentPos) {
+            pendingSlice.resolve(null);
+          }
         }
       }
       insertIntoCache(entry) {
@@ -75604,6 +76579,7 @@ var init_source = __esm({
       constructor(baseSource, offset, length) {
         super();
         this._ref = null;
+        this._removeReadListener = null;
         if (baseSource._disposed) {
           throw new Error("Cannot create a slice of a disposed source.");
         }
@@ -75613,27 +76589,28 @@ var init_source = __esm({
       }
       /** @internal */
       _getFileSize() {
+        if (this._length !== null) {
+          return this._length;
+        }
         const baseSize = this._baseSource._getFileSize();
-        if (baseSize === void 0) {
-          return this._length !== null ? this._length : void 0;
+        if (baseSize === void 0 || baseSize === null) {
+          return baseSize;
         }
-        if (baseSize === null) {
-          if (this._length !== null) {
-            return this._length;
-          } else {
-            return null;
-          }
-        }
-        return clamp(baseSize - this._offset, 0, this._length ?? Infinity);
+        return Math.max(baseSize - this._offset, 0);
       }
       /** @internal */
       _read(start, end, minReadPosition, maxReadPosition) {
         if (this._length !== null && end > this._length) {
           return null;
         }
-        const result = this._baseSource._read(this._offset + start, this._offset + end, this._offset + minReadPosition, this._offset + maxReadPosition);
+        const baseSize = this._baseSource._getFileSize();
+        const result = typeof baseSize === "number" && this._offset + end > baseSize ? null : this._baseSource._read(this._offset + start, this._offset + end, this._offset + minReadPosition, this._offset + maxReadPosition);
         const processResult = /* @__PURE__ */ __name((result2) => {
           if (!result2) {
+            if (this._length !== null) {
+              const expectedLength = this._offset + this._length;
+              throw new Error(`Underlying data too short, expected a length of at least ${expectedLength} bytes.`);
+            }
             return null;
           }
           result2.offset -= this._offset;
@@ -75648,9 +76625,19 @@ var init_source = __esm({
       /** @internal */
       _dispose() {
         this._ref?.free();
+        this._removeReadListener?.();
       }
       ref() {
-        this._ref ??= this._baseSource.ref();
+        if (!this._ref) {
+          this._ref = this._baseSource.ref();
+          this._removeReadListener = this._baseSource.on("read", ({ start, end }) => {
+            const sliceStart = Math.max(start - this._offset, 0);
+            const sliceEnd = Math.min(end - this._offset, this._length ?? Infinity);
+            if (sliceStart < sliceEnd) {
+              this._dispatchRead(sliceStart, sliceEnd);
+            }
+          });
+        }
         return super.ref();
       }
     };
@@ -75808,7 +76795,7 @@ var init_hls_segmented_input = __esm({
             __disposeResources2(env_1);
           }
         }
-        const offsetTimestampsByDateTime = this.input._formatOptions.hls?.offsetTimestampsByDateTime !== false;
+        const offsetTimestampsByDateTime = this.input._formatOptions.hls?.offsetTimestampsByDateTime !== false && (this.segments.length === 0 || this.segments[0].unixEpochTimestamp === this.segments[0].timestamp);
         const variables = new HlsPlaylistVariables(this.rootPath, this.demuxer.hasMasterPlaylist ? this.demuxer.masterPlaylistVariables : null);
         let headerRead = false;
         let accumulatedTime = 0;
@@ -75843,11 +76830,12 @@ var init_hls_segmented_input = __esm({
           if (prevLastSegment) {
             assert2(prevLastSegment.sequenceNumber !== null);
             if (prevLastSegment.sequenceNumber < number4) {
-              accumulatedTime = prevLastSegment.timestamp + prevLastSegment.duration;
-              currentFirstSegment = prevLastSegment.firstSegment;
+              const elapsed = (number4 - prevLastSegment.sequenceNumber) * prevLastSegment.duration;
+              accumulatedTime = prevLastSegment.timestamp + elapsed;
+              currentFirstSegment = prevLastSegment.firstSegment ?? prevLastSegment;
               currentInitSegment = prevLastSegment.initSegment;
               lastProgramDateTimeSeconds = prevLastSegment.lastProgramDateTimeSeconds;
-              accumulatedUnixTime = prevLastSegment.unixEpochTimestamp !== null ? prevLastSegment.unixEpochTimestamp + prevLastSegment.duration : null;
+              accumulatedUnixTime = prevLastSegment.unixEpochTimestamp !== null ? prevLastSegment.unixEpochTimestamp + elapsed : null;
               prevLastSegment = null;
             }
           }
@@ -75880,6 +76868,9 @@ var init_hls_segmented_input = __esm({
                 offset: nextByteRange?.offset ?? 0,
                 length: nextByteRange?.length ?? null
               };
+              if (currentFirstSegment && currentFirstSegment.discontinuityNumber !== nextDiscontinuityNumber) {
+                currentFirstSegment = null;
+              }
               const segment = {
                 index: this.segments.length,
                 timestamp: accumulatedTime,
@@ -75962,12 +76953,6 @@ var init_hls_segmented_input = __esm({
               };
               currentInitSegment = segment;
             } else {
-            }
-            nextSegmentDuration = null;
-            if (nextByteRange === null) {
-              lastByteRangeEnd = null;
-            } else {
-              nextByteRange = null;
             }
           } else if (line.startsWith(TAG_KEY)) {
             const attributes2 = new AttributeList(line.slice(TAG_KEY.length), variables);
@@ -76060,9 +77045,7 @@ var init_hls_segmented_input = __esm({
               continue;
             }
             if (lastProgramDateTimeSeconds === null && this.segments.length > 0) {
-              const lastSegment = last(this.segments);
-              const lastSegmentEnd = lastSegment.timestamp + lastSegment.duration;
-              const offset = dateTimeSeconds - lastSegmentEnd;
+              const offset = dateTimeSeconds - accumulatedTime;
               for (const segment of this.segments) {
                 segment.unixEpochTimestamp = segment.timestamp + offset;
                 if (offsetTimestampsByDateTime) {
@@ -76092,6 +77075,8 @@ var init_hls_segmented_input = __esm({
               throw new Error(`Invalid EXT-X-TARGETDURATION value '${value}'.`);
             }
             this.refreshInterval = clamp(duration3, 0.5, 3600);
+          } else if (line === TAG_I_FRAMES_ONLY) {
+            this.hasOnlyKeyPackets = true;
           } else if (line === TAG_ENDLIST) {
             this.streamHasEnded = true;
             break;
@@ -76110,13 +77095,13 @@ var init_hls_segmented_input = __esm({
         }
       }
       async getFirstSegment() {
-        if (this.segments.length === 0) {
+        if (this.segments.length === 0 && !this.streamHasEnded) {
           await this.runUpdateSegments();
         }
         return this.segments[0] ?? null;
       }
       async getSegmentAt(timestamp, options2) {
-        if (this.segments.length === 0) {
+        if (this.segments.length === 0 && !this.streamHasEnded && !(options2.skipLiveWait && this.getRemainingWaitTimeMs() > 0)) {
           await this.runUpdateSegments();
         }
         const playlistTimestamp = timestamp - (this.learnedSegmentTimestampOffset ?? 0);
@@ -76293,13 +77278,12 @@ var init_hls_segmented_input = __esm({
           if (await this.getRawTimestampOffset(input2) === null) {
             return 0;
           }
-          const tracks = await input2.getTracks();
-          const track = tracks.find((x) => x.type === "video") ?? tracks[0];
-          if (!track) {
-            throw new Error("The playlist's first segment contains no tracks.");
+          const firstTimestamp = await getReferenceFirstTimestamp(input2);
+          if (firstTimestamp === null) {
+            throw new Error("The playlist's first segment contains no media.");
           }
           const mediaOffset = await this.getMediaOffset(firstSegment, input2);
-          const offset = await track.getFirstTimestamp() + mediaOffset - firstSegment.timestamp;
+          const offset = firstTimestamp + mediaOffset - firstSegment.timestamp;
           this.learnedSegmentTimestampOffset ??= offset;
           return offset;
         })();
@@ -76338,7 +77322,7 @@ var init_hls_segmented_input = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/hls/hls-demuxer.js
-var MAX_VARIANT_STREAMS, MAX_MEDIA_TAGS, HlsDemuxer, HlsInputTrackBacking, HlsInputVideoTrackBacking, HlsInputAudioTrackBacking, getMediaTagDefault, getMediaTagAutoselect, preprocessLanguageCode;
+var MAX_VARIANT_STREAMS, MAX_MEDIA_TAGS, HlsDemuxer, HlsInputTrackBacking, HlsInputVideoTrackBacking, HlsInputAudioTrackBacking, getMediaTagDefault, getMediaTagAutoselect, preprocessLanguageCode, parseChannelCount;
 var init_hls_demuxer = __esm({
   "node_modules/mediabunny/dist/modules/src/hls/hls-demuxer.js"() {
     init_codec();
@@ -76348,6 +77332,7 @@ var init_hls_demuxer = __esm({
     init_reader();
     init_hls_misc();
     init_hls_segmented_input();
+    init_segmented_input();
     init_source();
     MAX_VARIANT_STREAMS = 256;
     MAX_MEDIA_TAGS = 256;
@@ -76431,7 +77416,6 @@ var init_hls_demuxer = __esm({
                 fullPath = joinPaths(rootPath, uri2);
               }
               mediaTags.push({ fullPath, attributes: attributes2, lineNumber: i });
-            } else if (line === TAG_I_FRAMES_ONLY) {
             } else if (line.startsWith(TAG_EXTINF)) {
               const segmentedInput = new HlsSegmentedInput(this, rootPath, null, lines);
               this.segmentedInputs = [segmentedInput];
@@ -76507,24 +77491,43 @@ var init_hls_demuxer = __esm({
               }
             }
             codecStrings = [...new Set(codecStrings)];
-            let videoCodecString = null;
-            let audioCodecString = null;
             const bandwidth = variantStream.attributes.getAsNumber("bandwidth");
             assert2(bandwidth !== null);
             const averageBandwidth = variantStream.attributes.getAsNumber("average-bandwidth");
             const name = variantStream.attributes.get("name");
-            for (const codecString of codecStrings) {
-              const inferredCodec = inferCodecFromCodecString(codecString);
-              if (inferredCodec === null) {
-                continue;
+            const resolveCodec = /* @__PURE__ */ __name(async (typeCodecStrings, fullPath, type) => {
+              const codecs = new Set(typeCodecStrings.map((x) => inferCodecFromCodecString(x)));
+              if (codecs.size === 1) {
+                const [codec3] = codecs;
+                assert2(codec3);
+                return {
+                  codec: codec3,
+                  // With several strings for the same codec, we can't tell which one belongs to this track
+                  fullCodecString: typeCodecStrings.length === 1 ? typeCodecStrings[0] : null
+                };
               }
-              if (VIDEO_CODECS2.includes(inferredCodec)) {
-                if (videoCodecString !== null) {
-                  throw new Error("Unsupported M3U8 file; multiple video codecs found in the CODECS attribute of a variant stream.");
-                }
-                videoCodecString = codecString;
-                const videoGroupId2 = variantStream.attributes.get("video");
-                if (videoGroupId2 === null) {
+              const segmentedInput = this.getSegmentedInputForPath(fullPath);
+              const trackBackings = (await segmentedInput.getTrackBackings()).filter((x) => x.getType() === type);
+              if (trackBackings.length !== 1) {
+                throw new Error(`Unsupported M3U8 file; a variant stream lists several ${type} codecs, but its media doesn't contain exactly one ${type} track.`);
+              }
+              const codec2 = await trackBackings[0].getCodec();
+              if (codec2 === null) {
+                return null;
+              }
+              const decoderConfig = await trackBackings[0].getDecoderConfig();
+              assert2(decoderConfig);
+              return {
+                codec: codec2,
+                fullCodecString: decoderConfig.codec
+              };
+            }, "resolveCodec");
+            const videoCodecStrings = codecStrings.filter((x) => VIDEO_CODECS2.includes(inferCodecFromCodecString(x)));
+            const audioCodecStrings = codecStrings.filter((x) => AUDIO_CODECS2.includes(inferCodecFromCodecString(x)));
+            for (const codecString of codecStrings) {
+              if (codecString === videoCodecStrings[0]) {
+                const referencedVideoMediaTags = mediaTags.filter((mediaTag) => mediaTag.attributes.get("group-id") === videoGroupId && mediaTag.attributes.get("type").toLowerCase() === "video");
+                if (referencedVideoMediaTags.length === 0) {
                   const resolution = variantStream.attributes.get("resolution");
                   let width = null;
                   let height = null;
@@ -76535,32 +77538,36 @@ var init_hls_demuxer = __esm({
                       height = Number(match2[2]);
                     }
                   }
-                  result.push({
-                    id: -1,
-                    demuxer: this,
-                    backingTrack: null,
-                    default: true,
-                    autoselect: true,
-                    languageCode: UNDETERMINED_LANGUAGE,
-                    lineNumber: variantStream.lineNumber,
-                    fullPath: variantStream.fullPath,
-                    fullCodecString: videoCodecString,
-                    pairingMask: 1n << BigInt(i),
-                    peakBitrate: bandwidth,
-                    averageBitrate: averageBandwidth,
-                    name,
-                    hasOnlyKeyPackets: variantStream.hasOnlyKeyPackets,
-                    info: {
-                      type: "video",
-                      width,
-                      height
-                    }
-                  });
+                  const resolvedCodec = await resolveCodec(videoCodecStrings, variantStream.fullPath, "video");
+                  if (resolvedCodec) {
+                    result.push({
+                      demuxer: this,
+                      backingTrack: null,
+                      default: true,
+                      autoselect: true,
+                      languageCode: UNDETERMINED_LANGUAGE,
+                      lineNumber: variantStream.lineNumber,
+                      fullPath: variantStream.fullPath,
+                      codec: resolvedCodec.codec,
+                      fullCodecString: resolvedCodec.fullCodecString,
+                      pairingMask: 1n << BigInt(i),
+                      peakBitrate: bandwidth,
+                      averageBitrate: averageBandwidth,
+                      name,
+                      hasOnlyKeyPackets: variantStream.hasOnlyKeyPackets,
+                      info: {
+                        type: "video",
+                        width,
+                        height
+                      }
+                    });
+                  }
                 } else {
-                  for (const mediaTag of mediaTags) {
-                    const groupId = mediaTag.attributes.get("group-id");
-                    const type = mediaTag.attributes.get("type");
-                    if (groupId !== videoGroupId2 || type.toLowerCase() !== "video") {
+                  const resolvedCodecs = await Promise.all(referencedVideoMediaTags.map((mediaTag) => resolveCodec(videoCodecStrings, mediaTag.fullPath ?? variantStream.fullPath, "video")));
+                  for (let j = 0; j < referencedVideoMediaTags.length; j++) {
+                    const mediaTag = referencedVideoMediaTags[j];
+                    const resolvedCodec = resolvedCodecs[j];
+                    if (!resolvedCodec) {
                       continue;
                     }
                     const resolution = mediaTag.attributes.get("resolution") ?? variantStream.attributes.get("resolution");
@@ -76574,7 +77581,6 @@ var init_hls_demuxer = __esm({
                       }
                     }
                     result.push({
-                      id: -1,
                       demuxer: this,
                       backingTrack: null,
                       default: getMediaTagDefault(mediaTag.attributes),
@@ -76583,7 +77589,8 @@ var init_hls_demuxer = __esm({
                       languageCode: preprocessLanguageCode(mediaTag.attributes.get("language")),
                       lineNumber: mediaTag.lineNumber,
                       fullPath: mediaTag.fullPath ?? variantStream.fullPath,
-                      fullCodecString: videoCodecString,
+                      codec: resolvedCodec.codec,
+                      fullCodecString: resolvedCodec.fullCodecString,
                       pairingMask: 1n << BigInt(i),
                       peakBitrate: mediaTag.fullPath === null ? bandwidth : null,
                       averageBitrate: mediaTag.fullPath === null ? averageBandwidth : null,
@@ -76597,46 +77604,43 @@ var init_hls_demuxer = __esm({
                     });
                   }
                 }
-              } else if (AUDIO_CODECS2.includes(inferredCodec)) {
-                if (audioCodecString !== null) {
-                  throw new Error("Unsupported M3U8 file; multiple audio codecs found in the CODECS attribute of a variant stream.");
-                }
-                audioCodecString = codecString;
-                const audioGroupId2 = variantStream.attributes.get("audio");
-                if (audioGroupId2 === null) {
-                  const channels = variantStream.attributes.get("channels");
-                  const parsedChannels = channels !== null ? Number(channels.split("/")[0]) : null;
-                  result.push({
-                    id: -1,
-                    demuxer: this,
-                    backingTrack: null,
-                    default: true,
-                    autoselect: true,
-                    languageCode: UNDETERMINED_LANGUAGE,
-                    lineNumber: variantStream.lineNumber,
-                    fullPath: variantStream.fullPath,
-                    fullCodecString: audioCodecString,
-                    pairingMask: 1n << BigInt(i),
-                    peakBitrate: bandwidth,
-                    averageBitrate: averageBandwidth,
-                    name,
-                    hasOnlyKeyPackets: variantStream.hasOnlyKeyPackets,
-                    info: {
-                      type: "audio",
-                      numberOfChannels: parsedChannels !== null && Number.isInteger(parsedChannels) && parsedChannels > 0 ? parsedChannels : null
-                    }
-                  });
+              } else if (codecString === audioCodecStrings[0]) {
+                const referencedAudioMediaTags = mediaTags.filter((mediaTag) => mediaTag.attributes.get("group-id") === audioGroupId && mediaTag.attributes.get("type").toLowerCase() === "audio");
+                if (referencedAudioMediaTags.length === 0) {
+                  const resolvedCodec = await resolveCodec(audioCodecStrings, variantStream.fullPath, "audio");
+                  if (resolvedCodec) {
+                    const channels = variantStream.attributes.get("channels");
+                    result.push({
+                      demuxer: this,
+                      backingTrack: null,
+                      default: true,
+                      autoselect: true,
+                      languageCode: UNDETERMINED_LANGUAGE,
+                      lineNumber: variantStream.lineNumber,
+                      fullPath: variantStream.fullPath,
+                      codec: resolvedCodec.codec,
+                      fullCodecString: resolvedCodec.fullCodecString,
+                      pairingMask: 1n << BigInt(i),
+                      peakBitrate: bandwidth,
+                      averageBitrate: averageBandwidth,
+                      name,
+                      hasOnlyKeyPackets: variantStream.hasOnlyKeyPackets,
+                      info: {
+                        type: "audio",
+                        numberOfChannels: parseChannelCount(channels)
+                      }
+                    });
+                  }
                 } else {
-                  for (const mediaTag of mediaTags) {
-                    const groupId = mediaTag.attributes.get("group-id");
-                    const type = mediaTag.attributes.get("type");
-                    if (groupId !== audioGroupId2 || type.toLowerCase() !== "audio") {
+                  const resolvedCodecs = await Promise.all(referencedAudioMediaTags.map((mediaTag) => resolveCodec(audioCodecStrings, mediaTag.fullPath ?? variantStream.fullPath, "audio")));
+                  for (let j = 0; j < referencedAudioMediaTags.length; j++) {
+                    const mediaTag = referencedAudioMediaTags[j];
+                    const resolvedCodec = resolvedCodecs[j];
+                    if (!resolvedCodec) {
                       continue;
                     }
                     const channels = mediaTag.attributes.get("channels") ?? variantStream.attributes.get("channels");
-                    const parsedChannels = channels !== null ? Number(channels.split("/")[0]) : null;
                     result.push({
-                      id: -1,
                       demuxer: this,
                       backingTrack: null,
                       default: getMediaTagDefault(mediaTag.attributes),
@@ -76645,7 +77649,8 @@ var init_hls_demuxer = __esm({
                       languageCode: preprocessLanguageCode(mediaTag.attributes.get("language")),
                       lineNumber: mediaTag.lineNumber,
                       fullPath: mediaTag.fullPath ?? variantStream.fullPath,
-                      fullCodecString: audioCodecString,
+                      codec: resolvedCodec.codec,
+                      fullCodecString: resolvedCodec.fullCodecString,
                       pairingMask: 1n << BigInt(i),
                       peakBitrate: mediaTag.fullPath === null ? bandwidth : null,
                       averageBitrate: mediaTag.fullPath === null ? averageBandwidth : null,
@@ -76653,7 +77658,7 @@ var init_hls_demuxer = __esm({
                       hasOnlyKeyPackets: variantStream.hasOnlyKeyPackets,
                       info: {
                         type: "audio",
-                        numberOfChannels: parsedChannels !== null && Number.isInteger(parsedChannels) && parsedChannels > 0 ? parsedChannels : null
+                        numberOfChannels: parseChannelCount(channels)
                       }
                     });
                   }
@@ -76680,7 +77685,6 @@ var init_hls_demuxer = __esm({
                 existingTrack.languageCode = track.languageCode;
               }
             } else {
-              track.id = internalTracks.length + 1;
               internalTracks.push(track);
             }
           }, "addInternalTrack");
@@ -76722,12 +77726,11 @@ var init_hls_demuxer = __esm({
           }
           const input2 = referenceSegmentedInput.getInputForSegment(segment);
           const rawTimestampOffset = await referenceSegmentedInput.getRawTimestampOffset(input2) ?? 0;
-          const tracks = await input2.getTracks();
-          const track = tracks.find((x) => x.type === "video") ?? tracks[0];
-          if (!track) {
-            throw new Error("The reference playlist's segment contains no tracks.");
+          const firstTimestamp = await getReferenceFirstTimestamp(input2);
+          if (firstTimestamp === null) {
+            throw new Error("The reference playlist's segment contains no media.");
           }
-          return segment.timestamp - (rawTimestampOffset + await track.getFirstTimestamp());
+          return segment.timestamp - (rawTimestampOffset + firstTimestamp);
         })();
         this.mediaOffsets.set(discontinuityNumber, promise2);
         return promise2;
@@ -76737,7 +77740,8 @@ var init_hls_demuxer = __esm({
           return this.segmentedInputs[0];
         }
         assert2(this.internalTracks);
-        const candidates = this.internalTracks.filter((x) => !x.hasOnlyKeyPackets);
+        const regularTracks = this.internalTracks.filter((x) => !x.hasOnlyKeyPackets);
+        const candidates = regularTracks.length > 0 ? regularTracks : this.internalTracks;
         const videoCandidates = candidates.filter((x) => x.info.type === "video");
         const pool = videoCandidates.length > 0 ? videoCandidates : candidates;
         const index23 = arrayArgmin(pool, (x) => x.peakBitrate ?? Infinity);
@@ -76752,10 +77756,7 @@ var init_hls_demuxer = __esm({
         let decls = null;
         if (this.internalTracks) {
           const tracks = this.internalTracks.filter((x) => x.fullPath === path3);
-          decls = tracks.map((x) => ({
-            id: x.id,
-            type: x.info.type
-          }));
+          decls = tracks.map((x) => ({ type: x.info.type }));
         }
         segmentedInput = new HlsSegmentedInput(this, path3, decls, null);
         this.segmentedInputs.push(segmentedInput);
@@ -76833,9 +77834,6 @@ var init_hls_demuxer = __esm({
           default: this.internalTrack.autoselect,
           primary: this.internalTrack.default
         };
-      }
-      getId() {
-        return this.internalTrack.id;
       }
       getPairingMask() {
         return this.internalTrack.pairingMask;
@@ -76924,8 +77922,7 @@ var init_hls_demuxer = __esm({
         return "video";
       }
       getCodec() {
-        const inferredCodec = inferCodecFromCodecString(this.internalTrack.fullCodecString);
-        return inferredCodec;
+        return this.internalTrack.codec;
       }
       getCodedWidth() {
         return this.delegate(() => this.backingVideoTrack.getCodedWidth());
@@ -76990,8 +77987,7 @@ var init_hls_demuxer = __esm({
         return "audio";
       }
       getCodec() {
-        const inferredCodec = inferCodecFromCodecString(this.internalTrack.fullCodecString);
-        return inferredCodec;
+        return this.internalTrack.codec;
       }
       getNumberOfChannels() {
         if (this.internalTrack.info.numberOfChannels !== null) {
@@ -77054,6 +78050,17 @@ var init_hls_demuxer = __esm({
       }
       return languageSubtag;
     }, "preprocessLanguageCode");
+    parseChannelCount = /* @__PURE__ */ __name((channels) => {
+      if (channels === null) {
+        return null;
+      }
+      const [count2, objectCodingIdentifiers] = channels.split("/");
+      if (objectCodingIdentifiers !== void 0 && objectCodingIdentifiers !== "-") {
+        return null;
+      }
+      const number4 = Number(count2);
+      return Number.isInteger(number4) && number4 > 0 ? number4 : null;
+    }, "parseChannelCount");
   }
 });
 
@@ -77065,7 +78072,6 @@ var init_input_format = __esm({
     init_ebml();
     init_matroska_demuxer();
     init_mp3_demuxer();
-    init_mp3_misc();
     init_id3();
     init_mp3_reader();
     init_ogg_demuxer();
@@ -77103,10 +78109,19 @@ var init_input_format = __esm({
           slice = await slice;
         if (!slice)
           return null;
-        slice.skip(4);
+        const size = readU32Be(slice);
         const fourCc = readAscii(slice, 4);
         if (fourCc !== "ftyp" && fourCc !== "styp") {
           return null;
+        }
+        if (size === 1) {
+          let brandSlice = input2._reader.requestSlice(16, 4);
+          if (isThenable(brandSlice))
+            brandSlice = await brandSlice;
+          if (!brandSlice) {
+            return null;
+          }
+          return readAscii(brandSlice, 4);
         }
         return readAscii(slice, 4);
       }
@@ -77123,10 +78138,10 @@ var init_input_format = __esm({
         __name(this, "Mp4InputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
+      async _getMatchPosition(input2) {
         const majorBrand = await this._getMajorBrand(input2);
         if (majorBrand !== null) {
-          return majorBrand !== "qt  ";
+          return majorBrand !== "qt  " ? 0 : null;
         }
         let pos = 0;
         for (let iter = 0; iter < 10; iter++) {
@@ -77134,7 +78149,7 @@ var init_input_format = __esm({
           if (isThenable(slice))
             slice = await slice;
           if (!slice)
-            return false;
+            return null;
           let size = readU32Be(slice);
           let headerSize = 8;
           if (size === 1) {
@@ -77142,23 +78157,26 @@ var init_input_format = __esm({
             if (isThenable(sizeExtensionSlice))
               sizeExtensionSlice = await sizeExtensionSlice;
             if (!sizeExtensionSlice)
-              return false;
+              return null;
             size = readU64Be(sizeExtensionSlice);
             headerSize = 16;
           }
           if (size < headerSize) {
-            return false;
+            return null;
           }
           const fourCc = readAscii(slice, 4);
-          if (fourCc === "moof" || fourCc === "sidx") {
-            return true;
-          } else if (fourCc === "emsg" || fourCc === "prft" || fourCc === "free") {
+          if (
+            // Seen in HLS for example, or in normal files without an ftyp box
+            fourCc === "moof" || fourCc === "sidx" || fourCc === "moov" || fourCc === "mdat"
+          ) {
+            return 0;
+          } else if (fourCc === "emsg" || fourCc === "prft" || fourCc === "free" || fourCc === "skip" || fourCc === "wide") {
             pos += size;
           } else {
-            return false;
+            return null;
           }
         }
-        return false;
+        return null;
       }
       get name() {
         return "MP4";
@@ -77172,9 +78190,9 @@ var init_input_format = __esm({
         __name(this, "QuickTimeInputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
+      async _getMatchPosition(input2) {
         const majorBrand = await this._getMajorBrand(input2);
-        return majorBrand === "qt  ";
+        return majorBrand === "qt  " ? 0 : null;
       }
       get name() {
         return "QuickTime File Format";
@@ -77227,15 +78245,6 @@ var init_input_format = __esm({
             return false;
           }
           switch (id3) {
-            case EBMLId.EBMLVersion:
-              {
-                const ebmlVersion = readUnsignedInt(dataSlice, size);
-                if (ebmlVersion !== 1) {
-                  return false;
-                }
-              }
-              ;
-              break;
             case EBMLId.EBMLReadVersion:
               {
                 const ebmlReadVersion = readUnsignedInt(dataSlice, size);
@@ -77254,10 +78263,10 @@ var init_input_format = __esm({
               }
               ;
               break;
-            case EBMLId.DocTypeVersion:
+            case EBMLId.DocTypeReadVersion:
               {
-                const docTypeVersion = readUnsignedInt(dataSlice, size);
-                if (docTypeVersion > 4) {
+                const docTypeReadVersion = readUnsignedInt(dataSlice, size);
+                if (docTypeReadVersion > 4) {
                   return false;
                 }
               }
@@ -77269,8 +78278,8 @@ var init_input_format = __esm({
         return true;
       }
       /** @internal */
-      _canReadInput(input2) {
-        return this.isSupportedEBMLOfDocType(input2, "matroska");
+      async _getMatchPosition(input2) {
+        return await this.isSupportedEBMLOfDocType(input2, "matroska") ? 0 : null;
       }
       /** @internal */
       _createDemuxer(input2) {
@@ -77291,8 +78300,8 @@ var init_input_format = __esm({
         __name(this, "WebMInputFormat");
       }
       /** @internal */
-      _canReadInput(input2) {
-        return this.isSupportedEBMLOfDocType(input2, "webm");
+      async _getMatchPosition(input2) {
+        return await this.isSupportedEBMLOfDocType(input2, "webm") ? 0 : null;
       }
       get name() {
         return "WebM";
@@ -77306,46 +78315,13 @@ var init_input_format = __esm({
         __name(this, "Mp3InputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
-        let currentPos = 0;
-        while (true) {
-          let slice2 = input2._reader.requestSlice(currentPos, ID3_V2_HEADER_SIZE);
-          if (isThenable(slice2))
-            slice2 = await slice2;
-          if (!slice2)
-            break;
-          const id3V2Header = readId3V2Header(slice2);
-          if (!id3V2Header) {
-            break;
-          }
-          currentPos = slice2.filePos + id3V2Header.size;
+      async _getMatchPosition(input2) {
+        const startPos = await skipId3V2Tags(input2._reader, 0);
+        const result = await readConfirmedMp3FrameHeader(input2._reader, startPos, 4096, null);
+        if (!result) {
+          return null;
         }
-        const firstResult = await readNextMp3FrameHeader(input2._reader, currentPos, currentPos + 4096);
-        if (!firstResult) {
-          return false;
-        }
-        const firstHeader = firstResult.header;
-        const xingOffset = getXingOffset(firstHeader.mpegVersionId, firstHeader.channel);
-        let slice = input2._reader.requestSlice(firstResult.startPos + xingOffset, 4);
-        if (isThenable(slice))
-          slice = await slice;
-        if (!slice)
-          return false;
-        const word = readU32Be(slice);
-        const isXing = word === XING || word === INFO;
-        if (isXing) {
-          return true;
-        }
-        currentPos = firstResult.startPos + firstResult.header.totalSize;
-        const secondResult = await readNextMp3FrameHeader(input2._reader, currentPos, currentPos + MP3_FRAME_HEADER_SIZE);
-        if (!secondResult) {
-          return false;
-        }
-        const secondHeader = secondResult.header;
-        if (firstHeader.channel !== secondHeader.channel || firstHeader.sampleRate !== secondHeader.sampleRate) {
-          return false;
-        }
-        return true;
+        return result.startPos === startPos ? 0 : result.startPos;
       }
       /** @internal */
       _createDemuxer(input2) {
@@ -77366,19 +78342,19 @@ var init_input_format = __esm({
         __name(this, "WaveInputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
+      async _getMatchPosition(input2) {
         let slice = input2._reader.requestSlice(0, 12);
         if (isThenable(slice))
           slice = await slice;
         if (!slice)
-          return false;
+          return null;
         const riffType = readAscii(slice, 4);
         if (riffType !== "RIFF" && riffType !== "RIFX" && riffType !== "RF64") {
-          return false;
+          return null;
         }
         slice.skip(4);
         const format2 = readAscii(slice, 4);
-        return format2 === "WAVE";
+        return format2 === "WAVE" ? 0 : null;
       }
       /** @internal */
       _createDemuxer(input2) {
@@ -77399,13 +78375,13 @@ var init_input_format = __esm({
         __name(this, "OggInputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
+      async _getMatchPosition(input2) {
         let slice = input2._reader.requestSlice(0, 4);
         if (isThenable(slice))
           slice = await slice;
         if (!slice)
-          return false;
-        return readAscii(slice, 4) === "OggS";
+          return null;
+        return readAscii(slice, 4) === "OggS" ? 0 : null;
       }
       /** @internal */
       _createDemuxer(input2) {
@@ -77426,26 +78402,14 @@ var init_input_format = __esm({
         __name(this, "FlacInputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
-        let currentPos = 0;
-        while (true) {
-          let slice2 = input2._reader.requestSlice(currentPos, ID3_V2_HEADER_SIZE);
-          if (isThenable(slice2))
-            slice2 = await slice2;
-          if (!slice2)
-            break;
-          const id3V2Header = readId3V2Header(slice2);
-          if (!id3V2Header) {
-            break;
-          }
-          currentPos = slice2.filePos + id3V2Header.size;
-        }
-        let slice = input2._reader.requestSlice(currentPos, 4);
+      async _getMatchPosition(input2) {
+        const startPos = await skipId3V2Tags(input2._reader, 0);
+        let slice = input2._reader.requestSlice(startPos, 4);
         if (isThenable(slice))
           slice = await slice;
         if (!slice)
-          return false;
-        return readAscii(slice, 4) === "fLaC";
+          return null;
+        return readAscii(slice, 4) === "fLaC" ? 0 : null;
       }
       get name() {
         return "FLAC";
@@ -77466,40 +78430,13 @@ var init_input_format = __esm({
         __name(this, "AdtsInputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
-        let currentPos = 0;
-        while (true) {
-          let slice2 = input2._reader.requestSlice(currentPos, ID3_V2_HEADER_SIZE);
-          if (isThenable(slice2))
-            slice2 = await slice2;
-          if (!slice2)
-            break;
-          const id3V2Header = readId3V2Header(slice2);
-          if (!id3V2Header) {
-            break;
-          }
-          currentPos = slice2.filePos + id3V2Header.size;
+      async _getMatchPosition(input2) {
+        const startPos = await skipId3V2Tags(input2._reader, 0);
+        const header = await readConfirmedAdtsFrameHeader(input2._reader, startPos, 4096, null);
+        if (!header) {
+          return null;
         }
-        let slice = input2._reader.requestSliceRange(currentPos, MIN_ADTS_FRAME_HEADER_SIZE, MAX_ADTS_FRAME_HEADER_SIZE);
-        if (isThenable(slice))
-          slice = await slice;
-        if (!slice)
-          return false;
-        const firstHeader = readAdtsFrameHeader(slice);
-        if (!firstHeader) {
-          return false;
-        }
-        currentPos += firstHeader.frameLength;
-        slice = input2._reader.requestSliceRange(currentPos, MIN_ADTS_FRAME_HEADER_SIZE, MAX_ADTS_FRAME_HEADER_SIZE);
-        if (isThenable(slice))
-          slice = await slice;
-        if (!slice)
-          return false;
-        const secondHeader = readAdtsFrameHeader(slice);
-        if (!secondHeader) {
-          return false;
-        }
-        return firstHeader.objectType === secondHeader.objectType && firstHeader.samplingFrequencyIndex === secondHeader.samplingFrequencyIndex && firstHeader.channelConfiguration === secondHeader.channelConfiguration;
+        return header.startPos === startPos ? 0 : header.startPos;
       }
       /** @internal */
       _createDemuxer(input2) {
@@ -77520,22 +78457,22 @@ var init_input_format = __esm({
         __name(this, "MpegTsInputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
+      async _getMatchPosition(input2) {
         const lengthToCheck = TS_PACKET_SIZE + 16 + 1;
         let slice = input2._reader.requestSlice(0, lengthToCheck);
         if (isThenable(slice))
           slice = await slice;
         if (!slice)
-          return false;
+          return null;
         const bytes2 = readBytes(slice, lengthToCheck);
         if (bytes2[0] === 71 && bytes2[TS_PACKET_SIZE] === 71) {
-          return true;
+          return 0;
         } else if (bytes2[0] === 71 && bytes2[TS_PACKET_SIZE + 16] === 71) {
-          return true;
+          return 0;
         } else if (bytes2[4] === 71 && bytes2[4 + TS_PACKET_SIZE + 4] === 71) {
-          return true;
+          return 0;
         }
-        return false;
+        return null;
       }
       /** @internal */
       _createDemuxer(input2) {
@@ -77556,21 +78493,21 @@ var init_input_format = __esm({
         __name(this, "HlsInputFormat");
       }
       /** @internal */
-      async _canReadInput(input2) {
+      async _getMatchPosition(input2) {
         let slice = input2._reader.requestSlice(0, 7);
         if (isThenable(slice))
           slice = await slice;
         if (!slice)
-          return false;
+          return null;
         const isM3u8 = readAscii(slice, 7) === "#EXTM3U";
         if (!isM3u8) {
-          return false;
+          return null;
         }
         if (!(input2._rootSource instanceof PathedSource)) {
           throw new TypeError("HLS inputs require `InputOptions.source` to be a PathedSource or a ref to one.");
         }
         input2._rootSource._usedForHls = true;
-        return true;
+        return 0;
       }
       /** @internal */
       _createDemuxer(input2) {
@@ -78025,6 +78962,7 @@ var init_media_sink = __esm({
               if (track.input._disposed) {
                 terminated = true;
                 ended = true;
+                onQueueDequeue();
                 closeSamples();
                 throw new InputDisposedError();
               } else if (terminated) {
@@ -78032,6 +78970,7 @@ var init_media_sink = __esm({
               } else if (hasOutOfBandError) {
                 terminated = true;
                 ended = true;
+                onQueueDequeue();
                 closeSamples();
                 throw outOfBandError;
               } else if (sampleQueue.length > 0) {
@@ -78054,6 +78993,7 @@ var init_media_sink = __esm({
             return { value: void 0, done: true };
           },
           async throw(error63) {
+            await this.return();
             throw error63;
           },
           [Symbol.asyncIterator]() {
@@ -78071,6 +79011,7 @@ var init_media_sink = __esm({
         let { promise: queueDequeue, resolve: onQueueDequeue } = promiseWithResolvers();
         let decoderIsFlushed = false;
         let terminated = false;
+        const { promise: terminatedPromise, resolve: onTerminated } = promiseWithResolvers();
         let decoder = null;
         let outOfBandError = null;
         let hasOutOfBandError = false;
@@ -78154,40 +79095,53 @@ var init_media_sink = __esm({
             emitHeldSample(timestampsOfInterest.length);
             timestampsOfInterest.length = 0;
           }, "flushDecoder");
-          for await (const timestamp of timestampIterator) {
-            validateTimestamp(timestamp);
-            if (terminated || this._track.input._disposed) {
-              break;
-            }
-            const targetPacket = await packetSink.getPacket(timestamp, retrievalOptions);
-            let keyPacket = targetPacket && await packetSink.getKeyPacket(targetPacket.timestamp - preRollDuration, retrievalOptions);
-            if (targetPacket && !keyPacket) {
-              const firstKeyPacket = await packetSink.getFirstKeyPacket(retrievalOptions);
-              if (firstKeyPacket && firstKeyPacket.timestamp <= targetPacket.timestamp) {
-                keyPacket = firstKeyPacket;
+          try {
+            while (true) {
+              const nextTimestamp = timestampIterator.next();
+              nextTimestamp.catch(() => {
+              });
+              const result = await Promise.race([nextTimestamp, terminatedPromise]);
+              if (!result || result.done) {
+                break;
               }
-            }
-            if (!targetPacket || !keyPacket) {
-              if (lastPacket) {
-                await flushDecoder();
+              const timestamp = result.value;
+              validateTimestamp(timestamp);
+              if (terminated || this._track.input._disposed) {
+                break;
               }
-              pushToQueue(null);
-              lastPacket = null;
-              continue;
-            }
-            if (!lastPacket || keyPacket.sequenceNumber > maxSequenceNumber + 1 || timestamp < lastTimestamp) {
-              if (lastPacket) {
-                await flushDecoder();
+              const targetPacket = await packetSink.getPacket(timestamp, retrievalOptions);
+              let keyPacket = targetPacket && await packetSink.getKeyPacket(targetPacket.timestamp - preRollDuration, retrievalOptions);
+              if (targetPacket && !keyPacket) {
+                const firstKeyPacket = await packetSink.getFirstKeyPacket(retrievalOptions);
+                if (firstKeyPacket && firstKeyPacket.timestamp <= targetPacket.timestamp) {
+                  keyPacket = firstKeyPacket;
+                }
               }
-              lastKeyPacket = keyPacket;
-              lastDecodedPacket = null;
-              maxSequenceNumber = -1;
+              if (!targetPacket || !keyPacket) {
+                if (lastPacket) {
+                  await flushDecoder();
+                }
+                pushToQueue(null);
+                lastPacket = null;
+                continue;
+              }
+              if (!lastPacket || keyPacket.sequenceNumber > maxSequenceNumber + 1 || timestamp < lastTimestamp) {
+                if (lastPacket) {
+                  await flushDecoder();
+                }
+                lastKeyPacket = keyPacket;
+                lastDecodedPacket = null;
+                maxSequenceNumber = -1;
+              }
+              timestampsOfInterest.push(timestamp);
+              maxSequenceNumber = Math.max(targetPacket.sequenceNumber, maxSequenceNumber);
+              lastPacket = targetPacket;
+              lastTimestamp = timestamp;
+              await decodePackets();
             }
-            timestampsOfInterest.push(timestamp);
-            maxSequenceNumber = Math.max(targetPacket.sequenceNumber, maxSequenceNumber);
-            lastPacket = targetPacket;
-            lastTimestamp = timestamp;
-            await decodePackets();
+          } finally {
+            timestampIterator.return().catch(() => {
+            });
           }
           if (!terminated && !this._track.input._disposed) {
             await flushDecoder();
@@ -78216,12 +79170,16 @@ var init_media_sink = __esm({
             while (true) {
               if (track.input._disposed) {
                 terminated = true;
+                onTerminated();
+                onQueueDequeue();
                 closeSamples();
                 throw new InputDisposedError();
               } else if (terminated) {
                 return { value: void 0, done: true };
               } else if (hasOutOfBandError) {
                 terminated = true;
+                onTerminated();
+                onQueueDequeue();
                 closeSamples();
                 throw outOfBandError;
               } else if (sampleQueue.length > 0) {
@@ -78238,12 +79196,14 @@ var init_media_sink = __esm({
           },
           async return() {
             terminated = true;
+            onTerminated();
             onQueueDequeue();
             onQueueNotEmpty();
             closeSamples();
             return { value: void 0, done: true };
           },
           async throw(error63) {
+            await this.return();
             throw error63;
           },
           [Symbol.asyncIterator]() {
@@ -78314,21 +79274,26 @@ var init_media_sink = __esm({
             if (codec2 === "avc" && this.decoderConfig.description) {
               const record2 = deserializeAvcDecoderConfigurationRecord(toUint8Array(this.decoderConfig.description));
               if (record2 && record2.sequenceParameterSets.length > 0) {
-                const sps = parseAvcSps(record2.sequenceParameterSets[0]);
-                if (sps) {
-                  if (sps.frameMbsOnlyFlag === 0) {
-                    this.decoderConfig = {
-                      ...this.decoderConfig,
-                      hardwareAcceleration: "prefer-software"
-                    };
+                const firstSps = parseAvcSps(record2.sequenceParameterSets[0]);
+                if (firstSps && firstSps.frameMbsOnlyFlag === 0) {
+                  this.decoderConfig = {
+                    ...this.decoderConfig,
+                    hardwareAcceleration: "prefer-software"
+                  };
+                }
+                let recordModified = false;
+                for (let i = 0; i < record2.sequenceParameterSets.length; i++) {
+                  const sps = parseAvcSps(record2.sequenceParameterSets[i]);
+                  if (sps && sps.maxDecFrameBuffering !== 0 && sps.bitstreamRestrictionFlag !== 1) {
+                    record2.sequenceParameterSets[i] = addAvcBitstreamRestriction(sps);
+                    recordModified = true;
                   }
-                  if (sps.maxDecFrameBuffering !== 0 && sps.bitstreamRestrictionFlag !== 1) {
-                    record2.sequenceParameterSets[0] = addAvcBitstreamRestriction(sps);
-                    this.decoderConfig = {
-                      ...this.decoderConfig,
-                      description: serializeAvcDecoderConfigurationRecord(record2)
-                    };
-                  }
+                }
+                if (recordModified) {
+                  this.decoderConfig = {
+                    ...this.decoderConfig,
+                    description: serializeAvcDecoderConfigurationRecord(record2)
+                  };
                 }
               }
             }
@@ -78369,7 +79334,7 @@ var init_media_sink = __esm({
           return this.customDecoderQueueSize;
         } else {
           assert2(this.decoder);
-          return Math.max(this.decoder.decodeQueueSize, this.alphaDecoder?.decodeQueueSize ?? 0);
+          return Math.max(this.decoder.decodeQueueSize, this.alphaDecoder?.decodeQueueSize ?? 0) + this.finalSamples.length;
         }
       }
       decode(packet) {
@@ -78388,46 +79353,15 @@ var init_media_sink = __esm({
         } else {
           assert2(this.decoder);
           if (!isWebKit()) {
-            insertSorted(this.inputTimestamps, packet.timestamp, (x) => x);
+            const shownFrameCount = countShownVideoFrames(this.codec, packet.data);
+            for (let i = 0; i < shownFrameCount; i++) {
+              insertSorted(this.inputTimestamps, packet.timestamp, (x) => x);
+            }
           }
           if (isChromium() && this.currentPacketIndex === 0) {
-            if (this.codec === "avc") {
-              const filteredNalUnits = [];
-              let hasFrameData = false;
-              for (const loc of iterateAvcNalUnits(packet.data, this.decoderConfig)) {
-                const type = extractNalUnitTypeForAvc(packet.data[loc.offset]);
-                hasFrameData ||= type >= 1 && type <= 5;
-                if (type === AvcNalUnitType.AUD) {
-                  if (hasFrameData) {
-                    break;
-                  } else {
-                    filteredNalUnits.length = 0;
-                  }
-                }
-                if (!(type >= 20 && type <= 31)) {
-                  filteredNalUnits.push(packet.data.subarray(loc.offset, loc.offset + loc.length));
-                }
-              }
-              if (!this.decoderConfig.description) {
-                for (let i = 0; i < filteredNalUnits.length; i++) {
-                  const nalUnit = filteredNalUnits[i];
-                  if (extractNalUnitTypeForAvc(nalUnit[0]) !== AvcNalUnitType.SPS) {
-                    continue;
-                  }
-                  const sps = parseAvcSps(nalUnit);
-                  if (sps && sps.maxDecFrameBuffering !== 0 && sps.bitstreamRestrictionFlag !== 1) {
-                    filteredNalUnits[i] = addAvcBitstreamRestriction(sps);
-                  }
-                  break;
-                }
-              }
-              const newData = concatAvcNalUnits(filteredNalUnits, this.decoderConfig);
-              packet = new EncodedPacket(newData, packet.type, packet.timestamp, packet.duration);
-            } else if (this.codec === "hevc") {
-              const sanitizedData = sanitizeHevcPacketForChromium(packet.data, this.decoderConfig);
-              if (sanitizedData) {
-                packet = new EncodedPacket(sanitizedData, packet.type, packet.timestamp, packet.duration);
-              }
+            const fixedData = this.fixFirstPacketDataForChromium(packet.data);
+            if (fixedData) {
+              packet = packet.clone({ data: fixedData });
             }
           }
           this.decoder.decode(packet.toEncodedVideoChunk());
@@ -78507,11 +79441,59 @@ var init_media_sink = __esm({
             }
             this.alphaRaslSkipped = true;
           }
+          if (isChromium() && this.currentAlphaPacketIndex === 0) {
+            const fixedData = this.fixFirstPacketDataForChromium(packet.sideData.alpha);
+            if (fixedData) {
+              packet = packet.clone({
+                sideData: {
+                  ...packet.sideData,
+                  alpha: fixedData
+                }
+              });
+            }
+          }
           this.currentAlphaPacketIndex++;
           this.alphaDecoder.decode(packet.alphaToEncodedVideoChunk(type ?? packet.type));
           this.alphaDecoderQueueSize++;
         } else {
           this.pushNullAlphaFrame();
+        }
+      }
+      fixFirstPacketDataForChromium(data) {
+        if (this.codec === "avc") {
+          const filteredNalUnits = [];
+          let hasFrameData = false;
+          for (const loc of iterateAvcNalUnits(data, this.decoderConfig)) {
+            const type = extractNalUnitTypeForAvc(data[loc.offset]);
+            hasFrameData ||= type >= 1 && type <= 5;
+            if (type === AvcNalUnitType.AUD) {
+              if (hasFrameData) {
+                break;
+              } else {
+                filteredNalUnits.length = 0;
+              }
+            }
+            if (!(type >= 20 && type <= 31)) {
+              filteredNalUnits.push(data.subarray(loc.offset, loc.offset + loc.length));
+            }
+          }
+          if (!this.decoderConfig.description) {
+            for (let i = 0; i < filteredNalUnits.length; i++) {
+              const nalUnit = filteredNalUnits[i];
+              if (extractNalUnitTypeForAvc(nalUnit[0]) !== AvcNalUnitType.SPS) {
+                continue;
+              }
+              const sps = parseAvcSps(nalUnit);
+              if (sps && sps.maxDecFrameBuffering !== 0 && sps.bitstreamRestrictionFlag !== 1) {
+                filteredNalUnits[i] = addAvcBitstreamRestriction(sps);
+              }
+            }
+          }
+          return concatAvcNalUnits(filteredNalUnits, this.decoderConfig);
+        } else if (this.codec === "hevc") {
+          return sanitizeHevcPacketForChromium(data, this.decoderConfig);
+        } else {
+          return null;
         }
       }
       pushNullAlphaFrame() {
@@ -78579,6 +79561,9 @@ var init_media_sink = __esm({
           }
         } catch (error63) {
           removeItem(this.finalSamples, result);
+          while (this.finalSamples.length > 0 && this.finalSamples[0].sample !== null) {
+            this.finalSamples.shift().sample.close();
+          }
           this.onError(error63);
         } finally {
           removeItem(this.mergeAlphaPromises, resolver.promise);
@@ -78640,6 +79625,7 @@ var init_media_sink = __esm({
           ]);
           this.flushing = false;
           await Promise.all(this.mergeAlphaPromises);
+          this.inputTimestamps.length = 0;
           this.colorQueue.forEach((x) => x.close());
           this.colorQueue.length = 0;
           this.alphaQueue.forEach((x) => x?.close());
@@ -78662,7 +79648,7 @@ var init_media_sink = __esm({
       }
       close() {
         if (this.customDecoder) {
-          void this.customDecoderCallSerializer.call(() => this.customDecoder.close());
+          void this.customDecoderCallSerializer.call(() => this.customDecoder.close()).catch((error63) => this.onError(error63));
         } else {
           assert2(this.decoder);
           if (this.decoder.state !== "closed") {
@@ -78707,6 +79693,9 @@ var init_media_sink = __esm({
               const data = event.data;
               const pending3 = this.pendingRequests.get(data.id);
               if (!pending3) {
+                if ("frame" in data) {
+                  data.frame.close();
+                }
                 return;
               }
               this.pendingRequests.delete(data.id);
@@ -78801,6 +79790,9 @@ var init_media_sink = __esm({
           format: outputFormat,
           codedWidth: width,
           codedHeight: height,
+          displayWidth: color.displayWidth,
+          displayHeight: color.displayHeight,
+          colorSpace: color.colorSpace.toJSON(),
           timestamp: color.timestamp,
           duration: color.duration ?? void 0,
           transfer: [output2.buffer]
@@ -78841,6 +79833,9 @@ var init_media_sink = __esm({
           format: outputFormat,
           codedWidth: width,
           codedHeight: height,
+          displayWidth: color.displayWidth,
+          displayHeight: color.displayHeight,
+          colorSpace: color.colorSpace.toJSON(),
           timestamp: color.timestamp,
           duration: color.duration ?? void 0,
           transfer: [output2.buffer]
@@ -78874,6 +79869,9 @@ var init_media_sink = __esm({
           format: "I420A",
           codedWidth: width,
           codedHeight: height,
+          displayWidth: color.displayWidth,
+          displayHeight: color.displayHeight,
+          colorSpace: color.colorSpace.toJSON(),
           timestamp: color.timestamp,
           duration: color.duration ?? void 0,
           transfer: [output2.buffer]
@@ -79120,21 +80118,23 @@ var init_media_sink = __esm({
           // Firefox has VideoFrame glitches with opaque canvases
         });
         assert2(context3);
-        sample._drawWithFitAndMipmapping(canvas, context3, {
-          fit: this._fit,
-          rotation: this._rotation,
-          flip: this._flip,
-          crop: this._crop,
-          targetIsFresh: canvasIsNew,
-          fillBlack: !this._alpha && isFirefox()
-        });
-        const result = {
-          canvas,
-          timestamp: sample.timestamp,
-          duration: sample.duration
-        };
-        sample.close();
-        return result;
+        try {
+          sample._drawWithFitAndMipmapping(canvas, context3, {
+            fit: this._fit,
+            rotation: this._rotation,
+            flip: this._flip,
+            crop: this._crop,
+            targetIsFresh: canvasIsNew,
+            fillBlack: !this._alpha && isFirefox()
+          });
+          return {
+            canvas,
+            timestamp: sample.timestamp,
+            duration: sample.duration
+          };
+        } finally {
+          sample.close();
+        }
       }
       /**
        * Retrieves a canvas with the video frame corresponding to the given timestamp, in seconds. More specifically,
@@ -79282,7 +80282,7 @@ var init_media_sink = __esm({
       }
       close() {
         if (this.customDecoder) {
-          void this.customDecoderCallSerializer.call(() => this.customDecoder.close());
+          void this.customDecoderCallSerializer.call(() => this.customDecoder.close()).catch((error63) => this.onError(error63));
         } else {
           assert2(this.decoder);
           if (this.decoder.state !== "closed") {
@@ -79442,6 +80442,9 @@ var init_media_sink = __esm({
       decode(packet) {
         const inputView = toDataView(packet.data);
         const numberOfFrames = Math.floor(packet.byteLength / this.decoderConfig.numberOfChannels / this.inputSampleSize);
+        if (numberOfFrames === 0) {
+          return;
+        }
         const outputBufferSize = numberOfFrames * this.decoderConfig.numberOfChannels * this.outputSampleSize;
         const outputBuffer = new ArrayBuffer(outputBufferSize);
         const outputView = new DataView(outputBuffer);
@@ -79457,17 +80460,20 @@ var init_media_sink = __esm({
         }
         const preciseTimestamp = this.currentTimestamp;
         this.currentTimestamp += preciseDuration;
+        const sampleRate = this.decoderConfig.sampleRate;
         const audioSample = new AudioSample({
           format: this.outputFormat,
           data: outputBuffer,
           numberOfChannels: this.decoderConfig.numberOfChannels,
-          sampleRate: this.decoderConfig.sampleRate,
+          sampleRate,
           numberOfFrames,
-          timestamp: preciseTimestamp
+          timestamp: roundToDivisor(preciseTimestamp, sampleRate),
+          _doNotCopy: true
         });
         this.onSample(audioSample);
       }
       async flush() {
+        this.currentTimestamp = null;
       }
       close() {
       }
@@ -79566,13 +80572,15 @@ var init_media_sink = __esm({
       }
       /** @internal */
       _audioSampleToWrappedArrayBuffer(sample) {
-        const result = {
-          buffer: sample.toAudioBuffer(),
-          timestamp: sample.timestamp,
-          duration: sample.duration
-        };
-        sample.close();
-        return result;
+        try {
+          return {
+            buffer: sample.toAudioBuffer(),
+            timestamp: sample.timestamp,
+            duration: sample.duration
+          };
+        } finally {
+          sample.close();
+        }
       }
       /**
        * Retrieves the audio buffer corresponding to the given timestamp, in seconds. More specifically, returns
@@ -79642,9 +80650,16 @@ var init_input_track = __esm({
       isAudioTrack() {
         return this instanceof InputAudioTrack;
       }
-      /** The unique ID of this track in the input file. */
+      /**
+       * The unique ID of this track in the input file, which is its 1-based index in the list of tracks returned by
+       * {@link Input.getTracks}.
+       */
       get id() {
-        return this._backing.getId();
+        const backings = this.input._trackBackingsCache;
+        assert2(backings);
+        const index23 = backings.indexOf(this._backing);
+        assert2(index23 !== -1);
+        return index23 + 1;
       }
       /**
        * The 1-based index of this track among all tracks of the same type in the input file. For example, the first
@@ -79773,10 +80788,19 @@ var init_input_track = __esm({
        * Returns the start timestamp of the first packet of this track, in seconds. While often near zero, this value
        * may be positive or even negative. A negative starting timestamp means the track's timing has been offset. Samples
        * with a negative timestamp should not be presented.
+       *
+       * Returns 0 if the track has no packets. Use {@link InputTrack.getFirstTimestampOrNull} to have it
+       * return `null` instead.
        */
       async getFirstTimestamp() {
+        return await this.getFirstTimestampOrNull() ?? 0;
+      }
+      /**
+       * Like {@link InputTrack.getFirstTimestamp}, but returns `null` when the track has no packets.
+       */
+      async getFirstTimestampOrNull() {
         const firstPacket = await this._backing.getFirstPacket({ metadataOnly: true });
-        return firstPacket?.timestamp ?? 0;
+        return firstPacket?.timestamp ?? null;
       }
       /**
        * Returns the end timestamp of the last packet of this track, in seconds.
@@ -79784,11 +80808,22 @@ var init_input_track = __esm({
        * By default, when the underlying media is live, this method will only resolve once the live stream ends. If you
        * want to query the current end timestamp of the stream, set {@link PacketRetrievalOptions.skipLiveWait} to `true`
        * in the options.
+       *
+       * Returns 0 if the track has no packets. Use {@link InputTrack.computeDurationOrNull} to have it
+       * return `null` instead.
        */
       async computeDuration(options2) {
+        return await this.computeDurationOrNull(options2) ?? 0;
+      }
+      /**
+       * Like {@link InputTrack.computeDuration}, but returns `null` when the track has no packets.
+       */
+      async computeDurationOrNull(options2) {
         const lastPacket = await this._backing.getPacket(Infinity, { metadataOnly: true, ...options2 });
-        const result = (lastPacket?.timestamp ?? 0) + (lastPacket?.duration ?? 0);
-        return roundToDivisor(result, await this.getTimeResolution());
+        if (!lastPacket) {
+          return null;
+        }
+        return roundToDivisor(lastPacket.timestamp + lastPacket.duration, await this.getTimeResolution());
       }
       /**
        * Gets the duration (end timestamp) in seconds of this track from metadata stored in the file. This value may be
@@ -79822,7 +80857,7 @@ var init_input_track = __esm({
         let packetCount = 0;
         let totalPacketBytes = 0;
         for await (const packet of sink.packets(void 0, void 0, { metadataOnly: true, ...options2 })) {
-          if (packetCount >= targetPacketCount && packet.timestamp >= endTimestamp) {
+          if (packetCount >= targetPacketCount && packet.timestamp >= endTimestamp && endTimestamp > startTimestamp) {
             break;
           }
           startTimestamp = Math.min(startTimestamp, packet.timestamp);
@@ -79830,10 +80865,11 @@ var init_input_track = __esm({
           packetCount++;
           totalPacketBytes += packet.byteLength;
         }
+        const timeSpan = endTimestamp - startTimestamp;
         return {
           packetCount,
-          averagePacketRate: packetCount ? Number((packetCount / (endTimestamp - startTimestamp)).toPrecision(16)) : 0,
-          averageBitrate: packetCount ? Number((8 * totalPacketBytes / (endTimestamp - startTimestamp)).toPrecision(16)) : 0
+          averagePacketRate: packetCount > 0 ? Number((packetCount / timeSpan).toPrecision(16)) : 0,
+          averageBitrate: totalPacketBytes > 0 ? Number((8 * totalPacketBytes / timeSpan).toPrecision(16)) : 0
         };
       }
       /**
@@ -80133,7 +81169,7 @@ var init_input_track = __esm({
       /** If this method returns true, the track's samples use a high dynamic range (HDR). */
       async hasHighDynamicRange() {
         const colorSpace = await this._backing.getColorSpace();
-        return colorSpace.primaries === "bt2020" || colorSpace.primaries === "smpte432" || colorSpace.transfer === "pq" || colorSpace.transfer === "hlg" || colorSpace.matrix === "bt2020-ncl";
+        return colorSpace.transfer === "pq" || colorSpace.transfer === "hlg";
       }
       /** Checks if this track may contain transparent samples with alpha data. */
       async canBeTransparent() {
@@ -80565,12 +81601,13 @@ var init_input_track = __esm({
       const sortedGaps = gaps.slice();
       sortedGaps.sort();
       let period = sortedGaps[Math.floor(sortedGaps.length * 0.05)];
+      let periodUncertainty = 1;
       for (let iteration = 0; iteration < 6; iteration++) {
         let totalTicks2 = 0;
         let totalFrames2 = 0;
         for (const gap of gaps) {
           const multiple = Math.max(1, Math.round(gap / period));
-          if (Math.abs(gap - multiple * period) >= DELTA_TOLERANCE) {
+          if (Math.abs(gap - multiple * period) >= DELTA_TOLERANCE + multiple * periodUncertainty) {
             continue;
           }
           totalTicks2 += gap;
@@ -80580,6 +81617,7 @@ var init_input_track = __esm({
           return null;
         }
         const refinedPeriod = totalTicks2 / totalFrames2;
+        periodUncertainty = 1 / Math.min(totalFrames2, MAX_EFFECTIVE_FRAME_SPAN);
         if (Math.abs(refinedPeriod - period) <= 1e-12 * Math.max(1, period)) {
           period = refinedPeriod;
           break;
@@ -80591,7 +81629,7 @@ var init_input_track = __esm({
       let totalFrames = 0;
       for (const gap of gaps) {
         const multiple = Math.max(1, Math.round(gap / period));
-        if (Math.abs(gap - multiple * period) >= DELTA_TOLERANCE) {
+        if (Math.abs(gap - multiple * period) >= DELTA_TOLERANCE + multiple * periodUncertainty) {
           continue;
         }
         inlierCount++;
@@ -80762,6 +81800,9 @@ var init_input = __esm({
       }
       /** @internal */
       get _rootSource() {
+        if (this._disposed) {
+          throw new InputDisposedError();
+        }
         return this._rootRef.source;
       }
       /** @internal */
@@ -80775,7 +81816,7 @@ var init_input = __esm({
       _getSourceCached(request2, cacheGroup = DEFAULT_SOURCE_CACHE_GROUP) {
         const cachedEntry = this._sourceCache.find((x) => x.cacheGroup === cacheGroup && sourceRequestsAreEqual(x.request, request2));
         if (cachedEntry) {
-          cachedEntry.age++;
+          cachedEntry.age = this._nextSourceCacheAge++;
           return Promise.resolve(cachedEntry.sourceRef.source.ref());
         }
         const cachedPromiseEntry = this._sourceCachePromises.find((x) => x.cacheGroup === cacheGroup && sourceRequestsAreEqual(x.request, request2));
@@ -80783,7 +81824,14 @@ var init_input = __esm({
           return cachedPromiseEntry.promise.then((x) => x.sourceRef.source.ref());
         }
         const promise2 = (async () => {
-          const sourceRef = await this._getSourceUncached(request2);
+          let sourceRef;
+          try {
+            sourceRef = await this._getSourceUncached(request2);
+          } finally {
+            const promiseIndex = this._sourceCachePromises.findIndex((x) => x.request === request2);
+            assert2(promiseIndex !== -1);
+            this._sourceCachePromises.splice(promiseIndex, 1);
+          }
           if (this._disposed) {
             sourceRef.free();
             throw new InputDisposedError();
@@ -80799,9 +81847,6 @@ var init_input = __esm({
             removeItem(this._sourceRefs, entry.sourceRef);
           }
           this._sourceRefs.push(sourceRef);
-          const promiseIndex = this._sourceCachePromises.findIndex((x) => x.request === request2);
-          assert2(promiseIndex !== -1);
-          this._sourceCachePromises.splice(promiseIndex, 1);
           const cacheEntry = {
             request: request2,
             sourceRef,
@@ -80826,15 +81871,24 @@ var init_input = __esm({
         return this._demuxerPromise ??= (async () => {
           this._reader = new Reader(this._rootSource);
           this._emit("source", { source: this._rootSource, request: null, isRoot: true });
+          let bestFormat = null;
+          let bestMatchPosition = Infinity;
           for (const format2 of this._formats) {
-            const canRead = await format2._canReadInput(this);
-            if (canRead) {
-              this._format = format2;
-              this._onFormatDetermined?.(format2);
-              return format2._createDemuxer(this);
+            const matchPosition = await format2._getMatchPosition(this);
+            if (matchPosition !== null && matchPosition < bestMatchPosition) {
+              bestFormat = format2;
+              bestMatchPosition = matchPosition;
+              if (matchPosition === 0) {
+                break;
+              }
             }
           }
-          throw new UnsupportedInputFormatError();
+          if (!bestFormat) {
+            throw new UnsupportedInputFormatError();
+          }
+          this._format = bestFormat;
+          this._onFormatDetermined?.(bestFormat);
+          return bestFormat._createDemuxer(this);
         })();
       }
       /**
@@ -80880,8 +81934,8 @@ var init_input = __esm({
         if (filtered.length === 0) {
           return 0;
         }
-        const firstPackets = await Promise.all(filtered.map((x) => x._backing.getFirstPacket({ metadataOnly: true })));
-        const result = Math.min(...firstPackets.map((x) => x?.timestamp ?? Infinity));
+        const firstTimestamps = await Promise.all(filtered.map((x) => x.getFirstTimestampOrNull()));
+        const result = Math.min(...firstTimestamps.map((x) => x ?? Infinity));
         return result === Infinity ? 0 : result;
       }
       /**
@@ -80904,8 +81958,9 @@ var init_input = __esm({
         if (filtered.length === 0) {
           return 0;
         }
-        const tracksDurations = await Promise.all(filtered.map((x) => x.computeDuration(options2)));
-        return Math.max(...tracksDurations);
+        const tracksDurations = await Promise.all(filtered.map((x) => x.computeDurationOrNull(options2)));
+        const result = Math.max(...tracksDurations.map((x) => x ?? -Infinity));
+        return result === -Infinity ? 0 : result;
       }
       /**
        * Gets the duration (end timestamp) in seconds of the input file from metadata stored in the file. This value may
@@ -81037,6 +82092,7 @@ var init_input = __esm({
           ref.free();
         }
         this._sourceRefs.length = 0;
+        this._sourceCache.length = 0;
         if (this._demuxerPromise) {
           void this._demuxerPromise.then((demuxer) => demuxer.dispose()).catch(() => {
           });
@@ -81554,7 +82610,6 @@ var init_media_source = __esm({
       constructor() {
         this._connectedTrack = null;
         this._closingPromise = null;
-        this._closed = false;
         this._nominalBitrate = null;
       }
       /** @internal */
@@ -81571,7 +82626,7 @@ var init_media_source = __esm({
         if (this._connectedTrack.output.state === "pending") {
           throw new Error("Output has not started.");
         }
-        if (this._closed) {
+        if (this._closingPromise) {
           throw new Error("Source is closed.");
         }
       }
@@ -81600,19 +82655,17 @@ var init_media_source = __esm({
         }
         this._closingPromise = (async () => {
           await this._flushAndClose(false);
-          this._closed = true;
           if (connectedTrack.output.state === "finalizing" || connectedTrack.output.state === "finalized") {
             return;
           }
-          connectedTrack.output._muxer.onTrackClose(connectedTrack);
+          await connectedTrack.output._muxer.onTrackClose(connectedTrack);
         })();
+        this._closingPromise.catch(() => {
+        });
       }
       /** @internal */
       async _flushOrWaitForOngoingClose(forceClose) {
-        return this._closingPromise ??= (async () => {
-          await this._flushAndClose(forceClose);
-          this._closed = true;
-        })();
+        return this._closingPromise ??= this._flushAndClose(forceClose);
       }
     };
     VideoSource = class extends MediaSource {
@@ -81685,13 +82738,14 @@ var init_media_source = __esm({
         this.encoderConfig = null;
         this.encodersReclaimed = false;
         this.muxer = null;
-        this.lastMultipleOfKeyFrameInterval = -1;
+        this.lastMultipleOfKeyFrameInterval = null;
         this.emittedEncoderPackets = 0;
         this.chunkTimestampsAreShiftedByDuration = false;
         this.codedWidth = null;
         this.codedHeight = null;
         this.outputWidth = null;
         this.outputHeight = null;
+        this.addMutex = new AsyncMutex();
         this.frameRateLastSample = null;
         this.frameRateLastTimestamp = null;
         this.frameRateLastEndTimestamp = null;
@@ -81711,9 +82765,13 @@ var init_media_source = __esm({
       }
       async add(videoSample, shouldClose, encodeOptions) {
         const originalSample = videoSample;
+        let release = null;
         try {
           this.checkForEncoderError();
-          this.source._ensureValidAdd();
+          release = await this.addMutex.acquire();
+          if (this.closed) {
+            return;
+          }
           const config2 = this.encodingConfig;
           const sizeChangeBehavior = config2.sizeChangeBehavior ?? "deny";
           let isSizeChange = false;
@@ -81728,19 +82786,20 @@ var init_media_source = __esm({
             this.codedWidth = videoSample.codedWidth;
             this.codedHeight = videoSample.codedHeight;
           }
-          const hasTransformConfig = config2.transform?.width !== void 0 || config2.transform?.height !== void 0 || config2.transform?.rotate !== void 0 || config2.transform?.flip !== void 0 || config2.transform?.crop !== void 0 || config2.transform?.force === true;
+          const hasTransformConfig = config2.transform?.width !== void 0 || config2.transform?.height !== void 0 || config2.transform?.rotate !== void 0 || config2.transform?.flip !== void 0 || config2.transform?.crop !== void 0 || config2.transform?.alpha === "discard" || config2.transform?.force === true;
           const needsTransform = hasTransformConfig || isSizeChange && sizeChangeBehavior !== "passThrough";
           if (needsTransform) {
             let targetWidth = config2.transform?.width;
             let targetHeight = config2.transform?.height;
             let appliedFit = config2.transform?.fit ?? "fill";
+            if (sizeChangeBehavior !== "deny" && sizeChangeBehavior !== "passThrough") {
+              appliedFit = sizeChangeBehavior;
+            }
             if (isSizeChange && sizeChangeBehavior !== "passThrough") {
               assert2(this.outputWidth);
               assert2(this.outputHeight);
-              assert2(sizeChangeBehavior !== "deny");
               targetWidth = this.outputWidth;
               targetHeight = this.outputHeight;
-              appliedFit = sizeChangeBehavior;
             }
             const transformed = await videoSample.transform({
               width: targetWidth,
@@ -81750,7 +82809,7 @@ var init_media_source = __esm({
               rotate: config2.transform?.rotate,
               flip: config2.transform?.flip,
               fit: appliedFit,
-              alpha: config2.alpha
+              alpha: config2.transform?.alpha
             });
             if (this.outputWidth === null || this.outputHeight === null) {
               this.outputWidth = transformed.displayWidth;
@@ -81782,7 +82841,11 @@ var init_media_source = __esm({
               }
             }
             if (videoSample === originalSample) {
-              videoSample = videoSample.clone();
+              const clone2 = videoSample.clone();
+              if (shouldClose) {
+                videoSample.close();
+              }
+              videoSample = clone2;
               shouldClose = true;
             }
             videoSample.setTimestamp(alignedTimestamp);
@@ -81794,6 +82857,7 @@ var init_media_source = __esm({
           }
           await this.processAndEncode(videoSample, encodeOptions);
         } finally {
+          release?.();
           if (shouldClose) {
             videoSample.close();
           }
@@ -82064,6 +83128,7 @@ var init_media_source = __esm({
           this.muxer = this.source._connectedTrack.output._muxer;
           this.encoderInitialized = true;
         })();
+        this.ensureEncoderPromise.catch((error63) => this.setError(error63));
       }
       createWebCodecsEncoders() {
         const encoderConfig = this.encoderConfig;
@@ -82083,30 +83148,34 @@ var init_media_source = __esm({
         const stack = new Error("Encoding error").stack;
         this.encoder = new VideoEncoder({
           output: /* @__PURE__ */ __name((chunk, meta3) => {
-            if (!this.alphaEncoder) {
-              this.addPacket(chunk, null, meta3);
-              return;
-            }
-            const alphaFrame = this.alphaFrameQueue.shift();
-            assert2(alphaFrame !== void 0);
-            if (alphaFrame) {
-              this.alphaEncoder.encode(alphaFrame, {
-                ...this.defaultEncodeOptions,
-                // Crucial: The alpha frame is forced to be a key frame whenever the color frame
-                // also is. Without this, playback can glitch and even crash in some browsers.
-                // This is the reason why the two encoders are wired in series and not in parallel.
-                keyFrame: chunk.type === "key"
-              });
-              alphaEncoderQueue++;
-              alphaFrame.close();
-              colorChunkQueue.push({ chunk, meta: meta3 });
-            } else {
-              if (alphaEncoderQueue === 0) {
+            try {
+              if (!this.alphaEncoder) {
                 this.addPacket(chunk, null, meta3);
-              } else {
-                nullAlphaChunkQueue.push(encodedAlphaChunkCount + alphaEncoderQueue);
-                colorChunkQueue.push({ chunk, meta: meta3 });
+                return;
               }
+              const alphaFrame = this.alphaFrameQueue.shift();
+              assert2(alphaFrame !== void 0);
+              if (alphaFrame) {
+                this.alphaEncoder.encode(alphaFrame, {
+                  ...this.defaultEncodeOptions,
+                  // Crucial: The alpha frame is forced to be a key frame whenever the color frame
+                  // also is. Without this, playback can glitch and even crash in some browsers.
+                  // This is the reason why the two encoders are wired in series and not in parallel.
+                  keyFrame: chunk.type === "key"
+                });
+                alphaEncoderQueue++;
+                alphaFrame.close();
+                colorChunkQueue.push({ chunk, meta: meta3 });
+              } else {
+                if (alphaEncoderQueue === 0) {
+                  this.addPacket(chunk, null, meta3);
+                } else {
+                  nullAlphaChunkQueue.push(encodedAlphaChunkCount + alphaEncoderQueue);
+                  colorChunkQueue.push({ chunk, meta: meta3 });
+                }
+              }
+            } catch (error63) {
+              this.setError(error63);
             }
           }, "output"),
           error: /* @__PURE__ */ __name((error63) => handleError2(error63, stack), "error")
@@ -82118,16 +83187,20 @@ var init_media_source = __esm({
             // We ignore the alpha chunk's metadata
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             output: /* @__PURE__ */ __name((chunk, meta3) => {
-              alphaEncoderQueue--;
-              const colorChunk = colorChunkQueue.shift();
-              assert2(colorChunk !== void 0);
-              this.addPacket(colorChunk.chunk, chunk, colorChunk.meta);
-              encodedAlphaChunkCount++;
-              while (nullAlphaChunkQueue.length > 0 && nullAlphaChunkQueue[0] === encodedAlphaChunkCount) {
-                nullAlphaChunkQueue.shift();
-                const colorChunk2 = colorChunkQueue.shift();
-                assert2(colorChunk2 !== void 0);
-                this.addPacket(colorChunk2.chunk, null, colorChunk2.meta);
+              try {
+                alphaEncoderQueue--;
+                const colorChunk = colorChunkQueue.shift();
+                assert2(colorChunk !== void 0);
+                this.addPacket(colorChunk.chunk, chunk, colorChunk.meta);
+                encodedAlphaChunkCount++;
+                while (nullAlphaChunkQueue.length > 0 && nullAlphaChunkQueue[0] === encodedAlphaChunkCount) {
+                  nullAlphaChunkQueue.shift();
+                  const colorChunk2 = colorChunkQueue.shift();
+                  assert2(colorChunk2 !== void 0);
+                  this.addPacket(colorChunk2.chunk, null, colorChunk2.meta);
+                }
+              } catch (error63) {
+                this.setError(error63);
               }
             }, "output"),
             error: /* @__PURE__ */ __name((error63) => handleError2(error63, stack2), "error")
@@ -82154,6 +83227,7 @@ var init_media_source = __esm({
             colorSpace: meta3.decoderConfig.colorSpace ?? null,
             avcType: encoderConfig.codec.includes("avc1.") ? 1 : encoderConfig.codec.includes("avc3.") ? 3 : null,
             avcCodecInfo: this.encodingConfig.codec === "avc" && !meta3.decoderConfig.description ? extractAvcDecoderConfigurationRecord(packet.data) : null,
+            hevcType: encoderConfig.codec.includes("hev1.") ? "hev1" : encoderConfig.codec.includes("hvc1.") ? "hvc1" : null,
             hevcCodecInfo: this.encodingConfig.codec === "hevc" && !meta3.decoderConfig.description ? extractHevcDecoderConfigurationRecord(packet.data) : null,
             vp9CodecInfo: this.encodingConfig.codec === "vp9" ? extractVp9CodecInfoFromPacket(packet.data) : null,
             av1CodecInfo: this.encodingConfig.codec === "av1" ? extractAv1CodecInfoFromPacket(packet.data) : null,
@@ -82218,23 +83292,30 @@ var init_media_source = __esm({
         this.alphaFrameQueue.forEach((x) => x?.close());
         this.alphaFrameQueue.length = 0;
         this.encodersReclaimed = false;
-        this.lastMultipleOfKeyFrameInterval = -1;
+        this.lastMultipleOfKeyFrameInterval = null;
         this.createWebCodecsEncoders();
       }
       async flushAndClose(forceClose) {
+        await this.ensureEncoderPromise?.catch(() => {
+        });
         try {
           if (!forceClose) {
             this.checkForEncoderError();
-            if (this.frameRateLastSample) {
-              const frameRate = this.encodingConfig.transform.frameRate;
-              const alignedEnd = floorToDivisor(this.frameRateLastEndTimestamp, frameRate);
-              await this.padFrameRate(alignedEnd);
+            const release = await this.addMutex.acquire();
+            try {
+              if (this.frameRateLastSample) {
+                const frameRate = this.encodingConfig.transform.frameRate;
+                const alignedEnd = floorToDivisor(this.frameRateLastEndTimestamp, frameRate);
+                await this.padFrameRate(alignedEnd);
+              }
+            } finally {
+              release();
             }
           }
           this.closed = true;
           if (!forceClose) {
             if (this.customEncoder) {
-              void this.customEncoderCallSerializer.call(() => this.customEncoder.flush());
+              void this.customEncoderCallSerializer.call(() => this.customEncoder.flush()).catch((error63) => this.setError(error63));
             } else if (this.encoder && !this.encodersReclaimed) {
               await this.encoder.flush();
               await this.alphaEncoder?.flush();
@@ -82260,14 +83341,15 @@ var init_media_source = __esm({
           }
         }
         if (!forceClose) {
+          await this.lastMuxerPromise;
           this.checkForEncoderError();
         }
       }
       getQueueSize() {
         if (this.customEncoder) {
-          return this.customEncoderQueueSize;
+          return this.addMutex.pending + this.customEncoderQueueSize;
         } else {
-          return this.encoder?.encodeQueueSize ?? 0;
+          return this.addMutex.pending + (this.encoder?.encodeQueueSize ?? 0);
         }
       }
       checkForEncoderError() {
@@ -82484,7 +83566,8 @@ var init_media_source = __esm({
           codedWidth: width,
           codedHeight: height,
           timestamp: sourceFrame.timestamp,
-          duration: sourceFrame.duration ?? void 0
+          duration: sourceFrame.duration ?? void 0,
+          colorSpace: sourceFrame.colorSpace
         });
         const alphaInit = {
           format: alphaFormat,
@@ -82527,6 +83610,7 @@ var init_media_source = __esm({
         if (!(videoSample instanceof VideoSample)) {
           throw new TypeError("videoSample must be a VideoSample.");
         }
+        this._ensureValidAdd();
         return this._encoder.add(videoSample, false, encodeOptions);
       }
       /** @internal */
@@ -82567,6 +83651,7 @@ var init_media_source = __esm({
         if (!Number.isFinite(duration3) || duration3 < 0) {
           throw new TypeError("duration must be a non-negative number.");
         }
+        this._ensureValidAdd();
         const sample = new VideoSample(this._canvas, { timestamp, duration: duration3 });
         return this._encoder.add(sample, true, encodeOptions);
       }
@@ -82601,8 +83686,8 @@ var init_media_source = __esm({
         if (typeof options2 !== "object" || !options2) {
           throw new TypeError("options must be an object.");
         }
-        if (options2.frameRate != null && (typeof options2.frameRate !== "number" || options2.frameRate <= 0)) {
-          throw new TypeError("options.frameRate, when provided, must be either a positive number or null.");
+        if (options2.frameRate != null && (!Number.isFinite(options2.frameRate) || options2.frameRate <= 0)) {
+          throw new TypeError("options.frameRate, when provided, must be either a finite positive number or null.");
         }
         if (options2.timestampBase !== void 0 && options2.timestampBase !== "synced-zero" && options2.timestampBase !== "zero" && options2.timestampBase !== "unix") {
           throw new TypeError("options.timestampBase, when provided, must be one of 'synced-zero', 'zero', or 'unix'.");
@@ -82633,6 +83718,7 @@ var init_media_source = __esm({
         const frameRate = this._options.frameRate !== void 0 ? this._options.frameRate : this._track.getSettings().frameRate ?? null;
         this._abortController = new AbortController();
         let firstVideoFrameTimestamp = null;
+        let firstReceivedFrameTimestamp = null;
         let lastFrameTime = null;
         let frameCount = 0;
         let errored = false;
@@ -82644,11 +83730,11 @@ var init_media_source = __esm({
             return;
           }
           assert2(lastFrameTime !== null);
-          assert2(firstVideoFrameTimestamp !== null);
+          assert2(firstReceivedFrameTimestamp !== null);
           const now = performance.now();
           while (now - lastFrameTime > 1e3 / frameRate) {
             lastFrameTime += 1e3 / frameRate;
-            const timestamp = firstVideoFrameTimestamp + frameCount / frameRate;
+            const timestamp = firstReceivedFrameTimestamp + frameCount / frameRate;
             const frame = new VideoFrame(this._videoElement ?? this._lastVideoFrame, {
               timestamp: 1e6 * timestamp,
               duration: 1e6 / frameRate
@@ -82660,11 +83746,16 @@ var init_media_source = __esm({
           this._timerHandle = setIntervalUnthrottled(tick2, 4);
         }
         const onVideoFrame = /* @__PURE__ */ __name((videoFrame) => {
+          if (this._closingPromise) {
+            videoFrame.close();
+            return;
+          }
           if (frameRate === null) {
             addVideoFrame(videoFrame);
           } else {
             const now = performance.now();
             if (!this._lastVideoFrame) {
+              firstReceivedFrameTimestamp = videoFrame.timestamp / 1e6;
               addVideoFrame(videoFrame.clone(), now);
               lastFrameTime = now;
               this._lastVideoFrame = videoFrame;
@@ -82676,7 +83767,7 @@ var init_media_source = __esm({
           }
         }, "onVideoFrame");
         const addVideoFrame = /* @__PURE__ */ __name((videoFrame, now = performance.now()) => {
-          if (errored) {
+          if (errored || this._closingPromise || this._connectedTrack.output.state !== "started") {
             videoFrame.close();
             return;
           }
@@ -82747,11 +83838,12 @@ var init_media_source = __esm({
           const supportedInWorker = await mediaStreamTrackProcessorIsSupportedInWorker();
           if (supportedInWorker) {
             this._workerTrackId = nextMediaStreamTrackProcessorWorkerId++;
+            const track = this._track.clone();
             sendMessageToMediaStreamTrackProcessorWorker({
               type: "videoTrack",
               trackId: this._workerTrackId,
-              track: this._track
-            });
+              track
+            }, [track]);
             this._workerListener = (event) => {
               const message = event.data;
               if (message.type === "videoFrame" && message.trackId === this._workerTrackId) {
@@ -82908,6 +84000,7 @@ var init_media_source = __esm({
         this.muxer = null;
         this.lastNumberOfChannels = null;
         this.lastSampleRate = null;
+        this.addMutex = new AsyncMutex();
         this.isPcmEncoder = false;
         this.outputSampleSize = null;
         this.writeOutputValue = null;
@@ -82928,9 +84021,13 @@ var init_media_source = __esm({
         this.closed = false;
       }
       async add(audioSample, shouldClose) {
+        let release = null;
         try {
           this.checkForEncoderError();
-          this.source._ensureValidAdd();
+          release = await this.addMutex.acquire();
+          if (this.closed) {
+            return;
+          }
           if (this.lastNumberOfChannels !== null && this.lastSampleRate !== null) {
             if (audioSample.numberOfChannels !== this.lastNumberOfChannels || audioSample.sampleRate !== this.lastSampleRate) {
               throw new Error(`Audio parameters must remain constant. Expected ${this.lastNumberOfChannels} channels at ${this.lastSampleRate} Hz, got ${audioSample.numberOfChannels} channels at ${audioSample.sampleRate} Hz.`);
@@ -82956,6 +84053,7 @@ var init_media_source = __esm({
             await this.processAndEncode(audioSample, shouldClose);
           }
         } finally {
+          release?.();
           if (shouldClose) {
             audioSample.close();
           }
@@ -82993,11 +84091,11 @@ var init_media_source = __esm({
                 }
               }
               for (const sample of processed) {
-                await this.encodeSample(sample, true);
+                await this.encodeSample(sample, sample !== audioSample);
               }
             } finally {
               for (const sample of processed) {
-                if (sample instanceof AudioSample) {
+                if (sample instanceof AudioSample && sample !== audioSample) {
                   sample.close();
                 }
               }
@@ -83016,6 +84114,9 @@ var init_media_source = __esm({
        */
       async encodeSample(audioSample, shouldClose) {
         try {
+          if (audioSample.numberOfFrames === 0) {
+            return;
+          }
           if (!this.encoderInitialized) {
             if (!this.ensureEncoderPromise) {
               this.ensureEncoder(audioSample);
@@ -83036,20 +84137,26 @@ var init_media_source = __esm({
             } else {
               const sampleDiff = startSampleIndex - this.lastEndSampleIndex;
               if (sampleDiff >= 64) {
-                const bytesPerSample = getBytesPerSample(audioSample.format);
-                const data = new Uint8Array(bytesPerSample * sampleDiff * audioSample.numberOfChannels);
+                const bytesPerFrame = getBytesPerSample(audioSample.format) * audioSample.numberOfChannels;
+                const silence = new Uint8Array(bytesPerFrame * Math.min(sampleDiff, audioSample.sampleRate));
                 if (audioSample.format === "u8" || audioSample.format === "u8-planar") {
-                  data.fill(2 ** 7);
+                  silence.fill(2 ** 7);
                 }
-                const fillSample = new AudioSample({
-                  data,
-                  format: audioSample.format,
-                  sampleRate: audioSample.sampleRate,
-                  numberOfChannels: audioSample.numberOfChannels,
-                  numberOfFrames: sampleDiff,
-                  timestamp: this.lastEndSampleIndex / audioSample.sampleRate
-                });
-                await this.encodeSample(fillSample, true);
+                let remainingFrames = sampleDiff;
+                while (remainingFrames > 0) {
+                  const frameCount = Math.min(remainingFrames, audioSample.sampleRate);
+                  const fillSample = new AudioSample({
+                    data: silence.subarray(0, bytesPerFrame * frameCount),
+                    _doNotCopy: true,
+                    format: audioSample.format,
+                    sampleRate: audioSample.sampleRate,
+                    numberOfChannels: audioSample.numberOfChannels,
+                    numberOfFrames: frameCount,
+                    timestamp: this.lastEndSampleIndex / audioSample.sampleRate
+                  });
+                  await this.encodeSample(fillSample, true);
+                  remainingFrames -= frameCount;
+                }
               }
               this.lastEndSampleIndex += audioSample.numberOfFrames;
             }
@@ -83070,9 +84177,13 @@ var init_media_source = __esm({
             await this.doPcmEncoding(audioSample, shouldClose);
           } else {
             assert2(this.encoder);
+            this.checkForEncoderError();
             const audioData = audioSample.toAudioData();
-            this.encoder.encode(audioData);
-            audioData.close();
+            try {
+              this.encoder.encode(audioData);
+            } finally {
+              audioData.close();
+            }
             if (shouldClose) {
               audioSample.close();
             }
@@ -83197,25 +84308,29 @@ var init_media_source = __esm({
             const stack = new Error("Encoding error").stack;
             this.encoder = new AudioEncoder({
               output: /* @__PURE__ */ __name((chunk, meta3) => {
-                if (meta3?.decoderConfig) {
-                  fixAudioDecoderConfig(this.encodingConfig.codec, encoderConfig, meta3.decoderConfig);
-                  if (this.encodingConfig.codec === "opus" && meta3.decoderConfig.description) {
-                    const description = toUint8Array(meta3.decoderConfig.description);
-                    opusPreSkip = parseOpusIdentificationHeader(description).preSkip / OPUS_SAMPLE_RATE;
+                try {
+                  if (meta3?.decoderConfig) {
+                    fixAudioDecoderConfig(this.encodingConfig.codec, encoderConfig, meta3.decoderConfig);
+                    if (this.encodingConfig.codec === "opus" && meta3.decoderConfig.description) {
+                      const description = toUint8Array(meta3.decoderConfig.description);
+                      opusPreSkip = parseOpusIdentificationHeader(description).preSkip / OPUS_SAMPLE_RATE;
+                    }
                   }
-                }
-                let packet = EncodedPacket.fromEncodedChunk(chunk);
-                packet = packet.clone({
-                  timestamp: roundToDivisor(packet.timestamp - primingShift - opusPreSkip, encoderConfig.sampleRate),
-                  duration: chunk.duration != null ? roundToDivisor(packet.duration, encoderConfig.sampleRate) : void 0
-                });
-                if (isFirefox()) {
-                  opusPreSkip = 0;
-                }
-                this.encodingConfig.onEncodedPacket?.(packet, meta3);
-                this.lastMuxerPromise = this.muxer.addEncodedAudioPacket(this.source._connectedTrack, packet, meta3).catch((error63) => {
+                  let packet = EncodedPacket.fromEncodedChunk(chunk);
+                  packet = packet.clone({
+                    timestamp: roundToDivisor(packet.timestamp - primingShift - opusPreSkip, encoderConfig.sampleRate),
+                    duration: chunk.duration != null ? roundToDivisor(packet.duration, encoderConfig.sampleRate) : void 0
+                  });
+                  if (isFirefox()) {
+                    opusPreSkip = 0;
+                  }
+                  this.encodingConfig.onEncodedPacket?.(packet, meta3);
+                  this.lastMuxerPromise = this.muxer.addEncodedAudioPacket(this.source._connectedTrack, packet, meta3).catch((error63) => {
+                    this.setError(error63);
+                  });
+                } catch (error63) {
                   this.setError(error63);
-                });
+                }
               }, "output"),
               error: /* @__PURE__ */ __name((error63) => {
                 error63.stack = stack;
@@ -83231,6 +84346,7 @@ var init_media_source = __esm({
           this.muxer = this.source._connectedTrack.output._muxer;
           this.encoderInitialized = true;
         })();
+        this.ensureEncoderPromise.catch((error63) => this.setError(error63));
       }
       initPcmEncoder() {
         this.isPcmEncoder = true;
@@ -83319,20 +84435,27 @@ var init_media_source = __esm({
         }
       }
       async flushAndClose(forceClose) {
+        await this.ensureEncoderPromise?.catch(() => {
+        });
         try {
           if (!forceClose) {
             this.checkForEncoderError();
-            if (this.resampler) {
-              await this.resampler.finalize();
-            }
-            if (this.pcmScratchFrames > 0) {
-              await this.emitPcmScratchPacket();
+            const release = await this.addMutex.acquire();
+            try {
+              if (this.resampler) {
+                await this.resampler.finalize();
+              }
+              if (this.pcmScratchFrames > 0) {
+                await this.emitPcmScratchPacket();
+              }
+            } finally {
+              release();
             }
           }
           this.closed = true;
           if (!forceClose) {
             if (this.customEncoder) {
-              void this.customEncoderCallSerializer.call(() => this.customEncoder.flush());
+              void this.customEncoderCallSerializer.call(() => this.customEncoder.flush()).catch((error63) => this.setError(error63));
             } else if (this.encoder) {
               await this.encoder.flush();
             }
@@ -83347,16 +84470,17 @@ var init_media_source = __esm({
           }
         }
         if (!forceClose) {
+          await this.lastMuxerPromise;
           this.checkForEncoderError();
         }
       }
       getQueueSize() {
         if (this.customEncoder) {
-          return this.customEncoderQueueSize;
+          return this.addMutex.pending + this.customEncoderQueueSize;
         } else if (this.isPcmEncoder) {
-          return 0;
+          return this.addMutex.pending;
         } else {
-          return this.encoder?.encodeQueueSize ?? 0;
+          return this.addMutex.pending + (this.encoder?.encodeQueueSize ?? 0);
         }
       }
       checkForEncoderError() {
@@ -83496,7 +84620,8 @@ var init_media_source = __esm({
           decoderConfig.description = buildAacAudioSpecificConfig({
             objectType,
             outputNumberOfChannels: decoderConfig.numberOfChannels,
-            outputSampleRate: decoderConfig.sampleRate
+            outputSampleRate: decoderConfig.sampleRate,
+            programConfigElement: null
           });
         }
       }
@@ -83524,6 +84649,7 @@ var init_media_source = __esm({
         if (!(audioSample instanceof AudioSample)) {
           throw new TypeError("audioSample must be an AudioSample.");
         }
+        this._ensureValidAdd();
         return this._encoder.add(audioSample, false);
       }
       /** @internal */
@@ -83548,6 +84674,7 @@ var init_media_source = __esm({
           throw new TypeError("options.startTimestamp, when provided, must be a finite number.");
         }
         super(encodingConfig.codec);
+        this._addMutex = new AsyncMutex();
         this._encoder = new AudioEncoderWrapper(this, encodingConfig);
         this._accumulatedTime = options2.startTimestamp ?? 0;
       }
@@ -83563,14 +84690,24 @@ var init_media_source = __esm({
         if (!(audioBuffer instanceof AudioBuffer)) {
           throw new TypeError("audioBuffer must be an AudioBuffer.");
         }
+        this._ensureValidAdd();
         const iterator = AudioSample._fromAudioBuffer(audioBuffer, this._accumulatedTime);
         this._accumulatedTime += audioBuffer.duration;
-        for (const audioSample of iterator) {
-          await this._encoder.add(audioSample, true);
+        const release = await this._addMutex.acquire();
+        try {
+          for (const audioSample of iterator) {
+            await this._encoder.add(audioSample, true);
+          }
+        } finally {
+          release();
         }
       }
       /** @internal */
-      _flushAndClose(forceClose) {
+      async _flushAndClose(forceClose) {
+        if (!forceClose) {
+          const release = await this._addMutex.acquire();
+          release();
+        }
         return this._encoder.flushAndClose(forceClose);
       }
     };
@@ -83624,7 +84761,7 @@ var init_media_source = __esm({
         let lastSampleTimestamp = null;
         let timestampOffset = 0;
         const onAudioSample = /* @__PURE__ */ __name((audioSample) => {
-          if (errored) {
+          if (errored || this._closingPromise || this._connectedTrack.output.state !== "started") {
             audioSample.close();
             return;
           }
@@ -83670,7 +84807,9 @@ var init_media_source = __esm({
             errored = true;
             this._abortController?.abort();
             this._promiseWithResolvers.reject(error63);
-            void this._audioContext?.suspend();
+            if (this._audioContext && this._audioContext.state !== "closed") {
+              void this._audioContext.suspend();
+            }
           });
         }, "onAudioSample");
         if (typeof MediaStreamTrackProcessor !== "undefined") {
@@ -83726,7 +84865,7 @@ var init_media_source = __esm({
           if (this._audioContext) {
             assert2(this._scriptProcessorNode);
             this._scriptProcessorNode.disconnect();
-            await this._audioContext.suspend();
+            await this._audioContext.close();
           }
         } finally {
           await this._encoder.flushAndClose(forceClose);
@@ -84080,54 +85219,54 @@ var init_codec = __esm({
       // Level 6.2
     ];
     AV1_LEVEL_TABLE = [
-      { maxPictureSize: 147456, maxBitrate: 15e5, tier: "M", level: 0 },
       // Level 2.0 (Main Tier)
-      { maxPictureSize: 278784, maxBitrate: 3e6, tier: "M", level: 1 },
+      { maxPictureSize: 147456, maxHSize: 2048, maxVSize: 1152, maxBitrate: 15e5, tier: "M", level: 0 },
       // Level 2.1 (Main Tier)
-      { maxPictureSize: 665856, maxBitrate: 6e6, tier: "M", level: 4 },
+      { maxPictureSize: 278784, maxHSize: 2816, maxVSize: 1584, maxBitrate: 3e6, tier: "M", level: 1 },
       // Level 3.0 (Main Tier)
-      { maxPictureSize: 1065024, maxBitrate: 1e7, tier: "M", level: 5 },
+      { maxPictureSize: 665856, maxHSize: 4352, maxVSize: 2448, maxBitrate: 6e6, tier: "M", level: 4 },
       // Level 3.1 (Main Tier)
-      { maxPictureSize: 2359296, maxBitrate: 12e6, tier: "M", level: 8 },
+      { maxPictureSize: 1065024, maxHSize: 5504, maxVSize: 3096, maxBitrate: 1e7, tier: "M", level: 5 },
       // Level 4.0 (Main Tier)
-      { maxPictureSize: 2359296, maxBitrate: 3e7, tier: "H", level: 8 },
+      { maxPictureSize: 2359296, maxHSize: 6144, maxVSize: 3456, maxBitrate: 12e6, tier: "M", level: 8 },
       // Level 4.0 (High Tier)
-      { maxPictureSize: 2359296, maxBitrate: 2e7, tier: "M", level: 9 },
+      { maxPictureSize: 2359296, maxHSize: 6144, maxVSize: 3456, maxBitrate: 3e7, tier: "H", level: 8 },
       // Level 4.1 (Main Tier)
-      { maxPictureSize: 2359296, maxBitrate: 5e7, tier: "H", level: 9 },
+      { maxPictureSize: 2359296, maxHSize: 6144, maxVSize: 3456, maxBitrate: 2e7, tier: "M", level: 9 },
       // Level 4.1 (High Tier)
-      { maxPictureSize: 8912896, maxBitrate: 3e7, tier: "M", level: 12 },
+      { maxPictureSize: 2359296, maxHSize: 6144, maxVSize: 3456, maxBitrate: 5e7, tier: "H", level: 9 },
       // Level 5.0 (Main Tier)
-      { maxPictureSize: 8912896, maxBitrate: 1e8, tier: "H", level: 12 },
+      { maxPictureSize: 8912896, maxHSize: 8192, maxVSize: 4352, maxBitrate: 3e7, tier: "M", level: 12 },
       // Level 5.0 (High Tier)
-      { maxPictureSize: 8912896, maxBitrate: 4e7, tier: "M", level: 13 },
+      { maxPictureSize: 8912896, maxHSize: 8192, maxVSize: 4352, maxBitrate: 1e8, tier: "H", level: 12 },
       // Level 5.1 (Main Tier)
-      { maxPictureSize: 8912896, maxBitrate: 16e7, tier: "H", level: 13 },
+      { maxPictureSize: 8912896, maxHSize: 8192, maxVSize: 4352, maxBitrate: 4e7, tier: "M", level: 13 },
       // Level 5.1 (High Tier)
-      { maxPictureSize: 8912896, maxBitrate: 6e7, tier: "M", level: 14 },
+      { maxPictureSize: 8912896, maxHSize: 8192, maxVSize: 4352, maxBitrate: 16e7, tier: "H", level: 13 },
       // Level 5.2 (Main Tier)
-      { maxPictureSize: 8912896, maxBitrate: 24e7, tier: "H", level: 14 },
+      { maxPictureSize: 8912896, maxHSize: 8192, maxVSize: 4352, maxBitrate: 6e7, tier: "M", level: 14 },
       // Level 5.2 (High Tier)
-      { maxPictureSize: 35651584, maxBitrate: 6e7, tier: "M", level: 15 },
+      { maxPictureSize: 8912896, maxHSize: 8192, maxVSize: 4352, maxBitrate: 24e7, tier: "H", level: 14 },
       // Level 5.3 (Main Tier)
-      { maxPictureSize: 35651584, maxBitrate: 24e7, tier: "H", level: 15 },
+      { maxPictureSize: 8912896, maxHSize: 8192, maxVSize: 4352, maxBitrate: 6e7, tier: "M", level: 15 },
       // Level 5.3 (High Tier)
-      { maxPictureSize: 35651584, maxBitrate: 6e7, tier: "M", level: 16 },
+      { maxPictureSize: 8912896, maxHSize: 8192, maxVSize: 4352, maxBitrate: 24e7, tier: "H", level: 15 },
       // Level 6.0 (Main Tier)
-      { maxPictureSize: 35651584, maxBitrate: 24e7, tier: "H", level: 16 },
+      { maxPictureSize: 35651584, maxHSize: 16384, maxVSize: 8704, maxBitrate: 6e7, tier: "M", level: 16 },
       // Level 6.0 (High Tier)
-      { maxPictureSize: 35651584, maxBitrate: 1e8, tier: "M", level: 17 },
+      { maxPictureSize: 35651584, maxHSize: 16384, maxVSize: 8704, maxBitrate: 24e7, tier: "H", level: 16 },
       // Level 6.1 (Main Tier)
-      { maxPictureSize: 35651584, maxBitrate: 48e7, tier: "H", level: 17 },
+      { maxPictureSize: 35651584, maxHSize: 16384, maxVSize: 8704, maxBitrate: 1e8, tier: "M", level: 17 },
       // Level 6.1 (High Tier)
-      { maxPictureSize: 35651584, maxBitrate: 16e7, tier: "M", level: 18 },
+      { maxPictureSize: 35651584, maxHSize: 16384, maxVSize: 8704, maxBitrate: 48e7, tier: "H", level: 17 },
       // Level 6.2 (Main Tier)
-      { maxPictureSize: 35651584, maxBitrate: 8e8, tier: "H", level: 18 },
+      { maxPictureSize: 35651584, maxHSize: 16384, maxVSize: 8704, maxBitrate: 16e7, tier: "M", level: 18 },
       // Level 6.2 (High Tier)
-      { maxPictureSize: 35651584, maxBitrate: 16e7, tier: "M", level: 19 },
+      { maxPictureSize: 35651584, maxHSize: 16384, maxVSize: 8704, maxBitrate: 8e8, tier: "H", level: 18 },
       // Level 6.3 (Main Tier)
-      { maxPictureSize: 35651584, maxBitrate: 8e8, tier: "H", level: 19 }
+      { maxPictureSize: 35651584, maxHSize: 16384, maxVSize: 8704, maxBitrate: 16e7, tier: "M", level: 19 },
       // Level 6.3 (High Tier)
+      { maxPictureSize: 35651584, maxHSize: 16384, maxVSize: 8704, maxBitrate: 8e8, tier: "H", level: 19 }
     ];
     VP9_DEFAULT_SUFFIX = ".01.01.01.01.00";
     AV1_DEFAULT_SUFFIX = ".0.110.01.01.01.0";
@@ -84187,7 +85326,7 @@ var init_codec = __esm({
         const pictureSize = width * height;
         const levelInfo = HEVC_LEVEL_TABLE.find((level) => pictureSize <= level.maxPictureSize && bitrate <= level.maxBitrate) ?? last(HEVC_LEVEL_TABLE);
         const constraintFlags = "B0";
-        return `hev1.${profilePrefix}${profileIdc}.${compatibilityFlags}.${levelInfo.tier}${levelInfo.level}.${constraintFlags}`;
+        return `hvc1.${profilePrefix}${profileIdc}.${compatibilityFlags}.${levelInfo.tier}${levelInfo.level}.${constraintFlags}`;
       } else if (codec2 === "vp8") {
         return "vp8";
       } else if (codec2 === "vp9") {
@@ -84199,7 +85338,7 @@ var init_codec = __esm({
       } else if (codec2 === "av1") {
         const profile = 0;
         const pictureSize = width * height;
-        const levelInfo = AV1_LEVEL_TABLE.find((level2) => pictureSize <= level2.maxPictureSize && bitrate <= level2.maxBitrate) ?? last(AV1_LEVEL_TABLE);
+        const levelInfo = AV1_LEVEL_TABLE.find((level2) => pictureSize <= level2.maxPictureSize && width <= level2.maxHSize && height <= level2.maxVSize && bitrate <= level2.maxBitrate) ?? last(AV1_LEVEL_TABLE);
         const level = levelInfo.level.toString().padStart(2, "0");
         const bitDepth = "08";
         return `av01.${profile}.${level}${levelInfo.tier}.${bitDepth}`;
@@ -84282,6 +85421,7 @@ var init_codec = __esm({
         }
         return `avc${trackInfo.avcType}.${bytesToHexString(codecDescription.subarray(1, 4))}`;
       } else if (codec2 === "hevc") {
+        assert2(trackInfo.hevcType !== null);
         let generalProfileSpace;
         let generalProfileIdc;
         let compatibilityFlags;
@@ -84311,7 +85451,7 @@ var init_codec = __esm({
             constraintFlags.push(view2.getUint8(6 + i));
           }
         }
-        let codecString = "hev1.";
+        let codecString = `${trackInfo.hevcType}.`;
         codecString += ["", "A", "B", "C"][generalProfileSpace] + generalProfileIdc;
         codecString += ".";
         codecString += compatibilityFlags.toString(16).toUpperCase();
@@ -84329,19 +85469,19 @@ var init_codec = __esm({
       } else if (codec2 === "vp8") {
         return "vp8";
       } else if (codec2 === "vp9") {
-        if (!vp9CodecInfo) {
-          const pictureSize = trackInfo.width * trackInfo.height;
-          let level2 = last(VP9_LEVEL_TABLE).level;
-          for (const entry of VP9_LEVEL_TABLE) {
-            if (pictureSize <= entry.maxPictureSize) {
-              level2 = entry.level;
-              break;
-            }
+        const pictureSize = trackInfo.width * trackInfo.height;
+        let levelFromSize = last(VP9_LEVEL_TABLE).level;
+        for (const entry of VP9_LEVEL_TABLE) {
+          if (pictureSize <= entry.maxPictureSize) {
+            levelFromSize = entry.level;
+            break;
           }
-          return `vp09.00.${level2.toString().padStart(2, "0")}.08`;
+        }
+        if (!vp9CodecInfo) {
+          return `vp09.00.${levelFromSize.toString().padStart(2, "0")}.08`;
         }
         const profile = vp9CodecInfo.profile.toString().padStart(2, "0");
-        const level = vp9CodecInfo.level.toString().padStart(2, "0");
+        const level = (vp9CodecInfo.level === 0 ? levelFromSize : vp9CodecInfo.level).toString().padStart(2, "0");
         const bitDepth = vp9CodecInfo.bitDepth.toString().padStart(2, "0");
         const chromaSubsampling = vp9CodecInfo.chromaSubsampling.toString().padStart(2, "0");
         const colourPrimaries = vp9CodecInfo.colourPrimaries.toString().padStart(2, "0");
@@ -84357,9 +85497,9 @@ var init_codec = __esm({
       } else if (codec2 === "av1") {
         if (!av1CodecInfo) {
           const pictureSize = trackInfo.width * trackInfo.height;
-          let level2 = last(VP9_LEVEL_TABLE).level;
-          for (const entry of VP9_LEVEL_TABLE) {
-            if (pictureSize <= entry.maxPictureSize) {
+          let level2 = last(AV1_LEVEL_TABLE).level;
+          for (const entry of AV1_LEVEL_TABLE) {
+            if (pictureSize <= entry.maxPictureSize && trackInfo.width <= entry.maxHSize && trackInfo.height <= entry.maxVSize) {
               level2 = entry.level;
               break;
             }
@@ -84483,7 +85623,7 @@ var init_codec = __esm({
               return {
                 primaries: COLOR_PRIMARIES_MAP_INVERSE[info.proresCodecInfo.colourPrimaries],
                 transfer: TRANSFER_CHARACTERISTICS_MAP_INVERSE[info.proresCodecInfo.transferCharacteristics],
-                matrix: MATRIX_COEFFICIENTS_MAP_INVERSE[info.proresCodecInfo.matrixCoefficients],
+                matrix: info.proresCodecInfo.matrixCoefficients === 0 ? void 0 : MATRIX_COEFFICIENTS_MAP_INVERSE[info.proresCodecInfo.matrixCoefficients],
                 fullRange: info.proresCodecInfo.fullRange
               };
             }
@@ -84498,14 +85638,8 @@ var init_codec = __esm({
         fullRange: void 0
       };
     }, "extractColorSpace");
-    buildAudioCodecString = /* @__PURE__ */ __name((codec2, numberOfChannels, sampleRate) => {
+    buildAudioCodecString = /* @__PURE__ */ __name((codec2) => {
       if (codec2 === "aac") {
-        if (numberOfChannels >= 2 && sampleRate <= 24e3) {
-          return "mp4a.40.29";
-        }
-        if (sampleRate <= 24e3) {
-          return "mp4a.40.5";
-        }
         return "mp4a.40.2";
       } else if (codec2 === "mp3") {
         return "mp3";
@@ -84759,7 +85893,7 @@ var init_codec = __esm({
         return "opus";
       } else if (codecString === "vorbis") {
         return "vorbis";
-      } else if (codecString === "flac") {
+      } else if (codecString === "flac" || codecString === "fLaC") {
         return "flac";
       } else if (codecString === "ac-3" || codecString === "ac3") {
         return "ac3";
@@ -84955,7 +86089,15 @@ var init_codec = __esm({
         }
       }
       if (metadata.decoderConfig.codec.startsWith("mp4a") && metadata.decoderConfig.codec !== "mp4a.69" && metadata.decoderConfig.codec !== "mp4a.6B" && metadata.decoderConfig.codec !== "mp4a.6b") {
-        const validStrings = ["mp4a.40.2", "mp4a.40.02", "mp4a.40.5", "mp4a.40.05", "mp4a.40.29", "mp4a.67"];
+        const validStrings = [
+          "mp4a.40.2",
+          "mp4a.40.02",
+          "mp4a.40.5",
+          "mp4a.40.05",
+          "mp4a.40.29",
+          "mp4a.40.42",
+          "mp4a.67"
+        ];
         if (!validStrings.includes(metadata.decoderConfig.codec)) {
           throw new TypeError("Audio chunk metadata decoder configuration codec string for AAC must be a valid AAC codec string as specified in https://www.w3.org/TR/webcodecs-aac-codec-registration/.");
         }
@@ -85031,7 +86173,7 @@ var init_codec = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/muxer.js
-var Muxer, PacketOrderValidator;
+var Muxer, PacketOrderValidator, NullMuxer;
 var init_muxer = __esm({
   "node_modules/mediabunny/dist/modules/src/muxer.js"() {
     init_misc();
@@ -85045,7 +86187,7 @@ var init_muxer = __esm({
         this.output = output2;
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      onTrackClose(track) {
+      async onTrackClose(track) {
       }
       validateTimestamp(track, timestampInSeconds, isKeyPacket) {
         let validator2 = this.trackPacketOrderValidators.get(track);
@@ -85090,6 +86232,24 @@ var init_muxer = __esm({
         return true;
       }
     };
+    NullMuxer = class extends Muxer {
+      static {
+        __name(this, "NullMuxer");
+      }
+      async start() {
+      }
+      async getMimeType() {
+        return "application/x-black-hole";
+      }
+      async addEncodedVideoPacket() {
+      }
+      async addEncodedAudioPacket() {
+      }
+      async addSubtitleCue() {
+      }
+      async finalize() {
+      }
+    };
   }
 });
 
@@ -85116,12 +86276,15 @@ var init_adts_muxer = __esm({
       }
       async start() {
         const release = await this.mutex.acquire();
-        this.writer = await this.output._getRootWriter(true);
-        if (!metadataTagsAreEmpty(this.output._metadataTags)) {
-          const id3Writer = new Id3V2Writer(this.writer);
-          id3Writer.writeId3V2Tag(this.output._metadataTags);
+        try {
+          this.writer = await this.output._getRootWriter(true);
+          if (!metadataTagsAreEmpty(this.output._metadataTags)) {
+            const id3Writer = new Id3V2Writer(this.writer);
+            id3Writer.writeId3V2Tag(this.output._metadataTags);
+          }
+        } finally {
+          release();
         }
-        release();
       }
       async getMimeType() {
         return "audio/aac";
@@ -85136,13 +86299,13 @@ var init_adts_muxer = __esm({
           if (this.inputIsAdts === null) {
             validateAudioChunkMetadata(meta3, track.source._codec);
             const description = meta3?.decoderConfig?.description;
-            this.inputIsAdts = !description;
-            if (!this.inputIsAdts) {
+            if (description) {
               const config2 = parseAacAudioSpecificConfig(toUint8Array(description));
               const template = buildAdtsHeaderTemplate(config2);
               this.header = template.header;
               this.headerBitstream = template.bitstream;
             }
+            this.inputIsAdts = !description;
           }
           if (this.inputIsAdts) {
             const startPos = this.writer.getPos();
@@ -85184,7 +86347,7 @@ var init_adts_muxer = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/flac/flac-muxer.js
-var FLAC_HEADER, STREAMINFO_SIZE, STREAMINFO_BLOCK_SIZE, FlacMuxer;
+var FLAC_HEADER, STREAMINFO_SIZE, STREAMINFO_BLOCK_SIZE, MAX_METADATA_BLOCK_SIZE, FlacMuxer;
 var init_flac_muxer = __esm({
   "node_modules/mediabunny/dist/modules/src/flac/flac-muxer.js"() {
     init_codec();
@@ -85198,6 +86361,7 @@ var init_flac_muxer = __esm({
     FLAC_HEADER = /* @__PURE__ */ new Uint8Array([102, 76, 97, 67]);
     STREAMINFO_SIZE = 38;
     STREAMINFO_BLOCK_SIZE = 34;
+    MAX_METADATA_BLOCK_SIZE = 2 ** 24 - 1;
     FlacMuxer = class extends Muxer {
       static {
         __name(this, "FlacMuxer");
@@ -85214,15 +86378,18 @@ var init_flac_muxer = __esm({
       }
       async start() {
         const release = await this.mutex.acquire();
-        this.writer = await this.output._getRootWriter(!!this.format._options.appendOnly);
-        this.writer.write(FLAC_HEADER);
-        const track = this.output.tracks[0];
-        assert2(track?.isAudioTrack());
-        if (track.metadata.decoderConfig) {
-          validateAudioChunkMetadata({ decoderConfig: track.metadata.decoderConfig }, track.source._codec);
-          this.applyDecoderConfig(track.metadata.decoderConfig);
+        try {
+          this.writer = await this.output._getRootWriter(!!this.format._options.appendOnly);
+          this.writer.write(FLAC_HEADER);
+          const track = this.output.tracks[0];
+          assert2(track?.isAudioTrack());
+          if (track.metadata.decoderConfig) {
+            validateAudioChunkMetadata({ decoderConfig: track.metadata.decoderConfig }, track.source._codec);
+            this.applyDecoderConfig(track.metadata.decoderConfig);
+          }
+        } finally {
+          release();
         }
-        release();
       }
       applyDecoderConfig(decoderConfig) {
         assert2(decoderConfig.description);
@@ -85270,29 +86437,30 @@ var init_flac_muxer = __esm({
         contentBitstream.writeBits(20, sampleRate);
         contentBitstream.writeBits(3, channels - 1);
         contentBitstream.writeBits(5, bitsPerSample - 1);
-        if (totalSamples >= 2 ** 32) {
-          throw new Error("This muxer only supports writing up to 2 ** 32 samples");
-        }
-        contentBitstream.writeBits(4, 0);
-        contentBitstream.writeBits(32, totalSamples);
+        contentBitstream.writeBits(36, totalSamples < 2 ** 36 ? totalSamples : 0);
         this.writer.write(contentBitstream.bytes);
         this.writer.write(new Uint8Array(16));
       }
       writePictureBlock(picture) {
-        const headerSize = 32 + picture.mimeType.length + (picture.description?.length ?? 0) + picture.data.length;
+        const mimeTypeBytes = textEncoder.encode(picture.mimeType);
+        const descriptionBytes = textEncoder.encode(picture.description ?? "");
+        const headerSize = 32 + mimeTypeBytes.length + descriptionBytes.length + picture.data.length;
+        if (headerSize > MAX_METADATA_BLOCK_SIZE) {
+          throw new Error(`Picture is too big for FLAC: its metadata block would take ${headerSize} bytes, but FLAC metadata blocks can take at most ${MAX_METADATA_BLOCK_SIZE} bytes.`);
+        }
         const header = new Uint8Array(headerSize);
         let offset = 0;
         const dataView = toDataView(header);
         dataView.setUint32(offset, picture.kind === "coverFront" ? 3 : picture.kind === "coverBack" ? 4 : 0);
         offset += 4;
-        dataView.setUint32(offset, picture.mimeType.length);
+        dataView.setUint32(offset, mimeTypeBytes.length);
         offset += 4;
-        header.set(textEncoder.encode(picture.mimeType), 8);
-        offset += picture.mimeType.length;
-        dataView.setUint32(offset, picture.description?.length ?? 0);
+        header.set(mimeTypeBytes, offset);
+        offset += mimeTypeBytes.length;
+        dataView.setUint32(offset, descriptionBytes.length);
         offset += 4;
-        header.set(textEncoder.encode(picture.description ?? ""), offset);
-        offset += picture.description?.length ?? 0;
+        header.set(descriptionBytes, offset);
+        offset += descriptionBytes.length;
         offset += 4 + 4 + 4 + 4;
         dataView.setUint32(offset, picture.data.length);
         offset += 4;
@@ -85319,6 +86487,9 @@ var init_flac_muxer = __esm({
           this.writePictureBlock(picture);
         }
         const vorbisComment = createVorbisComments(new Uint8Array(0), this.output._metadataTags, false);
+        if (vorbisComment.length > MAX_METADATA_BLOCK_SIZE) {
+          throw new Error(`Metadata tags are too big for FLAC: their Vorbis comment block would take ${vorbisComment.length} bytes, but FLAC metadata blocks can take at most ${MAX_METADATA_BLOCK_SIZE} bytes.`);
+        }
         const headerBitstream = new Bitstream(new Uint8Array(4));
         headerBitstream.writeBits(1, 1);
         headerBitstream.writeBits(7, FlacBlockType.VORBIS_COMMENT);
@@ -85403,6 +86574,9 @@ var init_flac_muxer = __esm({
             maximumBlockSize = 65535;
             minimumFrameSize = 0;
             maximumFrameSize = 0;
+          } else if (this.blockSizes.length === 1) {
+            maximumBlockSize = Math.max(maximumBlockSize, 16);
+            minimumBlockSize = maximumBlockSize;
           }
           assert2(this.channels !== null);
           assert2(this.bitsPerSample !== null);
@@ -85425,7 +86599,7 @@ var init_flac_muxer = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/isobmff/isobmff-boxes.js
-var IsobmffBoxWriter, bytes, view, u8, u16, i16, u24, u322, i322, u642, i64, fixed_8_8, fixed_16_16, fixed_2_30, variableUnsignedInt, ascii, matrixToBytes, box, fullBox, ftyp, styp, sidx, mdat, free, moov, mvhd, trak, tkhd, edts, mdia, mdhd, TRACK_TYPE_TO_COMPONENT_SUBTYPE, TRACK_TYPE_TO_HANDLER_NAME, hdlr, minf, vmhd, smhd, nmhd, TRACK_TYPE_TO_HEADER_BOX, dinf, dref, url3, stbl, stsd, videoSampleDescription, btrt, pasp, colr, avcC, hvcC, vpcC, av1C, soundSampleDescription, esds, wave, frma, enda, dOps, dfLa, pcmC, dac3, dec3, ddts, dmlp, subtitleSampleDescription, vttC, stts, stss, stsc, stsz, stco, ctts, cslg, sgpdAndSbgp, mvex, trex, moof, mfhd, fragmentSampleFlags, traf, tfhd, tfdt, trun, mfra, tfra, mfro, vtte, vttc, vtta, udta, addQuickTimeMetadataTagBoxes, metadataTagStringBoxShort, DATA_BOX_MIME_TYPE_MAP, ILST_UNSAFE_RAW_KEYS, generateMetadataPairs, metaMdir, metaMdta, dataStringBoxLong, videoCodecToBoxName, VIDEO_CODEC_TO_CONFIGURATION_BOX, audioCodecToBoxName, audioCodecToConfigurationBox, SUBTITLE_CODEC_TO_BOX_NAME, SUBTITLE_CODEC_TO_CONFIGURATION_BOX, getLanguageCodeInt;
+var IsobmffBoxWriter, bytes, view, u8, u16, i16, u24, u322, i322, u642, i64, f64, fixed_8_8, fixed_16_16, fixed_2_30, variableUnsignedInt, ascii, matrixToBytes, box, fullBox, ftyp, styp, sidx, mdat, free, moov, mvhd, trak, tkhd, edts, mdia, mdhd, TRACK_TYPE_TO_COMPONENT_SUBTYPE, TRACK_TYPE_TO_HANDLER_NAME, hdlr, minf, vmhd, smhd, nmhd, TRACK_TYPE_TO_HEADER_BOX, dinf, dref, url3, stbl, stsd, videoSampleDescription, btrt, pasp, colr, avcC, hvcC, vpcC, av1C, soundSampleDescription, srat, esds, wave, frma, enda, dOps, dfLa, pcmC, dac3, dec3, ddts, dmlp, subtitleSampleDescription, vttC, stts, stss, stsc, stsz, stco, ctts, cslg, sgpdAndSbgp, mvex, trex, moof, mfhd, fragmentSampleFlags, traf, tfhd, tfdt, trun, mfra, tfra, mfro, vtte, vttc, vtta, udta, addQuickTimeMetadataTagBoxes, metadataTagStringBoxShort, DATA_BOX_MIME_TYPE_MAP, ILST_UNSAFE_RAW_KEYS, generateMetadataPairs, metaMdir, metaMdta, dataStringBoxLong, videoCodecToBoxName, VIDEO_CODEC_TO_CONFIGURATION_BOX, audioCodecToBoxName, audioCodecToConfigurationBox, SUBTITLE_CODEC_TO_BOX_NAME, SUBTITLE_CODEC_TO_CONFIGURATION_BOX, getLanguageCodeInt;
 var init_isobmff_boxes = __esm({
   "node_modules/mediabunny/dist/modules/src/isobmff/isobmff-boxes.js"() {
     init_misc();
@@ -85556,6 +86730,10 @@ var init_isobmff_boxes = __esm({
       view.setUint32(4, value, false);
       return [bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]];
     }, "i64");
+    f64 = /* @__PURE__ */ __name((value) => {
+      view.setFloat64(0, value, false);
+      return [bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]];
+    }, "f64");
     fixed_8_8 = /* @__PURE__ */ __name((value) => {
       view.setInt16(0, 2 ** 8 * value, false);
       return [bytes[0], bytes[1]];
@@ -85672,10 +86850,15 @@ var init_isobmff_boxes = __esm({
       ascii("dash")
     ]), "styp");
     sidx = /* @__PURE__ */ __name((muxer, referencedSize) => {
+      assert2(referencedSize < 2 ** 31);
       const earliestPresentationTime = Math.max(0, muxer.minWrittenTimestamp);
       let duration3 = Math.max(0, muxer.maxWrittenEndTimestamp - earliestPresentationTime);
       if (!Number.isFinite(duration3)) {
         duration3 = 0;
+      }
+      const durationInTimescale = intoTimescale(duration3, GLOBAL_TIMESCALE);
+      if (durationInTimescale >= 2 ** 32) {
+        throw new Error("CMAF segments must be shorter than 20.712612 hours.");
       }
       return fullBox("sidx", 1, 0, [
         u322(1),
@@ -85690,9 +86873,9 @@ var init_isobmff_boxes = __esm({
         // Reserved
         u16(1),
         // Reference count
-        u322(referencedSize & 2147483647),
+        u322(referencedSize),
         // Reference type (0) + referenced size
-        u322(intoTimescale(duration3, GLOBAL_TIMESCALE)),
+        u322(durationInTimescale),
         // Subsegment duration
         u322(0)
         // Starts with SAP + SAP type + SAP delta time (no information provided)
@@ -85853,7 +87036,7 @@ var init_isobmff_boxes = __esm({
     }, "edts");
     mdia = /* @__PURE__ */ __name((trackData, creationTime) => box("mdia", void 0, [
       mdhd(trackData, creationTime),
-      hdlr(true, TRACK_TYPE_TO_COMPONENT_SUBTYPE[trackData.type], TRACK_TYPE_TO_HANDLER_NAME[trackData.type]),
+      hdlr(true, TRACK_TYPE_TO_COMPONENT_SUBTYPE[trackData.type], TRACK_TYPE_TO_HANDLER_NAME[trackData.type], void 0, trackData.muxer.isQuickTime),
       minf(trackData)
     ]), "mdia");
     mdhd = /* @__PURE__ */ __name((trackData, creationTime) => {
@@ -85885,7 +87068,7 @@ var init_isobmff_boxes = __esm({
       audio: "MediabunnySoundHandler",
       subtitle: "MediabunnyTextHandler"
     };
-    hdlr = /* @__PURE__ */ __name((hasComponentType, handlerType, name, manufacturer = "\0\0\0\0") => fullBox("hdlr", 0, 0, [
+    hdlr = /* @__PURE__ */ __name((hasComponentType, handlerType, name, manufacturer = "\0\0\0\0", isQuickTime = false) => fullBox("hdlr", 0, 0, [
       hasComponentType ? ascii("mhlr") : u322(0),
       // Component type
       ascii(handlerType),
@@ -85896,8 +87079,8 @@ var init_isobmff_boxes = __esm({
       // Component flags
       u322(0),
       // Component flags mask
-      ascii(name, true)
-      // Component name
+      isQuickTime ? [u8(name.length), ascii(name)] : ascii(name, true)
+      // Component name, a Pascal string for QuickTime
     ]), "hdlr");
     minf = /* @__PURE__ */ __name((trackData) => box("minf", void 0, [
       TRACK_TYPE_TO_HEADER_BOX[trackData.type](),
@@ -86060,7 +87243,7 @@ var init_isobmff_boxes = __esm({
       const parts = decoderConfig.codec.split(".");
       const profile = Number(parts[1]);
       const level = Number(parts[2]);
-      const bitDepth = Number(parts[3]);
+      const bitDepth = parts[3] ? Number(parts[3]) : 8;
       const chromaSubsampling = parts[4] ? Number(parts[4]) : 1;
       const videoFullRangeFlag = parts[8] ? Number(parts[8]) : Number(decoderConfig.colorSpace?.fullRange ?? 0);
       const thirdByte = (bitDepth << 4) + (chromaSubsampling << 1) + videoFullRangeFlag;
@@ -86091,17 +87274,25 @@ var init_isobmff_boxes = __esm({
       let version4 = 0;
       let contents;
       let sampleSizeInBits = 16;
+      let sampleEntrySampleRate = trackData.info.sampleRate;
+      let configurationBox = audioCodecToConfigurationBox(trackData.track.source._codec, trackData.muxer.isQuickTime)?.(trackData) ?? null;
       const isPcmCodec = PCM_AUDIO_CODECS.includes(trackData.track.source._codec);
       if (isPcmCodec) {
         const codec2 = trackData.track.source._codec;
         const { sampleSize } = parsePcmCodec(codec2);
         sampleSizeInBits = 8 * sampleSize;
-        if (sampleSizeInBits > 16) {
-          version4 = 1;
+      } else if (trackData.track.source._codec === "flac") {
+        const description = trackData.info.decoderConfig?.description;
+        assert2(description);
+        const bitstream = new Bitstream(toUint8Array(description));
+        bitstream.skipBits(167);
+        sampleSizeInBits = bitstream.readBits(5) + 1;
+        while (sampleEntrySampleRate >= 2 ** 16) {
+          sampleEntrySampleRate = Math.floor(sampleEntrySampleRate / 2);
         }
       }
       if (trackData.muxer.isQuickTime && trackData.track.source._codec !== "truehd") {
-        version4 = 1;
+        version4 = trackData.info.sampleRate < 2 ** 16 && trackData.info.numberOfChannels <= 2 ? 1 : 2;
       }
       if (version4 === 0) {
         contents = [
@@ -86124,13 +87315,13 @@ var init_isobmff_boxes = __esm({
           u16(0),
           // Packet size
           trackData.track.source._codec === "truehd" ? u322(trackData.info.sampleRate) : [
-            u16(trackData.info.sampleRate < 2 ** 16 ? trackData.info.sampleRate : 0),
+            u16(sampleEntrySampleRate < 2 ** 16 ? sampleEntrySampleRate : 0),
             // Sample rate (upper)
             u16(0)
             // Sample rate (lower)
           ]
         ];
-      } else {
+      } else if (version4 === 1) {
         const compressionId = isPcmCodec ? 0 : -2;
         contents = [
           Array(6).fill(0),
@@ -86173,12 +87364,80 @@ var init_isobmff_boxes = __esm({
           u322(2)
           // Bytes per sample (constant in FFmpeg)
         ];
+      } else if (version4 === 2) {
+        let formatSpecificFlags = 0;
+        if (isPcmCodec) {
+          const { dataType, littleEndian } = parsePcmCodec(trackData.track.source._codec);
+          if (dataType !== "ulaw" && dataType !== "alaw") {
+            compressionType = "lpcm";
+            configurationBox = null;
+            formatSpecificFlags = (dataType === "float" ? 1 : 0) | (littleEndian ? 0 : 2) | (dataType === "signed" ? 4 : 0) | 8;
+          }
+        }
+        contents = [
+          Array(6).fill(0),
+          // Reserved
+          u16(1),
+          // Data reference index
+          u16(version4),
+          // Version
+          u16(0),
+          // Revision level
+          u322(0),
+          // Vendor
+          u16(3),
+          // Always 3
+          u16(16),
+          // Always 16
+          i16(-2),
+          // Always -2
+          u16(0),
+          // Always 0
+          u322(65536),
+          // Always 65536
+          u322(72),
+          // Size of struct only
+          f64(trackData.info.sampleRate),
+          // Sample rate
+          u322(trackData.info.numberOfChannels),
+          // Number of channels
+          u322(2130706432),
+          // Always 0x7f000000
+          isPcmCodec ? [
+            u322(sampleSizeInBits),
+            // Constant bits per channel
+            u322(formatSpecificFlags),
+            // Format-specific flags
+            u322(trackData.info.numberOfChannels * sampleSizeInBits / 8),
+            // Constant bytes per audio packet
+            u322(1)
+            // Constant LPCM frames per audio packet
+          ] : [
+            u322(0),
+            // Constant bits per channel (variable)
+            u322(0),
+            // Format-specific flags
+            u322(0),
+            // Constant bytes per audio packet (variable)
+            u322(0)
+            // Constant LPCM frames per audio packet (variable)
+          ]
+        ];
+      } else {
+        assertNever2(version4);
+        assert2(false);
       }
       return box(compressionType, contents, [
-        audioCodecToConfigurationBox(trackData.track.source._codec, trackData.muxer.isQuickTime)?.(trackData) ?? null,
+        // For ipcm and fpcm, sample rates that don't fit into the sample entry go into their own box
+        (compressionType === "ipcm" || compressionType === "fpcm") && trackData.info.sampleRate >= 2 ** 16 ? srat(trackData) : null,
+        configurationBox,
         btrt(trackData)
       ]);
     }, "soundSampleDescription");
+    srat = /* @__PURE__ */ __name((trackData) => fullBox("srat", 0, 0, [
+      u322(trackData.info.sampleRate)
+      // Sampling rate
+    ]), "srat");
     esds = /* @__PURE__ */ __name((trackData) => {
       let objectTypeIndication;
       switch (trackData.track.source._codec) {
@@ -86252,7 +87511,7 @@ var init_isobmff_boxes = __esm({
     wave = /* @__PURE__ */ __name((trackData) => {
       return box("wave", void 0, [
         frma(trackData),
-        enda(trackData),
+        trackData.track.source._codec === "ac3" ? dac3(trackData) : trackData.track.source._codec === "eac3" ? dec3(trackData) : enda(trackData),
         box("\0\0\0\0")
         // NULL tag at the end
       ]);
@@ -86666,6 +87925,8 @@ var init_isobmff_boxes = __esm({
     }, "tfdt");
     trun = /* @__PURE__ */ __name((trackData) => {
       assert2(trackData.currentChunk);
+      const dataOffset = trackData.currentChunk.offset - trackData.currentChunk.moofOffset || 0;
+      assert2(isI32(dataOffset));
       const allSampleDurations = trackData.currentChunk.samples.map((x) => x.timescaleUnitsToNextSample);
       const allSampleSizes = trackData.currentChunk.samples.map((x) => x.size);
       const allSampleFlags = trackData.currentChunk.samples.map(fragmentSampleFlags);
@@ -86674,7 +87935,7 @@ var init_isobmff_boxes = __esm({
       const uniqueSampleSizes = new Set(allSampleSizes);
       const uniqueSampleFlags = new Set(allSampleFlags);
       const uniqueSampleCompositionTimeOffsets = new Set(allSampleCompositionTimeOffsets);
-      const firstSampleFlagsPresent = uniqueSampleFlags.size === 2 && findLastIndex(allSampleFlags, (x) => x === allSampleFlags[0]) === 0;
+      const firstSampleFlagsPresent = uniqueSampleFlags.size === 2 && allSampleFlags.lastIndexOf(allSampleFlags[0]) === 0;
       const sampleDurationPresent = uniqueSampleDurations.size > 1;
       const sampleSizePresent = uniqueSampleSizes.size > 1;
       const sampleFlagsPresent = !firstSampleFlagsPresent && uniqueSampleFlags.size > 1;
@@ -86689,7 +87950,7 @@ var init_isobmff_boxes = __esm({
       return fullBox("trun", 1, flags, [
         u322(trackData.currentChunk.samples.length),
         // Sample count
-        u322(trackData.currentChunk.offset - trackData.currentChunk.moofOffset || 0),
+        i322(dataOffset),
         // Data offset
         firstSampleFlagsPresent ? u322(allSampleFlags[0]) : [],
         trackData.currentChunk.samples.map((_, i) => [
@@ -87005,7 +88266,7 @@ var init_isobmff_boxes = __esm({
           case "discNumber":
             {
               if (!isMdta) {
-                pairs.push({ key: "disc", value: box("data", [
+                pairs.push({ key: "disk", value: box("data", [
                   u322(0),
                   // 8 bytes empty
                   u322(0),
@@ -87114,6 +88375,7 @@ var init_isobmff_boxes = __esm({
       switch (codec2) {
         case "avc":
           return fullCodecString.startsWith("avc3") ? "avc3" : "avc1";
+        // Always hvc1, even for hev1 codec strings, since Apple's players refuse to play hev1
         case "hevc":
           return "hvc1";
         case "vp8":
@@ -87139,7 +88401,7 @@ var init_isobmff_boxes = __esm({
         case "aac":
           return "mp4a";
         case "mp3":
-          return "mp4a";
+          return isQuickTime ? ".mp3" : "mp4a";
         case "opus":
           return "Opus";
         case "vorbis":
@@ -87216,7 +88478,7 @@ var init_isobmff_boxes = __esm({
         case "aac":
           return esds;
         case "mp3":
-          return esds;
+          return isQuickTime ? null : esds;
         case "opus":
           return dOps;
         case "vorbis":
@@ -87224,9 +88486,9 @@ var init_isobmff_boxes = __esm({
         case "flac":
           return dfLa;
         case "ac3":
-          return dac3;
+          return isQuickTime ? wave : dac3;
         case "eac3":
-          return dec3;
+          return isQuickTime ? wave : dec3;
         case "dts":
           return ddts;
         case "truehd":
@@ -87315,6 +88577,9 @@ var init_writer = __esm({
         if (target._writerAcquired) {
           throw new Error("Can't have multiple Writers for the same Target.");
         }
+        if (target._closed) {
+          throw new Error("Can't create a Writer for a Target that has already been closed.");
+        }
         this.target = target;
         target._setMonotonicity(isMonotonic);
         target._writerAcquired = true;
@@ -87360,7 +88625,7 @@ var init_writer = __esm({
             return;
           }
           data = data.subarray(this.trackedStart - pos);
-          pos = 0;
+          pos = this.trackedStart;
         }
         const neededSize = pos + data.byteLength - this.trackedStart;
         let newLength = this.trackedWrites.byteLength;
@@ -87411,8 +88676,14 @@ var init_target = __esm({
       constructor() {
         super(...arguments);
         this._writerAcquired = false;
+        this._closed = false;
         this._monotonicity = null;
         this.onwrite = null;
+      }
+      /** @internal */
+      _close() {
+        this._closed = true;
+        return this._release();
       }
       /** @internal */
       _setMonotonicity(monotonicity) {
@@ -87521,7 +88792,7 @@ var init_target = __esm({
         this._emit("finalized");
       }
       /** @internal */
-      async _close() {
+      async _release() {
       }
       /** @internal */
       _getSlice(start, end) {
@@ -87636,29 +88907,33 @@ var init_target = __esm({
       }
       /** @internal */
       _writeDataIntoChunks(data, position) {
-        let chunkIndex = this._chunks.findIndex((x) => x.start <= position && position < x.start + this._chunkSize);
-        if (chunkIndex === -1)
-          chunkIndex = this._createChunk(position);
-        const chunk = this._chunks[chunkIndex];
-        const relativePosition = position - chunk.start;
-        const toWrite = data.subarray(0, Math.min(this._chunkSize - relativePosition, data.byteLength));
-        chunk.data.set(toWrite, relativePosition);
-        const section = {
-          start: relativePosition,
-          end: relativePosition + toWrite.byteLength
-        };
-        this._insertSectionIntoChunk(chunk, section);
-        if (chunk.written[0].start === 0 && chunk.written[0].end === this._chunkSize) {
-          chunk.shouldFlush = true;
-        }
-        if (this._chunks.length > MAX_CHUNKS_AT_ONCE) {
-          for (let i = 0; i < this._chunks.length - 1; i++) {
-            this._chunks[i].shouldFlush = true;
+        while (true) {
+          let chunkIndex = this._chunks.findIndex((x) => x.start <= position && position < x.start + this._chunkSize);
+          if (chunkIndex === -1)
+            chunkIndex = this._createChunk(position);
+          const chunk = this._chunks[chunkIndex];
+          const relativePosition = position - chunk.start;
+          const toWrite = data.subarray(0, Math.min(this._chunkSize - relativePosition, data.byteLength));
+          chunk.data.set(toWrite, relativePosition);
+          const section = {
+            start: relativePosition,
+            end: relativePosition + toWrite.byteLength
+          };
+          this._insertSectionIntoChunk(chunk, section);
+          if (chunk.written[0].start === 0 && chunk.written[0].end === this._chunkSize) {
+            chunk.shouldFlush = true;
           }
-          this._tryToFlushChunks();
-        }
-        if (toWrite.byteLength < data.byteLength) {
-          this._writeDataIntoChunks(data.subarray(toWrite.byteLength), position + toWrite.byteLength);
+          if (this._chunks.length > MAX_CHUNKS_AT_ONCE) {
+            for (let i = 0; i < this._chunks.length - 1; i++) {
+              this._chunks[i].shouldFlush = true;
+            }
+            this._tryToFlushChunks();
+          }
+          if (toWrite.byteLength === data.byteLength) {
+            break;
+          }
+          data = data.subarray(toWrite.byteLength);
+          position += toWrite.byteLength;
         }
       }
       /** @internal */
@@ -87741,8 +89016,12 @@ var init_target = __esm({
         this._emit("finalized");
       }
       /** @internal */
-      async _close() {
-        return this._streamWriter?.close();
+      async _release() {
+        const writer = this._streamWriter ?? this._writable.getWriter();
+        if (writer.desiredSize !== null) {
+          await writer.close();
+        } else {
+        }
       }
     };
     AppendOnlyStreamTarget = class extends Target {
@@ -87786,11 +89065,12 @@ var init_target = __esm({
         return this._streamTarget._flush();
       }
       /** @internal */
-      _finalize() {
-        return this._streamTarget._finalize();
+      async _finalize() {
+        await this._streamTarget._finalize();
+        this._emit("finalized");
       }
       /** @internal */
-      _close() {
+      _release() {
         return this._streamTarget._close();
       }
       /** @internal */
@@ -87855,8 +89135,13 @@ var init_target = __esm({
         this._emit("finalized");
       }
       /** @internal */
-      async _close() {
-        return this._streamTarget._close();
+      async _release() {
+        try {
+          await this._streamTarget._close();
+        } finally {
+          await this._fileHandle?.close();
+          this._fileHandle = null;
+        }
       }
       /** @internal */
       _setMonotonicity(monotonicity) {
@@ -87883,7 +89168,7 @@ var init_target = __esm({
         this._emit("finalized");
       }
       /** @internal */
-      async _close() {
+      async _release() {
       }
     };
     RangedTarget = class extends Target {
@@ -87913,7 +89198,7 @@ var init_target = __esm({
         this._emit("finalized");
       }
       /** @internal */
-      async _close() {
+      async _release() {
       }
       /** @internal */
       _setMonotonicity(monotonicity) {
@@ -88008,6 +89293,7 @@ var init_isobmff_muxer = __esm({
         this.mdat = null;
         this.ftypSize = null;
         this.trackDatas = [];
+        this.closedTracks = /* @__PURE__ */ new Set();
         this.allTracksKnown = promiseWithResolvers();
         this.finalizedChunks = [];
         this.wroteFragmentedHeader = false;
@@ -88025,85 +89311,88 @@ var init_isobmff_muxer = __esm({
       }
       async start() {
         const release = await this.mutex.acquire();
-        const creationDate = this.output._metadataTags.creationTime === void 0 ? /* @__PURE__ */ new Date() : this.output._metadataTags.creationTime;
-        this.creationTime = creationDate ? Math.floor(creationDate.getTime() / 1e3) + TIMESTAMP_OFFSET : 0;
-        if (creationDate && this.creationTime <= 0) {
-          throw new Error("creationTime must be after 1904-01-01T00:00:00Z for MP4/QuickTime files.");
-        }
-        if (!this.isCmaf) {
-          this.writer = await this.output._getRootWriter((target) => this.formatOptions.fastStart !== void 0 ? this.formatOptions.fastStart === "fragmented" : target instanceof BufferTarget);
-          this.boxWriter = new IsobmffBoxWriter(this.writer);
-          this.fastStart = this.formatOptions.fastStart ?? (this.writer.target instanceof BufferTarget ? "in-memory" : false);
-          this.isFragmented = this.fastStart === "fragmented";
-        } else {
-          this.fastStart = "fragmented";
-          this.isFragmented = true;
-        }
-        if (this.isCmaf) {
-          if (!this.output._hasInitTarget()) {
-            throw new Error(`CMAF outputs require the initTarget field in OutputOptions to be set; the init segment will be written to it.`);
+        try {
+          const creationDate = this.output._metadataTags.creationTime === void 0 ? /* @__PURE__ */ new Date() : this.output._metadataTags.creationTime;
+          this.creationTime = creationDate ? Math.floor(creationDate.getTime() / 1e3) + TIMESTAMP_OFFSET : 0;
+          if (creationDate && this.creationTime <= 0) {
+            throw new Error("creationTime must be after 1904-01-01T00:00:00Z for MP4/QuickTime files.");
           }
-          const initTarget = await this.output._getInitTarget();
-          const initWriter = new Writer(initTarget, true);
-          initWriter.start();
-          this.initWriter = initWriter;
-          this.initBoxWriter = new IsobmffBoxWriter(initWriter);
-        }
-        const holdsAvc = this.output.tracks.some((x) => x.isVideoTrack() && x.source._codec === "avc");
-        {
-          const boxWriter = this.initBoxWriter ?? this.boxWriter;
-          assert2(boxWriter);
-          if (this.formatOptions.onFtyp) {
-            boxWriter.writer.startTrackingWrites();
+          if (!this.isCmaf) {
+            this.writer = await this.output._getRootWriter((target) => this.formatOptions.fastStart !== void 0 ? this.formatOptions.fastStart === "in-memory" || this.formatOptions.fastStart === "fragmented" : target instanceof BufferTarget);
+            this.boxWriter = new IsobmffBoxWriter(this.writer);
+            this.fastStart = this.formatOptions.fastStart ?? (this.writer.target instanceof BufferTarget ? "in-memory" : false);
+            this.isFragmented = this.fastStart === "fragmented";
+          } else {
+            this.fastStart = "fragmented";
+            this.isFragmented = true;
           }
-          boxWriter.writeBox(ftyp({
-            isQuickTime: this.isQuickTime,
-            holdsAvc,
-            fragmented: this.isFragmented,
-            cmaf: this.isCmaf
-          }));
-          if (this.formatOptions.onFtyp) {
-            const { data, start } = boxWriter.writer.stopTrackingWrites();
-            this.formatOptions.onFtyp(data, start);
-          }
-          this.ftypSize = boxWriter.writer.getPos();
           if (this.isCmaf) {
-            await this.initWriter.flush();
+            if (!this.output._hasInitTarget()) {
+              throw new Error(`CMAF outputs require the initTarget field in OutputOptions to be set; the init segment will be written to it.`);
+            }
+            const initTarget = await this.output._getInitTarget();
+            const initWriter = new Writer(initTarget, true);
+            initWriter.start();
+            this.initWriter = initWriter;
+            this.initBoxWriter = new IsobmffBoxWriter(initWriter);
           }
-        }
-        if (this.fastStart === "in-memory") {
-        } else if (this.fastStart === "reserve") {
+          const holdsAvc = this.output.tracks.some((x) => x.isVideoTrack() && x.source._codec === "avc");
+          {
+            const boxWriter = this.initBoxWriter ?? this.boxWriter;
+            assert2(boxWriter);
+            if (this.formatOptions.onFtyp) {
+              boxWriter.writer.startTrackingWrites();
+            }
+            boxWriter.writeBox(ftyp({
+              isQuickTime: this.isQuickTime,
+              holdsAvc,
+              fragmented: this.isFragmented,
+              cmaf: this.isCmaf
+            }));
+            if (this.formatOptions.onFtyp) {
+              const { data, start } = boxWriter.writer.stopTrackingWrites();
+              this.formatOptions.onFtyp(data, start);
+            }
+            this.ftypSize = boxWriter.writer.getPos();
+            if (this.isCmaf) {
+              await this.initWriter.flush();
+            }
+          }
+          if (this.fastStart === "in-memory") {
+          } else if (this.fastStart === "reserve") {
+            for (const track of this.output.tracks) {
+              if (track.metadata.maximumPacketCount === void 0) {
+                throw new Error("All tracks must specify maximumPacketCount in their metadata when using fastStart: 'reserve'.");
+              }
+              if (track.metadata.maximumPacketCount > 2 ** 32 - 1) {
+                throw new Error(`Track #${track.id} has a maximumPacketCount of ${track.metadata.maximumPacketCount}, which exceeds the maximum of ${2 ** 32 - 1} packets per track that a non-fragmented file can hold.`);
+              }
+            }
+          } else if (this.isFragmented) {
+          } else {
+            assert2(this.writer);
+            assert2(this.boxWriter);
+            if (this.formatOptions.onMdat) {
+              this.writer.startTrackingWrites();
+            }
+            this.mdat = mdat(true);
+            this.boxWriter.writeBox(this.mdat);
+          }
+          await this.writer?.flush();
           for (const track of this.output.tracks) {
-            if (track.metadata.maximumPacketCount === void 0) {
-              throw new Error("All tracks must specify maximumPacketCount in their metadata when using fastStart: 'reserve'.");
+            if (track.isVideoTrack() && track.metadata.decoderConfig) {
+              this.getVideoTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
+            } else if (track.isAudioTrack() && track.metadata.decoderConfig) {
+              this.getAudioTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
             }
-            if (track.metadata.maximumPacketCount > 2 ** 32 - 1) {
-              throw new Error(`Track #${track.id} has a maximumPacketCount of ${track.metadata.maximumPacketCount}, which exceeds the maximum of ${2 ** 32 - 1} packets per track that a non-fragmented file can hold.`);
-            }
           }
-        } else if (this.isFragmented) {
-        } else {
-          assert2(this.writer);
-          assert2(this.boxWriter);
-          if (this.formatOptions.onMdat) {
-            this.writer.startTrackingWrites();
-          }
-          this.mdat = mdat(true);
-          this.boxWriter.writeBox(this.mdat);
+        } finally {
+          release();
         }
-        await this.writer?.flush();
-        for (const track of this.output.tracks) {
-          if (track.isVideoTrack() && track.metadata.decoderConfig) {
-            this.getVideoTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
-          } else if (track.isAudioTrack() && track.metadata.decoderConfig) {
-            this.getAudioTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
-          }
-        }
-        release();
       }
       allTracksAreKnown() {
         for (const track of this.output.tracks) {
-          if (!track.source._closed && !this.trackDatas.some((x) => x.track === track)) {
+          if (!this.closedTracks.has(track) && !this.trackDatas.some((x) => x.track === track)) {
             return false;
           }
         }
@@ -88195,7 +89484,6 @@ var init_isobmff_muxer = __esm({
           finalizedChunks: [],
           currentChunk: null,
           compactlyCodedChunkTable: [],
-          closed: false,
           avgBitrate: track.source._nominalBitrate ?? track.metadata.averageBitrate ?? 0,
           maxBitrate: track.source._nominalBitrate ?? track.metadata.bitrate ?? 0
         };
@@ -88224,15 +89512,24 @@ var init_isobmff_muxer = __esm({
           if (!adtsFrame) {
             throw new Error("Couldn't parse ADTS header from the AAC packet. Make sure the packets are in ADTS format (as specified in ISO 13818-7) when not providing a description, or provide a description (must be an AudioSpecificConfig as specified in ISO 14496-3) and ensure the packets are raw AAC data.");
           }
-          const sampleRate = aacFrequencyTable[adtsFrame.samplingFrequencyIndex];
-          const numberOfChannels = aacChannelMap[adtsFrame.channelConfiguration];
-          if (sampleRate === void 0 || numberOfChannels === void 0) {
-            throw new Error("Invalid ADTS frame header.");
+          let numberOfChannels;
+          let programConfigElement = null;
+          if (adtsFrame.channelConfiguration === 0) {
+            const headerSize = adtsFrame.crcCheck === null ? MIN_ADTS_FRAME_HEADER_SIZE : MAX_ADTS_FRAME_HEADER_SIZE;
+            const result = readAdtsProgramConfigElement(packet.data.subarray(headerSize));
+            if (!result) {
+              throw new Error("ADTS frames with channel configuration 0 must begin with a program config element.");
+            }
+            programConfigElement = result.programConfigElement;
+            numberOfChannels = getAacProgramConfigElementChannelCount(programConfigElement);
+          } else {
+            numberOfChannels = aacChannelMap[adtsFrame.channelConfiguration];
           }
           decoderConfig.description = buildAacAudioSpecificConfig({
             objectType: adtsFrame.objectType,
-            outputSampleRate: sampleRate,
-            outputNumberOfChannels: numberOfChannels
+            outputSampleRate: aacFrequencyTable[adtsFrame.samplingFrequencyIndex],
+            outputNumberOfChannels: numberOfChannels,
+            programConfigElement
           });
           requiresAdtsStripping = true;
         }
@@ -88259,6 +89556,7 @@ var init_isobmff_muxer = __esm({
             expectedNextPcmPacketTimestamp: null,
             requiresAdtsStripping,
             primingPacket: packet,
+            pendingEac3Packets: [],
             preroll: {
               packetCount: 0,
               accumulatedAudioSamples: 0,
@@ -88277,7 +89575,6 @@ var init_isobmff_muxer = __esm({
           finalizedChunks: [],
           currentChunk: null,
           compactlyCodedChunkTable: [],
-          closed: false,
           avgBitrate: track.source._nominalBitrate ?? track.metadata.averageBitrate ?? 0,
           maxBitrate: track.source._nominalBitrate ?? track.metadata.bitrate ?? 0
         };
@@ -88316,7 +89613,6 @@ var init_isobmff_muxer = __esm({
           finalizedChunks: [],
           currentChunk: null,
           compactlyCodedChunkTable: [],
-          closed: false,
           avgBitrate: track.source._nominalBitrate ?? track.metadata.averageBitrate ?? 0,
           maxBitrate: track.source._nominalBitrate ?? track.metadata.bitrate ?? 0,
           lastCueEndTimestamp: null,
@@ -88362,8 +89658,31 @@ var init_isobmff_muxer = __esm({
             }
             const headerLength = adtsFrame.crcCheck === null ? MIN_ADTS_FRAME_HEADER_SIZE : MAX_ADTS_FRAME_HEADER_SIZE;
             packetData = packetData.subarray(headerLength);
+            if (adtsFrame.channelConfiguration === 0) {
+              const result = readAdtsProgramConfigElement(packetData);
+              if (result) {
+                packetData = packetData.subarray(result.size);
+              }
+            }
           }
           this.validateTimestamp(trackData.track, packet.timestamp, packet.type === "key");
+          if (track.source._codec === "eac3") {
+            const frames = splitEac3AudioFrames(packetData);
+            const blockCount = frames ? frames.reduce((sum, frame) => sum + frame.blockCount, 0) : 6;
+            const pending2 = trackData.info.pendingEac3Packets;
+            const totalBlockCount = pending2.reduce((sum, x) => sum + x.blockCount, 0) + blockCount;
+            if (totalBlockCount > 6) {
+              throw new Error("E-AC-3 frames must add up to exactly six blocks to be muxed into MP4 samples.");
+            }
+            pending2.push({
+              packet,
+              blockCount
+            });
+            if (totalBlockCount === 6) {
+              await this.writePendingEac3Packets(trackData);
+            }
+            return;
+          }
           let timestamp = packet.timestamp;
           let duration3 = packet.duration;
           if (trackData.info.requiresPcmTransformation) {
@@ -88407,15 +89726,15 @@ var init_isobmff_muxer = __esm({
       }
       async padWithSilence(trackData, timestamp, duration3) {
         const deltaInTimescale = intoTimescale(duration3, trackData.timescale);
-        duration3 = deltaInTimescale / trackData.timescale;
-        if (deltaInTimescale > 0) {
-          const { sampleSize, silentValue } = parsePcmCodec(trackData.info.decoderConfig.codec);
-          const samplesNeeded = deltaInTimescale * trackData.info.numberOfChannels;
-          const data = new Uint8Array(sampleSize * samplesNeeded).fill(silentValue);
-          const paddingSample = this.createSampleForTrack(trackData, new Uint8Array(data.buffer), timestamp, duration3, "key", 0);
+        const { sampleSize, silentValue } = parsePcmCodec(trackData.info.decoderConfig.codec);
+        const bytesPerFrame = sampleSize * trackData.info.numberOfChannels;
+        const silence = new Uint8Array(bytesPerFrame * Math.min(deltaInTimescale, trackData.timescale)).fill(silentValue);
+        for (let offset = 0; offset < deltaInTimescale; offset += trackData.timescale) {
+          const frameCount = Math.min(deltaInTimescale - offset, trackData.timescale);
+          const paddingSample = this.createSampleForTrack(trackData, silence.subarray(0, bytesPerFrame * frameCount), timestamp + offset / trackData.timescale, frameCount / trackData.timescale, "key", 0);
           await this.registerSample(trackData, paddingSample);
         }
-        return duration3;
+        return deltaInTimescale / trackData.timescale;
       }
       async addSubtitleCue(track, cue, meta3) {
         const release = await this.mutex.acquire();
@@ -88423,8 +89742,16 @@ var init_isobmff_muxer = __esm({
           const trackData = this.getSubtitleTrackData(track, meta3);
           this.validateTimestamp(trackData.track, cue.timestamp, true);
           if (track.source._codec === "webvtt") {
-            trackData.cueQueue.push(cue);
-            await this.processWebVTTCues(trackData, cue.timestamp);
+            const start = intoTimescale(cue.timestamp, trackData.timescale) / trackData.timescale;
+            const end = intoTimescale(cue.timestamp + cue.duration, trackData.timescale) / trackData.timescale;
+            if (end > start) {
+              trackData.cueQueue.push({
+                cue,
+                start,
+                end
+              });
+            }
+            await this.processWebVTTCues(trackData, start);
           } else {
           }
         } finally {
@@ -88433,13 +89760,13 @@ var init_isobmff_muxer = __esm({
       }
       async processWebVTTCues(trackData, until) {
         while (trackData.cueQueue.length > 0) {
-          trackData.lastCueEndTimestamp ??= Math.min(0, trackData.cueQueue[0].timestamp);
+          trackData.lastCueEndTimestamp ??= Math.min(0, trackData.cueQueue[0].start);
           const timestamps = /* @__PURE__ */ new Set([]);
-          for (const cue of trackData.cueQueue) {
-            assert2(cue.timestamp <= until);
-            assert2(trackData.lastCueEndTimestamp <= cue.timestamp + cue.duration);
-            timestamps.add(Math.max(cue.timestamp, trackData.lastCueEndTimestamp));
-            timestamps.add(cue.timestamp + cue.duration);
+          for (const { start, end } of trackData.cueQueue) {
+            assert2(start <= until);
+            assert2(trackData.lastCueEndTimestamp <= end);
+            timestamps.add(Math.max(start, trackData.lastCueEndTimestamp));
+            timestamps.add(end);
           }
           const sortedTimestamps = [...timestamps].sort((a, b) => a - b);
           const sampleStart = sortedTimestamps[0];
@@ -88458,15 +89785,14 @@ var init_isobmff_muxer = __esm({
           }
           this.auxWriter.seek(0);
           for (let i = 0; i < trackData.cueQueue.length; i++) {
-            const cue = trackData.cueQueue[i];
-            if (cue.timestamp >= sampleEnd) {
+            const { cue, start, end } = trackData.cueQueue[i];
+            if (start >= sampleEnd) {
               break;
             }
             inlineTimestampRegex.lastIndex = 0;
             const containsTimestamp = inlineTimestampRegex.test(cue.text);
-            const endTimestamp = cue.timestamp + cue.duration;
             let sourceId = trackData.cueToSourceId.get(cue);
-            if (sourceId === void 0 && sampleEnd < endTimestamp) {
+            if (sourceId === void 0 && sampleEnd < end) {
               sourceId = trackData.nextSourceId++;
               trackData.cueToSourceId.set(cue, sourceId);
             }
@@ -88476,7 +89802,7 @@ var init_isobmff_muxer = __esm({
             }
             const box2 = vttc(cue.text, containsTimestamp ? sampleStart : null, cue.identifier ?? null, cue.settings ?? null, sourceId ?? null);
             this.auxBoxWriter.writeBox(box2);
-            if (endTimestamp === sampleEnd) {
+            if (end === sampleEnd) {
               trackData.cueQueue.splice(i--, 1);
             }
           }
@@ -88621,7 +89947,7 @@ var init_isobmff_muxer = __esm({
             const maximumPacketCount = trackData.track.metadata.maximumPacketCount;
             assert2(maximumPacketCount !== void 0);
             if (trackData.samples.length > maximumPacketCount) {
-              throw new Error(`Track #${trackData.track.id} has already reached the maximum packet count (${maximumPacketCount}). Either add less packets or increase the maximum packet count.`);
+              throw new Error(`Track #${trackData.track.id} has already reached the maximum packet count (${maximumPacketCount}). Either add fewer packets or increase the maximum packet count.`);
             }
           }
         }
@@ -88640,9 +89966,10 @@ var init_isobmff_muxer = __esm({
               if (firstQueuedSample) {
                 return firstQueuedSample.type === "key";
               }
-              return otherTrackData.closed;
+              return this.closedTracks.has(otherTrackData.track);
             });
-            if (currentChunkDuration >= this.minimumFragmentDuration && keyFrameQueuedEverywhere && sample.timestamp > this.maxWrittenTimestamp) {
+            const startOffsetsKnown = this.wroteFragmentedHeader || this.trackDatas.every((x) => x.startTimestampOffset !== null || this.closedTracks.has(x.track));
+            if (currentChunkDuration >= this.minimumFragmentDuration && keyFrameQueuedEverywhere && sample.timestamp > this.maxWrittenTimestamp && startOffsetsKnown) {
               beginNewChunk = true;
               await this.finalizeFragment();
             }
@@ -88715,7 +90042,7 @@ var init_isobmff_muxer = __esm({
           let trackWithMinTimestamp = null;
           let minTimestamp = Infinity;
           for (const trackData of this.trackDatas) {
-            if (!isFinalCall && trackData.sampleQueue.length === 0 && !trackData.closed) {
+            if (!isFinalCall && trackData.sampleQueue.length === 0 && !this.closedTracks.has(trackData.track)) {
               break outer;
             }
             if (trackData.sampleQueue.length > 0 && trackData.sampleQueue[0].timestamp < minTimestamp) {
@@ -88777,6 +90104,7 @@ var init_isobmff_muxer = __esm({
           const trackData = tracksInFragment[i];
           assert2(trackData.currentChunk);
           assert2(trackData.startTimestampOffset !== null);
+          fragmentStartTimestamp = Math.min(fragmentStartTimestamp, trackData.currentChunk.startTimestamp);
           trackData.currentChunk.offset = currentPos;
           trackData.currentChunk.moofOffset = moofOffset;
           trackData.currentChunk.trafIndex = i;
@@ -88786,14 +90114,17 @@ var init_isobmff_muxer = __esm({
             sample.timestamp -= trackData.startTimestampOffset;
             sample.decodeTimestamp -= trackData.startTimestampOffset;
           }
-          fragmentStartTimestamp = Math.min(fragmentStartTimestamp, trackData.currentChunk.startTimestamp);
         }
-        const mdatSize = currentPos - mdatStartPos;
+        let mdatSize = currentPos - mdatStartPos;
         const needsLargeMdatSize = mdatSize >= 2 ** 32;
         if (needsLargeMdatSize) {
           for (const trackData of tracksInFragment) {
             trackData.currentChunk.offset += MAX_BOX_HEADER_SIZE - MIN_BOX_HEADER_SIZE;
           }
+          mdatSize += MAX_BOX_HEADER_SIZE - MIN_BOX_HEADER_SIZE;
+        }
+        if (last(tracksInFragment).currentChunk.offset - moofOffset >= 2 ** 31) {
+          throw new Error("The data of a fragment's track must start less than 2 GiB after its moof box; use shorter fragments.");
         }
         if (this.formatOptions.onMoof) {
           this.writer.startTrackingWrites();
@@ -88865,22 +90196,27 @@ var init_isobmff_muxer = __esm({
         }
         return upperBound;
       }
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async onTrackClose(track) {
         const release = await this.mutex.acquire();
-        const trackData = this.trackDatas.find((x) => x.track === track);
-        if (trackData) {
-          trackData.closed = true;
-          if (trackData.type === "subtitle" && track.source._codec === "webvtt") {
+        try {
+          const trackData = this.trackDatas.find((x) => x.track === track);
+          if (trackData?.type === "subtitle" && track.source._codec === "webvtt") {
             await this.processWebVTTCues(trackData, Infinity);
           }
-          this.processTimestamps(trackData);
+          if (trackData?.type === "audio" && trackData.info.pendingEac3Packets.length > 0) {
+            await this.writePendingEac3Packets(trackData);
+          }
+          this.closedTracks.add(track);
+          if (trackData) {
+            this.processTimestamps(trackData);
+          }
+          if (this.allTracksAreKnown()) {
+            this.allTracksKnown.resolve();
+          }
+          await this.interleaveSamples();
+        } finally {
+          release();
         }
-        if (this.allTracksAreKnown()) {
-          this.allTracksKnown.resolve();
-        }
-        await this.interleaveSamples();
-        release();
       }
       ensureOneEnabledTrack() {
         for (const type of ["video", "audio", "subtitle"]) {
@@ -88915,16 +90251,35 @@ var init_isobmff_muxer = __esm({
           release();
         }
       }
+      async writePendingEac3Packets(trackData) {
+        const packets = trackData.info.pendingEac3Packets.map((x) => x.packet);
+        trackData.info.pendingEac3Packets.length = 0;
+        let data = packets[0].data;
+        if (packets.length > 1) {
+          data = new Uint8Array(packets.reduce((sum, packet) => sum + packet.data.byteLength, 0));
+          let offset = 0;
+          for (const packet of packets) {
+            data.set(packet.data, offset);
+            offset += packet.data.byteLength;
+          }
+        }
+        const duration3 = packets.reduce((sum, packet) => sum + packet.duration, 0);
+        const sample = this.createSampleForTrack(trackData, data, packets[0].timestamp, duration3, "key", 0);
+        await this.registerSample(trackData, sample);
+      }
       /** Finalizes the file, making it ready for use. Must be called after all video and audio chunks have been added. */
       async finalize() {
         const release = await this.mutex.acquire();
         this.allTracksKnown.resolve();
         this.ensureOneEnabledTrack();
         for (const trackData of this.trackDatas) {
-          trackData.closed = true;
           if (trackData.type === "subtitle" && trackData.track.source._codec === "webvtt") {
             await this.processWebVTTCues(trackData, Infinity);
           }
+          if (trackData.type === "audio" && trackData.info.pendingEac3Packets.length > 0) {
+            await this.writePendingEac3Packets(trackData);
+          }
+          this.closedTracks.add(trackData.track);
           this.processTimestamps(trackData);
         }
         await this.interleaveSamples(true);
@@ -88973,11 +90328,17 @@ var init_isobmff_muxer = __esm({
         if (this.fastStart === "in-memory") {
           this.mdat = mdat(false);
           let mdatSize;
-          for (let i = 0; i < 2; i++) {
-            const movieBox2 = moov(this);
-            const movieBoxSize = this.boxWriter.measureBox(movieBox2);
-            mdatSize = this.boxWriter.measureBox(this.mdat);
-            let currentChunkPos = this.writer.getPos() + movieBoxSize + mdatSize;
+          let previousHeaderSize = null;
+          while (true) {
+            const movieBoxSize = this.boxWriter.measureBox(moov(this));
+            const mdatHeaderSize = this.boxWriter.measureBox(this.mdat);
+            const headerSize = movieBoxSize + mdatHeaderSize;
+            if (headerSize === previousHeaderSize) {
+              break;
+            }
+            previousHeaderSize = headerSize;
+            mdatSize = mdatHeaderSize;
+            let currentChunkPos = this.writer.getPos() + headerSize;
             for (const chunk of this.finalizedChunks) {
               chunk.offset = currentChunkPos;
               for (const { data } of chunk.samples) {
@@ -88986,10 +90347,9 @@ var init_isobmff_muxer = __esm({
                 mdatSize += data.byteLength;
               }
             }
-            if (currentChunkPos < 2 ** 32)
-              break;
-            if (mdatSize >= 2 ** 32)
+            if (mdatSize >= 2 ** 32) {
               this.mdat.largeSize = true;
+            }
           }
           if (this.formatOptions.onMoov) {
             this.writer.startTrackingWrites();
@@ -89011,6 +90371,7 @@ var init_isobmff_muxer = __esm({
               this.writer.write(sample.data);
               sample.data = null;
             }
+            await this.writer.flush();
           }
           if (this.formatOptions.onMdat) {
             const { data, start } = this.writer.stopTrackingWrites();
@@ -89019,6 +90380,9 @@ var init_isobmff_muxer = __esm({
         } else if (this.isFragmented) {
           if (this.isCmaf) {
             const contentSize = this.segmentHeaderSize !== null ? this.writer.getPos() - this.segmentHeaderSize : 0;
+            if (contentSize >= 2 ** 31) {
+              throw new Error("CMAF segments must be smaller than 2 GiB, as their sidx box can't index anything larger.");
+            }
             this.writer.seek(0);
             this.boxWriter.writeBox(styp());
             this.boxWriter.writeBox(sidx(this, contentSize));
@@ -89050,18 +90414,14 @@ var init_isobmff_muxer = __esm({
             if (moovSize + 8 > reservedSpace) {
               throw new Error(`The moov box (${moovSize} bytes) plus a free box (8 bytes) exceed the space reserved for them (${reservedSpace} bytes) with fastStart: 'reserve'. This is a bug; please report it.`);
             }
-            this.writer.seek(this.ftypSize);
-            if (this.formatOptions.onMoov) {
-              this.writer.startTrackingWrites();
-            }
-            this.boxWriter.writeBox(movieBox);
+            this.writer.seek(this.ftypSize + moovSize);
             this.boxWriter.writeBox(free(reservedSpace - moovSize));
-          } else {
-            if (this.formatOptions.onMoov) {
-              this.writer.startTrackingWrites();
-            }
-            this.boxWriter.writeBox(movieBox);
+            this.writer.seek(this.ftypSize);
           }
+          if (this.formatOptions.onMoov) {
+            this.writer.startTrackingWrites();
+          }
+          this.boxWriter.writeBox(movieBox);
           if (this.formatOptions.onMoov) {
             const { data, start } = this.writer.stopTrackingWrites();
             this.formatOptions.onMoov(data, start);
@@ -89077,7 +90437,6 @@ var init_isobmff_muxer = __esm({
 var MIN_CLUSTER_TIMESTAMP_MS, MAX_CLUSTER_TIMESTAMP_MS, SEGMENT_SIZE_BYTES, CLUSTER_SIZE_BYTES, TRACK_TYPE_MAP, MatroskaMuxer;
 var init_matroska_muxer = __esm({
   "node_modules/mediabunny/dist/modules/src/matroska/matroska-muxer.js"() {
-    init_bitstream();
     init_misc();
     init_ebml();
     init_matroska_misc();
@@ -89094,7 +90453,7 @@ var init_matroska_muxer = __esm({
     MIN_CLUSTER_TIMESTAMP_MS = -(2 ** 15);
     MAX_CLUSTER_TIMESTAMP_MS = 2 ** 15 - 1;
     SEGMENT_SIZE_BYTES = 6;
-    CLUSTER_SIZE_BYTES = 5;
+    CLUSTER_SIZE_BYTES = 6;
     TRACK_TYPE_MAP = {
       video: 1,
       audio: 2,
@@ -89107,6 +90466,7 @@ var init_matroska_muxer = __esm({
       constructor(output2, format2) {
         super(output2);
         this.trackDatas = [];
+        this.closedTracks = /* @__PURE__ */ new Set();
         this.allTracksKnown = promiseWithResolvers();
         this.segment = null;
         this.segmentInfo = null;
@@ -89119,27 +90479,29 @@ var init_matroska_muxer = __esm({
         this.currentClusterBlocks = [];
         this.currentClusterStartMsTimestamp = null;
         this.currentClusterMaxMsTimestamp = null;
-        this.startTimestamp = Infinity;
         this.endTimestamp = -Infinity;
         this.warnedAboutTooNegativeTimestamp = false;
         this.format = format2;
       }
       async start() {
         const release = await this.mutex.acquire();
-        this.writer = await this.output._getRootWriter(!!this.format._options.appendOnly);
-        this.ebmlWriter = new EBMLWriter(this.writer);
-        this.writeEBMLHeader();
-        this.createSegmentInfo();
-        this.createCues();
-        await this.writer.flush();
-        for (const track of this.output.tracks) {
-          if (track.isVideoTrack() && track.metadata.decoderConfig) {
-            this.getVideoTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
-          } else if (track.isAudioTrack() && track.metadata.decoderConfig) {
-            this.getAudioTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
+        try {
+          this.writer = await this.output._getRootWriter(!!this.format._options.appendOnly);
+          this.ebmlWriter = new EBMLWriter(this.writer);
+          this.writeEBMLHeader();
+          this.createSegmentInfo();
+          this.createCues();
+          await this.writer.flush();
+          for (const track of this.output.tracks) {
+            if (track.isVideoTrack() && track.metadata.decoderConfig) {
+              this.getVideoTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
+            } else if (track.isAudioTrack() && track.metadata.decoderConfig) {
+              this.getAudioTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
+            }
           }
+        } finally {
+          release();
         }
-        release();
       }
       writeEBMLHeader() {
         if (this.format._options.onEbmlHeader) {
@@ -89250,6 +90612,8 @@ var init_matroska_muxer = __esm({
             } else if (trackData.info.decoderConfig.codec === "dtsl") {
               codecId = "A_DTS/LOSSLESS";
             }
+          } else if (trackData.type === "subtitle" && this.format instanceof WebMOutputFormat) {
+            codecId = "D_WEBVTT/SUBTITLES";
           }
           let seekPreRollNs = 0;
           if (trackData.type === "audio") {
@@ -89267,6 +90631,7 @@ var init_matroska_muxer = __esm({
             trackData.track.metadata.disposition?.original ? { id: EBMLId.FlagOriginal, data: 1 } : null,
             trackData.track.metadata.disposition?.commentary ? { id: EBMLId.FlagCommentary, data: 1 } : null,
             { id: EBMLId.FlagLacing, data: 0 },
+            trackData.type === "video" && trackData.info.alphaMode || trackData.type === "subtitle" && !(this.format instanceof WebMOutputFormat) ? { id: EBMLId.MaxBlockAdditionID, data: 1 } : null,
             { id: EBMLId.Language, data: trackData.track.metadata.languageCode ?? UNDETERMINED_LANGUAGE },
             { id: EBMLId.CodecID, data: codecId },
             trackData.codecPrivate ? { id: EBMLId.CodecPrivate, data: toUint8Array(trackData.codecPrivate) } : null,
@@ -89284,7 +90649,7 @@ var init_matroska_muxer = __esm({
         const elements = [
           frameRate ? {
             id: EBMLId.DefaultDuration,
-            data: 1e9 / frameRate
+            data: Math.round(1e9 / frameRate)
           } : null
         ];
         let rotation;
@@ -89368,9 +90733,16 @@ var init_matroska_muxer = __esm({
       }
       audioSpecificTrackInfo(trackData) {
         const pcmInfo = PCM_AUDIO_CODECS.includes(trackData.track.source._codec) ? parsePcmCodec(trackData.track.source._codec) : null;
+        let samplingFrequency = trackData.info.sampleRate;
+        if (trackData.track.source._codec === "aac") {
+          assert2(trackData.codecPrivate);
+          const config2 = parseAacAudioSpecificConfig(toUint8Array(trackData.codecPrivate));
+          samplingFrequency = config2.coreSampleRate ?? samplingFrequency;
+        }
         return [
           { id: EBMLId.Audio, data: [
-            { id: EBMLId.SamplingFrequency, data: new EBMLFloat32(trackData.info.sampleRate) },
+            { id: EBMLId.SamplingFrequency, data: new EBMLFloat32(samplingFrequency) },
+            samplingFrequency !== trackData.info.sampleRate ? { id: EBMLId.OutputSamplingFrequency, data: new EBMLFloat32(trackData.info.sampleRate) } : null,
             { id: EBMLId.Channels, data: trackData.info.numberOfChannels },
             pcmInfo ? { id: EBMLId.BitDepth, data: 8 * pcmInfo.sampleSize } : null
           ] }
@@ -89619,7 +90991,7 @@ var init_matroska_muxer = __esm({
       }
       allTracksAreKnown() {
         for (const track of this.output.tracks) {
-          if (!track.source._closed && !this.trackDatas.some((x) => x.track === track)) {
+          if (!this.closedTracks.has(track) && !this.trackDatas.some((x) => x.track === track)) {
             return false;
           }
         }
@@ -89674,8 +91046,7 @@ var init_matroska_muxer = __esm({
           },
           chunkQueue: [],
           lastWrittenMsTimestamp: null,
-          codecPrivate: meta3.decoderConfig.description ?? null,
-          closed: false
+          codecPrivate: meta3.decoderConfig.description ?? null
         };
         if (track.source._codec === "vp9") {
           newTrackData.codecPrivate = new Uint8Array(generateVp9CodecConfigurationFromCodecString(newTrackData.info.decoderConfig.codec));
@@ -89709,15 +91080,24 @@ var init_matroska_muxer = __esm({
           if (!adtsFrame) {
             throw new Error("Couldn't parse ADTS header from the AAC packet. Make sure the packets are in ADTS format (as specified in ISO 13818-7) when not providing a description, or provide a description (must be an AudioSpecificConfig as specified in ISO 14496-3) and ensure the packets are raw AAC data.");
           }
-          const sampleRate = aacFrequencyTable[adtsFrame.samplingFrequencyIndex];
-          const numberOfChannels = aacChannelMap[adtsFrame.channelConfiguration];
-          if (sampleRate === void 0 || numberOfChannels === void 0) {
-            throw new Error("Invalid ADTS frame header.");
+          let numberOfChannels;
+          let programConfigElement = null;
+          if (adtsFrame.channelConfiguration === 0) {
+            const headerSize = adtsFrame.crcCheck === null ? MIN_ADTS_FRAME_HEADER_SIZE : MAX_ADTS_FRAME_HEADER_SIZE;
+            const result = readAdtsProgramConfigElement(packet.data.subarray(headerSize));
+            if (!result) {
+              throw new Error("ADTS frames with channel configuration 0 must begin with a program config element.");
+            }
+            programConfigElement = result.programConfigElement;
+            numberOfChannels = getAacProgramConfigElementChannelCount(programConfigElement);
+          } else {
+            numberOfChannels = aacChannelMap[adtsFrame.channelConfiguration];
           }
           decoderConfig.description = buildAacAudioSpecificConfig({
             objectType: adtsFrame.objectType,
-            outputSampleRate: sampleRate,
-            outputNumberOfChannels: numberOfChannels
+            outputSampleRate: aacFrequencyTable[adtsFrame.samplingFrequencyIndex],
+            outputNumberOfChannels: numberOfChannels,
+            programConfigElement
           });
           requiresAdtsStripping = true;
         }
@@ -89733,8 +91113,7 @@ var init_matroska_muxer = __esm({
           },
           chunkQueue: [],
           lastWrittenMsTimestamp: null,
-          codecPrivate: decoderConfig.description ?? null,
-          closed: false
+          codecPrivate: decoderConfig.description ?? null
         };
         this.trackDatas.push(newTrackData);
         this.trackDatas.sort((a, b) => a.track.id - b.track.id);
@@ -89759,8 +91138,7 @@ var init_matroska_muxer = __esm({
           },
           chunkQueue: [],
           lastWrittenMsTimestamp: null,
-          codecPrivate: textEncoder.encode(meta3.config.description),
-          closed: false
+          codecPrivate: textEncoder.encode(meta3.config.description)
         };
         this.trackDatas.push(newTrackData);
         this.trackDatas.sort((a, b) => a.track.id - b.track.id);
@@ -89791,8 +91169,6 @@ var init_matroska_muxer = __esm({
           }
           const additions = trackData.info.alphaMode ? packet.sideData.alpha ?? null : null;
           const videoChunk = this.createInternalChunk(packetData, timestamp, duration3, packet.type, additions);
-          if (track.source._codec === "vp9")
-            this.fixVP9ColorSpace(trackData, videoChunk);
           trackData.chunkQueue.push(videoChunk);
           await this.interleaveChunks();
         } finally {
@@ -89811,6 +91187,12 @@ var init_matroska_muxer = __esm({
             }
             const headerLength = adtsFrame.crcCheck === null ? MIN_ADTS_FRAME_HEADER_SIZE : MAX_ADTS_FRAME_HEADER_SIZE;
             packetData = packetData.subarray(headerLength);
+            if (adtsFrame.channelConfiguration === 0) {
+              const result = readAdtsProgramConfigElement(packetData);
+              if (result) {
+                packetData = packetData.subarray(result.size);
+              }
+            }
           }
           const isKeyFrame = packet.type === "key";
           this.validateTimestamp(trackData.track, packet.timestamp, isKeyFrame);
@@ -89833,13 +91215,21 @@ var init_matroska_muxer = __esm({
           bodyText = bodyText.replace(inlineTimestampRegex, (match2) => {
             const time4 = parseSubtitleTimestamp(match2.slice(1, -1));
             const offsetTime = time4 - timestampMs;
-            return `<${formatSubtitleTimestamp(offsetTime)}>`;
+            return `<${formatSubtitleTimestamp(offsetTime / 1e3)}>`;
           });
-          const body = textEncoder.encode(bodyText);
-          const additions = `${cue.settings ?? ""}
+          let subtitleChunk;
+          if (this.format instanceof WebMOutputFormat) {
+            const body = textEncoder.encode(`${cue.identifier ?? ""}
+${cue.settings ?? ""}
+${bodyText}`);
+            subtitleChunk = this.createInternalChunk(body, cue.timestamp, cue.duration, "key");
+          } else {
+            const body = textEncoder.encode(bodyText);
+            const additions = `${cue.settings ?? ""}
 ${cue.identifier ?? ""}
 ${cue.notes ?? ""}`;
-          const subtitleChunk = this.createInternalChunk(body, cue.timestamp, cue.duration, "key", additions.trim() ? textEncoder.encode(additions) : null);
+            subtitleChunk = this.createInternalChunk(body, cue.timestamp, cue.duration, "key", additions.trim() ? textEncoder.encode(additions) : null);
+          }
           trackData.chunkQueue.push(subtitleChunk);
           await this.interleaveChunks();
         } finally {
@@ -89854,7 +91244,7 @@ ${cue.notes ?? ""}`;
           let trackWithMinTimestamp = null;
           let minTimestamp = Infinity;
           for (const trackData of this.trackDatas) {
-            if (!isFinalCall && trackData.chunkQueue.length === 0 && !trackData.closed) {
+            if (!isFinalCall && trackData.chunkQueue.length === 0 && !this.closedTracks.has(trackData.track)) {
               break outer;
             }
             if (trackData.chunkQueue.length > 0 && trackData.chunkQueue[0].timestamp < minTimestamp) {
@@ -89871,42 +91261,6 @@ ${cue.notes ?? ""}`;
         if (!isFinalCall) {
           await this.writer.flush();
         }
-      }
-      /**
-       * Due to [a bug in Chromium](https://bugs.chromium.org/p/chromium/issues/detail?id=1377842), VP9 streams often
-       * lack color space information. This method patches in that information.
-       */
-      fixVP9ColorSpace(trackData, chunk) {
-        if (chunk.type !== "key")
-          return;
-        if (!trackData.info.decoderConfig.colorSpace || !trackData.info.decoderConfig.colorSpace.matrix)
-          return;
-        const bitstream = new Bitstream(chunk.data);
-        bitstream.skipBits(2);
-        const profileLowBit = bitstream.readBits(1);
-        const profileHighBit = bitstream.readBits(1);
-        const profile = (profileHighBit << 1) + profileLowBit;
-        if (profile === 3)
-          bitstream.skipBits(1);
-        const showExistingFrame = bitstream.readBits(1);
-        if (showExistingFrame)
-          return;
-        const frameType = bitstream.readBits(1);
-        if (frameType !== 0)
-          return;
-        bitstream.skipBits(2);
-        const syncCode = bitstream.readBits(24);
-        if (syncCode !== 4817730)
-          return;
-        if (profile >= 2)
-          bitstream.skipBits(1);
-        const colorSpaceID = {
-          rgb: 7,
-          bt709: 2,
-          bt470bg: 1,
-          smpte170m: 3
-        }[trackData.info.decoderConfig.colorSpace.matrix];
-        writeBits(chunk.data, bitstream.pos, bitstream.pos + 3, colorSpaceID);
       }
       /** Converts a read-only external chunk into an internal one for easier use. */
       createInternalChunk(data, timestamp, duration3, type, additions = null) {
@@ -89933,7 +91287,7 @@ ${cue.notes ?? ""}`;
           if (firstQueuedSample) {
             return firstQueuedSample.type === "key";
           }
-          return otherTrackData.closed;
+          return this.closedTracks.has(otherTrackData.track);
         });
         let shouldCreateNewCluster = false;
         if (this.currentClusterStartMsTimestamp === null) {
@@ -89961,7 +91315,6 @@ ${cue.notes ?? ""}`;
           msTimestamp,
           previousMsTimestamp: trackData.lastWrittenMsTimestamp
         });
-        this.startTimestamp = Math.min(this.startTimestamp, msTimestamp);
         this.endTimestamp = Math.max(this.endTimestamp, msTimestamp + Math.round(1e3 * chunk.duration));
         trackData.lastWrittenMsTimestamp = msTimestamp;
         this.currentClusterMaxMsTimestamp = Math.max(this.currentClusterMaxMsTimestamp, msTimestamp);
@@ -89985,7 +91338,10 @@ ${cue.notes ?? ""}`;
           if (block.chunk.type === "key" && !firstKeyBlockPerTrack.has(block.trackData)) {
             firstKeyBlockPerTrack.set(block.trackData, block);
           }
-          lastBlockPerTrack.set(block.trackData, block);
+          const lastBlock = lastBlockPerTrack.get(block.trackData);
+          if (!lastBlock || block.msTimestamp >= lastBlock.msTimestamp) {
+            lastBlockPerTrack.set(block.trackData, block);
+          }
         }
         const blockElements = /* @__PURE__ */ new Map();
         for (const block of this.currentClusterBlocks) {
@@ -90069,49 +91425,51 @@ ${cue.notes ?? ""}`;
           msDuration > 0 ? { id: EBMLId.BlockDuration, data: msDuration } : null
         ] };
       }
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async onTrackClose(track) {
         const release = await this.mutex.acquire();
-        const trackData = this.trackDatas.find((x) => x.track === track);
-        if (trackData) {
-          trackData.closed = true;
+        try {
+          this.closedTracks.add(track);
+          if (this.allTracksAreKnown()) {
+            this.allTracksKnown.resolve();
+          }
+          await this.interleaveChunks();
+        } finally {
+          release();
         }
-        if (this.allTracksAreKnown()) {
-          this.allTracksKnown.resolve();
-        }
-        await this.interleaveChunks();
-        release();
       }
       /** Finalizes the file, making it ready for use. Must be called after all media chunks have been added. */
       async finalize() {
         const release = await this.mutex.acquire();
-        this.allTracksKnown.resolve();
-        for (const trackData of this.trackDatas) {
-          trackData.closed = true;
+        try {
+          this.allTracksKnown.resolve();
+          for (const trackData of this.trackDatas) {
+            this.closedTracks.add(trackData.track);
+          }
+          if (!this.segment) {
+            this.createSegment();
+          }
+          await this.interleaveChunks(true);
+          if (this.currentClusterStartMsTimestamp !== null) {
+            this.writeCurrentCluster();
+          }
+          assert2(this.cues);
+          this.ebmlWriter.writeEBML(this.cues);
+          if (!this.format._options.appendOnly) {
+            const segmentSize = this.writer.getPos() - this.segmentDataOffset;
+            this.writer.seek(this.ebmlWriter.offsets.get(this.segment) + 4);
+            this.ebmlWriter.writeVarInt(segmentSize, SEGMENT_SIZE_BYTES);
+            const duration3 = Math.max(this.endTimestamp, 0);
+            this.segmentDuration.data = new EBMLFloat64(duration3);
+            this.writer.seek(this.ebmlWriter.offsets.get(this.segmentDuration));
+            this.ebmlWriter.writeEBML(this.segmentDuration);
+            assert2(this.seekHead);
+            this.writer.seek(this.ebmlWriter.offsets.get(this.seekHead));
+            this.maybeCreateSeekHead(true);
+            this.ebmlWriter.writeEBML(this.seekHead);
+          }
+        } finally {
+          release();
         }
-        if (!this.segment) {
-          this.createSegment();
-        }
-        await this.interleaveChunks(true);
-        if (this.currentClusterStartMsTimestamp !== null) {
-          this.writeCurrentCluster();
-        }
-        assert2(this.cues);
-        this.ebmlWriter.writeEBML(this.cues);
-        if (!this.format._options.appendOnly) {
-          const segmentSize = this.writer.getPos() - this.segmentDataOffset;
-          this.writer.seek(this.ebmlWriter.offsets.get(this.segment) + 4);
-          this.ebmlWriter.writeVarInt(segmentSize, SEGMENT_SIZE_BYTES);
-          const duration3 = this.startTimestamp === Infinity ? 0 : this.endTimestamp;
-          this.segmentDuration.data = new EBMLFloat64(duration3);
-          this.writer.seek(this.ebmlWriter.offsets.get(this.segmentDuration));
-          this.ebmlWriter.writeEBML(this.segmentDuration);
-          assert2(this.seekHead);
-          this.writer.seek(this.ebmlWriter.offsets.get(this.seekHead));
-          this.maybeCreateSeekHead(true);
-          this.ebmlWriter.writeEBML(this.seekHead);
-        }
-        release();
       }
     };
   }
@@ -90149,7 +91507,7 @@ var init_mp3_writer = __esm({
         const startPos = this.writer.getPos();
         this.crc = 0;
         const firstByte = 255;
-        const secondByte = 224 | data.mpegVersionId << 3 | data.layer << 1;
+        const secondByte = 224 | data.mpegVersionId << 3 | data.layer << 1 | 1;
         let lowSamplingFrequency;
         if (data.mpegVersionId & 2) {
           lowSamplingFrequency = data.mpegVersionId & 1 ? 0 : 1;
@@ -90163,6 +91521,9 @@ var init_mp3_writer = __esm({
         const bitrateOffset = lowSamplingFrequency * 16 * 4 + data.layer * 16;
         for (let i = 0; i < 16; i++) {
           const kbr = KILOBIT_RATES[bitrateOffset + i];
+          if (1e3 * kbr < (data.targetBitrate ?? 0)) {
+            continue;
+          }
           const size = computeMp3FrameSize(lowSamplingFrequency, data.layer, 1e3 * kbr, data.sampleRate, padding);
           if (size >= neededBytes) {
             bitrateIndex = i;
@@ -90240,13 +91601,16 @@ var init_mp3_muxer = __esm({
       }
       async start() {
         const release = await this.mutex.acquire();
-        this.writer = await this.output._getRootWriter(!this.writeXingHeader);
-        this.mp3Writer = new Mp3Writer(this.writer);
-        if (!metadataTagsAreEmpty(this.output._metadataTags)) {
-          const id3Writer = new Id3V2Writer(this.writer);
-          id3Writer.writeId3V2Tag(this.output._metadataTags);
+        try {
+          this.writer = await this.output._getRootWriter(!this.writeXingHeader);
+          this.mp3Writer = new Mp3Writer(this.writer);
+          if (!metadataTagsAreEmpty(this.output._metadataTags)) {
+            const id3Writer = new Id3V2Writer(this.writer);
+            id3Writer.writeId3V2Tag(this.output._metadataTags);
+          }
+        } finally {
+          release();
         }
-        release();
       }
       async getMimeType() {
         return "audio/mpeg";
@@ -90267,7 +91631,9 @@ var init_mp3_muxer = __esm({
             if (!header) {
               throw new Error("Invalid MP3 header in sample.");
             }
-            if (!this.xingFrameData) {
+            if (!this.xingFrameData && header.layer !== 1) {
+              this.writeXingHeader = false;
+            } else if (!this.xingFrameData) {
               const xingOffset = getXingOffset(header.mpegVersionId, header.channel);
               if (view2.byteLength >= xingOffset + 4) {
                 const word2 = view2.getUint32(xingOffset, false);
@@ -90290,6 +91656,7 @@ var init_mp3_muxer = __esm({
                 copyright: header.copyright,
                 original: header.original,
                 emphasis: header.emphasis,
+                targetBitrate: header.bitrate,
                 isCbr: false,
                 frameCount: null,
                 fileSize: null,
@@ -90298,7 +91665,6 @@ var init_mp3_muxer = __esm({
               };
               this.xingFramePos = this.writer.getPos();
               this.mp3Writer.writeXingFrame(this.xingFrameData);
-              this.frameCount++;
             }
             if (this.frameBitrate === null) {
               this.frameBitrate = header.bitrate;
@@ -90350,6 +91716,7 @@ var init_mp3_muxer = __esm({
               copyright: header.copyright,
               original: header.original,
               emphasis: header.emphasis,
+              targetBitrate: header.bitrate,
               isCbr: false,
               frameCount: null,
               fileSize: null,
@@ -90383,6 +91750,7 @@ var init_mp3_muxer = __esm({
               copyright: 0,
               original: 0,
               emphasis: 0,
+              targetBitrate: null,
               isCbr: false,
               frameCount: null,
               fileSize: null,
@@ -90394,7 +91762,6 @@ var init_mp3_muxer = __esm({
           }
           this.xingFramePos = this.writer.getPos();
           this.mp3Writer.writeXingFrame(this.xingFrameData);
-          this.frameCount++;
         }
         if (this.writeXingHeader) {
           assert2(this.xingFrameData);
@@ -90437,6 +91804,7 @@ var init_ogg_muxer = __esm({
     init_codec_data();
     init_misc();
     init_muxer();
+    init_logging();
     init_ogg_misc();
     init_ogg_reader();
     PAGE_SIZE_TARGET = 8192;
@@ -90447,22 +91815,27 @@ var init_ogg_muxer = __esm({
       constructor(output2, format2) {
         super(output2);
         this.trackDatas = [];
+        this.closedTracks = /* @__PURE__ */ new Set();
         this.bosPagesWritten = false;
         this.allTracksKnown = promiseWithResolvers();
+        this.warnedAboutTooNegativeTimestamp = false;
         this.pageBytes = new Uint8Array(MAX_PAGE_SIZE);
         this.pageView = new DataView(this.pageBytes.buffer);
         this.format = format2;
       }
       async start() {
         const release = await this.mutex.acquire();
-        this.writer = await this.output._getRootWriter(true);
-        for (const track of this.output.tracks) {
-          assert2(track.isAudioTrack());
-          if (track.metadata.decoderConfig) {
-            this.getTrackData(track, { decoderConfig: track.metadata.decoderConfig });
+        try {
+          this.writer = await this.output._getRootWriter(true);
+          for (const track of this.output.tracks) {
+            assert2(track.isAudioTrack());
+            if (track.metadata.decoderConfig) {
+              this.getTrackData(track, { decoderConfig: track.metadata.decoderConfig });
+            }
           }
+        } finally {
+          release();
         }
-        release();
       }
       async getMimeType() {
         await this.allTracksKnown.promise;
@@ -90486,10 +91859,19 @@ var init_ogg_muxer = __esm({
         validateAudioChunkMetadata(meta3, track.source._codec);
         assert2(meta3);
         assert2(meta3.decoderConfig);
+        let internalSampleRate;
+        if (track.source._codec === "vorbis") {
+          internalSampleRate = meta3.decoderConfig.sampleRate;
+        } else if (track.source._codec === "opus") {
+          internalSampleRate = OPUS_SAMPLE_RATE;
+        } else {
+          assertNever2(track.source._codec);
+          assert2(false);
+        }
         const newTrackData = {
           track,
           serialNumber,
-          internalSampleRate: track.source._codec === "opus" ? OPUS_SAMPLE_RATE : meta3.decoderConfig.sampleRate,
+          internalSampleRate,
           codecInfo: {
             codec: track.source._codec,
             vorbisInfo: null,
@@ -90497,8 +91879,9 @@ var init_ogg_muxer = __esm({
           },
           vorbisLastBlocksize: null,
           packetQueue: [],
-          startOffsetInSamples: null,
-          currentTimestampInSamples: 0,
+          leadingPackets: [],
+          startOffsetInSamples: 0,
+          currentTimestampInSamples: null,
           audioPacketCount: 0,
           pagesWritten: 0,
           currentGranulePosition: 0,
@@ -90506,8 +91889,7 @@ var init_ogg_muxer = __esm({
           currentPageData: [],
           currentPageSize: 27,
           currentPageStartsWithFreshPacket: true,
-          currentPageStartTimestampInSamples: 0,
-          closed: false
+          currentPageStartTimestampInSamples: 0
         };
         this.queueHeaderPackets(newTrackData, meta3);
         this.trackDatas.push(newTrackData);
@@ -90518,7 +91900,7 @@ var init_ogg_muxer = __esm({
       }
       queueHeaderPackets(trackData, meta3) {
         assert2(meta3.decoderConfig);
-        if (trackData.track.source._codec === "vorbis") {
+        if (trackData.codecInfo.codec === "vorbis") {
           assert2(meta3.decoderConfig.description);
           const bytes2 = toUint8Array(meta3.decoderConfig.description);
           if (bytes2[0] !== 2) {
@@ -90555,26 +91937,32 @@ var init_ogg_muxer = __esm({
           commentHeaderHeader[4] = 98;
           commentHeaderHeader[5] = 105;
           commentHeaderHeader[6] = 115;
-          const commentHeader = createVorbisComments(commentHeaderHeader, this.output._metadataTags, true);
+          const vorbisComments = createVorbisComments(commentHeaderHeader, this.output._metadataTags, true);
+          const commentHeader = new Uint8Array(vorbisComments.length + 1);
+          commentHeader.set(vorbisComments);
+          commentHeader[vorbisComments.length] = 1;
           trackData.packetQueue.push({
             data: identificationHeader,
             timestampInSamples: 0,
             durationInSamples: 0,
-            trimmedDurationInSamples: 0,
-            forcePageFlush: true
+            forcePageFlush: true,
+            holdPage: false,
+            isHeader: true
           }, {
             data: commentHeader,
             timestampInSamples: 0,
             durationInSamples: 0,
-            trimmedDurationInSamples: 0,
-            forcePageFlush: false
+            forcePageFlush: false,
+            holdPage: false,
+            isHeader: true
           }, {
             data: setupHeader,
             timestampInSamples: 0,
             durationInSamples: 0,
-            trimmedDurationInSamples: 0,
-            forcePageFlush: true
+            forcePageFlush: true,
             // The last header packet must flush the page
+            holdPage: false,
+            isHeader: true
           });
           const view2 = toDataView(identificationHeader);
           const blockSizeByte = view2.getUint8(28);
@@ -90585,7 +91973,7 @@ var init_ogg_muxer = __esm({
             ],
             modeBlockflags: parseModesFromVorbisSetupPacket(setupHeader).modeBlockflags
           };
-        } else if (trackData.track.source._codec === "opus") {
+        } else if (trackData.codecInfo.codec === "opus") {
           if (!meta3.decoderConfig.description) {
             throw new TypeError("For Ogg, Opus decoder description is required.");
           }
@@ -90599,19 +91987,23 @@ var init_ogg_muxer = __esm({
             data: identificationHeader,
             timestampInSamples: 0,
             durationInSamples: 0,
-            trimmedDurationInSamples: 0,
-            forcePageFlush: true
+            forcePageFlush: true,
+            holdPage: false,
+            isHeader: true
           }, {
             data: commentHeader,
             timestampInSamples: 0,
             durationInSamples: 0,
-            trimmedDurationInSamples: 0,
-            forcePageFlush: true
+            forcePageFlush: true,
             // The last header packet must flush the page
+            holdPage: false,
+            isHeader: true
           });
           trackData.codecInfo.opusInfo = {
             preSkip: parseOpusIdentificationHeader(identificationHeader).preSkip
           };
+        } else {
+          assertNever2(trackData.codecInfo.codec);
         }
       }
       async addEncodedAudioPacket(track, packet, meta3) {
@@ -90620,27 +92012,86 @@ var init_ogg_muxer = __esm({
           const trackData = this.getTrackData(track, meta3);
           this.validateTimestamp(trackData.track, packet.timestamp, packet.type === "key");
           const { durationInSamples, vorbisBlockSize } = extractSampleMetadata(packet.data, trackData.codecInfo, trackData.vorbisLastBlocksize);
-          if (trackData.startOffsetInSamples === null) {
-            const timestampInSamples = Math.round(packet.timestamp * trackData.internalSampleRate);
-            const preSkip = trackData.codecInfo.opusInfo?.preSkip ?? 0;
-            const minTimestampInSamples = trackData.codecInfo.codec === "vorbis" ? -durationInSamples : -preSkip;
-            const startTimestampInSamples = Math.max(timestampInSamples, minTimestampInSamples);
-            trackData.startOffsetInSamples = startTimestampInSamples - minTimestampInSamples;
-            trackData.currentTimestampInSamples = startTimestampInSamples + preSkip;
-          }
-          const currentTimestampInSamples = trackData.currentTimestampInSamples;
-          trackData.currentTimestampInSamples += durationInSamples;
           trackData.vorbisLastBlocksize = vorbisBlockSize;
-          const trimmedDurationInSamples = packet.duration > 0 ? clamp(Math.round(packet.duration * trackData.internalSampleRate), 0, durationInSamples) : durationInSamples;
-          const forcePageFlush = trackData.startOffsetInSamples > 0 && trackData.audioPacketCount === 1;
-          trackData.audioPacketCount++;
-          trackData.packetQueue.push({
+          if (trackData.currentTimestampInSamples === null) {
+            const timestampInSamples = Math.round(packet.timestamp * trackData.internalSampleRate);
+            if (trackData.codecInfo.codec === "vorbis") {
+              trackData.currentTimestampInSamples = timestampInSamples;
+            } else if (trackData.codecInfo.codec === "opus") {
+              const opusInfo = trackData.codecInfo.opusInfo;
+              assert2(opusInfo);
+              if (trackData.pagesWritten === 0) {
+                const preSkip = clamp(-timestampInSamples, opusInfo.preSkip, 2 ** 16 - 1);
+                const identificationHeader = trackData.packetQueue[0];
+                assert2(identificationHeader?.isHeader);
+                identificationHeader.data = identificationHeader.data.slice();
+                toDataView(identificationHeader.data).setUint16(10, preSkip, true);
+                opusInfo.preSkip = preSkip;
+              }
+              trackData.currentTimestampInSamples = timestampInSamples + opusInfo.preSkip;
+            } else {
+              assertNever2(trackData.codecInfo.codec);
+              assert2(false);
+            }
+          }
+          const newPacket = {
             data: packet.data,
-            timestampInSamples: currentTimestampInSamples,
+            timestampInSamples: trackData.currentTimestampInSamples,
             durationInSamples,
-            trimmedDurationInSamples,
-            forcePageFlush
-          });
+            forcePageFlush: false,
+            holdPage: false,
+            isHeader: false
+          };
+          trackData.currentTimestampInSamples += durationInSamples;
+          if (trackData.audioPacketCount === 0) {
+            const packetEndTimestampInSamples = newPacket.timestampInSamples + durationInSamples;
+            if (trackData.codecInfo.codec === "opus") {
+              if (newPacket.timestampInSamples < 0) {
+                this.warnAboutDiscardedPackets();
+                return;
+              }
+              trackData.startOffsetInSamples = newPacket.timestampInSamples;
+            } else if (trackData.codecInfo.codec === "vorbis") {
+              if (packetEndTimestampInSamples < 0) {
+                trackData.leadingPackets.push(newPacket);
+                return;
+              }
+              let segmentCount = Math.floor(newPacket.data.length / 255) + 1;
+              let firstKeptIndex = trackData.leadingPackets.length;
+              while (firstKeptIndex > 0) {
+                const leadingPacket = trackData.leadingPackets[firstKeptIndex - 1];
+                const leadingSegmentCount = Math.floor(leadingPacket.data.length / 255) + 1;
+                if (segmentCount + leadingSegmentCount > 255) {
+                  break;
+                }
+                segmentCount += leadingSegmentCount;
+                firstKeptIndex--;
+              }
+              if (firstKeptIndex > 0) {
+                this.warnAboutDiscardedPackets();
+              }
+              const keptPackets = trackData.leadingPackets.slice(firstKeptIndex);
+              trackData.leadingPackets.length = 0;
+              if (keptPackets.length > 0) {
+                for (const keptPacket of keptPackets) {
+                  keptPacket.holdPage = true;
+                  trackData.packetQueue.push(keptPacket);
+                }
+                newPacket.holdPage = true;
+                newPacket.forcePageFlush = true;
+                trackData.audioPacketCount += keptPackets.length;
+              } else {
+                trackData.startOffsetInSamples = packetEndTimestampInSamples;
+              }
+            } else {
+              assertNever2(trackData.codecInfo.codec);
+            }
+          }
+          if (trackData.startOffsetInSamples > 0 && trackData.audioPacketCount === 1) {
+            newPacket.forcePageFlush = true;
+          }
+          trackData.audioPacketCount++;
+          trackData.packetQueue.push(newPacket);
           await this.interleavePages();
         } finally {
           release();
@@ -90651,7 +92102,7 @@ var init_ogg_muxer = __esm({
       }
       allTracksAreKnown() {
         for (const track of this.output.tracks) {
-          if (!track.source._closed && !this.trackDatas.some((x) => x.track === track)) {
+          if (!this.closedTracks.has(track) && !this.trackDatas.some((x) => x.track === track)) {
             return false;
           }
         }
@@ -90677,12 +92128,17 @@ var init_ogg_muxer = __esm({
           let trackWithMinTimestamp = null;
           let minTimestamp = Infinity;
           for (const trackData of this.trackDatas) {
-            if (!isFinalCall && trackData.packetQueue.length <= 1 && !trackData.closed) {
+            if (!isFinalCall && trackData.packetQueue.length <= 1 && !this.closedTracks.has(trackData.track)) {
               break outer;
             }
-            if (trackData.packetQueue.length > 0 && trackData.packetQueue[0].timestampInSamples < minTimestamp) {
+            if (trackData.packetQueue.length === 0) {
+              continue;
+            }
+            const nextPacket = trackData.packetQueue[0];
+            const timestamp = nextPacket.isHeader ? -Infinity : nextPacket.timestampInSamples / trackData.internalSampleRate;
+            if (timestamp < minTimestamp) {
               trackWithMinTimestamp = trackData;
-              minTimestamp = trackData.packetQueue[0].timestampInSamples;
+              minTimestamp = timestamp;
             }
           }
           if (!trackWithMinTimestamp) {
@@ -90697,11 +92153,11 @@ var init_ogg_muxer = __esm({
         }
       }
       writePacket(trackData, packet, isFinalPacket) {
-        const packetEndTimestampInSamples = packet.timestampInSamples + (isFinalPacket ? packet.trimmedDurationInSamples : packet.durationInSamples);
+        const packetEndTimestampInSamples = packet.timestampInSamples + packet.durationInSamples;
         if (trackData.currentLacingValues.length === 0) {
           trackData.currentPageStartTimestampInSamples = packet.timestampInSamples;
         }
-        if (this.format._options.maximumPageDuration !== void 0) {
+        if (this.format._options.maximumPageDuration !== void 0 && !packet.holdPage) {
           const maxDurationInSamples = this.format._options.maximumPageDuration * trackData.internalSampleRate;
           if (trackData.currentLacingValues.length > 0 && packetEndTimestampInSamples - trackData.currentPageStartTimestampInSamples > maxDurationInSamples) {
             this.writePage(trackData, false);
@@ -90741,7 +92197,7 @@ var init_ogg_muxer = __esm({
         trackData.currentPageData.push(slice);
         trackData.currentPageSize += slice.length;
         trackData.currentGranulePosition = packetEndTimestampInSamples;
-        if (trackData.currentPageSize >= PAGE_SIZE_TARGET || packet.forcePageFlush) {
+        if (trackData.currentPageSize >= PAGE_SIZE_TARGET && !packet.holdPage || packet.forcePageFlush || isFinalPacket) {
           this.writePage(trackData, isFinalPacket);
         }
       }
@@ -90789,39 +92245,50 @@ var init_ogg_muxer = __esm({
           this.format._options.onPage(data, start, trackData.track.source);
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async onTrackClose(track) {
         const release = await this.mutex.acquire();
-        const trackData = this.trackDatas.find((x) => x.track === track);
-        if (trackData) {
-          trackData.closed = true;
+        try {
+          this.closedTracks.add(track);
+          const trackData = this.trackDatas.find((x) => x.track === track);
+          if (trackData) {
+            if (trackData.leadingPackets.length > 0) {
+              trackData.leadingPackets.length = 0;
+              this.warnAboutDiscardedPackets();
+            }
+          }
+          if (this.allTracksAreKnown()) {
+            this.allTracksKnown.resolve();
+          }
+          await this.interleavePages();
+        } finally {
+          release();
         }
-        if (this.allTracksAreKnown()) {
-          this.allTracksKnown.resolve();
-        }
-        await this.interleavePages();
-        release();
       }
       async finalize() {
         const release = await this.mutex.acquire();
         this.allTracksKnown.resolve();
         for (const trackData of this.trackDatas) {
-          trackData.closed = true;
-        }
-        await this.interleavePages(true);
-        for (const trackData of this.trackDatas) {
-          if (trackData.currentLacingValues.length > 0) {
-            this.writePage(trackData, true);
+          this.closedTracks.add(trackData.track);
+          if (trackData.leadingPackets.length > 0) {
+            trackData.leadingPackets.length = 0;
+            this.warnAboutDiscardedPackets();
           }
         }
+        await this.interleavePages(true);
         release();
+      }
+      warnAboutDiscardedPackets() {
+        if (!this.warnedAboutTooNegativeTimestamp) {
+          Logging._warn("Packets had to be discarded because their timestamp is too negative to represent in Ogg.");
+          this.warnedAboutTooNegativeTimestamp = true;
+        }
       }
     };
   }
 });
 
 // node_modules/mediabunny/dist/modules/src/mpeg-ts/mpeg-ts-muxer.js
-var PAT_PID, PMT_PID, FIRST_TRACK_PID, VIDEO_STREAM_ID_BASE, AUDIO_STREAM_ID_BASE, AVC_AUD_NAL, HEVC_AUD_NAL, MpegTsMuxer, MPEG_TS_CRC_POLYNOMIAL, MPEG_TS_CRC_TABLE, computeMpegTsCrc32, PAT_SECTION, buildPmt;
+var PAT_PID, PMT_PID, FIRST_TRACK_PID, VIDEO_STREAM_ID_BASE, AUDIO_STREAM_ID_BASE, MpegTsMuxer, MPEG_TS_CRC_POLYNOMIAL, MPEG_TS_CRC_TABLE, computeMpegTsCrc32, PAT_SECTION, buildPmt;
 var init_mpeg_ts_muxer = __esm({
   "node_modules/mediabunny/dist/modules/src/mpeg-ts/mpeg-ts-muxer.js"() {
     init_aac_misc();
@@ -90836,8 +92303,6 @@ var init_mpeg_ts_muxer = __esm({
     FIRST_TRACK_PID = 256;
     VIDEO_STREAM_ID_BASE = 224;
     AUDIO_STREAM_ID_BASE = 192;
-    AVC_AUD_NAL = new Uint8Array([9, 240]);
-    HEVC_AUD_NAL = new Uint8Array([70, 1]);
     MpegTsMuxer = class extends Muxer {
       static {
         __name(this, "MpegTsMuxer");
@@ -90845,13 +92310,12 @@ var init_mpeg_ts_muxer = __esm({
       constructor(output2, format2) {
         super(output2);
         this.trackDatas = [];
+        this.closedTracks = /* @__PURE__ */ new Set();
         this.tablesWritten = false;
         this.continuityCounters = /* @__PURE__ */ new Map();
         this.packetBuffer = new Uint8Array(TS_PACKET_SIZE);
         this.packetView = toDataView(this.packetBuffer);
         this.allTracksKnown = promiseWithResolvers();
-        this.videoTrackIndex = 0;
-        this.audioTrackIndex = 0;
         this.adaptationFieldBuffer = new Uint8Array(184);
         this.payloadBuffer = new Uint8Array(184);
         this.format = format2;
@@ -90859,8 +92323,11 @@ var init_mpeg_ts_muxer = __esm({
       }
       async start() {
         const release = await this.mutex.acquire();
-        this.writer = await this.output._getRootWriter(true);
-        release();
+        try {
+          this.writer = await this.output._getRootWriter(true);
+        } finally {
+          release();
+        }
       }
       async getMimeType() {
         await this.allTracksKnown.promise;
@@ -90876,8 +92343,8 @@ var init_mpeg_ts_muxer = __esm({
         const codec2 = track.source._codec;
         assert2(codec2 === "avc" || codec2 === "hevc");
         const streamType = codec2 === "avc" ? 27 : 36;
-        const pid = FIRST_TRACK_PID + this.trackDatas.length;
-        const streamId = VIDEO_STREAM_ID_BASE + this.videoTrackIndex++;
+        const pid = FIRST_TRACK_PID + this.output.tracks.indexOf(track);
+        const streamId = VIDEO_STREAM_ID_BASE + this.output.tracks.filter((x) => x.type === "video").indexOf(track);
         const newTrackData = {
           track,
           pid,
@@ -90885,6 +92352,8 @@ var init_mpeg_ts_muxer = __esm({
           streamId,
           codecString: meta3.decoderConfig.codec,
           timestampProcessingQueue: [],
+          reorderDelay: 0,
+          lastDecodeTimestamp: -Infinity,
           packetQueue: [],
           inputIsAnnexB: null,
           inputIsAdts: null,
@@ -90892,8 +92361,7 @@ var init_mpeg_ts_muxer = __esm({
           hevcDecoderConfig: null,
           adtsHeader: null,
           adtsHeaderBitstream: null,
-          firstPacketWritten: false,
-          closed: false
+          firstPacketWritten: false
         };
         this.trackDatas.push(newTrackData);
         if (this.allTracksAreKnown()) {
@@ -90910,20 +92378,22 @@ var init_mpeg_ts_muxer = __esm({
         assert2(meta3?.decoderConfig);
         const codec2 = track.source._codec;
         assert2(codec2 === "aac" || codec2 === "mp3" || codec2 === "ac3" || codec2 === "eac3" || codec2 === "dts");
+        const pid = FIRST_TRACK_PID + this.output.tracks.indexOf(track);
+        const audioTrackIndex = this.output.tracks.filter((x) => x.type === "audio").indexOf(track);
         let streamType;
         let streamId;
         switch (codec2) {
           case "aac":
             {
               streamType = 15;
-              streamId = AUDIO_STREAM_ID_BASE + this.audioTrackIndex++;
+              streamId = AUDIO_STREAM_ID_BASE + audioTrackIndex;
             }
             ;
             break;
           case "mp3":
             {
               streamType = 3;
-              streamId = AUDIO_STREAM_ID_BASE + this.audioTrackIndex++;
+              streamId = AUDIO_STREAM_ID_BASE + audioTrackIndex;
             }
             ;
             break;
@@ -90949,7 +92419,6 @@ var init_mpeg_ts_muxer = __esm({
             ;
             break;
         }
-        const pid = FIRST_TRACK_PID + this.trackDatas.length;
         const newTrackData = {
           track,
           pid,
@@ -90957,6 +92426,8 @@ var init_mpeg_ts_muxer = __esm({
           streamId,
           codecString: meta3.decoderConfig.codec,
           timestampProcessingQueue: [],
+          reorderDelay: 0,
+          lastDecodeTimestamp: -Infinity,
           packetQueue: [],
           inputIsAnnexB: null,
           inputIsAdts: null,
@@ -90964,8 +92435,7 @@ var init_mpeg_ts_muxer = __esm({
           hevcDecoderConfig: null,
           adtsHeader: null,
           adtsHeaderBitstream: null,
-          firstPacketWritten: false,
-          closed: false
+          firstPacketWritten: false
         };
         this.trackDatas.push(newTrackData);
         if (this.allTracksAreKnown()) {
@@ -91018,8 +92488,7 @@ var init_mpeg_ts_muxer = __esm({
         const codec2 = trackData.track.source._codec;
         if (trackData.inputIsAnnexB === null) {
           const description = meta3?.decoderConfig?.description;
-          trackData.inputIsAnnexB = !description;
-          if (!trackData.inputIsAnnexB) {
+          if (description) {
             const bytes2 = toUint8Array(description);
             if (codec2 === "avc") {
               trackData.avcDecoderConfig = deserializeAvcDecoderConfigurationRecord(bytes2);
@@ -91027,6 +92496,7 @@ var init_mpeg_ts_muxer = __esm({
               trackData.hevcDecoderConfig = deserializeHevcDecoderConfigurationRecord(bytes2);
             }
           }
+          trackData.inputIsAnnexB = !description;
         }
         if (trackData.inputIsAnnexB) {
           return this.prepareAnnexBVideoPacket(packet.data, codec2);
@@ -91043,8 +92513,7 @@ var init_mpeg_ts_muxer = __esm({
             nalUnits.push(nalUnit);
           }
         }
-        const aud = codec2 === "avc" ? AVC_AUD_NAL : HEVC_AUD_NAL;
-        nalUnits.unshift(aud);
+        nalUnits.unshift(this.createAud(nalUnits, codec2));
         return concatNalUnitsInAnnexB(nalUnits);
       }
       prepareLengthPrefixedVideoPacket(trackData, packet, codec2) {
@@ -91092,9 +92561,16 @@ var init_mpeg_ts_muxer = __esm({
             }
           }
         }
-        const aud = codec2 === "avc" ? AVC_AUD_NAL : HEVC_AUD_NAL;
-        nalUnits.unshift(aud);
+        nalUnits.unshift(this.createAud(nalUnits, codec2));
         return concatNalUnitsInAnnexB(nalUnits);
+      }
+      createAud(nalUnits, codec2) {
+        if (codec2 === "avc") {
+          return new Uint8Array([9, 240]);
+        }
+        const vclNalUnit = nalUnits.find((x) => extractNalUnitTypeForHevc(x[0]) < 32);
+        const temporalIdPlusOne = vclNalUnit ? vclNalUnit[1] & 7 : 1;
+        return new Uint8Array([70, temporalIdPlusOne, 80]);
       }
       prepareAudioPacket(trackData, packet, meta3) {
         const codec2 = trackData.track.source._codec;
@@ -91103,13 +92579,13 @@ var init_mpeg_ts_muxer = __esm({
         }
         if (trackData.inputIsAdts === null) {
           const description = meta3?.decoderConfig?.description;
-          trackData.inputIsAdts = !description;
-          if (!trackData.inputIsAdts) {
+          if (description) {
             const config2 = parseAacAudioSpecificConfig(toUint8Array(description));
             const template = buildAdtsHeaderTemplate(config2);
             trackData.adtsHeader = template.header;
             trackData.adtsHeaderBitstream = template.bitstream;
           }
+          trackData.inputIsAdts = !description;
         }
         if (trackData.inputIsAdts) {
           return packet.data;
@@ -91126,7 +92602,7 @@ var init_mpeg_ts_muxer = __esm({
       }
       allTracksAreKnown() {
         for (const track of this.output.tracks) {
-          if (!track.source._closed && !this.trackDatas.some((x) => x.track === track)) {
+          if (!this.closedTracks.has(track) && !this.trackDatas.some((x) => x.track === track)) {
             return false;
           }
         }
@@ -91139,7 +92615,14 @@ var init_mpeg_ts_muxer = __esm({
         const sortedTimestamps = trackData.timestampProcessingQueue.map((packet) => packet.presentationTimestamp).sort((a, b) => a - b);
         for (let i = 0; i < trackData.timestampProcessingQueue.length; i++) {
           const queuedPacket = trackData.timestampProcessingQueue[i];
-          queuedPacket.decodeTimestamp = sortedTimestamps[i];
+          trackData.reorderDelay = Math.max(trackData.reorderDelay, sortedTimestamps[i] - queuedPacket.presentationTimestamp);
+        }
+        for (let i = 0; i < trackData.timestampProcessingQueue.length; i++) {
+          const queuedPacket = trackData.timestampProcessingQueue[i];
+          const decodeTimestamp = Math.max(sortedTimestamps[i] - trackData.reorderDelay, trackData.lastDecodeTimestamp + 1 / MPEG_TS_TIMESCALE);
+          queuedPacket.decodeTimestamp = decodeTimestamp;
+          queuedPacket.presentationTimestamp = Math.max(queuedPacket.presentationTimestamp, decodeTimestamp);
+          trackData.lastDecodeTimestamp = decodeTimestamp;
           trackData.packetQueue.push(queuedPacket);
         }
         trackData.timestampProcessingQueue.length = 0;
@@ -91158,7 +92641,7 @@ var init_mpeg_ts_muxer = __esm({
           let trackWithMinTimestamp = null;
           let minTimestamp = Infinity;
           for (const trackData of this.trackDatas) {
-            if (!isFinalCall && trackData.packetQueue.length === 0 && !trackData.closed) {
+            if (!isFinalCall && trackData.packetQueue.length === 0 && !this.closedTracks.has(trackData.track)) {
               break outer;
             }
             if (trackData.packetQueue.length > 0 && trackData.packetQueue[0].presentationTimestamp < minTimestamp) {
@@ -91211,7 +92694,7 @@ var init_mpeg_ts_muxer = __esm({
         const ptsDtsBitstream = new Bitstream(pesHeaderBuffer.subarray(9));
         setUint24(pesView, 0, 1, false);
         pesHeaderBuffer[3] = trackData.streamId;
-        const pesPacketLength = trackData.track.type === "video" ? 0 : Math.min(8 + queuedPacket.data.length, 65535);
+        const pesPacketLength = trackData.track.type === "video" || 8 + queuedPacket.data.length > 65535 ? 0 : 8 + queuedPacket.data.length;
         pesView.setUint16(4, pesPacketLength, false);
         pesView.setUint8(6, 132);
         pesView.setUint8(7, includeDts ? 192 : 128);
@@ -91308,25 +92791,27 @@ var init_mpeg_ts_muxer = __esm({
           this.format._options.onPacket(this.packetBuffer.slice(), startPos);
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async onTrackClose(track) {
         const release = await this.mutex.acquire();
-        const trackData = this.trackDatas.find((x) => x.track === track);
-        if (trackData) {
-          trackData.closed = true;
-          await this.flushTimestampQueue(trackData, false);
+        try {
+          this.closedTracks.add(track);
+          const trackData = this.trackDatas.find((x) => x.track === track);
+          if (trackData) {
+            await this.flushTimestampQueue(trackData, false);
+          }
+          if (this.allTracksAreKnown()) {
+            this.allTracksKnown.resolve();
+          }
+          await this.interleavePackets();
+        } finally {
+          release();
         }
-        if (this.allTracksAreKnown()) {
-          this.allTracksKnown.resolve();
-        }
-        await this.interleavePackets();
-        release();
       }
       async finalize() {
         const release = await this.mutex.acquire();
         this.allTracksKnown.resolve();
         for (const trackData of this.trackDatas) {
-          trackData.closed = true;
+          this.closedTracks.add(trackData.track);
           await this.flushTimestampQueue(trackData, false);
         }
         await this.interleavePackets(true);
@@ -91385,7 +92870,7 @@ var init_mpeg_ts_muxer = __esm({
       view2.setUint16(8, 57344 | 8191, false);
       view2.setUint16(10, 61440, false);
       let offset = 12;
-      for (const trackData of trackDatas) {
+      for (const trackData of [...trackDatas].sort((a, b) => a.pid - b.pid)) {
         section[offset++] = trackData.streamType;
         view2.setUint16(offset, 57344 | trackData.pid & 8191, false);
         offset += 2;
@@ -91471,25 +92956,30 @@ var init_wave_muxer = __esm({
         this.sampleCount = 0;
         this.riffSizePos = null;
         this.dataSizePos = null;
+        this.factSampleCountPos = null;
         this.ds64RiffSizePos = null;
         this.ds64DataSizePos = null;
         this.ds64SampleCountPos = null;
         this.format = format2;
         this.isRf64 = !!format2._options.large;
+        this.appendOnly = !!format2._options.appendOnly;
       }
       async start() {
         const release = await this.mutex.acquire();
-        this.writer = await this.output._getRootWriter(false);
-        this.riffWriter = new RiffWriter(this.writer);
-        const track = this.output.tracks[0];
-        assert2(track?.isAudioTrack());
-        if (track.metadata.decoderConfig) {
-          validateAudioChunkMetadata({ decoderConfig: track.metadata.decoderConfig }, track.source._codec);
-          this.writeHeader(track, track.metadata.decoderConfig);
-          this.sampleRate = track.metadata.decoderConfig.sampleRate;
-          this.headerWritten = true;
+        try {
+          this.writer = await this.output._getRootWriter(this.appendOnly);
+          this.riffWriter = new RiffWriter(this.writer);
+          const track = this.output.tracks[0];
+          assert2(track?.isAudioTrack());
+          if (track.metadata.decoderConfig) {
+            validateAudioChunkMetadata({ decoderConfig: track.metadata.decoderConfig }, track.source._codec);
+            this.writeHeader(track, track.metadata.decoderConfig);
+            this.sampleRate = track.metadata.decoderConfig.sampleRate;
+            this.headerWritten = true;
+          }
+        } finally {
+          release();
         }
-        release();
       }
       async getMimeType() {
         return "audio/wav";
@@ -91541,34 +93031,90 @@ var init_wave_muxer = __esm({
         }
         const channels = config2.numberOfChannels;
         const sampleRate = config2.sampleRate;
+        const bitsPerSample = 8 * pcmInfo.sampleSize;
         const blockSize = pcmInfo.sampleSize * channels;
+        const isExtensible = channels > 2 || format2 === WaveFormat.PCM && bitsPerSample > 16;
+        const sizePlaceholder = this.appendOnly ? 4294967295 : 0;
+        const writeDs64SizePlaceholder = /* @__PURE__ */ __name(() => {
+          if (this.appendOnly) {
+            this.riffWriter.writeU32(4294967295);
+            this.riffWriter.writeU32(2147483647);
+          } else {
+            this.riffWriter.writeU64(0);
+          }
+        }, "writeDs64SizePlaceholder");
         this.riffWriter.writeAscii(this.isRf64 ? "RF64" : "RIFF");
         if (this.isRf64) {
           this.riffWriter.writeU32(4294967295);
         } else {
           this.riffSizePos = this.writer.getPos();
-          this.riffWriter.writeU32(0);
+          this.riffWriter.writeU32(sizePlaceholder);
         }
         this.riffWriter.writeAscii("WAVE");
         if (this.isRf64) {
           this.riffWriter.writeAscii("ds64");
           this.riffWriter.writeU32(28);
           this.ds64RiffSizePos = this.writer.getPos();
-          this.riffWriter.writeU64(0);
+          writeDs64SizePlaceholder();
           this.ds64DataSizePos = this.writer.getPos();
-          this.riffWriter.writeU64(0);
+          writeDs64SizePlaceholder();
           this.ds64SampleCountPos = this.writer.getPos();
           this.riffWriter.writeU64(0);
           this.riffWriter.writeU32(0);
         }
         this.riffWriter.writeAscii("fmt ");
-        this.riffWriter.writeU32(16);
-        this.riffWriter.writeU16(format2);
+        this.riffWriter.writeU32(isExtensible ? 40 : 16);
+        this.riffWriter.writeU16(isExtensible ? WaveFormat.EXTENSIBLE : format2);
         this.riffWriter.writeU16(channels);
         this.riffWriter.writeU32(sampleRate);
         this.riffWriter.writeU32(sampleRate * blockSize);
         this.riffWriter.writeU16(blockSize);
-        this.riffWriter.writeU16(8 * pcmInfo.sampleSize);
+        this.riffWriter.writeU16(bitsPerSample);
+        if (isExtensible) {
+          const DEFAULT_CHANNEL_MASKS = {
+            1: 4,
+            // Mono
+            2: 3,
+            // Stereo
+            3: 7,
+            // 3.0
+            4: 51,
+            // Quad
+            5: 55,
+            // 5.0(back)
+            6: 63,
+            // 5.1(back)
+            7: 1807,
+            // 6.1
+            8: 1599
+            // 7.1
+          };
+          const SUBFORMAT_GUID_SUFFIX = new Uint8Array([
+            0,
+            0,
+            16,
+            0,
+            128,
+            0,
+            0,
+            170,
+            0,
+            56,
+            155,
+            113
+          ]);
+          this.riffWriter.writeU16(22);
+          this.riffWriter.writeU16(bitsPerSample);
+          this.riffWriter.writeU32(DEFAULT_CHANNEL_MASKS[channels] ?? 0);
+          this.riffWriter.writeU32(format2);
+          this.writer.write(SUBFORMAT_GUID_SUFFIX);
+        }
+        if (format2 !== WaveFormat.PCM && !this.appendOnly) {
+          this.riffWriter.writeAscii("fact");
+          this.riffWriter.writeU32(4);
+          this.factSampleCountPos = this.writer.getPos();
+          this.riffWriter.writeU32(0);
+        }
         if (!metadataTagsAreEmpty(this.output._metadataTags)) {
           const metadataFormat = this.format._options.metadataFormat ?? "info";
           if (metadataFormat === "info") {
@@ -91584,7 +93130,7 @@ var init_wave_muxer = __esm({
           this.riffWriter.writeU32(4294967295);
         } else {
           this.dataSizePos = this.writer.getPos();
-          this.riffWriter.writeU32(0);
+          this.riffWriter.writeU32(sizePlaceholder);
         }
         if (this.format._options.onHeader) {
           const { data, start } = this.writer.stopTrackingWrites();
@@ -91728,8 +93274,16 @@ var init_wave_muxer = __esm({
         if (!this.headerWritten) {
           throw new Error("Cannot finalize an empty WAVE file: no packets were added and the track specified no decoderConfig in its metadata, so there's no telling what the file should look like.");
         }
+        if (this.dataSize & 1 && !this.appendOnly) {
+          this.writer.write(new Uint8Array(1));
+        }
         const endPos = this.writer.getPos();
-        if (this.isRf64) {
+        if (this.factSampleCountPos !== null) {
+          this.writer.seek(this.factSampleCountPos);
+          this.riffWriter.writeU32(Math.min(this.sampleCount, 4294967295));
+        }
+        if (this.appendOnly) {
+        } else if (this.isRf64) {
           assert2(this.ds64RiffSizePos !== null);
           this.writer.seek(this.ds64RiffSizePos);
           this.riffWriter.writeU64(endPos - 8);
@@ -91772,6 +93326,12 @@ var init_hls_muxer = __esm({
       if (codecString === "opus") {
         return "Opus";
       }
+      if (codecString === "flac") {
+        return "fLaC";
+      }
+      if (codecString === "mp3" || codecString === "mp4a.69" || codecString === "mp4a.6B" || codecString === "mp4a.6b") {
+        return "mp4a.40.34";
+      }
       return codecString;
     }, "toHlsCodecString");
     HlsMuxer = class extends Muxer {
@@ -91784,6 +93344,7 @@ var init_hls_muxer = __esm({
         }
         super(output2);
         this.trackDatas = [];
+        this.closedTracks = /* @__PURE__ */ new Set();
         this.firstPacketTimestamp = null;
         this.isRelativeToUnixEpoch = false;
         this.numWrittenMasterPlaylists = 0;
@@ -91795,304 +93356,316 @@ var init_hls_muxer = __esm({
         this.isLive = format2._options.live ?? false;
         this.maxLiveSegmentCount = format2._options.maxLiveSegmentCount ?? Infinity;
         this.mediaTimestampBase = format2._options.mediaTimestampBase ?? 10;
-        this.globalTargetDuration = this.targetSegmentDuration;
+        this.globalTargetDuration = 0;
         this.getPlaylistPath = format2._options.getPlaylistPath ?? (({ n }) => `playlist-${n}.m3u8`);
         this.getSegmentPath = format2._options.getSegmentPath ?? ((info) => info.isSingleFile ? `segments-${info.playlist.n}${info.format.fileExtension}` : `segment-${info.playlist.n}-${info.n}${info.format.fileExtension}`);
         this.getInitPath = format2._options.getInitPath ?? ((playlist) => `init-${playlist.n}${playlist.segmentFormat.fileExtension}`);
       }
       async start() {
         const release = await this.mutex.acquire();
-        const someRelative = this.output.tracks.some((t) => t.metadata.isRelativeToUnixEpoch);
-        const someNotRelative = this.output.tracks.some((t) => !t.metadata.isRelativeToUnixEpoch);
-        if (someRelative && someNotRelative) {
-          throw new Error("All tracks must agree on `relativeToUnixEpoch`: some tracks are relative to the Unix epoch and some are not.");
-        }
-        this.isRelativeToUnixEpoch = someRelative;
-        const groupAssignment = /* @__PURE__ */ new Map();
-        const groups = [];
-        let hasVideo = false;
-        let illegalPairingDetected = false;
-        let keyPacketsOnlyPairingWarned = false;
-        for (const track of this.output.tracks) {
-          if (track.type === "video") {
-            hasVideo = true;
+        try {
+          const someRelative = this.output.tracks.some((t) => t.metadata.isRelativeToUnixEpoch);
+          const someNotRelative = this.output.tracks.some((t) => !t.metadata.isRelativeToUnixEpoch);
+          if (someRelative && someNotRelative) {
+            throw new Error("All tracks must agree on `relativeToUnixEpoch`: some tracks are relative to the Unix epoch and some are not.");
           }
-          const pairableGroups = /* @__PURE__ */ new Map();
-          for (const otherTrack of this.output.tracks) {
-            if (track === otherTrack) {
-              continue;
+          this.isRelativeToUnixEpoch = someRelative;
+          const groupAssignment = /* @__PURE__ */ new Map();
+          const groups = [];
+          let hasVideo = false;
+          let illegalPairingDetected = false;
+          let keyPacketsOnlyPairingWarned = false;
+          for (const track of this.output.tracks) {
+            if (track.type === "video") {
+              hasVideo = true;
             }
-            if (!track.canBePairedWith(otherTrack)) {
-              continue;
-            }
-            if (track.type === otherTrack.type) {
-              if (!illegalPairingDetected) {
-                Logging._warn(`Illegal pairing of two ${track.type} tracks detected, which is not possible in HLS; treating them as unpaired.`);
-                illegalPairingDetected = true;
+            const pairableGroups = /* @__PURE__ */ new Map();
+            for (const otherTrack of this.output.tracks) {
+              if (track === otherTrack) {
+                continue;
               }
-              continue;
-            }
-            if (track.isVideoTrack() && track.metadata.hasOnlyKeyPackets || otherTrack.isVideoTrack() && otherTrack.metadata.hasOnlyKeyPackets) {
-              if (!keyPacketsOnlyPairingWarned) {
-                Logging._warn(`A key-packets-only video track is pairable with another track, which is not possible in HLS; treating them as unpaired.`);
-                keyPacketsOnlyPairingWarned = true;
+              if (!track.canBePairedWith(otherTrack)) {
+                continue;
               }
-              continue;
+              if (track.type === otherTrack.type) {
+                if (!illegalPairingDetected) {
+                  Logging._warn(`Illegal pairing of two ${track.type} tracks detected, which is not possible in HLS; treating them as unpaired.`);
+                  illegalPairingDetected = true;
+                }
+                continue;
+              }
+              if (track.isVideoTrack() && track.metadata.hasOnlyKeyPackets || otherTrack.isVideoTrack() && otherTrack.metadata.hasOnlyKeyPackets) {
+                if (!keyPacketsOnlyPairingWarned) {
+                  Logging._warn(`A key-packets-only video track is pairable with another track, which is not possible in HLS; treating them as unpaired.`);
+                  keyPacketsOnlyPairingWarned = true;
+                }
+                continue;
+              }
+              let groupTracks = pairableGroups.get(otherTrack.source._codec);
+              if (!groupTracks) {
+                pairableGroups.set(otherTrack.source._codec, groupTracks = []);
+              }
+              groupTracks.push(otherTrack);
             }
-            let groupTracks = pairableGroups.get(otherTrack.source._codec);
-            if (!groupTracks) {
-              pairableGroups.set(otherTrack.source._codec, groupTracks = []);
-            }
-            groupTracks.push(otherTrack);
-          }
-          for (const [, pairableTracks] of pairableGroups) {
-            const key = pairableTracks.map((x) => x.id).join("-");
-            const group = groups.find((x) => x.key === key);
-            if (!group) {
-              groups.push({
-                name: pairableTracks[0].type + "-" + (groups.length + 1),
-                key,
-                tracks: pairableTracks,
-                needsEmit: false,
-                firstNoUri: false
-              });
-            }
-            let assignedGroups = groupAssignment.get(track);
-            if (!assignedGroups) {
-              groupAssignment.set(track, assignedGroups = []);
-            }
-            assignedGroups.push(key);
-          }
-        }
-        const mainType = hasVideo ? "video" : "audio";
-        const variantStreams = [];
-        const unpairedVideoTracks = [];
-        const unpairedAudioTracks = [];
-        for (const track of this.output.tracks) {
-          const assignedGroupKeys = groupAssignment.get(track);
-          if (assignedGroupKeys) {
-            assert2(assignedGroupKeys.length > 0);
-            if (track.type !== mainType) {
-              continue;
-            }
-            for (const key of assignedGroupKeys) {
+            for (const [, pairableTracks] of pairableGroups) {
+              const key = pairableTracks.map((x) => x.id).join("-");
               const group = groups.find((x) => x.key === key);
-              assert2(group);
-              if (assignedGroupKeys.length === 1 && group.tracks.length === 1) {
-                const otherGroupKeys = groupAssignment.get(group.tracks[0]);
-                assert2(otherGroupKeys !== void 0);
-                if (otherGroupKeys.length === 1) {
-                  const otherGroup = groups.find((x) => x.key === otherGroupKeys[0]);
-                  if (otherGroup.tracks.length === 1) {
-                    assert2(otherGroup.tracks[0] === track);
-                    variantStreams.push({
-                      tracks: [track, group.tracks[0]],
-                      linkedGroup: null
-                    });
-                    continue;
+              if (!group) {
+                groups.push({
+                  name: pairableTracks[0].type + "-" + (groups.length + 1),
+                  key,
+                  tracks: pairableTracks,
+                  needsEmit: false,
+                  firstNoUri: false
+                });
+              }
+              let assignedGroups = groupAssignment.get(track);
+              if (!assignedGroups) {
+                groupAssignment.set(track, assignedGroups = []);
+              }
+              assignedGroups.push(key);
+            }
+          }
+          const mainType = hasVideo ? "video" : "audio";
+          const variantStreams = [];
+          const unpairedVideoTracks = [];
+          const unpairedAudioTracks = [];
+          const deduceSegmentFormat = /* @__PURE__ */ __name((tracks) => {
+            const codecs = [];
+            let videoCount = 0;
+            let audioCount = 0;
+            let requiresTransformationMetadata = false;
+            let candidate = null;
+            let candidateScore = -Infinity;
+            for (const track of tracks) {
+              if (track.isVideoTrack()) {
+                videoCount++;
+                requiresTransformationMetadata ||= (track.metadata.rotation ?? 0) !== 0 || !!track.metadata.flip || !!track.metadata.transformationMatrix;
+              } else if (track.isAudioTrack()) {
+                audioCount++;
+              }
+              codecs.push(track.source._codec);
+            }
+            for (const format2 of toArray(this.format._options.segmentFormat)) {
+              const supportedCodecs = format2.getSupportedCodecs();
+              const trackCounts = format2.getSupportedTrackCounts();
+              if (codecs.some((codec2) => !supportedCodecs.includes(codec2))) {
+                continue;
+              }
+              if (videoCount < trackCounts.video.min || videoCount > trackCounts.video.max) {
+                continue;
+              }
+              if (audioCount < trackCounts.audio.min || audioCount > trackCounts.audio.max) {
+                continue;
+              }
+              let score = 0;
+              if (requiresTransformationMetadata && format2.supportsVideoTransformationMetadata) {
+                score++;
+              }
+              if (score > candidateScore) {
+                candidate = format2;
+                candidateScore = score;
+              }
+            }
+            return candidate;
+          }, "deduceSegmentFormat");
+          for (const track of this.output.tracks) {
+            const assignedGroupKeys = groupAssignment.get(track);
+            if (assignedGroupKeys) {
+              assert2(assignedGroupKeys.length > 0);
+              if (track.type !== mainType) {
+                continue;
+              }
+              for (const key of assignedGroupKeys) {
+                const group = groups.find((x) => x.key === key);
+                assert2(group);
+                if (assignedGroupKeys.length === 1 && group.tracks.length === 1) {
+                  const otherGroupKeys = groupAssignment.get(group.tracks[0]);
+                  assert2(otherGroupKeys !== void 0);
+                  if (otherGroupKeys.length === 1) {
+                    const otherGroup = groups.find((x) => x.key === otherGroupKeys[0]);
+                    if (otherGroup.tracks.length === 1) {
+                      assert2(otherGroup.tracks[0] === track);
+                      const canSharePlaylist = !!deduceSegmentFormat([track, group.tracks[0]]);
+                      if (canSharePlaylist) {
+                        variantStreams.push({
+                          tracks: [track, group.tracks[0]],
+                          linkedGroup: null
+                        });
+                        continue;
+                      }
+                    }
                   }
                 }
+                variantStreams.push({
+                  tracks: [track],
+                  linkedGroup: group
+                });
+                group.needsEmit = true;
               }
+            } else {
+              if (track.type === "video") {
+                unpairedVideoTracks.push(track);
+              } else if (track.type === "audio") {
+                unpairedAudioTracks.push(track);
+              }
+            }
+          }
+          const getMetadataKeyForTrack = /* @__PURE__ */ __name(({ metadata }) => {
+            let key = "";
+            key += `${metadata.languageCode ?? UNDETERMINED_LANGUAGE}-`;
+            key += `${metadata.name ?? ""}-`;
+            key += `${metadata.disposition?.default ?? true}-`;
+            key += `${metadata.disposition?.primary ?? false}-`;
+            key += `${metadata.disposition?.forced ?? false}-`;
+            return key;
+          }, "getMetadataKeyForTrack");
+          if (unpairedVideoTracks.length > 0) {
+            const iFrameTracks = unpairedVideoTracks.filter((x) => x.isVideoTrack() && x.metadata.hasOnlyKeyPackets);
+            const groupableTracks = unpairedVideoTracks.filter((x) => !iFrameTracks.includes(x));
+            const uniqueMetadata = new Set(groupableTracks.map(getMetadataKeyForTrack));
+            if (uniqueMetadata.size > 1) {
+              const group = {
+                key: groupableTracks.map((x) => x.id).join("-"),
+                name: "video-" + (groups.length + 1),
+                tracks: groupableTracks,
+                needsEmit: true,
+                firstNoUri: true
+              };
+              groups.push(group);
               variantStreams.push({
-                tracks: [track],
+                tracks: [groupableTracks[0]],
                 linkedGroup: group
               });
-              group.needsEmit = true;
-            }
-          } else {
-            if (track.type === "video") {
-              unpairedVideoTracks.push(track);
-            } else if (track.type === "audio") {
-              unpairedAudioTracks.push(track);
+              for (const track of iFrameTracks) {
+                variantStreams.push({
+                  tracks: [track],
+                  linkedGroup: null
+                });
+              }
+            } else {
+              for (const track of unpairedVideoTracks) {
+                variantStreams.push({
+                  tracks: [track],
+                  linkedGroup: null
+                });
+              }
             }
           }
-        }
-        const getMetadataKeyForTrack = /* @__PURE__ */ __name(({ metadata }) => {
-          let key = "";
-          key += `${metadata.languageCode ?? UNDETERMINED_LANGUAGE}-`;
-          key += `${metadata.name ?? ""}-`;
-          key += `${metadata.disposition?.default ?? true}-`;
-          key += `${metadata.disposition?.primary ?? false}-`;
-          key += `${metadata.disposition?.forced ?? false}-`;
-          return key;
-        }, "getMetadataKeyForTrack");
-        if (unpairedVideoTracks.length > 0) {
-          const uniqueMetadata = new Set(unpairedVideoTracks.map(getMetadataKeyForTrack));
-          if (uniqueMetadata.size > 1) {
-            const group = {
-              key: unpairedVideoTracks.map((x) => x.id).join("-"),
-              name: "video-" + (groups.length + 1),
-              tracks: unpairedVideoTracks,
-              needsEmit: true,
-              firstNoUri: true
-            };
-            groups.push(group);
-            variantStreams.push({
-              tracks: [unpairedVideoTracks[0]],
-              linkedGroup: group
-            });
-          } else {
-            for (const track of unpairedVideoTracks) {
+          if (unpairedAudioTracks.length > 0) {
+            const uniqueMetadata = new Set(unpairedAudioTracks.map(getMetadataKeyForTrack));
+            if (uniqueMetadata.size > 1) {
+              const group = {
+                key: unpairedAudioTracks.map((x) => x.id).join("-"),
+                name: "audio-" + (groups.length + 1),
+                tracks: unpairedAudioTracks,
+                needsEmit: true,
+                firstNoUri: true
+              };
+              groups.push(group);
               variantStreams.push({
-                tracks: [track],
-                linkedGroup: null
+                tracks: [unpairedAudioTracks[0]],
+                linkedGroup: group
+              });
+            } else {
+              for (const track of unpairedAudioTracks) {
+                variantStreams.push({
+                  tracks: [track],
+                  linkedGroup: null
+                });
+              }
+            }
+          }
+          const registerPlaylist = /* @__PURE__ */ __name(async (tracks) => {
+            if (tracks.some((track) => this.playlists.some((playlist2) => playlist2.tracks.includes(track)))) {
+              throw new Error("Internal error: track is already registered in a playlist.");
+            }
+            const format2 = deduceSegmentFormat(tracks);
+            assert2(format2);
+            const id2 = this.playlists.length + 1;
+            const path3 = await this.getPlaylistPath({
+              n: id2,
+              tracks,
+              segmentFormat: format2
+            });
+            validatePlaylistPath(path3);
+            const playlist = {
+              id: this.playlists.length + 1,
+              path: path3,
+              tracks,
+              segmentFormat: format2,
+              currentSegmentStartTimestamp: null,
+              currentSegmentStartTimestampIsFixed: false,
+              nextSegmentId: 1,
+              initSegment: null,
+              writtenSegments: [],
+              peakBitrate: null,
+              averageBitrate: null,
+              mediaSequence: 0,
+              done: false,
+              singleFile: null,
+              mutex: new AsyncMutex()
+            };
+            this.playlists.push(playlist);
+            return playlist;
+          }, "registerPlaylist");
+          for (const group of groups) {
+            if (!group.needsEmit) {
+              continue;
+            }
+            for (let i = 0; i < group.tracks.length; i++) {
+              const track = group.tracks[i];
+              let playlist = this.playlists.find((x) => x.tracks[0].id === track.id);
+              playlist ??= await registerPlaylist([track]);
+              this.playlistDeclarations.push({
+                playlist,
+                groupId: group.name,
+                noUri: group.firstNoUri && i === 0,
+                references: []
               });
             }
           }
-        }
-        if (unpairedAudioTracks.length > 0) {
-          const uniqueMetadata = new Set(unpairedAudioTracks.map(getMetadataKeyForTrack));
-          if (uniqueMetadata.size > 1) {
-            const group = {
-              key: unpairedAudioTracks.map((x) => x.id).join("-"),
-              name: "audio-" + (groups.length + 1),
-              tracks: unpairedAudioTracks,
-              needsEmit: true,
-              firstNoUri: true
-            };
-            groups.push(group);
-            variantStreams.push({
-              tracks: [unpairedAudioTracks[0]],
-              linkedGroup: group
-            });
-          } else {
-            for (const track of unpairedAudioTracks) {
-              variantStreams.push({
-                tracks: [track],
-                linkedGroup: null
-              });
-            }
-          }
-        }
-        const deduceSegmentFormat = /* @__PURE__ */ __name((tracks) => {
-          const codecs = [];
-          let videoCount = 0;
-          let audioCount = 0;
-          let requiresTransformationMetadata = false;
-          let candidate = null;
-          let candidateScore = -Infinity;
-          for (const track of tracks) {
-            if (track.isVideoTrack()) {
-              videoCount++;
-              requiresTransformationMetadata ||= (track.metadata.rotation ?? 0) !== 0 || !!track.metadata.flip || !!track.metadata.transformationMatrix;
-            } else if (track.isAudioTrack()) {
-              audioCount++;
-            }
-            codecs.push(track.source._codec);
-          }
-          for (const format2 of toArray(this.format._options.segmentFormat)) {
-            const supportedCodecs = format2.getSupportedCodecs();
-            const trackCounts = format2.getSupportedTrackCounts();
-            if (codecs.some((codec2) => !supportedCodecs.includes(codec2))) {
-              continue;
-            }
-            if (videoCount < trackCounts.video.min || videoCount > trackCounts.video.max) {
-              continue;
-            }
-            if (audioCount < trackCounts.audio.min || audioCount > trackCounts.audio.max) {
-              continue;
-            }
-            let score = 0;
-            if (requiresTransformationMetadata && format2.supportsVideoTransformationMetadata) {
-              score++;
-            }
-            if (score > candidateScore) {
-              candidate = format2;
-              candidateScore = score;
-            }
-          }
-          assert2(candidate);
-          return candidate;
-        }, "deduceSegmentFormat");
-        const registerPlaylist = /* @__PURE__ */ __name(async (tracks) => {
-          if (tracks.some((track) => this.playlists.some((playlist2) => playlist2.tracks.includes(track)))) {
-            throw new Error("Internal error: track is already registered in a playlist.");
-          }
-          const format2 = deduceSegmentFormat(tracks);
-          const id2 = this.playlists.length + 1;
-          const path3 = await this.getPlaylistPath({
-            n: id2,
-            tracks,
-            segmentFormat: format2
-          });
-          validatePlaylistPath(path3);
-          const playlist = {
-            id: this.playlists.length + 1,
-            path: path3,
-            tracks,
-            segmentFormat: format2,
-            currentSegmentStartTimestamp: null,
-            currentSegmentStartTimestampIsFixed: false,
-            nextSegmentId: 1,
-            initSegment: null,
-            writtenSegments: [],
-            peakBitrate: null,
-            averageBitrate: null,
-            mediaSequence: 0,
-            done: false,
-            singleFile: null,
-            mutex: new AsyncMutex()
-          };
-          this.playlists.push(playlist);
-          return playlist;
-        }, "registerPlaylist");
-        for (const group of groups) {
-          if (!group.needsEmit) {
-            continue;
-          }
-          for (let i = 0; i < group.tracks.length; i++) {
-            const track = group.tracks[i];
-            let playlist = this.playlists.find((x) => x.tracks[0].id === track.id);
-            playlist ??= await registerPlaylist([track]);
+          for (const variant of variantStreams) {
+            let playlist = this.playlists.find((x) => x.tracks[0].id === variant.tracks[0].id);
+            playlist ??= await registerPlaylist(variant.tracks);
             this.playlistDeclarations.push({
               playlist,
-              groupId: group.name,
-              noUri: group.firstNoUri && i === 0,
-              references: []
+              groupId: null,
+              noUri: false,
+              references: variant.linkedGroup ? this.playlistDeclarations.filter((x) => x.groupId === variant.linkedGroup.name) : []
             });
           }
-        }
-        for (const variant of variantStreams) {
-          let playlist = this.playlists.find((x) => x.tracks[0].id === variant.tracks[0].id);
-          playlist ??= await registerPlaylist(variant.tracks);
-          this.playlistDeclarations.push({
-            playlist,
-            groupId: null,
-            noUri: false,
-            references: variant.linkedGroup ? this.playlistDeclarations.filter((x) => x.groupId === variant.linkedGroup.name) : []
-          });
-        }
-        for (const track of this.output.tracks) {
-          if (track.isVideoTrack() && track.metadata.decoderConfig) {
-            this.getVideoTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
-          } else if (track.isAudioTrack() && track.metadata.decoderConfig) {
-            this.getAudioTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
+          for (const track of this.output.tracks) {
+            if (track.isVideoTrack() && track.metadata.decoderConfig) {
+              this.getVideoTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
+            } else if (track.isAudioTrack() && track.metadata.decoderConfig) {
+              this.getAudioTrackData(track, track.metadata.primingPacket ?? null, { decoderConfig: track.metadata.decoderConfig });
+            }
           }
+        } finally {
+          release();
         }
-        release();
       }
       async getMimeType() {
         return HLS_MIME_TYPE;
       }
       allTracksAreKnown(playlist) {
         for (const track of playlist.tracks) {
-          if (!track.source._closed && !this.trackDatas.some((x) => x.track === track)) {
+          if (!this.closedTracks.has(track) && !this.trackDatas.some((x) => x.track === track)) {
             return false;
           }
         }
         return true;
       }
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async onTrackClose(track) {
-        const trackData = this.trackDatas.find((x) => x.track === track);
-        if (trackData) {
-          trackData.closed = true;
-        }
         const playlist = this.playlists.find((x) => x.tracks.includes(track));
         assert2(playlist);
         const release = await playlist.mutex.acquire();
         try {
-          await this.advancePlaylist(playlist);
+          this.closedTracks.add(track);
+          if (!playlist.done) {
+            await this.advancePlaylist(playlist);
+          }
         } finally {
           release();
         }
@@ -92111,7 +93684,6 @@ var init_hls_muxer = __esm({
           track,
           packets: [],
           playlist: playlists[0],
-          closed: false,
           info: {
             type: "video",
             decoderConfig: meta3.decoderConfig,
@@ -92135,7 +93707,6 @@ var init_hls_muxer = __esm({
           track,
           packets: [],
           playlist: playlists[0],
-          closed: false,
           info: {
             type: "audio",
             decoderConfig: meta3.decoderConfig,
@@ -92190,24 +93761,28 @@ var init_hls_muxer = __esm({
           return;
         }
         const trackDatas = this.trackDatas.filter((x) => playlist.tracks.includes(x.track));
+        const allClosed = trackDatas.every((x) => this.closedTracks.has(x.track));
         if (playlist.currentSegmentStartTimestamp === null) {
-          if (trackDatas.every((x) => x.closed)) {
+          if (allClosed) {
             await this.onPlaylistDone(playlist);
           }
           return;
         }
         const videoTrack = trackDatas.find((x) => x.info.type === "video");
         const audioTrack = trackDatas.find((x) => x.info.type === "audio");
+        const videoTrackIsClosed = !!videoTrack && this.closedTracks.has(videoTrack.track);
+        const audioTrackIsClosed = !!audioTrack && this.closedTracks.has(audioTrack.track);
+        const isKeyPacketsOnly = playlist.tracks[0].isVideoTrack() && playlist.tracks[0].metadata.hasOnlyKeyPackets;
         while (true) {
           const currentSegmentEndTimestamp = playlist.currentSegmentStartTimestamp + this.targetSegmentDuration;
           let videoEndIndex = 0;
           let audioEndIndex = 0;
-          if (videoTrack && (!videoTrack.closed || videoTrack.packets.length > 0)) {
+          if (videoTrack && (!videoTrackIsClosed || videoTrack.packets.length > 0)) {
             const allBelow = videoTrack.packets.every((x) => x.timestamp < currentSegmentEndTimestamp);
             let bestKeyPacket = null;
             let bestKeyPacketIndex = null;
-            if (allBelow) {
-              if (!videoTrack.closed) {
+            if (allBelow && !isKeyPacketsOnly) {
+              if (!videoTrackIsClosed) {
                 return;
               }
             } else {
@@ -92219,6 +93794,9 @@ var init_hls_muxer = __esm({
                 if (i > 0 && packet.type === "key") {
                   bestKeyPacket = packet;
                   bestKeyPacketIndex = i;
+                  if (isKeyPacketsOnly) {
+                    break;
+                  }
                 }
               }
             }
@@ -92229,7 +93807,7 @@ var init_hls_muxer = __esm({
                 if (index23 !== -1) {
                   audioEndIndex = index23;
                 } else {
-                  if (audioTrack.closed) {
+                  if (audioTrackIsClosed) {
                     audioEndIndex = audioTrack.packets.length;
                   } else {
                     return;
@@ -92237,7 +93815,7 @@ var init_hls_muxer = __esm({
                 }
               }
             } else {
-              if (!videoTrack.closed) {
+              if (!videoTrackIsClosed) {
                 return;
               }
               videoEndIndex = videoTrack.packets.length;
@@ -92250,7 +93828,7 @@ var init_hls_muxer = __esm({
                   if (index23 !== -1) {
                     audioEndIndex = index23;
                   } else {
-                    if (audioTrack.closed) {
+                    if (audioTrackIsClosed) {
                       audioEndIndex = audioTrack.packets.length;
                     } else {
                       return;
@@ -92261,7 +93839,7 @@ var init_hls_muxer = __esm({
                   if (index23 !== -1) {
                     audioEndIndex = index23;
                   } else {
-                    if (audioTrack.closed) {
+                    if (audioTrackIsClosed) {
                       audioEndIndex = audioTrack.packets.length;
                     } else {
                       return;
@@ -92270,10 +93848,10 @@ var init_hls_muxer = __esm({
                 }
               }
             }
-          } else if (audioTrack && (!audioTrack.closed || audioTrack.packets.length > 0)) {
+          } else if (audioTrack && (!audioTrackIsClosed || audioTrack.packets.length > 0)) {
             const allBelow = audioTrack.packets.every((x) => x.timestamp < currentSegmentEndTimestamp);
             if (allBelow) {
-              if (audioTrack.closed) {
+              if (audioTrackIsClosed) {
                 audioEndIndex = audioTrack.packets.length;
               } else {
                 return;
@@ -92284,7 +93862,6 @@ var init_hls_muxer = __esm({
             }
           }
           if (videoEndIndex === 0 && audioEndIndex === 0) {
-            const allClosed = trackDatas.every((x) => x.closed);
             if (allClosed) {
               await this.onPlaylistDone(playlist);
             }
@@ -92390,7 +93967,12 @@ var init_hls_muxer = __esm({
               audioSource = playlist.singleFile.fragmentedIsobmffOutput.audioSource;
             } else {
               output2 = new Output({
-                format: playlist.segmentFormat,
+                // TEMP HACK: MP3 makes little sense with the Xing header, because many players interpret it
+                // as mid-stream silence. But it's enabled by default, and changing that would be breaking.
+                // So, it's a hardcoded special case for now. In the future, we should deprecate arbitrary
+                // segment formats for HLS and switch to special HLS-specific segment formats which can carry
+                // their own logic.
+                format: playlist.segmentFormat._withoutXingHeader(),
                 target: new PathedTarget(fullSegmentPath, async (request2) => {
                   const proxiedRequest = {
                     ...request2,
@@ -92464,7 +94046,8 @@ var init_hls_muxer = __esm({
                 output2.addVideoTrack(videoSource, {
                   ...videoTrack.track.metadata,
                   decoderConfig: videoTrack.info.decoderConfig,
-                  primingPacket: videoTrack.info.primingPacket ?? void 0
+                  primingPacket: videoTrack.info.primingPacket ?? void 0,
+                  maximumPacketCount: videoEndIndex
                 });
               }
               if (audioTrack) {
@@ -92472,7 +94055,8 @@ var init_hls_muxer = __esm({
                 output2.addAudioTrack(audioSource, {
                   ...audioTrack.track.metadata,
                   decoderConfig: audioTrack.info.decoderConfig,
-                  primingPacket: audioTrack.info.primingPacket ?? void 0
+                  primingPacket: audioTrack.info.primingPacket ?? void 0,
+                  maximumPacketCount: audioEndIndex
                 });
                 if (!playlist.segmentFormat.supportsTimestampedMediaData && audioEndIndex > 0) {
                   const firstTimestamp = this.toMediaTimestamp(audioTrack.packets[0].timestamp);
@@ -92600,12 +94184,14 @@ var init_hls_muxer = __esm({
           }
           this.format._options.onSegment?.(playlist.singleFile.target, playlist.singleFile.info);
         }
-        await this.writePlaylist(playlist);
-        if (this.isLive && playlist.writtenSegments.length === 0) {
-          await this.tryWriteMasterPlaylist();
+        if (this.isLive) {
+          await this.writePlaylist(playlist);
+          if (playlist.writtenSegments.length === 0) {
+            await this.tryWriteMasterPlaylist();
+          }
         }
       }
-      updatePlaylistBitrates(playlist) {
+      updatePlaylistBitrates(playlist, targetDuration) {
         const segments = playlist.writtenSegments;
         let peakBitrate = 0;
         let totalBits = 0;
@@ -92617,10 +94203,10 @@ var init_hls_muxer = __esm({
           for (let j = i; j < segments.length; j++) {
             windowBytes += segments[j].byteSize;
             windowDuration += segments[j].duration;
-            if (windowDuration >= 0.5 * this.globalTargetDuration && windowDuration <= 1.5 * this.globalTargetDuration) {
+            if (windowDuration >= 0.5 * targetDuration && windowDuration <= 1.5 * targetDuration) {
               peakBitrate = Math.max(peakBitrate, 8 * windowBytes / windowDuration);
             }
-            if (windowDuration > 1.5 * this.globalTargetDuration) {
+            if (windowDuration > 1.5 * targetDuration) {
               break;
             }
           }
@@ -92651,7 +94237,8 @@ var init_hls_muxer = __esm({
                   decoderConfig?.codedHeight ?? 1080
                 );
               } else if (track.isAudioTrack()) {
-                trackPeakBitrate = mediumQuality._toAudioBitrate(track.source._codec) ?? 0;
+                const decoderConfig = trackData?.info.decoderConfig;
+                trackPeakBitrate = mediumQuality._toAudioBitrate(track.source._codec, decoderConfig?.numberOfChannels ?? 2) ?? 0;
               }
             }
             peakBitrate += trackPeakBitrate;
@@ -92663,7 +94250,8 @@ var init_hls_muxer = __esm({
       async writePlaylist(playlist) {
         assert2(this.output._target instanceof PathedTarget);
         const pathedTarget = this.output._target;
-        this.updatePlaylistBitrates(playlist);
+        const targetDuration = Math.max(Math.ceil(+(this.isLive ? this.targetSegmentDuration : this.globalTargetDuration).toFixed(12)), 1);
+        this.updatePlaylistBitrates(playlist, targetDuration);
         let hasByteOffsets = false;
         for (const segment of playlist.writtenSegments) {
           hasByteOffsets ||= segment.byteOffset !== null;
@@ -92679,11 +94267,10 @@ var init_hls_muxer = __esm({
         if (playlist.initSegment && !isKeyPacketsOnly) {
           version4 = 6;
         }
-        const targetDuration = this.isLive ? this.targetSegmentDuration : this.globalTargetDuration;
         const playlistPath = joinPaths(pathedTarget.rootPath, playlist.path);
         const playlistText = `#EXTM3U
 #EXT-X-VERSION:${version4}
-` + (!this.isLive ? "#EXT-X-PLAYLIST-TYPE:VOD\n" : "") + `#EXT-X-TARGETDURATION:${Math.ceil(targetDuration)}
+` + (!this.isLive ? "#EXT-X-PLAYLIST-TYPE:VOD\n" : "") + `#EXT-X-TARGETDURATION:${targetDuration}
 ` + (Number.isFinite(this.maxLiveSegmentCount) ? `#EXT-X-MEDIA-SEQUENCE:${playlist.mediaSequence}
 ` : "") + "#EXT-X-INDEPENDENT-SEGMENTS\n" + (isKeyPacketsOnly ? "#EXT-X-I-FRAMES-ONLY\n" : "") + (playlist.initSegment ? `#EXT-X-MAP:URI="${playlist.initSegment.path}"` + (playlist.initSegment.byteOffset !== null ? `,BYTERANGE="${playlist.initSegment.byteSize}@${playlist.initSegment.byteOffset}"` : "") + "\n" : "") + "\n" + playlist.writtenSegments.map((segment) => `#EXTINF:${+segment.duration.toFixed(12)},
 ` + (this.isRelativeToUnixEpoch ? `#EXT-X-PROGRAM-DATE-TIME:${new Date(1e3 * segment.timestamp).toISOString()}
@@ -92710,6 +94297,7 @@ var init_hls_muxer = __esm({
         let lastGroupId = null;
         let groupIdTrackCount = 0;
         let hasHadDefaultTrackInGroup = false;
+        const namesInGroup = /* @__PURE__ */ new Set();
         for (const decl of this.playlistDeclarations) {
           if (decl.groupId === null) {
             const isKeyPacketsOnly = decl.playlist.tracks[0].isVideoTrack() && decl.playlist.tracks[0].metadata.hasOnlyKeyPackets;
@@ -92721,21 +94309,22 @@ var init_hls_muxer = __esm({
             }
             let peakDeclBitrate = 0;
             let maxRefAverageBitrate = 0;
-            if (decl.references.length > 0) {
-              const firstRef = decl.references[0];
-              const firstTrack = firstRef.playlist.tracks[0];
-              const trackData = this.trackDatas.find((x) => x.track === firstTrack);
-              const codecString = trackData?.info.decoderConfig.codec ?? firstTrack.source._codec;
-              codecs.push(toHlsCodecString(codecString));
-              for (const ref of decl.references) {
-                assert2(ref.playlist.peakBitrate !== null);
-                peakDeclBitrate = Math.max(peakDeclBitrate, ref.playlist.peakBitrate);
-                maxRefAverageBitrate = Math.max(maxRefAverageBitrate, ref.playlist.averageBitrate ?? 0);
+            const ownPlaylistIsReferenced = decl.references.some((x) => x.playlist === decl.playlist);
+            for (const ref of decl.references) {
+              for (const track of ref.playlist.tracks) {
+                const trackData = this.trackDatas.find((x) => x.track === track);
+                const codecString = trackData?.info.decoderConfig.codec ?? track.source._codec;
+                codecs.push(toHlsCodecString(codecString));
               }
+              assert2(ref.playlist.peakBitrate !== null);
+              peakDeclBitrate = Math.max(peakDeclBitrate, ref.playlist.peakBitrate);
+              maxRefAverageBitrate = Math.max(maxRefAverageBitrate, ref.playlist.averageBitrate ?? 0);
             }
             assert2(decl.playlist.peakBitrate !== null);
-            const totalPeakBitrate = decl.playlist.peakBitrate + peakDeclBitrate;
-            const totalAverageBitrate = (decl.playlist.averageBitrate ?? 0) + maxRefAverageBitrate;
+            const ownPeakBitrate = ownPlaylistIsReferenced ? 0 : decl.playlist.peakBitrate;
+            const ownAverageBitrate = ownPlaylistIsReferenced ? 0 : decl.playlist.averageBitrate ?? 0;
+            const totalPeakBitrate = ownPeakBitrate + peakDeclBitrate;
+            const totalAverageBitrate = ownAverageBitrate + maxRefAverageBitrate;
             if (!firstVariantWritten) {
               masterPlaylistText += "\n";
               firstVariantWritten = true;
@@ -92749,20 +94338,29 @@ var init_hls_muxer = __esm({
             if (totalAverageBitrate > 0) {
               masterPlaylistText += `,AVERAGE-BANDWIDTH=${Math.ceil(totalAverageBitrate)}`;
             }
-            masterPlaylistText += `,CODECS="${codecs.join(",")}"`;
+            masterPlaylistText += `,CODECS="${[...new Set(codecs)].join(",")}"`;
             const videoTrack = decl.playlist.tracks.find((x) => x.isVideoTrack());
             if (videoTrack?.isVideoTrack()) {
               const trackData = this.trackDatas.find((x) => x.track === videoTrack);
               const decoderConfig = trackData?.info.decoderConfig;
               if (decoderConfig) {
-                let width = decoderConfig.displayAspectWidth ?? decoderConfig.codedWidth;
-                let height = decoderConfig.displayAspectHeight ?? decoderConfig.codedHeight;
-                if (width !== void 0 && height !== void 0) {
-                  if (videoTrack.metadata.rotation !== void 0 && videoTrack.metadata.rotation % 180 === 90) {
-                    [width, height] = [height, width];
+                assert2(decoderConfig.codedWidth !== void 0);
+                assert2(decoderConfig.codedHeight !== void 0);
+                let width = decoderConfig.codedWidth;
+                let height = decoderConfig.codedHeight;
+                if (decoderConfig.displayAspectWidth !== void 0 && decoderConfig.displayAspectHeight !== void 0) {
+                  const num2 = decoderConfig.displayAspectWidth * decoderConfig.codedHeight;
+                  const den = decoderConfig.displayAspectHeight * decoderConfig.codedWidth;
+                  if (num2 > den) {
+                    width = Math.round(width * num2 / den);
+                  } else {
+                    height = Math.round(height * den / num2);
                   }
-                  masterPlaylistText += `,RESOLUTION=${width}x${height}`;
                 }
+                if (videoTrack.metadata.rotation !== void 0 && videoTrack.metadata.rotation % 180 === 90) {
+                  [width, height] = [height, width];
+                }
+                masterPlaylistText += `,RESOLUTION=${width}x${height}`;
               }
               if (!isKeyPacketsOnly && videoTrack.metadata.frameRate !== void 0) {
                 masterPlaylistText += `,FRAME-RATE=${+videoTrack.metadata.frameRate.toFixed(3)}`;
@@ -92798,6 +94396,7 @@ var init_hls_muxer = __esm({
               groupIdTrackCount = 0;
               masterPlaylistText += "\n";
               hasHadDefaultTrackInGroup = false;
+              namesInGroup.clear();
             }
             lastGroupId = decl.groupId;
             groupIdTrackCount++;
@@ -92807,7 +94406,12 @@ var init_hls_muxer = __esm({
               name = null;
             }
             name ??= `${languageCode ?? decl.groupId}-${groupIdTrackCount}`;
-            masterPlaylistText += `,NAME="${name}"`;
+            let uniqueName = name;
+            for (let i = 2; namesInGroup.has(uniqueName); i++) {
+              uniqueName = `${name} (${i})`;
+            }
+            namesInGroup.add(uniqueName);
+            masterPlaylistText += `,NAME="${uniqueName}"`;
             if (languageCode !== void 0) {
               masterPlaylistText += `,LANGUAGE="${languageCode}"`;
             }
@@ -92821,7 +94425,7 @@ var init_hls_muxer = __esm({
             if (dispositionPrimary || dispositionDefault) {
               masterPlaylistText += ",AUTOSELECT=YES";
             }
-            if (dispositionForced) {
+            if (dispositionForced && type === "subtitle") {
               masterPlaylistText += ",FORCED=YES";
             }
             if (type === "audio") {
@@ -92872,11 +94476,12 @@ var init_hls_muxer = __esm({
       async finalize() {
         const releases = await Promise.all(this.playlists.map((p) => p.mutex.acquire()));
         releases.forEach((release) => release());
-        for (const trackData of this.trackDatas) {
-          trackData.closed = true;
+        for (const track of this.output.tracks) {
+          this.closedTracks.add(track);
         }
         await Promise.all(this.playlists.map((playlist) => playlist.done ? Promise.resolve() : this.advancePlaylist(playlist)));
         if (!this.isLive) {
+          await Promise.all(this.playlists.map((playlist) => this.writePlaylist(playlist)));
           await this.writeMasterPlaylist();
         }
       }
@@ -92916,7 +94521,7 @@ var init_hls_muxer = __esm({
 });
 
 // node_modules/mediabunny/dist/modules/src/output-format.js
-var OutputFormat, IsobmffOutputFormat, Mp4OutputFormat, CmafOutputFormat, MovOutputFormat, MkvOutputFormat, WebMOutputFormat, Mp3OutputFormat, WavOutputFormat, OggOutputFormat, AdtsOutputFormat, FlacOutputFormat, MpegTsOutputFormat, HlsOutputFormat;
+var OutputFormat, IsobmffOutputFormat, Mp4OutputFormat, CmafOutputFormat, MovOutputFormat, MkvOutputFormat, WebMOutputFormat, Mp3OutputFormat, WavOutputFormat, OggOutputFormat, AdtsOutputFormat, FlacOutputFormat, MpegTsOutputFormat, HlsOutputFormat, NullOutputFormat;
 var init_output_format = __esm({
   "node_modules/mediabunny/dist/modules/src/output-format.js"() {
     init_adts_muxer();
@@ -92925,6 +94530,7 @@ var init_output_format = __esm({
     init_isobmff_muxer();
     init_matroska_muxer();
     init_mp3_muxer();
+    init_muxer();
     init_ogg_muxer();
     init_mpeg_ts_muxer();
     init_wave_muxer();
@@ -92969,6 +94575,10 @@ var init_output_format = __esm({
       /** @internal */
       _isFragmentedIsobmff() {
         return false;
+      }
+      /** @internal */
+      _withoutXingHeader() {
+        return this;
       }
     };
     IsobmffOutputFormat = class extends OutputFormat {
@@ -93166,7 +94776,7 @@ var init_output_format = __esm({
           throw new TypeError("options.onEbmlHeader, when provided, must be a function.");
         }
         if (options2.onSegmentHeader !== void 0 && typeof options2.onSegmentHeader !== "function") {
-          throw new TypeError("options.onHeader, when provided, must be a function.");
+          throw new TypeError("options.onSegmentHeader, when provided, must be a function.");
         }
         if (options2.onCluster !== void 0 && typeof options2.onCluster !== "function") {
           throw new TypeError("options.onCluster, when provided, must be a function.");
@@ -93248,7 +94858,7 @@ var init_output_format = __esm({
         return "";
       }
     };
-    Mp3OutputFormat = class extends OutputFormat {
+    Mp3OutputFormat = class _Mp3OutputFormat extends OutputFormat {
       static {
         __name(this, "Mp3OutputFormat");
       }
@@ -93300,6 +94910,13 @@ var init_output_format = __esm({
       get negativeTimestampSupport() {
         return null;
       }
+      /** @internal */
+      _withoutXingHeader() {
+        return new _Mp3OutputFormat({
+          ...this._options,
+          xingHeader: false
+        });
+      }
     };
     WavOutputFormat = class extends OutputFormat {
       static {
@@ -93309,6 +94926,9 @@ var init_output_format = __esm({
       constructor(options2 = {}) {
         if (!options2 || typeof options2 !== "object") {
           throw new TypeError("options must be an object.");
+        }
+        if (options2.appendOnly !== void 0 && typeof options2.appendOnly !== "boolean") {
+          throw new TypeError("options.appendOnly, when provided, must be a boolean.");
         }
         if (options2.large !== void 0 && typeof options2.large !== "boolean") {
           throw new TypeError("options.large, when provided, must be a boolean.");
@@ -93412,7 +95032,7 @@ var init_output_format = __esm({
         return true;
       }
       get negativeTimestampSupport() {
-        return "none";
+        return "prefer-non-negative";
       }
     };
     AdtsOutputFormat = class extends OutputFormat {
@@ -93476,6 +95096,9 @@ var init_output_format = __esm({
         }
         if (options2.appendOnly !== void 0 && typeof options2.appendOnly !== "boolean") {
           throw new TypeError("options.appendOnly, when provided, must be a boolean.");
+        }
+        if (options2.onFrame !== void 0 && typeof options2.onFrame !== "function") {
+          throw new TypeError("options.onFrame, when provided, must be a function.");
         }
         super();
         this._options = options2;
@@ -93586,7 +95209,7 @@ var init_output_format = __esm({
         if (!(options2.segmentFormat instanceof OutputFormat) && (!Array.isArray(options2.segmentFormat) || options2.segmentFormat.length === 0 || !options2.segmentFormat.every((format2) => format2 instanceof OutputFormat))) {
           throw new TypeError("options.segmentFormat must be an OutputFormat or a non-empty array of OutputFormat instances.");
         }
-        if (options2.targetDuration !== void 0 && (typeof options2.targetDuration !== "number" || options2.targetDuration <= 0)) {
+        if (options2.targetDuration !== void 0 && (!isNumber(options2.targetDuration) || options2.targetDuration <= 0)) {
           throw new TypeError("options.targetDuration, when provided, must be a positive number.");
         }
         if (options2.singleFilePerPlaylist !== void 0 && typeof options2.singleFilePerPlaylist !== "boolean") {
@@ -93595,7 +95218,10 @@ var init_output_format = __esm({
         if (options2.live !== void 0 && typeof options2.live !== "boolean") {
           throw new TypeError("options.live, when provided, must be a boolean.");
         }
-        if (options2.maxLiveSegmentCount !== void 0 && (typeof options2.maxLiveSegmentCount !== "number" || options2.maxLiveSegmentCount < 1 || Number.isFinite(options2.maxLiveSegmentCount) && !Number.isInteger(options2.maxLiveSegmentCount))) {
+        if (options2.live && options2.targetDuration === Infinity) {
+          throw new TypeError("options.targetDuration must be finite in live mode.");
+        }
+        if (options2.maxLiveSegmentCount !== void 0 && (!isNumber(options2.maxLiveSegmentCount) || options2.maxLiveSegmentCount < 1 || Number.isFinite(options2.maxLiveSegmentCount) && !Number.isInteger(options2.maxLiveSegmentCount))) {
           throw new TypeError("options.maxLiveSegmentCount, when provided, must be a positive integer or Infinity.");
         }
         if (options2.mediaTimestampBase !== void 0 && !Number.isFinite(options2.mediaTimestampBase)) {
@@ -93647,6 +95273,9 @@ var init_output_format = __esm({
         for (const codec2 of AUDIO_CODECS_WITH_DELTA_PACKETS) {
           uniqueCodecs.delete(codec2);
         }
+        for (const codec2 of SUBTITLE_CODECS) {
+          uniqueCodecs.delete(codec2);
+        }
         return [...uniqueCodecs];
       }
       getSupportedTrackCounts() {
@@ -93687,9 +95316,52 @@ var init_output_format = __esm({
         return null;
       }
       /** @internal */
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       _codecUnsupportedHint(codec2) {
+        if (AUDIO_CODECS_WITH_DELTA_PACKETS.includes(codec2)) {
+          return "";
+        }
         return ` Using different segment formats may grant support for this codec.`;
+      }
+    };
+    NullOutputFormat = class extends OutputFormat {
+      static {
+        __name(this, "NullOutputFormat");
+      }
+      _createMuxer(output2) {
+        return new NullMuxer(output2);
+      }
+      get _name() {
+        return "Null";
+      }
+      getSupportedTrackCounts() {
+        return {
+          video: { min: 0, max: Infinity },
+          audio: { min: 0, max: Infinity },
+          subtitle: { min: 0, max: Infinity },
+          total: { min: 0, max: Infinity }
+        };
+      }
+      get fileExtension() {
+        return "";
+      }
+      get mimeType() {
+        return "application/x-black-hole";
+      }
+      getSupportedCodecs() {
+        return [
+          ...VIDEO_CODECS2,
+          ...AUDIO_CODECS2,
+          ...SUBTITLE_CODECS
+        ];
+      }
+      get supportsVideoTransformationMetadata() {
+        return true;
+      }
+      get supportsTimestampedMediaData() {
+        return true;
+      }
+      get negativeTimestampSupport() {
+        return "full";
       }
     };
   }
@@ -93852,6 +95524,8 @@ var init_output = __esm({
         }
         const rootTargetResult = this._getRootTarget();
         if (isThenable(rootTargetResult)) {
+          rootTargetResult.catch(() => {
+          });
           throw new TypeError(errorMessage);
         }
         return rootTargetResult;
@@ -93867,9 +95541,11 @@ var init_output = __esm({
         this.tracks = [];
         this._onFinalize = null;
         this._unfinalizedTargets = /* @__PURE__ */ new Set();
+        this._targetsClosed = false;
         this._rootWriterPromise = null;
         this._startPromise = null;
         this._cancelPromise = null;
+        this._canceled = promiseWithResolvers();
         this._finalizePromise = null;
         this._mutex = new AsyncMutex();
         this._metadataTags = {};
@@ -93924,11 +95600,11 @@ var init_output = __esm({
         assert2(this._target instanceof PathedTarget);
         const target = await this._getTargetValidated(request2);
         this._emit("target", { target, request: request2, isRoot: request2.isRoot });
-        if (this.state === "canceled") {
+        if (this._targetsClosed) {
           await target._close();
-        } else {
-          this._rememberTarget(target);
+          throw new Error(this.state === "canceled" ? "Output has been canceled." : "Output has already been finalized.");
         }
+        this._rememberTarget(target);
         return target;
       }
       /** @internal */
@@ -93943,7 +95619,10 @@ var init_output = __esm({
           return this._initTarget;
         }
         const target = await this._initTarget();
-        if (this.state === "canceled") {
+        if (!(target instanceof Target)) {
+          throw new TypeError("initTarget must return or resolve to a Target.");
+        }
+        if (this._targetsClosed) {
           await target._close();
         } else {
           this._rememberTarget(target);
@@ -93974,8 +95653,9 @@ var init_output = __esm({
         };
         const result = this._getTargetValidated(request2);
         const handleResult = /* @__PURE__ */ __name((target) => {
-          if (this.state === "canceled") {
-            void target._close();
+          if (this._targetsClosed) {
+            target._close().catch(() => {
+            });
           } else {
             this._rememberTarget(target);
           }
@@ -94097,7 +95777,7 @@ var init_output = __esm({
         }
         const maxTotalCount = supportedTrackCounts.total.max;
         if (this.tracks.length === maxTotalCount) {
-          throw new Error(`${this.format._name} does not support more than ${maxTotalCount} tracks${maxTotalCount === 1 ? "" : "s"} in total.`);
+          throw new Error(`${this.format._name} does not support more than ${maxTotalCount} track${maxTotalCount === 1 ? "" : "s"} in total.`);
         }
         if (track.isVideoTrack()) {
           const supportedVideoCodecs = this.format.getSupportedVideoCodecs();
@@ -94163,7 +95843,7 @@ var init_output = __esm({
         if (this.tracks.length < totalMinCount) {
           throw new Error(totalMinCount === supportedTrackCounts.total.max ? `${this.format._name} requires exactly ${totalMinCount} track${totalMinCount === 1 ? "" : "s"}.` : `${this.format._name} requires at least ${totalMinCount} track${totalMinCount === 1 ? "" : "s"}.`);
         }
-        if (this.state === "canceled") {
+        if (this._cancelPromise || this.state === "canceled") {
           throw new Error("Output has been canceled.");
         }
         if (this._startPromise) {
@@ -94174,21 +95854,32 @@ var init_output = __esm({
           this.state = "started";
           const releasePromise = this._mutex.acquire();
           try {
-            await this._muxer.start();
-            const promises = this.tracks.map((track) => track.source._start());
-            await Promise.all(promises);
-          } finally {
-            (await releasePromise)();
+            try {
+              await this._muxer.start();
+              const promises = this.tracks.map((track) => track.source._start());
+              await Promise.all(promises);
+            } finally {
+              (await releasePromise)();
+            }
+          } catch (error63) {
+            await this.cancel();
+            throw error63;
           }
         })();
       }
       /**
        * Resolves with the full MIME type of the output file, including track codecs.
        *
-       * The returned promise will resolve only once the precise codec strings of all tracks are known.
+       * The returned promise will resolve only once the precise codec strings of all tracks are known. If the output is
+       * canceled before that, the promise rejects.
        */
       getMimeType() {
-        return this._muxer.getMimeType();
+        return Promise.race([
+          this._muxer.getMimeType(),
+          this._canceled.promise.then(() => {
+            throw new Error("Output has been canceled.");
+          })
+        ]);
       }
       /**
        * Cancels the creation of the output file, releasing internal resources like encoders and preventing further
@@ -94197,21 +95888,26 @@ var init_output = __esm({
        * @returns A promise that resolves once all internal resources have been released.
        */
       async cancel() {
-        if (this.state === "canceled") {
+        if (this._cancelPromise || this.state === "canceled") {
           return this._cancelPromise ?? void 0;
-        } else if (this.state === "finalizing" || this.state === "finalized") {
-          if (this.state === "finalized") {
-            Logging._warn("Output has already been finalized.");
-          }
+        } else if (this.state === "finalized") {
+          Logging._warn("Output has already been finalized.");
           return;
+        } else if (this._finalizePromise) {
+          return this._finalizePromise.catch(() => {
+          });
         }
         return this._cancelPromise = (async () => {
-          this.state = "canceled";
           const release = await this._mutex.acquire();
           try {
-            const promises = this.tracks.map((x) => x.source._flushOrWaitForOngoingClose(true));
+            this.state = "canceled";
+            this._canceled.resolve();
+            const promises = this.tracks.map((x) => x.source._flushOrWaitForOngoingClose(true).catch(() => {
+            }));
             await Promise.all(promises);
-            await Promise.all([...this._unfinalizedTargets].map((target) => target._close()));
+            this._targetsClosed = true;
+            await Promise.all([...this._unfinalizedTargets].map((target) => target._close().catch(() => {
+            })));
             this._unfinalizedTargets.clear();
           } finally {
             release();
@@ -94226,7 +95922,7 @@ var init_output = __esm({
         if (this.state === "pending") {
           throw new Error("Cannot finalize before starting.");
         }
-        if (this.state === "canceled") {
+        if (this._cancelPromise || this.state === "canceled") {
           throw new Error("Cannot finalize after canceling.");
         }
         if (this._finalizePromise) {
@@ -94234,9 +95930,9 @@ var init_output = __esm({
           return this._finalizePromise;
         }
         return this._finalizePromise = (async () => {
-          this.state = "finalizing";
           const release = await this._mutex.acquire();
           try {
+            this.state = "finalizing";
             const promises = this.tracks.map((x) => x.source._flushOrWaitForOngoingClose(false));
             await Promise.all(promises);
             await this._muxer.finalize();
@@ -94253,8 +95949,10 @@ var init_output = __esm({
             this.state = "finalized";
           } catch (error63) {
             this.state = "canceled";
+            this._canceled.resolve();
             throw error63;
           } finally {
+            this._targetsClosed = true;
             await Promise.all([...this._unfinalizedTargets].map((target) => target._close().catch(() => {
             })));
             this._unfinalizedTargets.clear();
@@ -94634,8 +96332,6 @@ var init_conversion = __esm({
           assert2(false);
         }
         const outputTrackCounts = this.output.format.getSupportedTrackCounts();
-        let nVideo = 1;
-        let nAudio = 1;
         const filteredTracks = [];
         const filteredTrackOptions = [];
         for (const track of tracks) {
@@ -94643,7 +96339,7 @@ var init_conversion = __esm({
           if (track.isVideoTrack()) {
             if (this._options.video) {
               if (typeof this._options.video === "function") {
-                const returnedTrackOptions = await this._options.video(track, nVideo) ?? {};
+                const returnedTrackOptions = await this._options.video(track, track.number) ?? {};
                 if (Array.isArray(returnedTrackOptions)) {
                   for (const obj of returnedTrackOptions) {
                     validateVideoOptions(obj);
@@ -94652,7 +96348,6 @@ var init_conversion = __esm({
                   validateVideoOptions(returnedTrackOptions);
                 }
                 trackOptions = Array.isArray(returnedTrackOptions) ? returnedTrackOptions : [returnedTrackOptions];
-                nVideo++;
               } else {
                 trackOptions = Array.isArray(this._options.video) ? this._options.video : [this._options.video];
               }
@@ -94662,7 +96357,7 @@ var init_conversion = __esm({
           } else if (track.isAudioTrack()) {
             if (this._options.audio) {
               if (typeof this._options.audio === "function") {
-                const returnedTrackOptions = await this._options.audio(track, nAudio) ?? {};
+                const returnedTrackOptions = await this._options.audio(track, track.number) ?? {};
                 if (Array.isArray(returnedTrackOptions)) {
                   for (const obj of returnedTrackOptions) {
                     validateAudioOptions(obj);
@@ -94671,7 +96366,6 @@ var init_conversion = __esm({
                   validateAudioOptions(returnedTrackOptions);
                 }
                 trackOptions = Array.isArray(returnedTrackOptions) ? returnedTrackOptions : [returnedTrackOptions];
-                nAudio++;
               } else {
                 trackOptions = Array.isArray(this._options.audio) ? this._options.audio : [this._options.audio];
               }
@@ -94808,9 +96502,12 @@ var init_conversion = __esm({
           const encodabilityIsTheProblem = this.discardedTracks.every((x) => x.reason === "discarded_by_user" || x.reason === "no_encodable_target_codec") && this.discardedTracks.some((x) => x.reason === "no_encodable_target_codec");
           elements.push("Due to discarded tracks, this conversion cannot be executed.");
           if (encodabilityIsTheProblem) {
-            const codecs = this.discardedTracks.flatMap((x) => {
-              if (x.reason === "discarded_by_user")
-                return [];
+            const codecs = [];
+            const uncontainableCodecs = [];
+            for (const x of this.discardedTracks) {
+              if (x.reason === "discarded_by_user") {
+                continue;
+              }
               let supportedCodecs;
               if (x.track.type === "video") {
                 supportedCodecs = this.output.format.getSupportedVideoCodecs();
@@ -94819,13 +96516,23 @@ var init_conversion = __esm({
               } else {
                 supportedCodecs = this.output.format.getSupportedSubtitleCodecs();
               }
-              return supportedCodecs.filter((codec2) => !x.trackOptions.codec || codec2 === x.trackOptions.codec);
-            });
+              const requestedCodec = x.trackOptions.codec;
+              if (requestedCodec && !supportedCodecs.includes(requestedCodec)) {
+                uncontainableCodecs.push(requestedCodec);
+              } else {
+                codecs.push(...supportedCodecs.filter((codec2) => !requestedCodec || codec2 === requestedCodec));
+              }
+            }
             const uniqueCodecs = [...new Set(codecs)];
+            const uniqueUncontainableCodecs = [...new Set(uncontainableCodecs)];
+            if (uniqueUncontainableCodecs.length > 0) {
+              elements.push(`
+Tracks were discarded because the output format cannot contain the requested codecs ${uniqueUncontainableCodecs.map((x) => `'${x}'`).join(", ")}.`);
+            }
             if (uniqueCodecs.length === 1) {
               elements.push(`
 Tracks were discarded because your environment is not able to encode '${uniqueCodecs[0]}' with the provided parameters.`);
-            } else {
+            } else if (uniqueCodecs.length > 1) {
               elements.push(`
 Tracks were discarded because your environment is not able to encode any of the codecs ${uniqueCodecs.map((x) => `'${x}'`).join(", ")} with the provided parameters.`);
             }
@@ -94841,6 +96548,15 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
             }
             if (uniqueCodecs.includes("flac")) {
               elements.push("\nThe @mediabunny/flac-encoder extension package provides support for encoding FLAC.");
+            }
+            if (uniqueCodecs.includes("dts")) {
+              elements.push("\nThe @mediabunny/dts extension package provides support for encoding and decoding DTS.");
+            }
+            if (uniqueCodecs.includes("truehd")) {
+              elements.push("\nThe @mediabunny/truehd extension package provides support for encoding and decoding TrueHD.");
+            }
+            if (uniqueCodecs.length > 0 && typeof VideoEncoder === "undefined") {
+              elements.push("\nIn server-side environments, the @mediabunny/server extension package provides support for encoding and decoding all common codecs.");
             }
           } else {
             elements.push("\nCheck the discardedTracks field for more info.");
@@ -94897,40 +96613,41 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
             pump.resolvers = promiseWithResolvers();
           }
         }
-        if (!this._executed) {
-          this._executed = true;
-          for (const id2 of this._outputTrackIds) {
-            this._synchronizer.declareTrack(id2);
-          }
-          if (this.onProgress) {
-            const uniqueUtilizedTracks = new Set(this.utilizedTracks);
-            const durationPromises = [...uniqueUtilizedTracks].map((track) => this._getTrackDuration(track));
-            const duration3 = Math.max(0, ...await Promise.all(durationPromises));
-            this._computeProgress = true;
-            this._totalDuration = Math.min(duration3 - this._startTimestamp, this._endTimestamp - this._startTimestamp);
-            for (const id2 of this._outputTrackIds) {
-              this._maxTimestamps.set(id2, 0);
-            }
-            this.onProgress?.(0, 0);
-          }
-          if (!this._composable) {
-            await this.output.start();
-          }
-          for (const pump of this._trackPumps) {
-            pump.start();
-          }
-        } else {
-          for (const pump of this._trackPumps) {
-            pump.wake?.();
-          }
-        }
         try {
+          if (!this._executed) {
+            this._executed = true;
+            for (const id2 of this._outputTrackIds) {
+              this._synchronizer.declareTrack(id2);
+            }
+            if (this.onProgress) {
+              const uniqueUtilizedTracks = new Set(this.utilizedTracks);
+              const durationPromises = [...uniqueUtilizedTracks].map((track) => this._getTrackDuration(track));
+              const duration3 = Math.max(0, ...await Promise.all(durationPromises));
+              this._computeProgress = true;
+              this._totalDuration = Math.min(duration3 - this._startTimestamp, this._endTimestamp - this._startTimestamp);
+              for (const id2 of this._outputTrackIds) {
+                this._maxTimestamps.set(id2, 0);
+              }
+              this.onProgress?.(0, 0);
+            }
+            if (!this._composable) {
+              await this.output.start();
+            }
+            for (const pump of this._trackPumps) {
+              pump.start();
+            }
+          } else {
+            for (const pump of this._trackPumps) {
+              pump.wake?.();
+            }
+          }
           await Promise.all(this._trackPumps.map((x) => x.resolvers.promise));
         } catch (error63) {
           if (this._state !== "canceled") {
-            void this.cancel();
+            void this.cancel().catch(() => {
+            });
+            throw error63;
           }
-          throw error63;
         } finally {
           options2.pauseSignal?.removeEventListener("abort", onPause);
         }
@@ -94938,14 +96655,24 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
           throw new ConversionCanceledError();
         }
         const isDone = this._trackPumps.every((x) => x.done);
-        this._state = isDone ? "done" : "idle";
-        if (isDone) {
-          if (!this._composable) {
+        if (!isDone) {
+          this._state = "idle";
+          return;
+        }
+        if (!this._composable) {
+          try {
             await this.output.finalize();
+          } catch (error63) {
+            this._state = "canceled";
+            throw error63;
           }
-          if (this._computeProgress) {
-            this.onProgress?.(1, this._lastProcessedTime);
+          if (this._state === "canceled") {
+            throw new ConversionCanceledError();
           }
+        }
+        this._state = "done";
+        if (this._computeProgress) {
+          this.onProgress?.(1, this._lastProcessedTime);
         }
       }
       /**
@@ -95193,8 +96920,7 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
             const env_1 = { stack: [], error: void 0, hasError: false };
             try {
               const tempOutput = new Output({
-                format: new Mp4OutputFormat(),
-                // Supports all video codecs
+                format: new NullOutputFormat(),
                 target: new NullTarget()
               });
               const tempSource = new VideoSampleSource(encodingConfig);
@@ -95258,7 +96984,7 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
                 }
                 const clampedStartTimestamp = Math.max(this._startTimestamp, sample.timestamp);
                 const clampedEndTimestamp = Math.min(this._endTimestamp, sample.timestamp + sample.duration);
-                if (clampedStartTimestamp >= clampedEndTimestamp) {
+                if (clampedStartTimestamp > clampedEndTimestamp || clampedStartTimestamp === clampedEndTimestamp && sample.duration > 0) {
                   continue;
                 }
                 sample.setTimestamp(clampedStartTimestamp + this._timestampOffset);
@@ -95295,9 +97021,8 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
         const canBeTransparent = alpha === "keep" && await track.canBeTransparent();
         let maximumPacketCount = trackOptions.maximumPacketCount;
         if (this.output.format.requiresMaximumPacketCount && maximumPacketCount === void 0) {
-          const packetRate = trackOptions.frameRate ?? (await track.computePacketStats(PACKET_STATS_PACKET_COUNT)).averagePacketRate;
           const startTimestamp = needsTranscode ? this._startTimestamp : copyStartPacket?.timestamp ?? this._startTimestamp;
-          maximumPacketCount = await this._estimateMaximumPacketCount(track, startTimestamp, packetRate);
+          maximumPacketCount = await this._estimateMaximumPacketCount(track, startTimestamp, trackOptions.frameRate ?? null);
         }
         this.output.addVideoTrack(videoSource, {
           frameRate: trackOptions.frameRate,
@@ -95349,7 +97074,7 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
         if (!needsTranscode) {
           const sink = new EncodedPacketSink(track);
           let startPacket = await sink.getKeyPacket(this._startTimestamp, { verifyKeyPackets: true }) ?? await sink.getFirstKeyPacket({ verifyKeyPackets: true });
-          if (startPacket && (this._copyBoundaryPolicy === "shrink" && startPacket.timestamp < this._startTimestamp || this._copyBoundaryPolicy === "expand" && startPacket.timestamp + startPacket.duration <= this._startTimestamp)) {
+          if (startPacket && (this._copyBoundaryPolicy === "shrink" && startPacket.timestamp < this._startTimestamp || this._copyBoundaryPolicy === "expand" && startPacket.timestamp + startPacket.duration <= this._startTimestamp && await track.hasOnlyKeyPackets())) {
             startPacket = await sink.getNextKeyPacket(startPacket, { verifyKeyPackets: true });
           }
           const preRollDuration = await track.getPreRollDuration();
@@ -95479,6 +97204,8 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
               outputCodec = nonPcmCodec;
               numberOfChannels = FALLBACK_NUMBER_OF_CHANNELS;
               sampleRate = FALLBACK_SAMPLE_RATE;
+            } else {
+              outputCodec = encodableCodecs[0] ?? null;
             }
           } else {
             outputCodec = encodableCodecs[0] ?? null;
@@ -95549,33 +97276,37 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
                 const finalSample = __addDisposableResource4(env_3, finalSampleLet, false);
                 finalSample.setTimestamp(finalSample.timestamp + this._timestampOffset);
                 if (paddingLengthInSamples === null) {
-                  paddingLengthInSamples = this.output.format.supportsTimestampedMediaData ? 0 : Math.round(finalSample.timestamp * originalSampleRate);
+                  paddingLengthInSamples = this.output.format.supportsTimestampedMediaData ? 0 : Math.round(finalSample.timestamp * finalSample.sampleRate);
                 }
                 if (paddingLengthInSamples > 0) {
-                  const env_4 = { stack: [], error: void 0, hasError: false };
-                  try {
-                    const bytesPerSample = getBytesPerSample(sample.format);
-                    const data = new Uint8Array(bytesPerSample * paddingLengthInSamples * originalNumberOfChannels);
-                    if (sample.format === "u8" || sample.format === "u8-planar") {
-                      data.fill(2 ** 7);
-                    }
-                    const silentSample = __addDisposableResource4(env_4, new AudioSample({
-                      data,
-                      // Use the same format the decoder is spitting out. This avoids feeding changing sample
-                      // formats to the audio encoder.
-                      format: sample.format,
-                      numberOfChannels: originalNumberOfChannels,
-                      sampleRate: originalSampleRate,
-                      timestamp: 0
-                    }), false);
-                    await this._registerAudioSample(pump, silentSample, source, outputTrackId, () => lastSampleTimestamp);
-                    paddingLengthInSamples = 0;
-                  } catch (e_3) {
-                    env_4.error = e_3;
-                    env_4.hasError = true;
-                  } finally {
-                    __disposeResources4(env_4);
+                  const bytesPerFrame = getBytesPerSample(sample.format) * finalSample.numberOfChannels;
+                  const silence = new Uint8Array(bytesPerFrame * Math.min(paddingLengthInSamples, finalSample.sampleRate));
+                  if (sample.format === "u8" || sample.format === "u8-planar") {
+                    silence.fill(2 ** 7);
                   }
+                  for (let offset = 0; offset < paddingLengthInSamples; offset += finalSample.sampleRate) {
+                    const env_4 = { stack: [], error: void 0, hasError: false };
+                    try {
+                      const frameCount = Math.min(paddingLengthInSamples - offset, finalSample.sampleRate);
+                      const silentSample = __addDisposableResource4(env_4, new AudioSample({
+                        data: silence.subarray(0, bytesPerFrame * frameCount),
+                        _doNotCopy: true,
+                        // Use the same format the decoder is spitting out. This avoids feeding changing sample
+                        // formats to the audio encoder.
+                        format: sample.format,
+                        numberOfChannels: finalSample.numberOfChannels,
+                        sampleRate: finalSample.sampleRate,
+                        timestamp: offset / finalSample.sampleRate
+                      }), false);
+                      await this._registerAudioSample(pump, silentSample, source, outputTrackId, () => lastSampleTimestamp);
+                    } catch (e_3) {
+                      env_4.error = e_3;
+                      env_4.hasError = true;
+                    } finally {
+                      __disposeResources4(env_4);
+                    }
+                  }
+                  paddingLengthInSamples = 0;
                 }
                 await this._registerAudioSample(pump, finalSample, source, outputTrackId, () => lastSampleTimestamp);
               } catch (e_4) {
@@ -95600,12 +97331,10 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
         const averageBitrate = needsTranscode ? null : await track.getAverageBitrate();
         let maximumPacketCount = trackOptions.maximumPacketCount;
         if (this.output.format.requiresMaximumPacketCount && maximumPacketCount === void 0) {
-          let packetRate;
+          let packetRate = null;
           if (needsTranscode) {
             assert2(outputCodec);
             packetRate = sampleRate / getMinimumAudioPacketSize(outputCodec, sampleRate);
-          } else {
-            packetRate = (await track.computePacketStats(PACKET_STATS_PACKET_COUNT)).averagePacketRate;
           }
           const startTimestamp = needsTranscode ? this._startTimestamp : copyStartPacket?.timestamp ?? this._startTimestamp;
           maximumPacketCount = await this._estimateMaximumPacketCount(track, startTimestamp, packetRate);
@@ -95626,6 +97355,13 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
       }
       /** @internal */
       async _estimateMaximumPacketCount(track, startTimestamp, packetRate) {
+        if (packetRate === null) {
+          const stats = await track.computePacketStats(PACKET_STATS_PACKET_COUNT);
+          if (stats.averagePacketRate === Infinity) {
+            return stats.packetCount;
+          }
+          packetRate = stats.averagePacketRate;
+        }
         const endTimestamp = Math.min(await this._getTrackDuration(track), this._endTimestamp);
         const duration3 = Math.max(endTimestamp - startTimestamp, 0);
         return Math.ceil(1.5 * packetRate * duration3) + 64;
@@ -95704,7 +97440,7 @@ The @mediabunny/mp3-encoder extension package provides support for encoding MP3.
         }
         assert2(this._totalDuration !== null);
         const minTimestamp = Math.min(...this._maxTimestamps.values());
-        const newProgress = clamp(minTimestamp / this._totalDuration, 0, 1);
+        const newProgress = this._totalDuration > 0 ? clamp(minTimestamp / this._totalDuration, 0, 1) : 0;
         this._lastProcessedTime = minTimestamp;
         if (newProgress !== this._lastProgress) {
           this._lastProgress = newProgress;
@@ -95992,11 +97728,11 @@ function Images($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData$5 }]));
 }
-function Link_2($$renderer, $$props) {
+function Link_2_off($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData$4 }]));
 }
-function Link_2_off($$renderer, $$props) {
+function Link_2($$renderer, $$props) {
   let { $$slots, $$events, ...props } = $$props;
   Icon($$renderer, spread_props([props, { icon: __iconData$3 }]));
 }
@@ -97296,17 +99032,6 @@ function Editor($$renderer, $$props) {
       if (!ids.length) return null;
       return unconnectedProblem(ids) ?? firstPublishProblem(ids);
     });
-    const altMissing = derived2(() => {
-      if (editLocked() || loadFailedId || !draftId && !baseBody.trim()) return [];
-      return missingAlt(media.map((m) => ({
-        id: m.id,
-        kind: isVideoItem(m) ? "video" : "image",
-        altText: m.altText ?? null,
-        segmentIndex: m.segmentIndex ?? 0
-      })), altDestinations());
-    });
-    const altWarning = derived2(() => missingAltMessage(altMissing(), segments().length));
-    let altAnnouncement = "";
     let blockerAnnouncement = "";
     let pendingPublish = null;
     let publishRequestSeq = 0;
@@ -98348,9 +100073,8 @@ function Editor($$renderer, $$props) {
     if (!editLocked()) {
       $$renderer2.push(`<!--[0--><div class="pointer-events-none fixed bottom-[max(2rem,env(safe-area-inset-bottom))] left-1/2 z-30 w-full max-w-2xl -translate-x-1/2 px-4 sm:px-6">`);
       if (publishBlocker()) $$renderer2.push(`<!--[0--><p data-testid="publish-blocker" class="mx-auto mb-2 w-fit max-w-full rounded-full border border-amber-200 bg-amber-50/95 px-3 py-1 text-center text-[12px] font-bold text-amber-800 shadow-sm backdrop-blur">${escape_html(publishBlocker())}</p>`);
-      else if (altWarning()) $$renderer2.push(`<!--[1--><p data-testid="alt-warning" class="mx-auto mb-2 flex w-fit max-w-full items-center gap-2 rounded-full border border-stone-200 bg-white/95 py-1 pr-1 pl-3 text-[12px] font-bold text-stone-700 shadow-sm backdrop-blur"><span class="h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true"></span> <span class="min-w-0">${escape_html(altWarning())}</span> <button type="button" data-testid="alt-warning-add" class="pointer-events-auto relative shrink-0 rounded-full bg-stone-900 px-2.5 py-0.5 text-[11px] font-bold text-white hover:bg-stone-700 pointer-coarse:after:absolute pointer-coarse:after:-inset-2 pointer-coarse:after:content-['']">Add alt text</button></p>`);
       else $$renderer2.push("<!--[-1-->");
-      $$renderer2.push(`<!--]--> <p class="sr-only" aria-live="polite">${escape_html(blockerAnnouncement)}</p> <p class="sr-only" aria-live="polite">${escape_html(altAnnouncement)}</p> <div class="flex items-center justify-center gap-4"><div class="accounts-popover-container pointer-events-auto relative flex items-center"><button type="button" data-testid="destinations-toggle"${attr_class(`flex items-center gap-2 rounded-full border border-stone-200/80 bg-white/95 px-4 py-2.5 text-[13px] font-bold text-stone-700 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl transition-all hover:border-stone-300 hover:bg-white `)} aria-haspopup="dialog"${attr("aria-expanded", isAccountsPopoverOpen)}><div class="mr-0.5 flex -space-x-1.5"><!--[-->`);
+      $$renderer2.push(`<!--]--> <p class="sr-only" aria-live="polite">${escape_html(blockerAnnouncement)}</p> <div class="flex items-center justify-center gap-4"><div class="accounts-popover-container pointer-events-auto relative flex items-center"><button type="button" data-testid="destinations-toggle"${attr_class(`flex items-center gap-2 rounded-full border border-stone-200/80 bg-white/95 px-4 py-2.5 text-[13px] font-bold text-stone-700 shadow-[0_16px_40px_-12px_rgb(28_25_23/0.15)] backdrop-blur-xl transition-all hover:border-stone-300 hover:bg-white `)} aria-haspopup="dialog"${attr("aria-expanded", isAccountsPopoverOpen)}><div class="mr-0.5 flex -space-x-1.5"><!--[-->`);
       const each_array_8 = ensure_array_like(selectedAccounts().slice(0, 3));
       for (let $$index_8 = 0, $$length = each_array_8.length; $$index_8 < $$length; $$index_8++) {
         let account = each_array_8[$$index_8];
@@ -98669,22 +100393,6 @@ var init_page_svelte3 = __esm({
     __iconData$5.node;
     __name(Images, "Images");
     __iconData$4 = {
-      "name": "link-2",
-      "size": 24,
-      "node": [
-        ["path", { "d": "M9 17H7A5 5 0 0 1 7 7h2" }],
-        ["path", { "d": "M15 7h2a5 5 0 1 1 0 10h-2" }],
-        ["line", {
-          "x1": "8",
-          "x2": "16",
-          "y1": "12",
-          "y2": "12"
-        }]
-      ]
-    };
-    __iconData$4.node;
-    __name(Link_2, "Link_2");
-    __iconData$3 = {
       "name": "link-2-off",
       "size": 24,
       "node": [
@@ -98704,8 +100412,24 @@ var init_page_svelte3 = __esm({
         }]
       ]
     };
-    __iconData$3.node;
+    __iconData$4.node;
     __name(Link_2_off, "Link_2_off");
+    __iconData$3 = {
+      "name": "link-2",
+      "size": 24,
+      "node": [
+        ["path", { "d": "M9 17H7A5 5 0 0 1 7 7h2" }],
+        ["path", { "d": "M15 7h2a5 5 0 1 1 0 10h-2" }],
+        ["line", {
+          "x1": "8",
+          "x2": "16",
+          "y1": "12",
+          "y2": "12"
+        }]
+      ]
+    };
+    __iconData$3.node;
+    __name(Link_2, "Link_2");
     __iconData$22 = {
       "name": "quote",
       "size": 24,
@@ -98853,7 +100577,7 @@ var init__7 = __esm({
     index8 = 6;
     component7 = /* @__PURE__ */ __name(async () => component_cache7 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
     server_id4 = "src/routes/compose/+page.server.ts";
-    imports7 = ["_app/immutable/nodes/6.DfkYgtS0.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/c0sNYjpe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CY8Zu225.js", "_app/immutable/chunks/w6cIr1dZ.js", "_app/immutable/chunks/Dqq3XDBp.js", "_app/immutable/chunks/D7xHsHZT.js", "_app/immutable/chunks/Dh6kmDip.js", "_app/immutable/chunks/x2sejOuv.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BPD3TFi8.js", "_app/immutable/chunks/BgYBQX1k.js", "_app/immutable/chunks/Dd2Gdvce.js", "_app/immutable/chunks/C8SF_c7R.js", "_app/immutable/chunks/DzP4v4eU.js", "_app/immutable/chunks/od6B7d8m.js", "_app/immutable/chunks/BzgMV-4R.js", "_app/immutable/chunks/rKt3i4gP.js", "_app/immutable/chunks/RThujouB.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/DDbcasBn.js", "_app/immutable/chunks/BTS5f2ql.js", "_app/immutable/chunks/D1F8ghUU.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/vQP5jzjx.js", "_app/immutable/chunks/BI52Ye1g.js", "_app/immutable/chunks/C5FuyNRT.js", "_app/immutable/chunks/DsuyzSaA.js", "_app/immutable/chunks/B_pUxefk.js"];
+    imports7 = ["_app/immutable/nodes/6.B5Au-ePU.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/c0sNYjpe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CY8Zu225.js", "_app/immutable/chunks/w6cIr1dZ.js", "_app/immutable/chunks/Dqq3XDBp.js", "_app/immutable/chunks/D7xHsHZT.js", "_app/immutable/chunks/Dh6kmDip.js", "_app/immutable/chunks/x2sejOuv.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/lyktyNIf.js", "_app/immutable/chunks/BPD3TFi8.js", "_app/immutable/chunks/BgYBQX1k.js", "_app/immutable/chunks/Dd2Gdvce.js", "_app/immutable/chunks/C8SF_c7R.js", "_app/immutable/chunks/DzP4v4eU.js", "_app/immutable/chunks/od6B7d8m.js", "_app/immutable/chunks/BzgMV-4R.js", "_app/immutable/chunks/rKt3i4gP.js", "_app/immutable/chunks/RThujouB.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/DDbcasBn.js", "_app/immutable/chunks/BTS5f2ql.js", "_app/immutable/chunks/D1F8ghUU.js", "_app/immutable/chunks/DfK8EbmR.js", "_app/immutable/chunks/vQP5jzjx.js", "_app/immutable/chunks/C5FuyNRT.js", "_app/immutable/chunks/DsuyzSaA.js", "_app/immutable/chunks/B_pUxefk.js"];
     stylesheets7 = [];
     fonts7 = [];
   }
@@ -102496,7 +104220,7 @@ function UpdatesCard($$renderer, $$props) {
       description: "Install a new release, or go back to the one before, without leaving CogSend.",
       id: "instance",
       children: /* @__PURE__ */ __name(($$renderer3) => {
-        $$renderer3.push(`<div class="mb-5 flex flex-wrap items-start justify-between gap-3" data-testid="version-line"><div class="min-w-0"><p class="text-[13px] font-extrabold text-stone-900">Version ${escape_html("1.32.0")}</p> <p class="mt-0.5 text-[12px] font-medium text-stone-500">`);
+        $$renderer3.push(`<div class="mb-5 flex flex-wrap items-start justify-between gap-3" data-testid="version-line"><div class="min-w-0"><p class="text-[13px] font-extrabold text-stone-900">Version ${escape_html("1.32.1")}</p> <p class="mt-0.5 text-[12px] font-medium text-stone-500">`);
         $$renderer3.push(`<!--[-1-->Checking for updates\u2026`);
         $$renderer3.push(`<!--]--></p></div> `);
         $$renderer3.push(`<!--[0--><button type="button"${attr("disabled", releaseBusy, true)} class="shrink-0 rounded-full bg-stone-100 px-4 py-1.5 text-[12px] font-bold text-stone-700 transition-all hover:bg-stone-200 disabled:opacity-50">${escape_html("Check for updates")}</button>`);
@@ -102552,7 +104276,7 @@ var init__19 = __esm({
     "use strict";
     index20 = 18;
     component16 = /* @__PURE__ */ __name(async () => component_cache16 ??= (await Promise.resolve().then(() => (init_page_svelte12(), page_svelte_exports12))).default, "component");
-    imports19 = ["_app/immutable/nodes/18.F_r3HDu4.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/c0sNYjpe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CY8Zu225.js", "_app/immutable/chunks/BzgMV-4R.js", "_app/immutable/chunks/Ckz6KOul.js", "_app/immutable/chunks/CeR0_Uk8.js", "_app/immutable/chunks/CrHCOw8s.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/dkqABqXI.js", "_app/immutable/chunks/BPD3TFi8.js"];
+    imports19 = ["_app/immutable/nodes/18.DUS-lGTc.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/c0sNYjpe.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/CY8Zu225.js", "_app/immutable/chunks/BzgMV-4R.js", "_app/immutable/chunks/Ckz6KOul.js", "_app/immutable/chunks/CeR0_Uk8.js", "_app/immutable/chunks/CrHCOw8s.js", "_app/immutable/chunks/D20gE_Xc.js", "_app/immutable/chunks/dkqABqXI.js", "_app/immutable/chunks/BPD3TFi8.js"];
     stylesheets19 = [];
     fonts19 = [];
   }
@@ -107209,7 +108933,7 @@ var init_server_ts43 = __esm({
         return json({
           ok: true,
           service: "cogsend",
-          version: "1.32.0",
+          version: "1.32.1",
           time: (/* @__PURE__ */ new Date()).toISOString(),
           account: { created: Boolean(account) }
         });
@@ -118377,7 +120101,7 @@ function isFresh(cache2, now) {
   return age < (cache2.latest ? OK_TTL_MS : FAIL_TTL_MS);
 }
 async function checkForRelease(db, options2 = {}) {
-  const current = options2.current ?? "1.32.0";
+  const current = options2.current ?? "1.32.1";
   const now = options2.now ?? /* @__PURE__ */ new Date();
   const cached3 = parseCache(await readAppSetting(db, CACHE_KEY));
   const prereleases = await readOfferPrereleases(db);
@@ -119233,7 +120957,7 @@ var init_server_ts64 = __esm({
         const env3 = locals.bindings;
         const install = env3?.COGSEND_INSTALL === "button" ? "button" : "other";
         return ok({
-          version: "1.32.0",
+          version: "1.32.1",
           install,
           github: install === "button" ? githubUpdateTarget(env3?.COGSEND_REPO, env3?.COGSEND_BRANCH) : null,
           target,
@@ -119442,7 +121166,7 @@ function updaterContext(event, token, overrides = {}) {
     budget: event.locals.budget,
     host: event.url.host,
     runningVersionId: env3?.CF_VERSION_METADATA?.id ?? null,
-    currentVersion: "1.32.0"
+    currentVersion: "1.32.1"
   };
 }
 async function download(ctx, url4) {
@@ -119993,7 +121717,7 @@ var manifest2 = (() => {
     app_path: "_app",
     assets: /* @__PURE__ */ new Set(["apple-touch-icon.png", "robots.txt"]),
     mime_types: { ".png": "image/png", ".txt": "text/plain" },
-    client: { start: "_app/immutable/entry/start.Cph3vpD-.js", app: "_app/immutable/entry/app.CgusGgSA.js", imports: ["_app/immutable/entry/start.Cph3vpD-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/1s8-KDk8.js", "_app/immutable/chunks/c0sNYjpe.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/CY8Zu225.js", "_app/immutable/entry/app.CgusGgSA.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+    client: { start: "_app/immutable/entry/start.Cph3vpD-.js", app: "_app/immutable/entry/app.DV_nrOS4.js", imports: ["_app/immutable/entry/start.Cph3vpD-.js", "_app/immutable/entry/payload.DSmR2FwN.js", "_app/immutable/chunks/DclECHGd.js", "_app/immutable/chunks/1s8-KDk8.js", "_app/immutable/chunks/c0sNYjpe.js", "_app/immutable/chunks/DFW3z4me.js", "_app/immutable/chunks/CY8Zu225.js", "_app/immutable/entry/app.DV_nrOS4.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
     nodes: [
       __memo(() => Promise.resolve().then(() => (init__(), __exports))),
       __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -120759,7 +122483,7 @@ export {
 };
 /**
 * @file
-* @license @lucide/svelte v1.72.0 - ISC
+* @license @lucide/svelte v1.74.0 - ISC
 *
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
